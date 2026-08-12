@@ -57,6 +57,22 @@ Run `./vendor/bin/sail artisan storage:link` once per environment for product im
 
 Run normal versioned migrations against development. Do not run `migrate:fresh`: it would delete existing administrators, products, customers, and orders. Clean migration checks belong in the isolated test database.
 
+Create the isolated database and local testing environment once:
+
+```bash
+cp .env.testing.example .env.testing
+# Set DB_PASSWORD in .env.testing to the same local PostgreSQL password used by Sail.
+./vendor/bin/sail exec -T pgsql sh -lc 'psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''testing'\''" | grep -qx 1 || createdb -U "$POSTGRES_USER" testing'
+```
+
+Then verify migrations from scratch only with the explicit testing environment:
+
+```bash
+./vendor/bin/sail artisan migrate:fresh --env=testing
+```
+
+`.env.testing` is local and ignored; `.env.testing.example` is the committed template. When `APP_ENV=testing`, application boot refuses any database name that does not contain a standalone `test` or `testing` segment. This guard also checks the database selected by `DB_URL`, when present. It exists because Laravel otherwise falls back to `.env` when `.env.testing` is absent.
+
 PostgreSQL order sequences can contain gaps after rollbacks or sequence refresh. A gap is not corruption; never renumber orders or replace the sequence with `max + 1`.
 
 ## Quality gate

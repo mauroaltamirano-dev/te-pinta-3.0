@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Core\Contracts\ProductPriceProvider;
+use App\Core\Support\TestingDatabaseGuard;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Policies\CustomerPolicy;
 use App\Modules\Orders\Models\Order;
@@ -34,6 +35,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $connection = (string) config('database.default');
+        $database = config("database.connections.{$connection}.database");
+        $url = config("database.connections.{$connection}.url");
+
+        TestingDatabaseGuard::ensureSafe(
+            $this->app->environment(),
+            is_string($database) ? $database : null,
+            is_string($url) ? $url : null,
+        );
+
         $this->configureDefaults();
     }
 
