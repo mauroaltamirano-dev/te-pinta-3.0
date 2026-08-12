@@ -1,82 +1,56 @@
 # Security
 
-Security decisions are enforced by Laravel on the server. Frontend visibility and validation are usability features, not security controls.
+Laravel is the authority for authentication, authorization, validation, catalog eligibility, prices, totals, and order state. UI visibility and disabled buttons are not controls.
 
-## Authentication
+## Administrative boundary
 
-- Use Laravel Fortify/session authentication rather than custom authentication.
-- Administrator accounts are provisioned through an explicit trusted operator workflow.
-- Public administrator registration is disabled.
-- Login remains rate limited.
-- Web requests retain Laravel CSRF protection and secure cookie/session defaults appropriate to the environment.
-- Production uses HTTPS, `APP_DEBUG=false`, and secure session cookies.
+Every `/admin` module route uses `auth`, `verified`, `admin`, and `admin.request.log`. Customer/order/settings requests also authorize through policies or explicit administrator checks. Laravel web middleware retains CSRF protection.
 
-## Authorization
+For each administrative write:
 
-Every administrative route and endpoint is grouped below `/admin` and must require `auth`, `verified`, and `admin` middleware, plus resource policies where the use case requires them. A hidden React link or button is never sufficient.
+1. Resolve the resource on the backend.
+2. Authorize the action.
+3. Validate an allowlisted payload.
+4. Execute the focused action/transaction.
+5. Return an explicit resource or redirect.
 
-For every resource read or write:
+## Public checkout boundary
 
-1. Resolve the resource on the server.
-2. Authorize the specific action against the authenticated administrator.
-3. Validate the allowed input.
-4. Execute the use case, using a transaction when required.
-5. Return only fields needed by the page.
+| Control                 | Implementation                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| Catalog identifiers     | Stable product/addon slugs; internal IDs are rejected                                       |
+| Product eligibility     | Products must be available, not soft-deleted, and belong to an active, non-deleted category |
+| Price authority         | `OrderPricingEngine` loads server prices/settings again on create                           |
+| State/payment authority | Public status is `pending_confirmation`; payment is always `unpaid`                         |
+| Customer privacy        | Phone matching happens only inside `CreateOrder`; no lookup endpoint exists                 |
+| Duplicate protection    | Required idempotency key, keyed HMAC at rest, payload fingerprint, unique constraint        |
+| Abuse control           | Preview: 20/minute; creation: 5/minute via Laravel throttle middleware                      |
 
-Changing a URL or resource ID must not bypass authorization. Avoid exposing internal incremental IDs in public URLs when a public identifier is available.
+Public requests cannot submit `customer_id`, `status`, `payment_status`, `total`, `shipping_fee`, or `combined_price`. Extra internal catalog IDs are rejected by strict array key validation. Quantities and array sizes are bounded.
 
-## Input and business integrity
+The checkout normalizes the required phone and may attach the order to an existing active customer. It never returns that customer's name, address, notes, history, or internal ID; never preloads private profile data; and never overwrites the matched profile. The order stores visitor-provided snapshots separately.
 
-- Use Form Requests or explicit Laravel validators.
-- Do not accept roles, permissions, prices, totals, discounts, or state transitions as authoritative client data.
-- Read prices and eligible states from server-owned data.
-- Validate identifiers and resource relationships, not only their scalar format.
-- Use explicit model fillable fields or explicit assignments; never indiscriminately mass assign request payloads.
-- Public Inertia props and JSON responses expose only the necessary fields.
+Exact idempotent retries return the existing order. Reusing a key for a changed payload fails validation. The stored HMAC prevents raw checkout tokens from being persisted.
 
-### Product catalog controls
+## Private and historical data
 
-- Every product/category write is inside the existing `/admin` middleware group and is authorized again by Product/Category policies or Form Requests.
-- Product input uses an explicit allowlist. Categories and tags must exist; all three base prices and `sort_order` must be non-negative integers; availability must be boolean.
-- Slugs and `image_path` are server-owned. Clients cannot submit arbitrary storage paths.
-- Uploads are validated server-side as JPEG, PNG, or WebP, with matching MIME/extension checks and a 4 MiB maximum.
-- Images are written through Laravel's `public` disk. A failed database transaction removes the newly uploaded file; a successful replacement/removal deletes the prior file and logs only the product ID if cleanup fails.
-- `AdminProductResource` and `PublicProductResource` explicitly shape output. `GET /menu/catalog` omits internal IDs, availability flags, storage paths, timestamps, and soft-delete metadata.
-- Public catalog queries require both an available product and an active category. Soft-deleted products/categories are excluded by Eloquent or explicit query constraints.
-- Cooking prices come from integer product prices plus `cooking_surcharges` on the backend. React input or totals are never authoritative.
+- Customer notes are administrative only. They are not copied to orders, public resources, or WhatsApp summaries.
+- Order notes are separate and may appear in the order summary/WhatsApp message.
+- Do not log complete phone numbers, addresses, notes, request payloads, tokens, cookies, or secrets.
+- Public checkout returns only Order ID, state, payment state, backend total/summary, and WhatsApp URL.
+- Historical displays use order snapshots; current customer/catalog data cannot silently rewrite them.
 
-Uploaded files live under `storage/app/public/products/`; URLs are generated with `Storage::disk('public')->url(...)`. Create the public symlink per environment with `./vendor/bin/sail artisan storage:link`. Never expose arbitrary filesystem paths.
+## WhatsApp
 
-## Secrets and private data
+The business destination number comes from `whatsapp_order_phone`. No real phone is hardcoded. The initial value is empty: checkout persists the order, then link generation returns an explicit “not configured” validation error until an administrator sets the number.
 
-Never commit `.env`, credentials, application keys, API tokens, cookies, or production data. Never log passwords, tokens, cookies, secrets, full payment-card data, or unnecessary complete addresses/phone numbers.
+The application generates a `wa.me` URL only. It does not send a message, authenticate the visitor, or infer that the order was confirmed.
 
-Use redaction or stable internal identifiers when correlation is needed. There is no online payment feature in the defined scope.
+## Production checklist
 
-## Errors
-
-- Production must not display stack traces or infrastructure details.
-- Public error responses should be actionable without exposing internals.
-- Log internal context separately and safely.
-
-## Required security tests
-
-- Guests cannot access admin pages or execute admin endpoints.
-- URL changes do not bypass route protection.
-- Resource ID changes cannot access or modify unauthorized data.
-- Client-supplied roles do not grant privilege.
-- Client-supplied prices/totals are ignored as sources of truth.
-- Order and payment states reject unsupported values.
-- Invalid inputs are rejected on the server.
-- Login rate limiting is active.
-- Public endpoints do not expose internal fields.
-
-## Deployment checklist
-
-- [ ] `APP_ENV=production` and `APP_DEBUG=false`.
-- [ ] HTTPS and secure session cookie settings enabled.
-- [ ] PostgreSQL is not publicly reachable.
-- [ ] Application database user has minimum privileges.
-- [ ] Secrets are supplied by the platform, not repository files.
-- [ ] Logs and error monitoring are access controlled.
-- [ ] Authorization and rate-limit tests pass.
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`, HTTPS, secure cookies.
+- [ ] PostgreSQL is not publicly reachable and uses least privilege.
+- [ ] Secrets come from the deployment platform, not Git.
+- [ ] WhatsApp destination and delivery fee are deliberately configured.
+- [ ] Logs/monitoring are access-controlled and do not contain PII payloads.
+- [ ] Guest/admin, tampered-price, public-field, idempotency, and rate-limit tests pass.

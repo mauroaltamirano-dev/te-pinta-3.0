@@ -1,117 +1,84 @@
 # Project map
 
-This is the practical navigation guide. Update it whenever an important path moves.
+Use this map to change a rule at its owner instead of searching the whole repository.
 
-## Backend
+## Ordering maintainer map
 
-| Looking for                                       | Location                                                                      |
-| ------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Application bootstrap and middleware registration | `bootstrap/app.php`                                                           |
-| Global public route entry                         | `routes/web.php`                                                              |
-| Module routes                                     | `app/Modules/<Module>/routes.php`, loaded by `routes/web.php`                 |
-| Authentication configuration                      | `config/auth.php`, `config/fortify.php`                                       |
-| Identity/user model                               | `app/Modules/Identity/`                                                       |
-| Authentication actions and provider wiring        | `app/Modules/Identity/`, `app/Providers/FortifyServiceProvider.php`           |
-| Administrative access enforcement                 | `/admin` route groups protected by `auth`, `verified`, and `admin` middleware |
-| Core contracts and application-wide support       | `app/Core/`                                                                   |
-| Narrow shared infrastructure                      | `app/Shared/`                                                                 |
-| Business modules                                  | `app/Modules/`                                                                |
-| Database migrations                               | `database/migrations/`                                                        |
-| Factories and seeders                             | `database/factories/`, `database/seeders/`                                    |
-| Database connection                               | `config/database.php`, `.env`                                                 |
-| Logging configuration                             | `config/logging.php`                                                          |
-| Runtime logs                                      | `storage/logs/` (never commit)                                                |
-| Other framework configuration                     | `config/`                                                                     |
+| Change                                                 | Source of truth                                                                                                 |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Product base prices and sellability                    | `app/Modules/Products/`, especially `Pricing/DatabaseProductPriceProvider.php`                                  |
+| Products-to-Orders contract                            | `app/Core/Contracts/ProductPriceProvider.php`, `app/Core/Data/SellableProductPrice.php`                         |
+| Grouping, totals, combined dozen, toppings, shipping   | `app/Modules/Orders/Pricing/OrderPricingEngine.php`                                                             |
+| Pricing result shapes                                  | `app/Modules/Orders/Pricing/OrderPriceQuote.php`, `PricingLine.php`, `PricingAddon.php`                         |
+| Order creation transaction, snapshots, idempotency     | `app/Modules/Orders/Actions/CreateOrder.php`, `Data/OrderCheckoutData.php`                                      |
+| Public product/topping slug resolution                 | `app/Modules/Orders/Actions/ResolvePublicCheckoutSelections.php`                                                |
+| Order ID generation                                    | `database/migrations/2026_08_11_000400_create_orders_tables.php` (`order_public_id_seq`)                        |
+| Operational/payment states                             | `app/Modules/Orders/Enums/OrderStatus.php`, `PaymentStatus.php`                                                 |
+| Shared text summary                                    | `app/Modules/Orders/Support/OrderSummaryFormatter.php`                                                          |
+| WhatsApp URL                                           | `app/Modules/Orders/Support/WhatsAppOrderLink.php`                                                              |
+| Customer matching/normalization                        | `app/Modules/Customers/Support/PhoneNormalizer.php`, `app/Modules/Orders/Actions/CreateOrder.php`               |
+| Customer CRUD/history                                  | `app/Modules/Customers/` and `resources/js/pages/admin/customers/`                                              |
+| Admin order list/POS/detail                            | `app/Modules/Orders/Http/`, `resources/js/pages/admin/orders/`, `resources/js/features/orders/`                 |
+| Public menu/cart/checkout                              | `app/Modules/PublicSite/routes.php`, `resources/js/pages/public/menu.tsx`, `resources/js/pages/public/cart.tsx` |
+| Combined prices, delivery, WhatsApp, cooking, toppings | `app/Modules/Settings/`, `resources/js/pages/admin/settings/general.tsx`                                        |
+| Pricing behavior guide                                 | `docs/ORDER_PRICING.md`                                                                                         |
 
-## Business areas
+## Routes
 
-| Change                   | Backend                                                                            | Frontend                                                                            |
-| ------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Public home/navigation   | `app/Modules/PublicSite/`                                                          | public pages and public layout                                                      |
-| Public menu and products | `app/Modules/PublicSite/routes.php` exposes the page; `Products` owns catalog data | menu page and `resources/js/features/products/`                                     |
-| Cart                     | public ordering boundary as it is introduced                                       | cart page and owning feature                                                        |
-| Orders / POS             | `app/Modules/Orders/`                                                              | orders pages and `resources/js/features/orders/`                                    |
-| Customers                | `app/Modules/Customers/`                                                           | customer pages and `resources/js/features/customers/`                               |
-| Product management       | `app/Modules/Products/`                                                            | `resources/js/pages/admin/products/index.tsx` and `resources/js/features/products/` |
-| Dashboard                | `app/Modules/Dashboard/`                                                           | admin dashboard page/feature                                                        |
-| Analytics                | `app/Modules/Analytics/`                                                           | analytics placeholder/feature                                                       |
-| Inventory                | `app/Modules/Inventory/`                                                           | inventory placeholder/feature                                                       |
-| Configuration            | `app/Modules/Settings/` redirects the Settings entry to Products                   | `resources/js/layouts/settings-layout.tsx`; general configuration is not available  |
+### Administrative
 
-Exact page filenames should follow route names and remain thin composition points.
+All routes below use the `/admin` prefix and `auth`, `verified`, `admin`, and `admin.request.log` middleware.
 
-## Frontend
+| Area              | Routes file                        | Main endpoints                                                      |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------------- |
+| Customers         | `app/Modules/Customers/routes.php` | CRUD at `/admin/customers`                                          |
+| Orders            | `app/Modules/Orders/routes.php`    | list/create/detail/delete, `/price-preview`, status, payment status |
+| Products          | `app/Modules/Products/routes.php`  | `/admin/settings/products` and categories                           |
+| Ordering settings | `app/Modules/Settings/routes.php`  | `GET/PUT /admin/settings/general`                                   |
 
-| Looking for                      | Location                                                                                                |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Inertia application entry        | `resources/js/app.tsx`                                                                                  |
-| Application composition          | `resources/js/app.tsx`; add `app/` only when composition code needs a folder                            |
-| Public/admin/auth shells         | `resources/js/layouts/`                                                                                 |
-| Global admin navigation          | `resources/js/components/shared/admin-sidebar.tsx`; composed by `resources/js/layouts/admin-layout.tsx` |
-| Route-level pages                | `resources/js/pages/`                                                                                   |
-| Feature-owned UI and hooks       | `resources/js/features/` as non-placeholder features are introduced                                     |
-| shadcn primitives                | `resources/js/components/ui/`                                                                           |
-| Te Pinta shared components       | `resources/js/components/shared/`                                                                       |
-| Shared hooks                     | `resources/js/hooks/`                                                                                   |
-| Focused utilities                | `resources/js/lib/`                                                                                     |
-| Shared TypeScript types          | `resources/js/types/`                                                                                   |
-| Design tokens and Tailwind theme | `resources/css/app.css`                                                                                 |
-| shadcn generator configuration   | `components.json`                                                                                       |
+### Public
 
-Generated Wayfinder route/action files live under `resources/js/routes/`, `resources/js/actions/`, and `resources/js/wayfinder/`; change the PHP route or controller source rather than manually editing generated output.
+| Endpoint                       | Owner                        | Notes                                       |
+| ------------------------------ | ---------------------------- | ------------------------------------------- |
+| `GET /menu/catalog`            | Products/PublicSite boundary | Available products; public slugs only       |
+| `GET /checkout/options`        | Orders                       | Available toppings; public slugs only       |
+| `POST /checkout/price-preview` | Orders                       | 20 requests/minute                          |
+| `POST /checkout/orders`        | Orders                       | 5 requests/minute; requires idempotency key |
 
-## Products quick map
+There is no public customer lookup endpoint.
 
-| Change                                           | Location                                                                                                                                                                                                      |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Admin product/category routes                    | `app/Modules/Products/routes.php` (`/admin/settings/products`, `/admin/settings/categories`)                                                                                                                  |
-| Public catalog route                             | `app/Modules/PublicSite/routes.php` (`GET /menu/catalog`)                                                                                                                                                     |
-| HTTP coordination and safe response shapes       | `app/Modules/Products/Http/Controllers/`, `app/Modules/Products/Http/Resources/`                                                                                                                              |
-| Input validation and authorization               | `app/Modules/Products/Http/Requests/`, `app/Modules/Products/Policies/`                                                                                                                                       |
-| Product/category mutations and price calculation | `app/Modules/Products/Actions/`                                                                                                                                                                               |
-| Validated command data passed to actions         | `app/Modules/Products/Data/`                                                                                                                                                                                  |
-| Models and relationships                         | `app/Modules/Products/Models/`                                                                                                                                                                                |
-| Catalog schema                                   | `database/migrations/2026_08_11_000200_create_catalog_tables.php`, `database/migrations/2026_08_11_000500_expand_product_catalog.php`, `database/migrations/2026_08_11_000600_add_product_catalog_checks.php` |
-| Initial catalog and cooking surcharges           | `database/seeders/ProductCatalogSeeder.php`                                                                                                                                                                   |
-| Admin page, Settings layout, and feature UI      | `resources/js/pages/admin/products/index.tsx`, `resources/js/layouts/settings-layout.tsx`, `resources/js/features/products/`                                                                                  |
-| Canonical visual reference                       | `docs/design/references/admin-products.png`                                                                                                                                                                   |
-| Product tests                                    | `tests/Feature/Products/`, `tests/e2e/products.spec.ts`                                                                                                                                                       |
+## Schema map
 
-### Add a product manually
+| Capability                                          | Migrations                                                                                                                                        |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Customer base and management fields                 | `2026_08_11_000300_create_customers_table.php`, `2026_08_12_040000_expand_customers_for_management.php`                                           |
+| Order base, public sequence, items                  | `2026_08_11_000400_create_orders_tables.php`                                                                                                      |
+| Ordering settings and toppings catalog              | `2026_08_12_050000_create_order_configuration_tables.php`                                                                                         |
+| Checkout snapshots, compositions, topping snapshots | `2026_08_12_060000_expand_orders_for_checkout.php`                                                                                                |
+| Product catalog/prices/surcharges                   | `2026_08_11_000200_create_catalog_tables.php`, `2026_08_11_000500_expand_product_catalog.php`, `2026_08_11_000600_add_product_catalog_checks.php` |
 
-1. Open `/admin/settings/products` as an administrator.
-2. Select its category tab and choose **Add product**.
-3. Enter base prices in whole pesos, select any tags, set availability/order, and save the modal.
+## Tests
 
-For uploaded images, initialize the public link once per environment:
+| Area                                    | Location                                                    |
+| --------------------------------------- | ----------------------------------------------------------- |
+| Customers and phone normalization       | `tests/Feature/Customers/`                                  |
+| Pricing, checkout, database constraints | `tests/Feature/Orders/`                                     |
+| Ordering configuration                  | `tests/Feature/Settings/OrderingSettingsManagementTest.php` |
+| Admin order journey                     | `tests/e2e/orders.spec.ts`                                  |
+| Public checkout/WhatsApp handoff        | `tests/e2e/public-checkout.spec.ts`                         |
+| Products                                | `tests/Feature/Products/`, `tests/e2e/products.spec.ts`     |
 
-```bash
-./vendor/bin/sail artisan storage:link
-```
+## Infrastructure
 
-Initialize any missing records from the defined catalog with:
+| Need                                 | Location                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| Application/module route composition | `routes/web.php`                                                                     |
+| Middleware registration              | `bootstrap/app.php`                                                                  |
+| Auth and identity                    | `app/Modules/Identity/`, `config/auth.php`, `config/fortify.php`                     |
+| Database                             | `config/database.php`, `database/migrations/`                                        |
+| Logging                              | `config/logging.php`, `storage/logs/`                                                |
+| Inertia entry/layouts                | `resources/js/app.tsx`, `resources/js/layouts/`                                      |
+| Design tokens                        | `resources/css/app.css`                                                              |
+| Quality configuration                | `composer.json`, `package.json`, `phpstan.neon`, `pint.json`, `playwright.config.ts` |
 
-```bash
-./vendor/bin/sail artisan db:seed --class=ProductCatalogSeeder
-```
-
-Repeated runs preserve administrative edits and do not restore soft-deleted records.
-
-## Tests and tooling
-
-| Looking for                        | Location                                                           |
-| ---------------------------------- | ------------------------------------------------------------------ |
-| Laravel feature tests              | `tests/Feature/`                                                   |
-| Laravel unit tests                 | `tests/Unit/`                                                      |
-| Browser tests                      | `playwright.config.ts` and `tests/e2e/`                            |
-| PHP formatter/static analysis      | `pint.json`, `phpstan.neon`, `composer.json`                       |
-| TypeScript lint/format/type checks | `eslint.config.js`, `.prettierrc`, `tsconfig.json`, `package.json` |
-| Vite build                         | `vite.config.ts`                                                   |
-
-## Operations
-
-- Environment template: `.env.example`
-- Local secrets: `.env` (ignored; never commit)
-- Public assets: `public/`
-- Compiled assets: generated by Vite; never edit them directly
-- Uploaded files: Laravel filesystem disks configured in `config/filesystems.php`
+Generated Wayfinder files under `resources/js/routes/`, `resources/js/actions/`, and `resources/js/wayfinder/` are outputs. Change their PHP source, not the generated files.

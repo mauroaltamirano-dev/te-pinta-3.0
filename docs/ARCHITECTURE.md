@@ -1,74 +1,80 @@
 # Architecture
 
-Te Pinta 3.0 is a modular Laravel monolith with an Inertia/React frontend. It keeps deployment and transactions simple while using explicit feature boundaries so the codebase can grow without becoming a collection of global controllers and services.
+Te Pinta 3.0 is a modular Laravel monolith with an Inertia/React frontend. PostgreSQL owns transactional integrity; Laravel owns authorization, validation, pricing, and state changes; React composes the workflow and displays backend results.
 
-## System shape
+## Request paths
 
 ```text
-Browser
-  -> Laravel web middleware (session, cookies, CSRF, rate limiting)
-  -> public or authenticated module route
-  -> controller / Form Request / authorization
-  -> action or focused service
-  -> Eloquent model / PostgreSQL transaction
-  -> Inertia response
-  -> React page and feature components
+Administrative browser
+  -> auth + verified + admin + admin.request.log
+  -> module controller / Form Request / policy
+  -> action or pricing service
+  -> PostgreSQL transaction
+  -> Inertia page or JSON preview
+
+Public checkout
+  -> public slug input + Laravel validation + rate limit
+  -> internal slug resolution
+  -> shared pricing engine
+  -> atomic customer match/create + order snapshots
+  -> backend summary + WhatsApp link
 ```
 
-The backend is authoritative. React may improve usability, but it never decides permissions, roles, prices, totals, state transitions, or resource ownership.
+The public order is committed before the WhatsApp URL is generated. Opening WhatsApp is a client-side handoff, not proof that the customer sent the message.
 
 ## Backend boundaries
 
 ```text
 app/
-  Core/       stable application-wide contracts and support
-  Shared/     narrowly scoped, reusable implementation
-  Modules/    business capabilities
+  Core/       stable application-wide contracts and value data
+  Shared/     narrowly named reusable infrastructure
+  Modules/    business capabilities and their delivery/application code
 ```
 
-- A module owns its routes and the layers its behavior actually needs.
-- Modules do not contain placeholder directories.
-- Cross-module calls use small contracts or explicit application actions when direct coupling would obscure ownership.
-- `Core` is not a dumping ground. It contains stable concepts with application-wide relevance.
-- `Shared` contains concrete reusable behavior with a specific name and responsibility; generic `Helpers` buckets are prohibited.
-- Composition is preferred over base controllers, base services, and deep inheritance.
+- `Products` owns catalog availability and base raw/cooked prices.
+- `Orders` owns commercial grouping, final totals, snapshots, lifecycle, toppings, delivery, summaries, and checkout idempotency.
+- `Customers` owns profiles, phone normalization, administrative search, and customer history.
+- `Settings` provides the administrative write boundary for ordering settings, cooking surcharges, and existing toppings.
+- `PublicSite` owns public page routes; its checkout endpoints delegate to `Orders`.
+- `Core\Contracts\ProductPriceProvider` is the narrow Products-to-Orders seam. Orders must not reproduce catalog pricing queries.
+
+Controllers coordinate HTTP. Form Requests authorize/validate. Actions execute use cases. Models persist relationships. Do not introduce generic repositories, base services, or placeholder folders.
 
 ## Frontend boundaries
 
 ```text
 resources/js/
-  app/                 application composition
-  layouts/             public, admin, and authentication shells
-  pages/               Inertia route entry points
-  features/            feature-owned components, hooks, types, and utilities
+  layouts/             public, admin, authentication, and Settings shells
+  pages/               thin Inertia route entry points
+  features/            feature-owned components and types
   components/ui/       shadcn primitives
   components/shared/   Te Pinta reusable components
-  hooks/                application-wide hooks
-  lib/                  focused infrastructure helpers
-  types/                shared TypeScript contracts
+  lib/                 focused infrastructure helpers
 ```
 
-Pages compose features and layouts. Business-rich UI belongs to its feature rather than a global component folder. `components/ui` remains the primitive layer; Te Pinta-specific wrappers live in `components/shared` or the owning feature.
+Frontend price previews call Laravel. They are informative only: order creation reruns the same backend engine and persists its result.
 
 ## Dependency direction
 
-1. Framework delivery code calls module application behavior.
-2. Module behavior may depend on `Core` contracts and narrow `Shared` utilities.
-3. `Core` must not depend on a business module.
-4. One module must not reach into another module's internal controllers, requests, or persistence details.
-5. Frontend feature code may use shared primitives; shared primitives must not import feature code.
+1. HTTP delivery calls application actions or focused services.
+2. Orders consumes Products through `ProductPriceProvider`.
+3. Core never depends on a business module.
+4. A module never calls another module's controller or request class.
+5. Pages may compose feature/shared UI; shared UI must not import feature code.
 
-## Current architectural decisions
+## Durable decisions
 
-| Decision                                                   | Reason                                                                                   |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Modular monolith                                           | Clear ownership without distributed-system overhead.                                     |
-| Laravel session authentication with an administrative flag | Native CSRF, cookie, rate-limit, guard, and server-side admin middleware integration.    |
-| PostgreSQL-only application database                       | Strong constraints, transactions, and a clean schema independent from the legacy backup. |
-| Inertia instead of a separate API SPA                      | One authorization and routing boundary with typed React pages.                           |
-| Soft deletion for customers and orders                     | Preserve history and referential integrity while supporting administrative removal.      |
-| Internal and public order identifiers                      | Keep database identity separate from stable human-facing references.                     |
+| Decision                          | Consequence                                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Modular monolith                  | Customers, Products, Orders, Settings, and PublicSite keep ownership without distributed transactions. |
+| PostgreSQL sequence for Order IDs | `TP-000001` allocation is concurrency-safe; rollbacks may leave harmless gaps.                         |
+| One backend pricing engine        | Admin and public checkout cannot diverge on grouping or totals.                                        |
+| Immutable order snapshots         | Catalog, address, topping, and setting changes never rewrite history.                                  |
+| Active-phone partial uniqueness   | Matching is deterministic among active customers while a soft-deleted phone may be reused.             |
+| Public slugs, internal IDs        | Public checkout selects catalog entries without exposing database IDs.                                 |
+| Hash + fingerprint idempotency    | Exact retries return the same order; key reuse with another payload is rejected.                       |
+| Soft deletion                     | Customers/orders remain recoverable and historical foreign keys remain intact.                         |
 
-## Intentionally deferred
+## Still out of scope
 
-Promotion rules, analytics calculations, inventory/stock behavior, combo rules, advanced discounts, and complete ordering workflows are not defined in this foundation. Add them only from explicit requirements and record consequential decisions in `docs/decisions/`.
+Payment methods/gateways, WhatsApp automation, promotions beyond combined-dozen savings, inventory, purchases, stock, analytics, and additional combo types are not implemented.

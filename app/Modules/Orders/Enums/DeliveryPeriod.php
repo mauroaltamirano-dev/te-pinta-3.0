@@ -2,7 +2,7 @@
 
 namespace App\Modules\Orders\Enums;
 
-enum DeliverySlot: string
+enum DeliveryPeriod: string
 {
     case Midday = 'midday';
     case Afternoon = 'afternoon';

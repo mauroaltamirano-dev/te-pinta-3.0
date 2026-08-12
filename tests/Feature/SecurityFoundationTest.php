@@ -74,7 +74,7 @@ class SecurityFoundationTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->patch(route('admin.orders.status.update', $order), ['status' => 'cancelled'])
+            ->patch(route('admin.orders.status.update', $order), ['status' => 'refunded'])
             ->assertSessionHasErrors('status');
 
         $this->assertSame('waiting', $order->refresh()->status->value);

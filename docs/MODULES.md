@@ -1,83 +1,72 @@
 # Backend modules
 
-Each module represents a business capability and owns its delivery and application behavior. Create only the folders needed by implemented behavior.
+Each module owns one business capability and only the layers its implemented behavior needs.
 
-## Initial modules
+## Current ownership
 
-| Module       | Current responsibility                                                                    | Deferred                                               |
-| ------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `Identity`   | User identity and administrator status boundary                                           | Additional roles/permissions not yet required          |
-| `PublicSite` | Public home, menu, and cart route/page boundary                                           | Complete catalog/cart/WhatsApp workflow                |
-| `Dashboard`  | Administrative landing boundary                                                           | Recommendation, discounts, and combo management rules  |
-| `Orders`     | Order/POS boundary and future order lifecycle                                             | Complete wizard, pricing, transitions, WhatsApp output |
-| `Customers`  | Customer boundary                                                                         | Search, editing, history, historical spend             |
-| `Products`   | Product/category administration, tags, images, catalog queries, and authoritative pricing | Tag administration UI and editable cooking surcharges  |
-| `Analytics`  | Navigation and contract boundary                                                          | Metrics and reporting definitions                      |
-| `Inventory`  | Navigation and contract boundary                                                          | Stock and replenishment rules                          |
-| `Settings`   | Administrative configuration boundary                                                     | Advanced operational settings                          |
+| Module                                | Owns                                                                                                          | Does not own                                  |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `Identity`                            | User identity, sessions, administrator boundary                                                               | Customer profiles or order state              |
+| `Products`                            | Categories, products, tags, availability, base prices, cooking surcharges, public catalog                     | Cart grouping or historical sale lines        |
+| `Customers`                           | Profile CRUD, optional phone/address/private notes, phone normalization, search, order history                | Public identity verification or order notes   |
+| `Orders`                              | Pricing, POS/public creation, snapshots, order/topping records, delivery, states, summaries, WhatsApp handoff | Product CRUD or customer private-note changes |
+| `Settings`                            | Admin editing of order settings, cooking surcharges, and existing toppings                                    | Pricing calculations                          |
+| `PublicSite`                          | Public page routes and menu/cart entry                                                                        | Authoritative checkout logic                  |
+| `Dashboard`, `Analytics`, `Inventory` | Current route/page boundaries                                                                                 | Functional analytics or stock behavior        |
 
-## Module anatomy
-
-A module may contain only what it uses:
+## Customers
 
 ```text
-app/Modules/Orders/
-  Http/
-    Controllers/
-    Requests/
-    Middleware/
-  Actions/
-  DTOs/
-  Models/
-  Policies/
-  Services/
+Customers/
+  Actions/       create, update, soft delete and structured events
+  Data/          validated customer command data
+  Http/          admin controller, requests, explicit resource
+  Models/        Customer and Orders relationship
+  Policies/      admin authorization
+  Support/       PhoneNormalizer
   routes.php
 ```
 
-Do not reproduce this tree mechanically. For example, a placeholder route needs neither a service nor a DTO.
+Names are not unique. Phone is optional for administrative records. When present, it is normalized centrally and must be unique among active customers. Private notes are only returned by the authenticated admin resource and are never copied to orders or public responses.
+
+Customer history reads persisted orders. Effective historical spend excludes soft-deleted orders through Eloquent and excludes `cancelled` orders explicitly.
+
+## Orders
+
+```text
+Orders/
+  Actions/       create, public selection resolution, status/payment updates
+  Data/          immutable validated checkout input
+  Enums/         states, source, condition, delivery, pricing, setting keys
+  Http/          admin/public controllers, requests, resource
+  Models/        order, item/composition, topping, addon, setting
+  Policies/      admin authorization
+  Pricing/       one deterministic backend pricing engine and DTOs
+  Support/       summary formatter and WhatsApp link builder
+  routes.php
+```
+
+`CreateOrder` is the shared application boundary for POS and public checkout. In one transaction it resolves/creates the customer, calculates the quote, creates the order, persists item/composition/topping snapshots, and stores totals. Public source fixes status to `pending_confirmation` and payment to `unpaid`; admin source starts at `waiting` and may select `paid` or `unpaid`.
+
+Public requests use product/topping slugs. `ResolvePublicCheckoutSelections` converts them to internal IDs only after checking current sellability. The pricing engine then calls `ProductPriceProvider`; callers never calculate authoritative totals.
+
+## Settings
+
+`GET/PUT /admin/settings/general` edits the four typed order settings, three existing cooking surcharges, and existing addon rows in one transaction. The UI intentionally does not redesign Settings or create a separate toppings module.
+
+| Setting                       |      Initial value |
+| ----------------------------- | -----------------: |
+| `combined_dozen_raw_price`    |              16000 |
+| `combined_dozen_cooked_price` |              17500 |
+| `delivery_fee`                |                  0 |
+| `whatsapp_order_phone`        | empty/unconfigured |
+
+Initial toppings are Lactonesa (500) and Yasgua (200). Their names, prices, availability, and order are configurable. An empty WhatsApp phone prevents link creation with an explicit validation error; it is not replaced with a real or hardcoded number.
 
 ## Adding behavior
 
-1. Place the route in the owning module's `routes.php`.
-2. For admin behavior, keep it below `/admin` and enforce `auth`, `verified`, and `admin` on the server route/controller.
-3. Validate input with a Form Request or an equally explicit Laravel mechanism.
-4. Put a multi-step use case in a named action; use a service only for cohesive reusable behavior.
-5. Keep persistence and transactions inside the module boundary.
-6. Add feature tests beside the behavior's public boundary.
-7. Update `PROJECT_MAP.md` and this document if ownership changes.
-
-## Cross-module rules
-
-- Prefer IDs, small immutable data, and contracts over passing mutable models across boundaries.
-- Do not call another module's controller or Form Request.
-- Extract behavior only after the same responsibility is genuinely shared.
-- A shared abstraction needs a clear owner, reason, and tests.
-- Database foreign keys may cross module tables where the domain requires it; application behavior still goes through an explicit boundary.
-
-## Products
-
-`Products` owns the first complete vertical slice. Its page remains a thin Inertia composition point; HTTP controllers coordinate, Form Requests validate/authorize, and named actions perform mutations.
-
-```text
-app/Modules/Products/
-  Actions/             # product/category writes and price calculation
-  Data/                # immutable validated command data
-  Enums/PriceTier.php
-  Http/
-    Controllers/
-    Requests/
-    Resources/         # separate admin and public response shapes
-  Models/              # Product, Category, Tag, CookingSurcharge
-  Policies/
-  Support/UniqueSlug.php
-  routes.php
-```
-
-Ownership rules:
-
-- A product belongs to one category and may have many independent tags. `Clásicas` and `Especiales` are categories; `Vegetariana` is a tag.
-- Category/product ordering is explicit through `sort_order`; queries never infer business order from name or creation time.
-- `CalculateProductPrice` reads integer base prices and persisted cooking surcharges. Callers do not calculate authoritative prices in React.
-- `PublicProductCatalogController` exposes only available products in active categories through `PublicProductResource`.
-- Category deletion is intentionally absent from normal administration. Deactivate a category instead, preserving products and history.
-- Product and category forms save individually in focused dialogs. Cancel/close discards local form state; there is no misleading page-wide Save/Discard buffer.
+1. Put the use case in its owning module.
+2. Reuse a narrow contract when another module owns required data.
+3. Keep HTTP input/output explicit through Form Requests and resources.
+4. Use a transaction for multi-record invariants.
+5. Add only folders that contain real code.

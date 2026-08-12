@@ -12,9 +12,9 @@ const navigation = [
     },
     {
         label: 'General configuration',
-        description: 'Not available yet',
+        description: 'Ordering prices and WhatsApp',
         icon: Settings2,
-        href: null,
+        href: '/admin/settings/general',
     },
 ] as const;
 
@@ -43,22 +43,6 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                           ? 'text-admin-text-secondary'
                                           : 'cursor-not-allowed text-admin-text-secondary/60',
                                 );
-
-                                if (!href) {
-                                    return (
-                                        <span
-                                            key={label}
-                                            aria-disabled="true"
-                                            className={className}
-                                        >
-                                            <Icon />
-                                            <NavigationText
-                                                label={label}
-                                                description={description}
-                                            />
-                                        </span>
-                                    );
-                                }
 
                                 return (
                                     <Link

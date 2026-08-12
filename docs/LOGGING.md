@@ -1,57 +1,60 @@
 # Logging and observability
 
-Use Laravel logging and Monolog. Logs should explain meaningful application events without exposing private data or flooding the output.
+Use stable event names and structured context. Logs identify a business event without serializing private payloads.
+
+## Implemented events
+
+| Event                                   | Context                                               |
+| --------------------------------------- | ----------------------------------------------------- |
+| `[Customers] customer.created`          | `module`, internal `customer_id`, `admin_id`          |
+| `[Customers] customer.updated`          | `module`, internal `customer_id`, `admin_id`          |
+| `[Customers] customer.deleted`          | `module`, internal `customer_id`, `admin_id`          |
+| `[Orders] order.created`                | `module`, public `order_id`, `admin_id`               |
+| `[Orders] public_order.created`         | `module`, public `order_id`; `admin_id` is null       |
+| `[Orders] order.status_changed`         | `module`, public `order_id`, `admin_id`, `from`, `to` |
+| `[Orders] order.cancelled`              | same transition context when target is cancelled      |
+| `[Orders] order.payment_status_changed` | `module`, public `order_id`, `admin_id`, `from`, `to` |
+| `[Orders] order.deleted`                | `module`, public `order_id`, `admin_id`               |
+
+Administrative requests also pass through `admin.request.log`, which supplies the existing request/correlation logging boundary. Reuse its correlation context rather than inventing a second request-ID mechanism.
+
+## PII rule
+
+Never log:
+
+- full phone numbers or delivery/customer addresses;
+- customer notes, order notes, or formatted WhatsApp messages;
+- checkout payloads, idempotency keys, cookies, tokens, or secrets;
+- serialized Customer, Order, Request, or exception objects without reviewing fields.
+
+Use internal customer ID or public Order ID for correlation. If phone-based operational correlation is ever necessary, add an explicitly reviewed masked/hash representation; do not add the raw value.
 
 ## Event shape
 
-Use stable event names and structured context:
-
 ```php
-Log::info('order.created', [
-    'request_id' => $requestId,
+Log::info('[Orders] order.status_changed', [
     'module' => 'Orders',
-    'action' => 'create',
     'order_id' => $order->public_id,
-    'admin_id' => $admin->getKey(),
-    'status' => $order->status,
-    'duration_ms' => $duration,
+    'admin_id' => $adminId,
+    'from' => $previous->value,
+    'to' => $status->value,
 ]);
 ```
 
-Prefer searchable fields over interpolated prose. Include only fields that help operate or diagnose the event.
-
 ## Levels
 
-| Level     | Use                                                                                                 |
-| --------- | --------------------------------------------------------------------------------------------------- |
-| `INFO`    | Relevant completed actions, such as an order created or status changed                              |
-| `WARNING` | Abnormal but recoverable situations, such as a rejected transition or degraded optional integration |
-| `ERROR`   | Real failures requiring diagnosis or intervention                                                   |
+| Level     | Use                                                 |
+| --------- | --------------------------------------------------- |
+| `INFO`    | Completed meaningful business action                |
+| `WARNING` | Recoverable abnormal condition that needs attention |
+| `ERROR`   | Failure requiring diagnosis/intervention            |
 
-Debug-level output is for local diagnosis and must not become noisy production logging.
-
-## Context
-
-When relevant, include:
-
-- request/correlation ID;
-- module and action;
-- authenticated administrator ID;
-- public order ID;
-- resulting status;
-- duration;
-- safe exception/error context.
-
-Do not log passwords, tokens, cookies, secrets, full card data, or unnecessary complete addresses/phone numbers. Do not serialize full request payloads, user models, or exception context without reviewing their fields.
-
-## Storage and access
-
-Channels are configured in `config/logging.php`. Local file logs live under `storage/logs/` and are not versioned. Production retention, forwarding, access control, and redaction are deployment responsibilities and must match data-protection requirements.
+Do not duplicate Laravel's exception reporting without adding safe, actionable context. Channels are configured in `config/logging.php`; local files under `storage/logs/` are never committed.
 
 ## Review checklist
 
-- [ ] Event name is stable and describes a meaningful action.
-- [ ] Level matches operational severity.
-- [ ] Context supports correlation without private payloads.
-- [ ] Failure logs do not expose secrets or duplicate framework reporting unnecessarily.
-- [ ] High-frequency paths will not create avoidable noise or cost.
+- [ ] Stable event name and useful identifiers.
+- [ ] Correct level.
+- [ ] No PII, secret, raw payload, or idempotency token.
+- [ ] High-frequency preview endpoints do not create routine noise.
+- [ ] Tests inspect logs without depending on private values.

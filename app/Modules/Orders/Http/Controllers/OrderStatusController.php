@@ -2,28 +2,18 @@
 
 namespace App\Modules\Orders\Http\Controllers;
 
+use App\Modules\Orders\Actions\UpdateOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Http\Requests\UpdateOrderStatusRequest;
 use App\Modules\Orders\Models\Order;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Log;
 
 final class OrderStatusController
 {
-    public function __invoke(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
+    public function __invoke(UpdateOrderStatusRequest $request, Order $order, UpdateOrderStatus $update): RedirectResponse
     {
-        $previous = $order->status;
-        $order->status = OrderStatus::from($request->validated('status'));
-        $order->save();
+        $update->execute($order, OrderStatus::from($request->validated('status')), (int) $request->user()->getAuthIdentifier());
 
-        Log::info('order.status_changed', [
-            'module' => 'Orders',
-            'order_id' => $order->public_id,
-            'admin_id' => $request->user()->getAuthIdentifier(),
-            'from' => $previous->value,
-            'to' => $order->status->value,
-        ]);
-
-        return back();
+        return back()->with('success', 'Order status updated.');
     }
 }

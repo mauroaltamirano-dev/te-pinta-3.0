@@ -11,7 +11,7 @@ test('public navigation exposes the foundation pages', async ({ page }) => {
         page.getByRole('heading', { name: 'Menu', exact: true }),
     ).toBeVisible();
 
-    await page.getByRole('link', { name: 'Cart' }).click();
+    await page.getByRole('link', { name: 'Cart', exact: true }).click();
     await expect(
         page.getByRole('heading', { name: 'Cart', exact: true }),
     ).toBeVisible();

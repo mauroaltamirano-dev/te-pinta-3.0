@@ -1,19 +1,12 @@
 # Development
 
-The supported local path uses Laravel Sail so PHP, PostgreSQL, Node, and extensions are reproducible.
-
-## Prerequisites
-
-- Docker with Docker Compose
-- Git
-
-Host PHP, Composer, and Node are optional when commands run through Sail.
+Laravel Sail is the supported local path for PHP, PostgreSQL, Node, and extensions.
 
 ## First setup
 
 ```bash
 cp .env.example .env
-# Set a local DB_PASSWORD in .env before starting the containers.
+# Set a local DB_PASSWORD before starting containers.
 docker run --rm --user "$(id -u):$(id -g)" \
   -e HOME=/tmp -v "$PWD":/app -w /app composer:2 composer install
 ./vendor/bin/sail up -d
@@ -24,56 +17,47 @@ docker run --rm --user "$(id -u):$(id -g)" \
 ./vendor/bin/sail artisan admin:create
 ```
 
-The Composer bootstrap container is only needed when `vendor/` is not present.
-Do not commit the generated `.env` or any key.
+The Composer bootstrap container is only needed when `vendor/` is absent. Never commit `.env` or `APP_KEY`.
+
+## Configure ordering
+
+1. Sign in as an administrator.
+2. Open `/admin/settings/general`.
+3. Review combined-dozen prices and cooking surcharges.
+4. Set the actual delivery fee. Its migration default is deliberately `0`, not an invented business price.
+5. Set the WhatsApp destination. It is deliberately empty after migration; public checkout cannot produce a link until configured.
+6. Review topping names, prices, availability, and order.
+
+These settings are database records, not environment secrets. Never hardcode the business phone in React or PHP.
 
 ## Daily workflow
 
 ```bash
 ./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate
 ./vendor/bin/sail npm run dev
 ```
 
 Useful commands:
 
 ```bash
-./vendor/bin/sail artisan migrate
 ./vendor/bin/sail artisan route:list
 ./vendor/bin/sail artisan test
 ./vendor/bin/sail pail
 ./vendor/bin/sail down
 ```
 
-## Environment variables
+Run `./vendor/bin/sail artisan storage:link` once per environment for product images. Seed missing catalog records non-destructively with:
 
-Required application/database keys (values are environment-specific and must not be documented as secrets):
-
-```dotenv
-APP_NAME=
-APP_ENV=
-APP_KEY=
-APP_DEBUG=
-APP_URL=
-APP_PORT=
-
-DB_CONNECTION=pgsql
-DB_HOST=
-DB_PORT=
-DB_DATABASE=
-DB_USERNAME=
-DB_PASSWORD=
-
-SESSION_DRIVER=
-SESSION_ENCRYPT=
-SESSION_DOMAIN=
-
-LOG_CHANNEL=
-LOG_LEVEL=
-
-VITE_APP_NAME=
+```bash
+./vendor/bin/sail artisan db:seed --class=ProductCatalogSeeder
 ```
 
-Use `.env.example` for the complete non-secret contract. A local `.env` must remain ignored. Never use production credentials locally.
+## Migration safety
+
+Run normal versioned migrations against development. Do not run `migrate:fresh`: it would delete existing administrators, products, customers, and orders. Clean migration checks belong in the isolated test database.
+
+PostgreSQL order sequences can contain gaps after rollbacks or sequence refresh. A gap is not corruption; never renumber orders or replace the sequence with `max + 1`.
 
 ## Quality gate
 
@@ -84,19 +68,16 @@ Use `.env.example` for the complete non-secret contract. A local `.env` must rem
 ./vendor/bin/sail npm run types:check
 ./vendor/bin/sail npm run build
 ./vendor/bin/sail npm run test:e2e
+./vendor/bin/sail composer audit
+./vendor/bin/sail npm audit
 ```
 
-`composer test` covers PHP formatting, static analysis, and Laravel tests in the current scripts. Use `composer ci:check` inside Sail for the combined repository gate when appropriate.
+Install Chromium once with `./vendor/bin/sail npx playwright install chromium`. Browser tests use the configured test server/database; inspect `playwright.config.ts` before changing ports.
 
-Install the Chromium binary once with `./vendor/bin/sail npx playwright install chromium`. Use `./vendor/bin/sail npm run test:e2e:ui` for interactive Playwright debugging. Browser tests expect the configured test server and database environment; inspect `playwright.config.ts` before changing ports or base URLs.
+## Environment contract
+
+Application/database/session/log values come from `.env`; `.env.example` is the non-secret reference. Ordering prices, toppings, delivery fee, and WhatsApp destination live in the typed database settings UI instead of environment variables.
 
 ## Dependency policy
 
-Before adding a production dependency:
-
-1. Verify Laravel, React, Tailwind, shadcn/ui, or the platform cannot solve the problem.
-2. State the concrete responsibility the dependency owns.
-3. Evaluate maintenance, security, bundle/runtime cost, and removal cost.
-4. Record a durable decision when the tradeoff affects architecture.
-
-Never add a dependency merely to avoid understanding a small native capability.
+Prefer Laravel, React, Tailwind, shadcn/ui, and platform-native capabilities. Add a production dependency only after documenting the concrete responsibility, maintenance/security cost, and why composition with existing tools is insufficient.

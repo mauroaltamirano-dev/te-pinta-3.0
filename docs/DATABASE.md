@@ -1,87 +1,78 @@
 # Database
 
-PostgreSQL is the application database. Te Pinta 3.0 starts with a new schema; the legacy database is retained separately for backup/reference and is not migrated automatically.
+PostgreSQL is the application database and the final integrity boundary. Migrations are versioned; existing development data must be preserved.
 
-## Connection
+## Money and identifiers
 
-Configuration comes from environment variables read by `config/database.php`:
+- Money is stored as exact non-negative whole-peso values (decimal columns cast to integers by the models).
+- Internal primary keys are never customer-facing identities.
+- `orders.public_id` defaults from PostgreSQL sequence `order_public_id_seq` as `TP-` plus six padded digits.
+- Sequence allocation is concurrency-safe. Values are stable and unique, but transaction rollbacks and sequence refresh can create gaps. Gaps are valid and must never be “repaired” with `max(id) + 1`.
 
-```dotenv
-DB_CONNECTION=pgsql
-DB_HOST=
-DB_PORT=
-DB_DATABASE=
-DB_USERNAME=
-DB_PASSWORD=
-```
+## Customers
 
-Do not expose PostgreSQL publicly. Local containers should use an internal Docker network or bind any required host port to loopback. Production credentials belong in the deployment secret store, never Git.
+| Column/rule        | Purpose                                 |
+| ------------------ | --------------------------------------- |
+| `id`               | Stable internal identity                |
+| `name`             | Required, indexed, duplicates allowed   |
+| `phone`            | Optional display value                  |
+| `phone_normalized` | Optional digits-only match/search value |
+| `address`          | One optional editable address           |
+| `notes`            | Optional private administrative notes   |
+| `deleted_at`       | Soft deletion                           |
 
-## Schema rules
+`customers_active_phone_normalized_unique` is a PostgreSQL partial unique index for non-null phone values where `deleted_at IS NULL`. This makes public matching deterministic among active profiles while allowing a phone from a soft-deleted profile to be reused. Application validation mirrors the constraint; the database remains authoritative under concurrency.
 
-- Migrations in `database/migrations/` are the versioned source of truth.
-- Use foreign keys, check/unique constraints, appropriate nullability, and indexes that match real access paths.
-- Use transactions when one operation changes multiple records.
-- Explicitly define mass-assignable input; never pass arbitrary request data into model create/update calls.
-- Use an application database role with only the privileges required at runtime.
-- Do not use a person's name as a primary key.
+## Orders and snapshots
 
-## Defined identity and lifecycle
+`orders` stores customer reference plus customer name/phone snapshots; source; operational/payment state; raw/cooked condition; delivery type/date/period/time; delivery address snapshot; order notes; subtotal/savings/shipping/total values; and optional public idempotency hash/fingerprint.
 
-### Customers
+| Table                     | Historical responsibility                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `order_items`             | Product reference when applicable, sold name, commercial mode, block count, unit count, applied price, normal comparison price, savings, subtotal |
+| `order_item_compositions` | Product reference, sold name, and quantity for each combined-dozen part                                                                           |
+| `order_toppings`          | Optional addon reference plus sold name, quantity, applied unit price, subtotal                                                                   |
 
-- Stable internal primary key (`customer_id` conceptually; exact physical convention must remain consistent with the implemented migration).
-- Searchable by name and phone when the customer feature is implemented.
-- Soft deletion is preferred to preserve order history.
-- Addresses and phone numbers are personal data; expose and log only what a use case requires.
+Combined-dozen lines have no single `product_id`; normal lines require one. Product/catalog foreign keys restrict deletion, while soft deletion keeps historical references usable. Order-owned item, composition, and topping rows cascade only when the physical order row is deleted; normal administration soft-deletes orders.
 
-### Orders
+Changing a product name/price/availability, customer address, topping price, or delivery fee does not change existing orders. Detail/resources/formatter read snapshots rather than current catalog/settings.
 
-- Internal database primary key.
-- Separate stable public/human order identifier such as `TP-000001`.
-- Public routes must not rely on guessable internal IDs where that creates unnecessary exposure.
-- Soft deletion is preferred.
-- Order state and payment state are separate validated concepts.
+## Database constraints
 
-Defined order states: `waiting`, `prepared`, `delivered`. Defined payment states: `unpaid`, `paid`. Any transition rules beyond validation are deferred until explicitly specified.
+PostgreSQL checks enforce:
 
-### Product catalog
+- valid status, payment status, source, condition, delivery type, delivery period, and pricing mode;
+- positive bounded quantities and non-negative monetary values;
+- `total = items_subtotal + toppings_subtotal + shipping_fee_snapshot`;
+- pickup has zero shipping; delivery has a non-blank address snapshot;
+- combined-dozen item shape and `savings = regular_price_total - line_total`;
+- exactly one typed value per `order_settings` row;
+- idempotency hash and fingerprint are both null or both present.
 
-| Table                | Purpose and lifecycle                                                                                                                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `products`           | Stable internal ID, one category, name/slug, nullable description and relative image path, three integer base prices, availability, category-local `sort_order`, timestamps, and soft delete |
-| `categories`         | Administrable name/slug, manual order, active flag, timestamps, and soft delete                                                                                                              |
-| `tags`               | Independent, extensible product labels such as `Vegetariana`                                                                                                                                 |
-| `product_tag`        | Many-to-many association with a composite primary key; deleting a referenced tag is restricted                                                                                               |
-| `cooking_surcharges` | One integer peso surcharge for each `unit`, `half_dozen`, and `dozen` pricing mode                                                                                                           |
+The unique `public_checkout_idempotency_hash` resolves concurrent duplicate submissions.
 
-Prices are whole integer pesos in `unit_price`, `half_dozen_price`, and `dozen_price`; floats and client-calculated totals are not accepted. `CalculateProductPrice` adds the matching persisted surcharge only when cooked pricing is requested. The initial surcharge values are seeded—not hardcoded per product—so Settings can own an editing workflow later without changing the product schema.
+## Configuration tables
 
-Availability and deletion are different:
+`order_settings` uses the closed `OrderSettingKey` enum rather than arbitrary runtime keys. Each row has exactly one integer or string value. Initial values are 16000 raw combined dozen, 17500 cooked combined dozen, zero delivery fee, and an empty WhatsApp phone.
 
-- `is_available=false` hides a product from the public catalog and future selling, while retaining it in administration for immediate reactivation.
-- Soft-deleted products disappear from normal/admin/public queries but retain their row for historical order relationships.
-- An inactive category and its products remain visible to administrators but are excluded from the public catalog.
-- Normal administration provides no category delete route; categories with products are deactivated instead.
+`order_addons` is the small configurable topping catalog. It has a stable public slug, name, integer price, availability, manual order, and soft deletion. Initial rows are Lactonesa (500) and Yasgua (200).
 
-Public/catalog order is `categories.sort_order`, then `products.sort_order`, with internal ID only as a deterministic tie-breaker.
+Products retain `unit_price`, `half_dozen_price`, and `dozen_price` as raw base prices. `cooking_surcharges` stores the three configurable cooked additions.
 
-### Initial catalog
-
-`database/seeders/ProductCatalogSeeder.php` initializes any missing records among the two categories, the `Vegetariana` tag, nine defined products, and three cooking surcharges. It is intentionally non-destructive: repeated runs preserve administrative edits and do not restore soft-deleted categories or products. Run it directly with:
+## Migration workflow
 
 ```bash
-./vendor/bin/sail artisan db:seed --class=ProductCatalogSeeder
+./vendor/bin/sail artisan migrate
 ```
 
-`DatabaseSeeder` also calls it, so `./vendor/bin/sail artisan db:seed` is the full-database equivalent.
+Never run `migrate:fresh` against the current development database. Test clean migrations only in the isolated test database.
 
 ## Migration checklist
 
-- [ ] The table belongs to a sufficiently defined feature.
-- [ ] Nullability and defaults express the domain rather than convenience.
-- [ ] Foreign-key delete behavior is deliberate.
-- [ ] Search and uniqueness requirements have supporting indexes.
-- [ ] Money uses an exact representation, never floating point.
-- [ ] Rollback behavior is safe and tested.
-- [ ] No legacy data import is hidden in the migration.
+- [ ] Foreign-key behavior preserves required history.
+- [ ] Search and uniqueness requirements have indexes.
+- [ ] Money is exact and server-computed.
+- [ ] Multi-record writes are transactional.
+- [ ] PostgreSQL checks mirror important domain invariants.
+- [ ] Upgrading preserves existing administrators, products, customers, and orders.
+- [ ] Rollback behavior is safe in the intended environment.

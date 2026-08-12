@@ -5,6 +5,7 @@ namespace Tests\Support;
 use App\Modules\Identity\Models\User;
 use Database\Seeders\ProductCatalogSeeder;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 final class PlaywrightDatabaseSeeder extends Seeder
@@ -18,5 +19,7 @@ final class PlaywrightDatabaseSeeder extends Seeder
         ]);
 
         $this->call(ProductCatalogSeeder::class);
+
+        DB::table('order_settings')->where('key', 'whatsapp_order_phone')->update(['string_value' => '5491100000000']);
     }
 }

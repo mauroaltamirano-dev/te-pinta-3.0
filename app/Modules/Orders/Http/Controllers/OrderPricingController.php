@@ -3,13 +3,26 @@
 namespace App\Modules\Orders\Http\Controllers;
 
 use App\Modules\Orders\Actions\CalculateOrderPrice;
+use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Http\Requests\PreviewOrderPriceRequest;
+use App\Modules\Orders\Pricing\OrderPricingEngine;
 use Illuminate\Http\JsonResponse;
 
 final class OrderPricingController
 {
-    public function __invoke(PreviewOrderPriceRequest $request, CalculateOrderPrice $calculator): JsonResponse
+    public function __invoke(PreviewOrderPriceRequest $request, OrderPricingEngine $pricing, CalculateOrderPrice $legacyPricing): JsonResponse
     {
-        return response()->json($calculator->execute($request->validated('items')));
+        if ($request->validated('condition') === null) {
+            return response()->json($legacyPricing->execute($request->validated('items')));
+        }
+        $quote = $pricing->quote(
+            $request->validated('items'),
+            OrderCondition::from($request->validated('condition')),
+            $request->validated('addons', []),
+            DeliveryType::from($request->validated('delivery_type', 'pickup')),
+        );
+
+        return response()->json(['data' => $quote->toArray()]);
     }
 }

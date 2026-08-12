@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Modules\Orders\Http\Resources;
+
+use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Models\OrderItem;
+use App\Modules\Orders\Models\OrderItemComposition;
+use App\Modules\Orders\Models\OrderTopping;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/** @mixin Order */
+final class AdminOrderResource extends JsonResource
+{
+    /** @return array<string, mixed> */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->public_id,
+            'customer' => ['id' => $this->customer_id, 'name' => $this->customer_name_snapshot],
+            'source' => $this->source->value,
+            'status' => $this->status->value,
+            'payment_status' => $this->payment_status->value,
+            'condition' => $this->condition->value,
+            'delivery_type' => $this->delivery_type->value,
+            'delivery_period' => $this->getRawOriginal('delivery_period'),
+            'delivery_date' => CarbonImmutable::parse($this->delivery_date)->toDateString(),
+            'delivery_time' => $this->delivery_time,
+            'delivery_address' => $this->delivery_address_snapshot,
+            'notes' => $this->notes,
+            'items_subtotal' => (int) $this->items_subtotal,
+            'toppings_subtotal' => (int) $this->toppings_subtotal,
+            'shipping_fee' => (int) $this->shipping_fee_snapshot,
+            'combined_dozen_savings' => (int) $this->combined_dozen_savings,
+            'total' => (int) $this->total,
+            'items' => $this->whenLoaded('items', fn () => $this->items->map(fn (OrderItem $item): array => [
+                'product_id' => $item->product_id, 'product_name' => $item->product_name,
+                'pricing_mode' => $item->getRawOriginal('pricing_mode'), 'quantity' => $item->quantity,
+                'units_count' => $item->units_count, 'unit_price' => $item->unit_price,
+                'subtotal' => $item->line_total, 'regular_price_total' => $item->regular_price_total,
+                'savings' => $item->savings,
+                'composition' => $item->relationLoaded('compositions') ? $item->compositions->map(fn (OrderItemComposition $part): array => [
+                    'product_name' => $part->product_name, 'quantity' => $part->quantity,
+                ])->all() : [],
+            ])->all()),
+            'toppings' => $this->whenLoaded('toppings', fn () => $this->toppings->map(fn (OrderTopping $topping): array => [
+                'name' => $topping->name, 'quantity' => $topping->quantity,
+                'unit_price' => $topping->unit_price, 'subtotal' => $topping->subtotal,
+            ])->all()),
+        ];
+    }
+}

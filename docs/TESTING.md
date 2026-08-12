@@ -1,72 +1,63 @@
 # Testing
 
-Tests prove backend authority, module behavior, and critical user flows. Frontend validation alone cannot prove security.
+Tests prove backend authority, historical stability, and the two order creation paths. Frontend validation alone is never security or pricing coverage.
 
-## Test layers
+## Focused suites
 
-| Layer               | Location/tool                               | Purpose                                                                           |
-| ------------------- | ------------------------------------------- | --------------------------------------------------------------------------------- |
-| Feature/integration | `tests/Feature/`, Laravel test runner       | Routes, middleware, authorization, validation, persistence, Inertia props         |
-| Unit                | `tests/Unit/`, Laravel test runner          | Focused domain behavior without unnecessary framework integration                 |
-| Browser             | Playwright (`playwright.config.ts`)         | Functional navigation, responsive behavior, and visual regression of stable flows |
-| Static/format       | Pint, PHPStan, ESLint, Prettier, TypeScript | Consistency and type/static correctness                                           |
+| Suite                                                       | Proves                                                                                                                                         |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/Feature/Customers/PhoneNormalizerTest.php`           | Deterministic digits-only normalization and null handling                                                                                      |
+| `tests/Feature/Customers/CustomerManagementTest.php`        | Admin boundary, duplicate names, optional phone, active phone uniqueness, search, private notes, history/spend, soft deletion, safe logs       |
+| `tests/Feature/Orders/OrderPricingEngineTest.php`           | Grouping matrix, raw/cooked prices, fixed combined prices, savings, toppings, delivery/pickup, limits, availability, public slugs              |
+| `tests/Feature/Orders/OrderCheckoutHttpTest.php`            | Public/admin creation, backend price authority, privacy-safe matching, idempotency, rate limiting, states/payment, quick create, soft deletion |
+| `tests/Feature/Orders/OrderDatabaseConstraintTest.php`      | PostgreSQL sequence, snapshot/value checks, unique idempotency hash                                                                            |
+| `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                                   |
+| `tests/e2e/orders.spec.ts`                                  | Admin POS creation and lifecycle journey                                                                                                       |
+| `tests/e2e/public-checkout.spec.ts`                         | Persistence before mocked WhatsApp navigation                                                                                                  |
+
+The pricing matrix includes 5/6/7/12/18 of one product, 3+3, 6+3+3, 6+6, and 24 varied units. When a grouping rule changes, update `docs/ORDER_PRICING.md` and its focused tests together.
 
 ## Commands
 
 ```bash
-# PHP format, static analysis, and Laravel suite
+# Focused backend
+./vendor/bin/sail artisan test tests/Feature/Customers tests/Feature/Orders tests/Feature/Settings
+
+# Focused browser
+./vendor/bin/sail npm run test:e2e -- tests/e2e/orders.spec.ts tests/e2e/public-checkout.spec.ts
+
+# Complete PHP gate: Pint check + PHPStan + Laravel suite
 ./vendor/bin/sail composer test
 
-# Focused Laravel test
-./vendor/bin/sail artisan test --filter=AuthenticationTest
-
-# Frontend quality
+# Complete frontend gate
 ./vendor/bin/sail npm run lint:check
 ./vendor/bin/sail npm run format:check
 ./vendor/bin/sail npm run types:check
 ./vendor/bin/sail npm run build
 ./vendor/bin/sail npm run test:e2e
+
+# Dependency audits
+./vendor/bin/sail composer audit
+./vendor/bin/sail npm audit
 ```
 
-Use `./vendor/bin/sail npm run test:e2e:ui` for Playwright's interactive runner. A configured runner without relevant assertions is not feature coverage; report the specs actually executed.
+`composer ci:check` combines frontend lint/format/types with `composer test`; it does not run Vite build, Playwright, or dependency audits.
 
-### Products focused checks
+## Required regression invariants
 
-```bash
-./vendor/bin/sail artisan test tests/Feature/Products
-./vendor/bin/sail npm run test:e2e -- tests/e2e/products.spec.ts
-```
+- Client totals/prices/shipping/combined price cannot alter persisted values.
+- Public input cannot set internal IDs, paid state, or operational state.
+- Deleted/unavailable catalog entries cannot be sold.
+- Exact public retries create one order; changed-payload key reuse is rejected.
+- Product, customer address, delivery-fee, and topping changes do not alter snapshots.
+- Customer private notes never appear publicly or in WhatsApp.
+- Cancelled orders remain historical but do not contribute to effective spend.
+- Guests/non-admins cannot access administrative operations.
 
-`tests/Feature/Products/` covers guest/admin CRUD boundaries, validation, category/tag relationships, ordering, soft deletion, image validation/replacement/removal, admin visibility, public filtering/output minimization, backend price sourcing, persisted cooking surcharges, and the repeatable initial seeder.
+## Test data
 
-`tests/e2e/products.spec.ts` authenticates through the real admin login, opens Products, verifies seeded catalog content, creates a tagged product, edits it, disables it, and checks the visual unavailable state. `tests/e2e/global-setup.ts` prepares deterministic seeded data and the Playwright administrator.
+Persistence tests use `RefreshDatabase` and the isolated test connection. Playwright global setup seeds deterministic catalog/admin data through `tests/Support/PlaywrightDatabaseSeeder.php`. Never use `migrate:fresh` on the existing development database to prove clean migrations.
 
-## Minimum security coverage
+## Delivery report
 
-Tests must demonstrate that:
-
-- guests cannot open admin pages or call admin write endpoints;
-- changing a URL does not bypass authentication/authorization;
-- changing resource IDs does not expose or modify unauthorized resources;
-- client-supplied roles cannot grant administrative privilege;
-- client-supplied prices or totals are not authoritative;
-- unsupported order/payment states are rejected;
-- invalid server input is rejected;
-- login is rate limited;
-- public responses omit internal/sensitive fields.
-
-## Test design rules
-
-- Prefer behavior-oriented names that state the security or business invariant.
-- Use `RefreshDatabase` for persistence-facing tests.
-- Test the HTTP boundary for middleware, policies, validation, and Inertia props.
-- Add lower-level tests only when they provide clearer failure diagnosis.
-- Keep fixtures minimal and explicit; factories must not silently grant privileges.
-- For visual tests, use deterministic data and representative mobile/public and tablet/admin viewports.
-
-## Before delivery
-
-1. Run the smallest relevant test while implementing.
-2. Run the full affected backend/frontend suite.
-3. Run formatting, lint, type checks, and production build.
-4. Report exact commands and failures/skips; never describe an unexecuted check as passing.
+Report the exact commands executed, their results, and any skipped or environment-blocked check. Never describe an unexecuted check as passing.

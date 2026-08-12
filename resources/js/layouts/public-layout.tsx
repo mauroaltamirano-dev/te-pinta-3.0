@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ShoppingBag } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
+import { CartProvider, useCart } from '@/features/orders/cart-context';
 
 const navigation = [
     { label: 'Home', href: '/' },
@@ -9,7 +10,16 @@ const navigation = [
 ];
 
 export default function PublicLayout({ children }: PropsWithChildren) {
+    return (
+        <CartProvider>
+            <PublicShell>{children}</PublicShell>
+        </CartProvider>
+    );
+}
+
+function PublicShell({ children }: PropsWithChildren) {
     const { url } = usePage();
+    const { count } = useCart();
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -41,6 +51,14 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                     />
                                 )}
                                 {item.label}
+                                {item.href === '/cart' && count > 0 && (
+                                    <span
+                                        className="ml-1 tabular-nums"
+                                        aria-label={`${count} items`}
+                                    >
+                                        ({count})
+                                    </span>
+                                )}
                             </Link>
                         ))}
                     </div>

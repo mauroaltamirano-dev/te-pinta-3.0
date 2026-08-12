@@ -6,16 +6,35 @@ use App\Modules\Orders\Enums\PricingMode;
 use App\Modules\Products\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class OrderItem extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['product_id', 'product_name', 'pricing_mode', 'quantity', 'unit_price', 'line_total'];
+    protected $fillable = [
+        'product_id',
+        'product_name',
+        'pricing_mode',
+        'quantity',
+        'units_count',
+        'unit_price',
+        'line_total',
+        'regular_price_total',
+        'savings',
+    ];
 
     protected function casts(): array
     {
-        return ['pricing_mode' => PricingMode::class, 'unit_price' => 'decimal:2', 'line_total' => 'decimal:2'];
+        return [
+            'pricing_mode' => PricingMode::class,
+            'quantity' => 'integer',
+            'units_count' => 'integer',
+            'unit_price' => 'integer',
+            'line_total' => 'integer',
+            'regular_price_total' => 'integer',
+            'savings' => 'integer',
+        ];
     }
 
     /** @return BelongsTo<Order, $this> */
@@ -28,5 +47,11 @@ final class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /** @return HasMany<OrderItemComposition, $this> */
+    public function compositions(): HasMany
+    {
+        return $this->hasMany(OrderItemComposition::class);
     }
 }
