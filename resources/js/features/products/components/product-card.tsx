@@ -22,8 +22,8 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
     );
 
     return (
-        <Card className="group gap-4 overflow-hidden border-border/80 bg-card/70 py-5 shadow-none transition-[border-color,transform] hover:-translate-y-0.5 hover:border-primary/45">
-            <CardHeader className="items-center gap-3 px-5 text-center">
+        <Card className="gap-0 overflow-hidden rounded-[0.5rem] border-admin-border bg-admin-surface py-0 text-admin-text-primary shadow-none">
+            <CardHeader className="items-center gap-3 px-5 pt-5 pb-4 text-center">
                 <Avatar className="size-24 border-4 border-muted bg-muted shadow-lg shadow-black/20">
                     {product.image_url && (
                         <AvatarImage
@@ -54,16 +54,16 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="grid gap-2 px-5 text-xs">
+            <CardContent className="grid gap-2 bg-transparent px-5 pb-5 text-xs">
                 <PriceRow label="Unit" value={product.unit_price} />
                 <PriceRow label="Half dozen" value={product.half_dozen_price} />
                 <PriceRow label="Dozen" value={product.dozen_price} />
             </CardContent>
-            <CardFooter className="mt-auto px-4 pb-0">
+            <CardFooter className="mt-auto h-[3.25rem] bg-admin-action p-0">
                 <Button
                     type="button"
-                    variant="secondary"
-                    className="w-full border border-primary/20 bg-primary/12 text-primary hover:bg-primary/20"
+                    variant="ghost"
+                    className="h-[3.25rem] w-full rounded-none bg-transparent text-admin-accent hover:bg-transparent hover:text-admin-accent"
                     onClick={() => onEdit(product)}
                 >
                     <Pencil data-icon="inline-start" />
@@ -77,7 +77,7 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
 function PriceRow({ label, value }: { label: string; value: number }) {
     return (
         <div className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground">{label}</span>
+            <span className="text-admin-text-secondary">{label}</span>
             <span className="font-medium tabular-nums">
                 {formatPesos(value)}
             </span>

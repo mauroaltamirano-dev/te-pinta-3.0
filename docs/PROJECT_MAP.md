@@ -36,26 +36,27 @@ This is the practical navigation guide. Update it whenever an important path mov
 | Dashboard                | `app/Modules/Dashboard/`                                                           | admin dashboard page/feature                                                        |
 | Analytics                | `app/Modules/Analytics/`                                                           | analytics placeholder/feature                                                       |
 | Inventory                | `app/Modules/Inventory/`                                                           | inventory placeholder/feature                                                       |
-| Configuration            | `app/Modules/Settings/`                                                            | settings pages/feature                                                              |
+| Configuration            | `app/Modules/Settings/` redirects the Settings entry to Products                   | `resources/js/layouts/settings-layout.tsx`; general configuration is not available  |
 
 Exact page filenames should follow route names and remain thin composition points.
 
 ## Frontend
 
-| Looking for                      | Location                                                                     |
-| -------------------------------- | ---------------------------------------------------------------------------- |
-| Inertia application entry        | `resources/js/app.tsx`                                                       |
-| Application composition          | `resources/js/app.tsx`; add `app/` only when composition code needs a folder |
-| Public/admin/auth shells         | `resources/js/layouts/`                                                      |
-| Route-level pages                | `resources/js/pages/`                                                        |
-| Feature-owned UI and hooks       | `resources/js/features/` as non-placeholder features are introduced          |
-| shadcn primitives                | `resources/js/components/ui/`                                                |
-| Te Pinta shared components       | `resources/js/components/shared/`                                            |
-| Shared hooks                     | `resources/js/hooks/`                                                        |
-| Focused utilities                | `resources/js/lib/`                                                          |
-| Shared TypeScript types          | `resources/js/types/`                                                        |
-| Design tokens and Tailwind theme | `resources/css/app.css`                                                      |
-| shadcn generator configuration   | `components.json`                                                            |
+| Looking for                      | Location                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Inertia application entry        | `resources/js/app.tsx`                                                                                  |
+| Application composition          | `resources/js/app.tsx`; add `app/` only when composition code needs a folder                            |
+| Public/admin/auth shells         | `resources/js/layouts/`                                                                                 |
+| Global admin navigation          | `resources/js/components/shared/admin-sidebar.tsx`; composed by `resources/js/layouts/admin-layout.tsx` |
+| Route-level pages                | `resources/js/pages/`                                                                                   |
+| Feature-owned UI and hooks       | `resources/js/features/` as non-placeholder features are introduced                                     |
+| shadcn primitives                | `resources/js/components/ui/`                                                                           |
+| Te Pinta shared components       | `resources/js/components/shared/`                                                                       |
+| Shared hooks                     | `resources/js/hooks/`                                                                                   |
+| Focused utilities                | `resources/js/lib/`                                                                                     |
+| Shared TypeScript types          | `resources/js/types/`                                                                                   |
+| Design tokens and Tailwind theme | `resources/css/app.css`                                                                                 |
+| shadcn generator configuration   | `components.json`                                                                                       |
 
 Generated Wayfinder route/action files live under `resources/js/routes/`, `resources/js/actions/`, and `resources/js/wayfinder/`; change the PHP route or controller source rather than manually editing generated output.
 
@@ -72,7 +73,7 @@ Generated Wayfinder route/action files live under `resources/js/routes/`, `resou
 | Models and relationships                         | `app/Modules/Products/Models/`                                                                                                                                                                                |
 | Catalog schema                                   | `database/migrations/2026_08_11_000200_create_catalog_tables.php`, `database/migrations/2026_08_11_000500_expand_product_catalog.php`, `database/migrations/2026_08_11_000600_add_product_catalog_checks.php` |
 | Initial catalog and cooking surcharges           | `database/seeders/ProductCatalogSeeder.php`                                                                                                                                                                   |
-| Admin page and feature UI                        | `resources/js/pages/admin/products/index.tsx`, `resources/js/features/products/`                                                                                                                              |
+| Admin page, Settings layout, and feature UI      | `resources/js/pages/admin/products/index.tsx`, `resources/js/layouts/settings-layout.tsx`, `resources/js/features/products/`                                                                                  |
 | Canonical visual reference                       | `docs/design/references/admin-products.png`                                                                                                                                                                   |
 | Product tests                                    | `tests/Feature/Products/`, `tests/e2e/products.spec.ts`                                                                                                                                                       |
 

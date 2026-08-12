@@ -17,6 +17,15 @@ final class ProductManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_settings_entry_redirects_administrators_to_product_management(): void
+    {
+        $admin = User::factory()->administrator()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.settings.index'))
+            ->assertRedirect(route('admin.products.index'));
+    }
+
     public function test_guests_cannot_create_edit_or_delete_products(): void
     {
         $category = $this->createCategory();

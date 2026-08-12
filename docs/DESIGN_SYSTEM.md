@@ -52,8 +52,42 @@ When the Figma integration and exact nodes are available:
 
 ## Products management composition
 
-`resources/js/pages/admin/products/index.tsx` integrates with the global dark admin shell and adds a Settings-local navigation rail. The feature preserves the reference's hierarchy: category tabs and category management at the top, then a dense responsive product-card grid led by the Add product card.
+`resources/js/pages/admin/products/index.tsx` integrates with the global dark admin shell through `resources/js/layouts/settings-layout.tsx`, which owns the Settings-local navigation rail. Products is the only available Settings destination; general configuration is explicitly unavailable. The feature preserves the reference's hierarchy: category filters and category management at the top, then a dense responsive product-card grid led by the Add product card.
 
 Product cards use circular imagery, a consistent image placeholder, compact base-price rows, vegetarian/unavailable status badges, and one clear edit action. Product/category editing uses focused, accessible dialogs so validation errors stay beside their fields.
 
 Changes save per product or category. Closing/canceling a dialog discards its unsaved local state; page-wide Save/Discard controls were intentionally not reproduced because the server persists each resource independently and a fake global buffer would misrepresent that behavior.
+
+### Admin surface palette
+
+The admin shell uses a small semantic palette sourced from the verified Figma nodes. Components consume the `admin-*` theme tokens defined in `resources/css/app.css`; they must not introduce near-duplicate dark or coral values.
+
+| Verified Figma node | Responsibility                                |
+| ------------------- | --------------------------------------------- |
+| `177:735`           | Global sidebar geometry and active state      |
+| `196:1985`          | Full 1194 × 834 admin composition and canvas  |
+| `201:2202`          | Settings panel hierarchy and surfaces         |
+| `186:100`           | Product card surface, border, and action band |
+| `175:888`           | Navigation selection treatment                |
+| `177:2031`          | Settings row content and active indicator     |
+
+| Semantic token         | Value                      | Use                                                      |
+| ---------------------- | -------------------------- | -------------------------------------------------------- |
+| `admin-canvas`         | `#252836`                  | Root admin workspace                                     |
+| `admin-surface`        | `#1F1D2B`                  | Global rail, Settings panels, dialogs, and product cards |
+| `admin-border`         | `#393C49`                  | One-pixel product-card borders and internal dividers     |
+| `admin-accent`         | `#EA7C69`                  | Active controls, icons, labels, and focus emphasis       |
+| `admin-selection`      | `rgba(234, 124, 105, .16)` | Selected navigation rows                                 |
+| `admin-action`         | `rgba(234, 124, 105, .24)` | Product-card actions and restrained accent surfaces      |
+| `admin-text-primary`   | `#FFFFFF`                  | Primary text                                             |
+| `admin-text-secondary` | `#ABBBC2`                  | Supporting text                                          |
+
+Settings panels use an opaque surface with an 8 px radius, no outer border or shadow, and a 24 px gap. Their header, filters, and content regions remain transparent over that surface. Product cards use the same 8 px surface with a one-pixel border and no shadow; the edit action is a 52 px high action band. Figma defines no hover variant for these surfaces, so hover must not invent a new fill.
+
+## Global admin navigation
+
+`resources/js/components/shared/admin-sidebar.tsx` owns the global administration destinations and active-route logic. `AdminLayout` only composes this rail with the administration header and page content; feature-local navigation remains inside its feature layout, such as `SettingsLayout`.
+
+At desktop and tablet widths, the rail follows Figma node `177:735`: 104 px wide with the `#1F1D2B` surface, a 56 px brand tile with a 12 px radius and 40 px store glyph, six 102 px navigation slots, 24 px fine-stroke icon wrappers, and a bottom-aligned logout control. Desktop controls start at x=24. The active control uses `#EA7C69`, an 8 px radius, the specified coral shadow, and a `#252836` recessed right-edge treatment. At smaller widths, the same icon-only destinations recompose into a horizontally scrollable top rail; accessible Spanish labels remain available through link names and tooltips.
+
+Playwright comparison captures are generated under `storage/app/` and are intentionally not versioned. The Figma nodes and the semantic contract in this document are the durable source of truth.

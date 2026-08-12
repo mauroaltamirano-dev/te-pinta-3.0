@@ -1,10 +1,18 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-test('administrator creates, edits, and changes product availability', async ({
-    page,
-}, testInfo) => {
-    const productName = `Playwright Product ${testInfo.project.name}`;
-    const editedName = `${productName} Edited`;
+const seededProducts = {
+    Clásicas: ['Criolla Salada', 'Criolla Dulce', 'Jamón y Queso', 'Caprese'],
+    Especiales: [
+        'Salteña',
+        'Humita Tucumana',
+        'Hongos al puerro',
+        'Pollo y portobellos',
+        'Matambre y verduras asadas',
+    ],
+} as const;
+
+async function logInAsAdministrator(page: Page) {
     await page.goto('/login');
     await page
         .getByLabel('Email address')
@@ -12,6 +20,40 @@ test('administrator creates, edits, and changes product availability', async ({
     await page.locator('#password').fill('playwright-password');
     await page.getByRole('button', { name: 'Log in' }).click();
     await expect(page).toHaveURL(/\/admin$/);
+}
+
+test('settings opens product management with the seeded catalog', async ({
+    page,
+}) => {
+    await logInAsAdministrator(page);
+
+    await page.goto('/admin/settings');
+    await expect(page).toHaveURL(/\/admin\/settings\/products$/);
+    await expect(
+        page.getByRole('heading', { name: 'Products management' }),
+    ).toBeVisible();
+
+    for (const product of seededProducts.Clásicas) {
+        await expect(
+            page.getByRole('heading', { name: product, exact: true }),
+        ).toBeVisible();
+    }
+
+    await page.getByRole('button', { name: 'Especiales' }).click();
+
+    for (const product of seededProducts.Especiales) {
+        await expect(
+            page.getByRole('heading', { name: product, exact: true }),
+        ).toBeVisible();
+    }
+});
+
+test('administrator creates, edits, and changes product availability', async ({
+    page,
+}, testInfo) => {
+    const productName = `Playwright Product ${testInfo.project.name}`;
+    const editedName = `${productName} Edited`;
+    await logInAsAdministrator(page);
 
     await page.goto('/admin/settings/products');
     await expect(
@@ -31,8 +73,16 @@ test('administrator creates, edits, and changes product availability', async ({
     await createDialog.getByLabel('Half dozen', { exact: true }).fill('10000');
     await createDialog.getByLabel('Dozen', { exact: true }).fill('18000');
     await createDialog.getByLabel('Order within category').fill('99');
-    await createDialog.getByRole('checkbox', { name: 'Vegetariana' }).click();
-    await createDialog.getByRole('button', { name: 'Create product' }).click();
+    const vegetarianTag = createDialog.getByRole('checkbox', {
+        name: 'Vegetariana',
+    });
+    await vegetarianTag.focus();
+    await vegetarianTag.press('Space');
+    const createProduct = createDialog.getByRole('button', {
+        name: 'Create product',
+    });
+    await createProduct.focus();
+    await createProduct.press('Enter');
 
     await expect(createDialog).toBeHidden();
     const createdCard = page.locator('[data-slot="card"]').filter({
@@ -43,13 +93,23 @@ test('administrator creates, edits, and changes product availability', async ({
         createdCard.getByText('Vegetarian', { exact: true }),
     ).toBeVisible();
 
-    await createdCard.getByRole('button', { name: 'Edit product' }).click();
+    const editProduct = createdCard.getByRole('button', {
+        name: 'Edit product',
+    });
+    await editProduct.focus();
+    await editProduct.press('Enter');
     const editDialog = page.getByRole('dialog', { name: 'Edit product' });
     await editDialog.getByLabel('Name', { exact: true }).fill(editedName);
-    await editDialog
-        .getByRole('checkbox', { name: /Available for sale/ })
-        .click();
-    await editDialog.getByRole('button', { name: 'Save changes' }).click();
+    const availability = editDialog.getByRole('checkbox', {
+        name: /Available for sale/,
+    });
+    await availability.focus();
+    await availability.press('Space');
+    const saveProduct = editDialog.getByRole('button', {
+        name: 'Save changes',
+    });
+    await saveProduct.focus();
+    await saveProduct.press('Enter');
 
     await expect(editDialog).toBeHidden();
     const editedCard = page.locator('[data-slot="card"]').filter({

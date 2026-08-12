@@ -2,4 +2,4 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/settings', 'admin/settings/index')->name('settings.index');
+Route::get('/settings', fn () => to_route('admin.products.index'))->name('settings.index');

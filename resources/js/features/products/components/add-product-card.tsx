@@ -7,13 +7,13 @@ export function AddProductCard({ onClick }: { onClick: () => void }) {
             type="button"
             variant="ghost"
             onClick={onClick}
-            className="group h-full min-h-80 w-full flex-col gap-4 rounded-xl border border-dashed border-primary/55 bg-transparent text-primary hover:border-primary hover:bg-primary/7 hover:text-primary"
+            className="h-full min-h-80 w-full flex-col gap-4 rounded-[0.5rem] border border-dashed border-admin-accent bg-transparent text-admin-accent hover:border-admin-accent hover:bg-transparent hover:text-admin-accent"
         >
-            <span className="flex size-12 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-transform group-hover:scale-105">
+            <span className="flex size-12 items-center justify-center rounded-full border border-admin-accent/30 bg-admin-selection">
                 <Plus className="size-6" />
             </span>
             <span className="font-semibold">Add product</span>
-            <span className="max-w-40 text-xs leading-relaxed font-normal text-wrap text-muted-foreground">
+            <span className="max-w-40 text-xs leading-relaxed font-normal text-wrap text-admin-text-secondary">
                 Create a new catalog item in this category
             </span>
         </Button>
