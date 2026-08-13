@@ -109,6 +109,8 @@ On wide viewports, Orders uses the Figma two-column proportion: a `646:372` prim
 
 Settings panels use an opaque surface with an 8 px radius, no outer border or shadow, and a 24 px gap. Their header, filters, and content regions remain transparent over that surface. Product cards use the same 8 px surface with a one-pixel border and no shadow; the edit action is a 52 px high action band. Figma defines no hover variant for these surfaces, so hover must not invent a new fill.
 
+On desktop, the Settings workspace fills the height remaining below the admin header and page inset. Both the local navigation and content panels stay inside that viewport region; any vertical overflow scrolls within its owning panel instead of expanding the document. Below the two-column breakpoint, Settings returns to normal document flow.
+
 ## Global admin navigation
 
 `resources/js/components/shared/admin-sidebar.tsx` owns the global administration destinations and active-route logic. `AdminLayout` only composes this rail with the administration header and page content; feature-local navigation remains inside its feature layout, such as `SettingsLayout`.

@@ -1,4 +1,4 @@
-import { ImageIcon, Plus } from 'lucide-react';
+import { ImageIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { AdminProductOption } from '../admin-order-types';
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
@@ -85,7 +85,7 @@ export function QuickOrderCatalog({
                         Elegí las variedades
                     </h2>
                     <p className="mt-1 text-sm text-admin-text-secondary">
-                        Cada toque suma una empanada al pedido.
+                        Sumá por docena, media docena o unidad.
                     </p>
                 </div>
                 <span className="shrink-0 text-sm text-admin-text-secondary">
@@ -106,14 +106,9 @@ export function QuickOrderCatalog({
                             )?.quantity ?? 0;
 
                         return (
-                            <button
+                            <article
                                 key={product.id}
-                                type="button"
-                                onClick={() =>
-                                    draft.changeProduct(product.id, 1)
-                                }
-                                aria-label={`Agregar una unidad de ${product.name}`}
-                                className="group relative flex h-[16.25rem] flex-col items-center rounded-2xl bg-admin-surface px-4 pt-16 pb-5 text-center transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
+                                className="relative flex h-[16.25rem] flex-col items-center rounded-2xl bg-admin-surface px-4 pt-16 pb-5 text-center"
                             >
                                 <span className="absolute -top-[1.125rem] grid size-[8.25rem] place-items-center overflow-hidden rounded-full bg-admin-surface-raised ring-4 ring-admin-canvas">
                                     {product.image_url ? (
@@ -141,15 +136,33 @@ export function QuickOrderCatalog({
                                 <span className="mt-1 text-xs text-admin-text-tertiary">
                                     {product.category.name}
                                 </span>
-                                <span className="mt-auto flex items-center gap-1 pt-3 text-sm font-medium text-admin-accent">
-                                    <Plus className="size-4" /> Agregar
-                                </span>
+                                <div
+                                    className="mt-auto grid w-full grid-cols-3 gap-2 pt-3"
+                                    aria-label={`Agregar ${product.name} al pedido`}
+                                >
+                                    {[12, 6, 1].map((increment) => (
+                                        <button
+                                            key={increment}
+                                            type="button"
+                                            aria-label={`Agregar ${increment} ${increment === 1 ? 'unidad' : 'unidades'} de ${product.name}`}
+                                            onClick={() =>
+                                                draft.changeProduct(
+                                                    product.id,
+                                                    increment,
+                                                )
+                                            }
+                                            className="rounded-lg border border-admin-border py-1.5 text-sm font-semibold text-admin-accent transition-colors hover:border-admin-accent hover:bg-admin-accent/10 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
+                                        >
+                                            {increment}
+                                        </button>
+                                    ))}
+                                </div>
                                 {quantity > 0 && (
                                     <span className="absolute top-3 right-3 grid size-8 place-items-center rounded-full bg-admin-accent font-semibold text-white shadow-admin-nav-active">
                                         {quantity}
                                     </span>
                                 )}
-                            </button>
+                            </article>
                         );
                     })}
                 </div>

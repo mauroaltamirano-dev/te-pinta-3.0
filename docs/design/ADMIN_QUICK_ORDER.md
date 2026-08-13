@@ -9,8 +9,8 @@ Sidebar | Product catalog | Current order
                          └─ Continue → customer and fulfillment panel
 ```
 
-1. Home lists the real available product varieties as clickable cards.
-2. Each click increments that product in an in-progress administrative order.
+1. Home lists the real available product varieties with 12, 6, and 1-unit shortcuts.
+2. Each shortcut increments that product in an in-progress administrative order.
 3. The fixed right column shows lines, quantities, applied preview prices, savings, and subtotal.
 4. **Continuar** opens the second-stage panel over a darkened catalog.
 5. That stage captures the existing admin fields: customer, toppings, raw/cooked condition, delivery/pickup, date/period/time/address, notes, and paid/unpaid.
@@ -71,7 +71,9 @@ The store negotiates a JSON confirmation for Quick Order and preserves the Inert
 
 ## Acceptance checklist
 
-- [x] Clicking a product increments the draft and updates the backend preview.
+- [x] Product shortcuts add 12, 6, or 1 units and update the backend preview.
+- [x] Customer matches appear while typing and can be selected immediately.
+- [x] Delivery reuses a selected customer's address without replacing a per-order edit.
 - [x] Quantities can be changed and lines removed from the order panel.
 - [x] Continue is unavailable for an empty draft.
 - [x] The details stage reuses every field and rule from admin order creation.

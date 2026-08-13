@@ -2,7 +2,6 @@
 
 namespace App\Modules\Orders\Actions;
 
-use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
@@ -15,7 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class CreateOrder
 {
-    public function __construct(private OrderPricingEngine $pricing) {}
+    public function __construct(
+        private OrderPricingEngine $pricing,
+        private ResolveOrderCustomer $customers,
+        private PersistOrderQuote $quotes,
+    ) {}
 
     public function execute(OrderCheckoutData $data, OrderSource $source, ?int $adminId = null): Order
     {
@@ -30,7 +33,7 @@ final readonly class CreateOrder
 
         try {
             $order = DB::transaction(function () use ($data, $source, $idempotencyHash, $fingerprint): Order {
-                $customer = $this->resolveCustomer($data, $source);
+                $customer = $this->customers->execute($data, $source);
                 $quote = $this->pricing->quote($data->items, $data->condition, $data->addons, $data->deliveryType);
 
                 $order = Order::query()->create([
@@ -47,45 +50,12 @@ final readonly class CreateOrder
                     'delivery_time' => $data->deliveryTime,
                     'delivery_address_snapshot' => $data->deliveryType->value === 'delivery' ? $data->deliveryAddress : null,
                     'notes' => $data->notes,
-                    'items_base_subtotal' => $quote->productsBaseSubtotal,
-                    'cooking_surcharge' => $quote->cookingSurcharge,
-                    'items_subtotal' => $quote->productsSubtotal,
-                    'toppings_subtotal' => $quote->addonsSubtotal,
-                    'shipping_fee_snapshot' => $quote->shippingFee,
-                    'combined_dozen_savings' => $quote->savings,
-                    'total' => $quote->total,
+                    ...$this->quotes->totals($quote),
                     'public_checkout_idempotency_hash' => $idempotencyHash,
                     'public_checkout_fingerprint' => $fingerprint,
                 ]);
 
-                foreach ($quote->lines as $line) {
-                    $item = $order->items()->create([
-                        'product_id' => $line->productId,
-                        'product_name' => $line->productName ?? 'Combined dozen',
-                        'pricing_mode' => $line->pricingMode,
-                        'quantity' => $line->quantity,
-                        'units_count' => $line->unitsCount,
-                        'unit_price' => $line->unitPrice,
-                        'line_total' => $line->lineTotal,
-                        'base_unit_price' => $line->baseUnitPrice,
-                        'base_line_total' => $line->baseLineTotal,
-                        'cooking_surcharge' => $line->cookingSurcharge,
-                        'regular_price_total' => $line->regularPriceTotal,
-                        'savings' => $line->savings,
-                    ]);
-                    foreach ($line->composition as $part) {
-                        $item->compositions()->create($part);
-                    }
-                }
-                foreach ($quote->addons as $addon) {
-                    $order->toppings()->create([
-                        'order_addon_id' => $addon->addonId,
-                        'name' => $addon->name,
-                        'quantity' => $addon->quantity,
-                        'unit_price' => $addon->unitPrice,
-                        'subtotal' => $addon->lineTotal,
-                    ]);
-                }
+                $this->quotes->execute($order, $quote);
 
                 return $order->refresh()->load(['items.compositions', 'toppings']);
             });
@@ -103,39 +73,6 @@ final readonly class CreateOrder
         ]);
 
         return $order;
-    }
-
-    private function resolveCustomer(OrderCheckoutData $data, OrderSource $source): Customer
-    {
-        if ($source === OrderSource::Admin && $data->customerId !== null) {
-            return Customer::query()->findOrFail($data->customerId);
-        }
-
-        if ($source === OrderSource::PublicCheckout && $data->customerPhoneNormalized !== null) {
-            $existing = Customer::query()->where('phone_normalized', $data->customerPhoneNormalized)->first();
-            if ($existing) {
-                return $existing;
-            }
-        }
-
-        $attributes = [
-            'name' => $data->customerName,
-            'phone' => $data->customerPhone,
-            'phone_normalized' => $data->customerPhoneNormalized,
-            'address' => $data->customerAddress,
-            'notes' => null,
-            'created_at' => now(), 'updated_at' => now(),
-        ];
-
-        if ($source === OrderSource::Admin) {
-            return Customer::query()->create($attributes);
-        }
-
-        Customer::query()->insertOrIgnore($attributes);
-
-        return Customer::query()
-            ->when($data->customerPhoneNormalized !== null, fn ($query) => $query->where('phone_normalized', $data->customerPhoneNormalized))
-            ->firstOrFail();
     }
 
     private function assertSameFingerprint(Order $order, ?string $fingerprint): void

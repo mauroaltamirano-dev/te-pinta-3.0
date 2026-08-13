@@ -1,6 +1,6 @@
 # Order pricing
 
-`app/Modules/Orders/Pricing/OrderPricingEngine.php` is the only authoritative commercial grouping and total calculator. Both POS and public checkout call it; React only renders backend previews.
+`app/Modules/Orders/Pricing/OrderPricingEngine.php` is the only authoritative commercial grouping and total calculator. POS, public checkout, and economic administrative edits call it; React only renders backend previews.
 
 ## Inputs and price sources
 
@@ -89,13 +89,30 @@ New orders also persist aggregate base-product and cooking-surcharge values. The
 
 Opening an order never reruns pricing. Current catalog, customer, topping, or setting changes must not affect existing snapshots.
 
+## Administrative editing and repricing
+
+The edit page starts from two structured backend values:
+
+- a draft rebuilt from persisted item/composition/topping records as real product and addon quantities;
+- `original_quote`, built only from the order's current snapshots for the **Before** summary.
+
+The shared draft hook calls the existing `/admin/orders/price-preview` whenever products, quantities, condition, toppings, or delivery type change. It compares that current backend quote with the persisted total; React does not calculate a replacement price.
+
+`UpdateOrder` independently classifies those same fields as economic. If any changed, it runs the complete order through `OrderPricingEngine` with configuration and sellability valid at confirmation time. `PersistOrderQuote` then replaces item, composition, topping, aggregate pricing, shipping, and savings snapshots for that order in the same transaction. Other historical orders are never recalculated.
+
+Customer, address, date/period/time, notes, payment, and operational-state-only corrections do not trigger quote replacement. They still pass backend validation and optimistic-concurrency checks; the persisted quote remains unchanged.
+
+### Unavailable historical selections
+
+An unavailable, inactive-category, or soft-deleted product/addon already present in an order remains visible with its historical quantity. It may survive a non-economic correction only while the complete economic selection is unchanged. It cannot be incremented or newly selected. Before any economic edit can be confirmed, unavailable historical selections must be removed or replaced, because current-rule repricing cannot authoritatively price an unsellable selection.
+
 ## Limits and rejection
 
 - At least one product is required.
 - Each product may appear once with quantity 1–120.
 - Requests contain at most 50 product entries.
 - Each topping may appear once with quantity 1–100; at most 20 entries.
-- Missing, unavailable, or soft-deleted selections fail validation.
+- Missing, unavailable, or soft-deleted selections fail current pricing. Edit hydration may display an unchanged historical selection under the explicit policy above.
 - Public selection uses slugs; admin selection uses validated internal IDs.
 
 ## Change checklist

@@ -23,13 +23,32 @@ const createInitialDraft = (today: string): AdminOrderForm => ({
     payment_status: 'unpaid',
 });
 
+interface AdminOrderDraftOptions {
+    initialDraft?: AdminOrderForm;
+    initialQuote?: PriceQuote;
+    submitUrl?: string;
+    submitMethod?: 'post' | 'put';
+}
+
 export function useAdminOrderDraft(
     customers: AdminCustomerOption[],
     today: string,
+    options: AdminOrderDraftOptions = {},
 ) {
-    const form = useForm<AdminOrderForm>(createInitialDraft(today));
-    const [quote, setQuote] = useState<PriceQuote | null>(null);
-    const [quotedPreviewKey, setQuotedPreviewKey] = useState('');
+    const initialDraft = options.initialDraft ?? createInitialDraft(today);
+    const form = useForm<AdminOrderForm>(initialDraft);
+    const initialPreviewKey = JSON.stringify({
+        items: initialDraft.items,
+        addons: initialDraft.addons,
+        condition: initialDraft.condition,
+        delivery_type: initialDraft.delivery_type,
+    });
+    const [quote, setQuote] = useState<PriceQuote | null>(
+        options.initialQuote ?? null,
+    );
+    const [quotedPreviewKey, setQuotedPreviewKey] = useState(
+        options.initialQuote ? initialPreviewKey : '',
+    );
     const [quoteLoading, setQuoteLoading] = useState(false);
     const [quoteError, setQuoteError] = useState('');
     const [submittingQuickOrder, setSubmittingQuickOrder] = useState(false);
@@ -38,6 +57,7 @@ export function useAdminOrderDraft(
     );
     const previewSequence = useRef(0);
     const quickSubmitLocked = useRef(false);
+    const autoFilledDeliveryAddress = useRef<string | null>(null);
     const preview = useMemo(
         () => ({
             items: form.data.items,
@@ -53,15 +73,26 @@ export function useAdminOrderDraft(
         ],
     );
     const previewKey = JSON.stringify(preview);
-    const currentQuote = quotedPreviewKey === previewKey ? quote : null;
+    const isInitialEconomicDraft = previewKey === initialPreviewKey;
+    const currentQuote =
+        isInitialEconomicDraft && options.initialQuote
+            ? options.initialQuote
+            : quotedPreviewKey === previewKey
+              ? quote
+              : null;
     const currentQuoteLoading =
         preview.items.length > 0 &&
+        !isInitialEconomicDraft &&
         (quoteLoading || quotedPreviewKey !== previewKey);
 
     useEffect(() => {
         const sequence = ++previewSequence.current;
 
         if (!preview.items.length) {
+            return;
+        }
+
+        if (options.initialQuote && previewKey === initialPreviewKey) {
             return;
         }
 
@@ -96,7 +127,7 @@ export function useAdminOrderDraft(
         }, 250);
 
         return () => window.clearTimeout(timer);
-    }, [preview, previewKey]);
+    }, [initialPreviewKey, options.initialQuote, preview, previewKey]);
 
     const changeProduct = (id: number, increment: number) => {
         const found = form.data.items.find((item) => item.product_id === id);
@@ -156,8 +187,12 @@ export function useAdminOrderDraft(
                 ...data,
                 customer_id: null,
                 customer: { name: '', phone: '', address: '' },
-                delivery_address: '',
+                delivery_address:
+                    data.delivery_address === autoFilledDeliveryAddress.current
+                        ? ''
+                        : data.delivery_address,
             }));
+            autoFilledDeliveryAddress.current = null;
 
             return;
         }
@@ -168,17 +203,61 @@ export function useAdminOrderDraft(
             return;
         }
 
-        form.setData((data) => ({
-            ...data,
-            customer_id: customer.id,
-            customer: { name: '', phone: '', address: '' },
-            delivery_address: customer.address ?? '',
-        }));
+        form.setData((data) => {
+            const wasAutoFilled =
+                Boolean(data.delivery_address) &&
+                data.delivery_address === autoFilledDeliveryAddress.current;
+            const canAutoFill =
+                data.delivery_type === 'delivery' &&
+                (!data.delivery_address || wasAutoFilled);
+            const deliveryAddress = canAutoFill
+                ? (customer.address ?? '')
+                : wasAutoFilled
+                  ? ''
+                  : data.delivery_address;
+
+            autoFilledDeliveryAddress.current = canAutoFill
+                ? deliveryAddress || null
+                : null;
+
+            return {
+                ...data,
+                customer_id: customer.id,
+                customer: { name: '', phone: '', address: '' },
+                delivery_address: deliveryAddress,
+            };
+        });
+    };
+
+    const selectDeliveryType = (deliveryType: 'pickup' | 'delivery') => {
+        form.setData((data) => {
+            if (deliveryType !== 'delivery' || data.delivery_address) {
+                return { ...data, delivery_type: deliveryType };
+            }
+
+            const customer = customers.find(
+                (item) => item.id === data.customer_id,
+            );
+            const deliveryAddress = customer?.address ?? '';
+            autoFilledDeliveryAddress.current = deliveryAddress || null;
+
+            return {
+                ...data,
+                delivery_type: deliveryType,
+                delivery_address: deliveryAddress,
+            };
+        });
+    };
+
+    const setDeliveryAddress = (deliveryAddress: string) => {
+        autoFilledDeliveryAddress.current = null;
+        form.setData('delivery_address', deliveryAddress);
     };
 
     const discard = () => {
         previewSequence.current += 1;
-        form.setData(createInitialDraft(today));
+        autoFilledDeliveryAddress.current = null;
+        form.setData(initialDraft);
         form.clearErrors();
         setQuote(null);
         setQuotedPreviewKey('');
@@ -202,6 +281,7 @@ export function useAdminOrderDraft(
                 form.data,
             );
             setCreatedOrder(data);
+            autoFilledDeliveryAddress.current = null;
             form.setData(createInitialDraft(today));
             form.clearErrors();
             setQuote(null);
@@ -225,7 +305,17 @@ export function useAdminOrderDraft(
         }
     };
 
-    const submitFullOrder = () => form.post('/admin/orders');
+    const submitFullOrder = () => {
+        const url = options.submitUrl ?? '/admin/orders';
+
+        if (options.submitMethod === 'put') {
+            form.put(url);
+
+            return;
+        }
+
+        form.post(url);
+    };
 
     return {
         form,
@@ -236,6 +326,8 @@ export function useAdminOrderDraft(
         removeProduct,
         changeAddon,
         selectCustomer,
+        selectDeliveryType,
+        setDeliveryAddress,
         discard,
         submitFullOrder,
         submitQuickOrder,

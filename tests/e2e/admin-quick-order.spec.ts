@@ -12,15 +12,15 @@ async function logIn(page: Page) {
 }
 
 async function addProduct(page: Page, name: string, times = 1) {
-    const card = page
+    const unitButton = page
         .getByRole('button', {
-            name: `Agregar una unidad de ${name}`,
+            name: `Agregar 1 unidad de ${name}`,
             exact: true,
         })
         .first();
 
     for (let click = 0; click < times; click += 1) {
-        await card.click();
+        await unitButton.click();
     }
 }
 
@@ -65,23 +65,37 @@ test('quick order edits the draft, previews backend pricing, and creates exactly
     await logIn(page);
     const orderPostCount = countOrderPosts(page);
 
-    await addProduct(page, 'Salteña', 3);
+    const dozen = page.getByRole('button', {
+        name: 'Agregar 12 unidades de Salteña',
+    });
+    const halfDozen = page.getByRole('button', {
+        name: 'Agregar 6 unidades de Salteña',
+    });
+    const unit = page.getByRole('button', {
+        name: 'Agregar 1 unidad de Salteña',
+    });
+    await expect(dozen).toHaveText('12');
+    await expect(halfDozen).toHaveText('6');
+    await expect(unit).toHaveText('1');
+    await dozen.click();
+    await halfDozen.click();
+    await unit.click();
     await addProduct(page, 'Humita Tucumana');
     await openDraftOnMobile(page);
     const draft = draftPanel(page);
 
-    await expect(draft.getByLabel('Cantidad de Salteña: 3')).toBeVisible();
+    await expect(draft.getByLabel('Cantidad de Salteña: 19')).toBeVisible();
     await draft
         .getByRole('button', { name: 'Quitar una unidad de Salteña' })
         .click();
-    await expect(draft.getByLabel('Cantidad de Salteña: 2')).toBeVisible();
+    await expect(draft.getByLabel('Cantidad de Salteña: 18')).toBeVisible();
     await draft
         .getByRole('button', {
             name: 'Agregar una unidad de Salteña',
             exact: true,
         })
         .click();
-    await expect(draft.getByLabel('Cantidad de Salteña: 3')).toBeVisible();
+    await expect(draft.getByLabel('Cantidad de Salteña: 19')).toBeVisible();
     await draft
         .getByRole('button', { name: 'Eliminar Humita Tucumana del pedido' })
         .click();
@@ -99,9 +113,17 @@ test('quick order edits the draft, previews backend pricing, and creates exactly
     await expect(
         continuation.getByRole('heading', { name: 'Completar pedido' }),
     ).toBeVisible();
-    await continuation.getByLabel('Buscar cliente').fill('habitual');
-    await continuation.locator('#customer-selection').click();
-    await page.getByRole('option', { name: /Cliente habitual/ }).click();
+    const customerSearch = continuation.getByLabel('Buscar cliente');
+    await customerSearch.fill('5555');
+    await expect(
+        continuation.getByRole('button', { name: /Cliente habitual/ }),
+    ).toBeVisible();
+    await customerSearch.fill('habitual');
+    const customerMatch = continuation.getByRole('button', {
+        name: /Cliente habitual/,
+    });
+    await expect(customerMatch).toBeVisible();
+    await customerMatch.click();
 
     const cooked = continuation.getByRole('button', { name: 'Cocinado' });
     await cooked.click();
@@ -110,9 +132,17 @@ test('quick order edits the draft, previews backend pricing, and creates exactly
         .getByRole('button', { name: 'Agregar un adicional Lactonesa' })
         .click();
     await continuation.getByRole('button', { name: 'Envío' }).click();
+    await expect(continuation.getByLabel('Dirección de entrega')).toHaveValue(
+        'Av. Siempre Viva 123',
+    );
     await continuation
         .getByLabel('Dirección de entrega')
-        .fill('Av. Siempre Viva 123');
+        .fill('Calle del pedido 456');
+    await continuation.getByRole('button', { name: 'Retiro en local' }).click();
+    await continuation.getByRole('button', { name: 'Envío' }).click();
+    await expect(continuation.getByLabel('Dirección de entrega')).toHaveValue(
+        'Calle del pedido 456',
+    );
     await continuation.getByRole('checkbox').click();
     await expect(
         continuation.getByText('Pagado', { exact: true }),

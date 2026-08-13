@@ -11,9 +11,10 @@ Tests prove backend authority, historical stability, and the two order creation 
 | `tests/Feature/Orders/OrderPricingEngineTest.php`           | Grouping matrix, raw/cooked tiers, base/cooking breakdown, fixed combined price and surcharge, savings, toppings, delivery, limits, sellability |
 | `tests/Feature/Orders/OrderCheckoutHttpTest.php`            | Public/admin creation, price authority, snapshot-safe cooking output, legacy omission, matching, idempotency, throttling, state/payment         |
 | `tests/Feature/Orders/OrderDatabaseConstraintTest.php`      | PostgreSQL sequence, snapshot/value and cooking-breakdown checks, unique idempotency hash                                                       |
+| `tests/Feature/Orders/AdminOrderEditingTest.php`            | Active/closed editing, structured quantities, current-rule repricing, immutable ID, audit, rollback, unavailable history, and concurrency       |
 | `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                                    |
 | `tests/Unit/Core/TestingDatabaseGuardTest.php`              | Testing-only database-name boundary, `DB_URL` precedence, and non-testing bypass                                                                |
-| `tests/e2e/orders.spec.ts`                                  | Cooked POS breakdown, insights panel, drawer/full detail, status/payment/copy, history navigation, desktop/mobile                               |
+| `tests/e2e/orders.spec.ts`                                  | Cooked POS breakdown, insights/detail plus edit/save/cancel, closed-order unlock, immutable ID, and total comparison                            |
 | `tests/Feature/Orders/AdminQuickOrderHomeTest.php`          | Quick Home authorization, sellable catalog/category filtering, props, and Dashboard separation                                                  |
 | `tests/e2e/admin-quick-order.spec.ts`                       | Fast quantities, backend preview, continuation, exact-one confirmation, cancel/discard non-persistence, and screenshots                         |
 | `tests/Feature/Orders/OrderDashboardDataTest.php`           | Real most-ordered product aggregation, combined-dozen composition, images, delivery and cooking-condition distributions, soft deletes           |
@@ -61,6 +62,11 @@ Quick Order visual captures are written to `storage/app/admin-quick-order-home.p
 - Customer private notes never appear publicly or in WhatsApp.
 - Cancelled orders remain historical but do not contribute to effective spend.
 - Guests/non-admins cannot access administrative operations.
+- An edit with a stale `expected_version` is rejected, including when another surface changed status or payment.
+- Delivered/cancelled edits require a reasoned version-bound grant; one successful update consumes it without implicitly changing status.
+- Economic edits reprice the complete order with current rules and replace snapshots only for that order; non-economic edits keep the persisted quote.
+- Historical unavailable selections remain visible and unchanged for non-economic corrections, but block current-rule repricing until removed or replaced.
+- Revision failure rolls back order fields, totals, item/composition/topping replacement, version, and audit together.
 
 ## Test data
 

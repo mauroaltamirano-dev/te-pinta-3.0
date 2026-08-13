@@ -17,6 +17,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property string $public_id
+ * @property int $customer_id
+ * @property int $edit_version
+ * @property int|numeric-string $total
+ * @property int|numeric-string|null $items_base_subtotal
+ * @property int|numeric-string|null $cooking_surcharge
+ * @property int|numeric-string $items_subtotal
+ * @property int|numeric-string $toppings_subtotal
+ * @property int|numeric-string $shipping_fee_snapshot
+ * @property int|numeric-string $combined_dozen_savings
  * @property OrderStatus $status
  * @property PaymentStatus $payment_status
  * @property OrderSource $source
@@ -51,6 +60,7 @@ final class Order extends Model implements PublicIdentifier
         'total',
         'public_checkout_idempotency_hash',
         'public_checkout_fingerprint',
+        'edit_version',
     ];
 
     protected function casts(): array
@@ -70,6 +80,7 @@ final class Order extends Model implements PublicIdentifier
             'shipping_fee_snapshot' => 'integer',
             'combined_dozen_savings' => 'integer',
             'total' => 'integer',
+            'edit_version' => 'integer',
         ];
     }
 
@@ -99,5 +110,11 @@ final class Order extends Model implements PublicIdentifier
     public function toppings(): HasMany
     {
         return $this->hasMany(OrderTopping::class);
+    }
+
+    /** @return HasMany<OrderRevision, $this> */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(OrderRevision::class);
     }
 }

@@ -48,6 +48,49 @@ test('settings opens product management with the seeded catalog', async ({
     }
 });
 
+test('settings keeps both panels inside the desktop viewport', async ({
+    page,
+}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium');
+
+    await logInAsAdministrator(page);
+    await page.goto('/admin/settings/products');
+
+    const navigationPanel = page.locator('[data-settings-panel="navigation"]');
+    const contentPanel = page.locator('[data-settings-panel="content"]');
+
+    await expect(navigationPanel).toBeVisible();
+    await expect(contentPanel).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+        const navigation = document.querySelector<HTMLElement>(
+            '[data-settings-panel="navigation"]',
+        );
+        const content = document.querySelector<HTMLElement>(
+            '[data-settings-panel="content"]',
+        );
+
+        if (!navigation || !content) {
+            throw new Error('Settings panels were not rendered.');
+        }
+
+        return {
+            documentScrollHeight: document.documentElement.scrollHeight,
+            viewportHeight: window.innerHeight,
+            navigationBottom: navigation.getBoundingClientRect().bottom,
+            contentBottom: content.getBoundingClientRect().bottom,
+            contentOverflowY: getComputedStyle(content).overflowY,
+        };
+    });
+
+    expect(layout.documentScrollHeight).toBeLessThanOrEqual(
+        layout.viewportHeight,
+    );
+    expect(layout.navigationBottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.contentBottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.contentOverflowY).toBe('auto');
+});
+
 test('administrator creates, edits, and changes product availability', async ({
     page,
 }, testInfo) => {

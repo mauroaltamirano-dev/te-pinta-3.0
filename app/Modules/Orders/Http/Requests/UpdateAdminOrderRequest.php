@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Modules\Orders\Http\Requests;
+
+use App\Modules\Orders\Enums\OrderStatus;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class UpdateAdminOrderRequest extends FormRequest
+{
+    use ValidatesOrderCheckout;
+
+    public function authorize(): bool
+    {
+        return $this->user()?->can('update', $this->route('order')) === true;
+    }
+
+    /** @return array<string, array<int, mixed>> */
+    public function rules(): array
+    {
+        $rules = $this->checkoutRules(false);
+        $rules['delivery_date'] = ['required', 'date_format:Y-m-d'];
+        $rules['status'] = ['required', Rule::enum(OrderStatus::class)];
+        $rules['expected_version'] = ['required', 'integer', 'min:1'];
+        foreach (['id', 'public_id', 'created_at', 'updated_at', 'edit_version', 'revision', 'subtotal', 'unit_price', 'items_subtotal', 'toppings_subtotal', 'cooking_surcharge'] as $field) {
+            $rules[$field] = ['prohibited'];
+        }
+
+        return $rules;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeCheckoutInput();
+    }
+}

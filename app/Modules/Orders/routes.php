@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Orders\Http\Controllers\EnableClosedOrderEditController;
 use App\Modules\Orders\Http\Controllers\OrderManagementController;
 use App\Modules\Orders\Http\Controllers\OrderPaymentStatusController;
 use App\Modules\Orders\Http\Controllers\OrderPricingController;
@@ -11,6 +12,9 @@ Route::get('/orders', [OrderManagementController::class, 'index'])->name('orders
 Route::get('/orders/create', [OrderManagementController::class, 'create'])->name('orders.create');
 Route::post('/orders', [OrderManagementController::class, 'store'])->name('orders.store');
 Route::post('/orders/price-preview', OrderPricingController::class)->name('orders.price-preview');
+Route::get('/orders/{order}/edit', [OrderManagementController::class, 'edit'])->name('orders.edit');
+Route::post('/orders/{order}/enable-edit', EnableClosedOrderEditController::class)->name('orders.enable-edit');
+Route::put('/orders/{order}', [OrderManagementController::class, 'update'])->name('orders.update');
 Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->name('orders.show');
 Route::patch('/orders/{order}/status', OrderStatusController::class)->name('orders.status.update');
 Route::patch('/orders/{order}/payment-status', OrderPaymentStatusController::class)->name('orders.payment-status.update');

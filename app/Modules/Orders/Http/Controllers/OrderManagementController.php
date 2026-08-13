@@ -2,35 +2,35 @@
 
 namespace App\Modules\Orders\Http\Controllers;
 
-use App\Modules\Customers\Models\Customer;
+use App\Modules\Orders\Actions\BuildAdminOrderEditData;
+use App\Modules\Orders\Actions\BuildAdminOrderFormOptions;
 use App\Modules\Orders\Actions\BuildOrderDashboardData;
 use App\Modules\Orders\Actions\CreateOrder;
+use App\Modules\Orders\Actions\UpdateOrder;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Http\Requests\StoreAdminOrderRequest;
+use App\Modules\Orders\Http\Requests\UpdateAdminOrderRequest;
 use App\Modules\Orders\Http\Resources\AdminOrderResource;
 use App\Modules\Orders\Models\Order;
-use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Support\OrderSummaryFormatter;
-use App\Modules\Products\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class OrderManagementController
 {
-    public function home(): Response
+    public function home(BuildAdminOrderFormOptions $options): Response
     {
         Gate::authorize('create', Order::class);
 
-        return Inertia::render('admin/home', $this->orderFormOptions());
+        return Inertia::render('admin/home', $options->execute());
     }
 
     public function index(
@@ -72,11 +72,11 @@ final class OrderManagementController
         ]);
     }
 
-    public function create(): Response
+    public function create(BuildAdminOrderFormOptions $options): Response
     {
         Gate::authorize('create', Order::class);
 
-        return Inertia::render('admin/orders/create', $this->orderFormOptions());
+        return Inertia::render('admin/orders/create', $options->execute());
     }
 
     public function store(StoreAdminOrderRequest $request, CreateOrder $createOrder): RedirectResponse|JsonResponse
@@ -97,45 +97,60 @@ final class OrderManagementController
         return to_route('admin.orders.show', $order)->with('success', 'Order created.');
     }
 
-    /** @return array{products: array<int, array<string, mixed>>, customers: mixed, addons: mixed, today: string} */
-    private function orderFormOptions(): array
-    {
-        $products = Product::query()
-            ->select('products.*')
-            ->join('categories', 'categories.id', '=', 'products.category_id')
-            ->with('category:id,name')
-            ->where('products.is_available', true)
-            ->where('categories.is_active', true)
-            ->whereNull('categories.deleted_at')
-            ->orderBy('categories.sort_order')
-            ->orderBy('products.sort_order')
-            ->orderBy('products.id')
-            ->get()
-            ->map(fn (Product $product): array => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'description' => $product->description,
-                'image_url' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
-                'category' => ['id' => $product->category->id, 'name' => $product->category->name],
-                'unit_price' => $product->unit_price,
-                'half_dozen_price' => $product->half_dozen_price,
-                'dozen_price' => $product->dozen_price,
-            ])->all();
-
-        return [
-            'products' => $products,
-            'addons' => OrderAddon::query()->where('is_available', true)->orderBy('sort_order')->get(['id', 'name', 'price']),
-            'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'phone', 'address']),
-            'today' => now()->toDateString(),
-        ];
-    }
-
     public function show(Request $request, Order $order, OrderSummaryFormatter $formatter): Response
     {
         Gate::authorize('view', $order);
         $order->load(['items.compositions', 'toppings']);
 
         return Inertia::render('admin/orders/show', ['order' => (new AdminOrderResource($order))->resolve($request), 'summary' => $formatter->format($order)]);
+    }
+
+    public function edit(Request $request, Order $order, BuildAdminOrderEditData $editData, BuildAdminOrderFormOptions $options): Response
+    {
+        Gate::authorize('update', $order);
+        $grant = $request->session()->get(EnableClosedOrderEditController::sessionKey($order));
+        $granted = is_array($grant)
+            && ($grant['admin_id'] ?? null) === (int) $request->user()->getAuthIdentifier()
+            && ($grant['version'] ?? null) === (int) $order->edit_version;
+
+        return Inertia::render('admin/orders/edit', [
+            'order' => $editData->execute($order, $granted),
+            ...$options->execute($order),
+        ]);
+    }
+
+    public function update(UpdateAdminOrderRequest $request, Order $order, UpdateOrder $update): RedirectResponse|JsonResponse
+    {
+        $grantKey = EnableClosedOrderEditController::sessionKey($order);
+        $grant = $request->session()->get($grantKey);
+        $adminId = (int) $request->user()->getAuthIdentifier();
+        $expectedVersion = (int) $request->validated('expected_version');
+        $closedReason = is_array($grant)
+            && ($grant['admin_id'] ?? null) === $adminId
+            && ($grant['version'] ?? null) === $expectedVersion
+            ? ($grant['reason'] ?? null)
+            : null;
+        $updated = $update->execute(
+            $order,
+            OrderCheckoutData::fromRequest($request, false),
+            OrderStatus::from($request->validated('status')),
+            $expectedVersion,
+            $adminId,
+            is_string($closedReason) ? $closedReason : null,
+        );
+        $request->session()->forget($grantKey);
+
+        if ($request->expectsJson()) {
+            return response()->json(['data' => [
+                'order_id' => $updated->public_id,
+                'status' => $updated->status->value,
+                'payment_status' => $updated->payment_status->value,
+                'total' => (int) $updated->total,
+                'version' => (int) $updated->edit_version,
+            ]]);
+        }
+
+        return to_route('admin.orders.show', $updated)->with('success', 'Order updated.');
     }
 
     public function destroy(Request $request, Order $order): RedirectResponse

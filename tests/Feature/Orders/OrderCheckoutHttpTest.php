@@ -54,9 +54,9 @@ final class OrderCheckoutHttpTest extends TestCase
             ->assertJsonPath('data.items_base_subtotal', 9000)
             ->assertJsonPath('data.cooking_surcharge', 0)
             ->assertJsonPath('data.total', 9000)
-            ->assertJsonMissingPath('data.customer_id')
-            ->assertJsonPath('data.order_id', 'TP-000001');
-        $this->assertStringContainsString('TP-000001', $response->json('data.whatsapp_url'));
+            ->assertJsonMissingPath('data.customer_id');
+        $this->assertMatchesRegularExpression('/^TP-\d{6}$/', $response->json('data.order_id'));
+        $this->assertStringContainsString($response->json('data.order_id'), $response->json('data.whatsapp_url'));
 
         $order = Order::query()->firstOrFail();
         $this->assertSame('Visitor name', $order->customer_name_snapshot);

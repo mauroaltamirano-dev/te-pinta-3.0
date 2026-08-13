@@ -1,8 +1,17 @@
 import { Link, router } from '@inertiajs/react';
-import { Check, Clipboard, ExternalLink } from 'lucide-react';
+import { Check, Clipboard, ExternalLink, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -10,6 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
     deliveryPeriodLabels,
     deliveryTypeLabels,
@@ -55,6 +65,10 @@ export function OrderDetailContent({
     showFullDetailLink = false,
 }: OrderDetailContentProps) {
     const [copied, setCopied] = useState(false);
+    const [enableEditOpen, setEnableEditOpen] = useState(false);
+    const [enableEditReason, setEnableEditReason] = useState('');
+    const [enablingEdit, setEnablingEdit] = useState(false);
+    const closed = order.status === 'delivered' || order.status === 'cancelled';
     const changeStatus = (status: OrderStatus) =>
         router.patch(
             `/admin/orders/${order.id}/status`,
@@ -306,6 +320,21 @@ export function OrderDetailContent({
                     </label>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
+                    {closed ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEnableEditOpen(true)}
+                        >
+                            <Pencil /> Habilitar edición
+                        </Button>
+                    ) : (
+                        <Button asChild type="button">
+                            <Link href={`/admin/orders/${order.id}/edit`}>
+                                <Pencil /> Editar pedido
+                            </Link>
+                        </Button>
+                    )}
                     <Button type="button" variant="outline" onClick={copy}>
                         {copied ? <Check /> : <Clipboard />}
                         {copied ? 'Detalle copiado' : 'Copiar detalle'}
@@ -318,7 +347,72 @@ export function OrderDetailContent({
                         </Button>
                     )}
                 </div>
+                {closed && (
+                    <p className="mt-3 text-sm font-medium text-amber-400">
+                        Pedido cerrado — edición bloqueada
+                    </p>
+                )}
             </DetailSection>
+
+            <Dialog open={enableEditOpen} onOpenChange={setEnableEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            Habilitar edición de {order.id}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Vas a modificar un pedido cerrado. Su estado no
+                            cambiará automáticamente y la acción quedará
+                            registrada.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-2">
+                        <Label htmlFor={`closed-edit-reason-${order.id}`}>
+                            Motivo breve
+                        </Label>
+                        <Textarea
+                            id={`closed-edit-reason-${order.id}`}
+                            value={enableEditReason}
+                            maxLength={240}
+                            onChange={(event) =>
+                                setEnableEditReason(event.target.value)
+                            }
+                            placeholder="Indicá por qué necesitás corregirlo"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEnableEditOpen(false)}
+                        >
+                            Volver
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={
+                                enablingEdit ||
+                                enableEditReason.trim().length < 3
+                            }
+                            onClick={() => {
+                                setEnablingEdit(true);
+                                router.post(
+                                    `/admin/orders/${order.id}/enable-edit`,
+                                    {
+                                        reason: enableEditReason.trim(),
+                                        expected_version: order.version,
+                                    },
+                                    {
+                                        onFinish: () => setEnablingEdit(false),
+                                    },
+                                );
+                            }}
+                        >
+                            Confirmar y editar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

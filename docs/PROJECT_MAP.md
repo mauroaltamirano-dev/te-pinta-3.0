@@ -11,6 +11,8 @@ Use this map to change a rule at its owner instead of searching the whole reposi
 | Grouping, totals, combined dozen, toppings, shipping   | `app/Modules/Orders/Pricing/OrderPricingEngine.php`                                                                           |
 | Pricing result shapes                                  | `app/Modules/Orders/Pricing/OrderPriceQuote.php`, `PricingLine.php`, `PricingAddon.php`                                       |
 | Order creation transaction, snapshots, idempotency     | `app/Modules/Orders/Actions/CreateOrder.php`, `Data/OrderCheckoutData.php`                                                    |
+| Order edit transaction, repricing, audit, concurrency  | `app/Modules/Orders/Actions/UpdateOrder.php`, `PersistOrderQuote.php`, `Models/OrderRevision.php`                             |
+| Structured edit hydration and historical options       | `app/Modules/Orders/Actions/BuildAdminOrderEditData.php`, `BuildAdminOrderFormOptions.php`                                    |
 | Public product/topping slug resolution                 | `app/Modules/Orders/Actions/ResolvePublicCheckoutSelections.php`                                                              |
 | Order ID generation                                    | `database/migrations/2026_08_11_000400_create_orders_tables.php` (`order_public_id_seq`)                                      |
 | Operational/payment states                             | `app/Modules/Orders/Enums/OrderStatus.php`, `PaymentStatus.php`                                                               |
@@ -33,12 +35,12 @@ Use this map to change a rule at its owner instead of searching the whole reposi
 
 All routes below use the `/admin` prefix and `auth`, `verified`, `admin`, and `admin.request.log` middleware.
 
-| Area              | Routes file                        | Main endpoints                                                      |
-| ----------------- | ---------------------------------- | ------------------------------------------------------------------- |
-| Customers         | `app/Modules/Customers/routes.php` | CRUD at `/admin/customers`                                          |
-| Orders            | `app/Modules/Orders/routes.php`    | list/create/detail/delete, `/price-preview`, status, payment status |
-| Products          | `app/Modules/Products/routes.php`  | `/admin/settings/products` and categories                           |
-| Ordering settings | `app/Modules/Settings/routes.php`  | `GET/PUT /admin/settings/general`                                   |
+| Area              | Routes file                        | Main endpoints                                                                              |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| Customers         | `app/Modules/Customers/routes.php` | CRUD at `/admin/customers`                                                                  |
+| Orders            | `app/Modules/Orders/routes.php`    | list/create/detail/edit/delete, `/price-preview`, closed-edit grant, status, payment status |
+| Products          | `app/Modules/Products/routes.php`  | `/admin/settings/products` and categories                                                   |
+| Ordering settings | `app/Modules/Settings/routes.php`  | `GET/PUT /admin/settings/general`                                                           |
 
 ### Public
 
@@ -60,6 +62,7 @@ There is no public customer lookup endpoint.
 | Ordering settings and toppings catalog              | `2026_08_12_050000_create_order_configuration_tables.php`                                                                                         |
 | Checkout snapshots, compositions, topping snapshots | `2026_08_12_060000_expand_orders_for_checkout.php`                                                                                                |
 | Raw-base and cooking-breakdown snapshots            | `2026_08_12_070000_add_cooking_breakdown_snapshots_to_orders.php`                                                                                 |
+| Safe edit version and redacted order revisions      | `2026_08_13_230000_add_safe_order_editing.php`                                                                                                    |
 | Product catalog/prices/surcharges                   | `2026_08_11_000200_create_catalog_tables.php`, `2026_08_11_000500_expand_product_catalog.php`, `2026_08_11_000600_add_product_catalog_checks.php` |
 
 ## Tests
@@ -68,6 +71,7 @@ There is no public customer lookup endpoint.
 | --------------------------------------- | ----------------------------------------------------------- |
 | Customers and phone normalization       | `tests/Feature/Customers/`                                  |
 | Pricing, checkout, database constraints | `tests/Feature/Orders/`                                     |
+| Administrative safe order editing       | `tests/Feature/Orders/AdminOrderEditingTest.php`            |
 | Ordering configuration                  | `tests/Feature/Settings/OrderingSettingsManagementTest.php` |
 | Admin order journey                     | `tests/e2e/orders.spec.ts`                                  |
 | Public checkout/WhatsApp handoff        | `tests/e2e/public-checkout.spec.ts`                         |
@@ -90,3 +94,5 @@ There is no public customer lookup endpoint.
 Generated Wayfinder files under `resources/js/routes/`, `resources/js/actions/`, and `resources/js/wayfinder/` are outputs. Change their PHP source, not the generated files.
 
 `GET /admin` is owned by Orders and renders the Quick Order Home. `GET /admin/dashboard` preserves Dashboard as a secondary destination. Quick confirmation negotiates JSON from the existing `POST /admin/orders`; the full create route still receives its redirect response.
+
+Order route-model binding uses `orders.public_id`, including `GET /admin/orders/{public_id}/edit`, `POST /admin/orders/{public_id}/enable-edit`, and `PUT /admin/orders/{public_id}`. The frontend never addresses an order by its internal primary key.

@@ -28,6 +28,11 @@ export function AdminProductSelector({
                             <p className="text-xs text-muted-foreground">
                                 Cantidad: {quantity}
                             </p>
+                            {product.is_sellable === false && (
+                                <p className="mt-1 text-xs font-medium text-amber-400">
+                                    Producto actualmente no disponible
+                                </p>
+                            )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <Button
@@ -37,6 +42,7 @@ export function AdminProductSelector({
                                 onClick={() =>
                                     draft.changeProduct(product.id, 1)
                                 }
+                                disabled={product.is_sellable === false}
                             >
                                 <Plus /> Unidad
                             </Button>
@@ -48,6 +54,7 @@ export function AdminProductSelector({
                                 onClick={() =>
                                     draft.changeProduct(product.id, 6)
                                 }
+                                disabled={product.is_sellable === false}
                             >
                                 +6
                             </Button>
@@ -59,6 +66,7 @@ export function AdminProductSelector({
                                 onClick={() =>
                                     draft.changeProduct(product.id, 12)
                                 }
+                                disabled={product.is_sellable === false}
                             >
                                 +12
                             </Button>
@@ -72,6 +80,7 @@ export function AdminProductSelector({
                                         onClick={() =>
                                             draft.changeProduct(product.id, -1)
                                         }
+                                        disabled={product.is_sellable === false}
                                     >
                                         <Minus />
                                     </Button>

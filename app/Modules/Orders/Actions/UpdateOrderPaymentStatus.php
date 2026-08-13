@@ -11,7 +11,7 @@ final class UpdateOrderPaymentStatus
     public function execute(Order $order, PaymentStatus $status, int $adminId): Order
     {
         $previous = $order->payment_status;
-        $order->update(['payment_status' => $status]);
+        $order->update(['payment_status' => $status, 'edit_version' => $order->edit_version + 1]);
         Log::info('[Orders] order.payment_status_changed', [
             'module' => 'Orders', 'order_id' => $order->public_id, 'admin_id' => $adminId,
             'from' => $previous->value, 'to' => $status->value,

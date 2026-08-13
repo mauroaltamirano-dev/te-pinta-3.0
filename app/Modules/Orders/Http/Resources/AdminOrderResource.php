@@ -36,6 +36,8 @@ final class AdminOrderResource extends JsonResource
             'shipping_fee' => (int) $this->shipping_fee_snapshot,
             'combined_dozen_savings' => (int) $this->combined_dozen_savings,
             'total' => (int) $this->total,
+            'version' => (int) $this->edit_version,
+            'closed' => $this->status->isClosed(),
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn (OrderItem $item): array => [
                 'product_id' => $item->product_id, 'product_name' => $item->product_name,
                 'pricing_mode' => $item->getRawOriginal('pricing_mode'), 'quantity' => $item->quantity,

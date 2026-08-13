@@ -105,6 +105,7 @@ export interface AdminOrder {
     shipping_fee: number;
     combined_dozen_savings: number;
     total: number;
+    version?: number;
     items?: Array<{
         product_id: number | null;
         product_name: string | null;

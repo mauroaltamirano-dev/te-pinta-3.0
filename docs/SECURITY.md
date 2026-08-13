@@ -14,6 +14,15 @@ For each administrative write:
 4. Execute the focused action/transaction.
 5. Return an explicit resource or redirect.
 
+## Safe administrative order editing
+
+- Edit, enable-edit, and update routes resolve `Order` by immutable `public_id`, require the admin middleware stack, authorize the order policy, and use CSRF-protected web requests.
+- `UpdateAdminOrderRequest` reuses the checkout allowlist and adds enum-validated operational status plus required `expected_version`. IDs, timestamps, revision metadata, edit version, and all client-supplied pricing fields are prohibited.
+- `UpdateOrder` locks the row and rejects a stale version. Status-only and payment-only actions also advance `edit_version`, closing the silent-overwrite gap between surfaces.
+- Delivered/cancelled orders are denied by default. Enabling editing requires a 3–300 character reason and creates an authenticated-session grant bound to admin, order, and version. It authorizes one successful edit only and never changes status by itself.
+- An edit updates the order address snapshot only; it does not overwrite `customer.address`. Changing customer updates the order's customer reference/snapshots without mutating that customer's private profile.
+- `order_revisions.changed_fields` stores field names and an economic-change flag, not values. It does not contain complete phone, address, or note content. The closed-order reason is bounded but must remain brief and must not contain unnecessary private information.
+
 ## Public checkout boundary
 
 | Control                 | Implementation                                                                              |
