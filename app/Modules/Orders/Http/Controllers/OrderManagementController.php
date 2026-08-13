@@ -3,6 +3,7 @@
 namespace App\Modules\Orders\Http\Controllers;
 
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Orders\Actions\BuildOrderDashboardData;
 use App\Modules\Orders\Actions\CreateOrder;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\OrderSource;
@@ -23,13 +24,17 @@ use Inertia\Response;
 
 final class OrderManagementController
 {
-    public function index(Request $request): Response
-    {
+    public function index(
+        Request $request,
+        OrderSummaryFormatter $formatter,
+        BuildOrderDashboardData $dashboardData,
+    ): Response {
         Gate::authorize('viewAny', Order::class);
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:160'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
             'date' => ['nullable', 'date_format:Y-m-d'],
+            'order' => ['nullable', 'string', 'max:32', 'regex:/^TP-[0-9]+$/'],
         ]);
         $search = trim((string) ($filters['search'] ?? ''));
         $orders = Order::query()->with('customer:id,name')
@@ -40,9 +45,21 @@ final class OrderManagementController
             ->when(isset($filters['date']), fn ($query) => $query->whereDate('delivery_date', $filters['date']))
             ->orderByDesc('delivery_date')->orderByDesc('id')->paginate(25)->withQueryString();
 
+        $selectedOrder = isset($filters['order'])
+            ? Order::query()->where('public_id', $filters['order'])->firstOrFail()
+            : null;
+
+        if ($selectedOrder !== null) {
+            Gate::authorize('view', $selectedOrder);
+            $selectedOrder->load(['items.compositions', 'toppings']);
+        }
+
         return Inertia::render('admin/orders/index', [
             'orders' => $orders->through(fn (Order $order) => (new AdminOrderResource($order))->resolve($request)),
             'filters' => ['search' => $search, 'status' => $filters['status'] ?? null, 'date' => $filters['date'] ?? null],
+            'selectedOrder' => $selectedOrder === null ? null : (new AdminOrderResource($selectedOrder))->resolve($request),
+            'selectedOrderSummary' => $selectedOrder === null ? null : $formatter->format($selectedOrder),
+            ...$dashboardData->execute(),
         ]);
     }
 

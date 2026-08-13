@@ -4,15 +4,15 @@ Each module owns one business capability and only the layers its implemented beh
 
 ## Current ownership
 
-| Module                                | Owns                                                                                                          | Does not own                                  |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `Identity`                            | User identity, sessions, administrator boundary                                                               | Customer profiles or order state              |
-| `Products`                            | Categories, products, tags, availability, base prices, cooking surcharges, public catalog                     | Cart grouping or historical sale lines        |
-| `Customers`                           | Profile CRUD, optional phone/address/private notes, phone normalization, search, order history                | Public identity verification or order notes   |
-| `Orders`                              | Pricing, POS/public creation, snapshots, order/topping records, delivery, states, summaries, WhatsApp handoff | Product CRUD or customer private-note changes |
-| `Settings`                            | Admin editing of order settings, cooking surcharges, and existing toppings                                    | Pricing calculations                          |
-| `PublicSite`                          | Public page routes and menu/cart entry                                                                        | Authoritative checkout logic                  |
-| `Dashboard`, `Analytics`, `Inventory` | Current route/page boundaries                                                                                 | Functional analytics or stock behavior        |
+| Module                                | Owns                                                                                                          | Does not own                                            |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `Identity`                            | User identity, sessions, administrator boundary                                                               | Customer profiles or order state                        |
+| `Products`                            | Categories, products, tags, availability, base prices, cooking surcharges, public catalog                     | Cart grouping or historical sale lines                  |
+| `Customers`                           | Profile CRUD, optional phone/address/private notes, phone normalization, search, order history                | Public identity verification or order notes             |
+| `Orders`                              | Pricing, POS/public creation, snapshots, order/topping records, delivery, states, summaries, WhatsApp handoff | Product CRUD or customer private-note changes           |
+| `Settings`                            | Admin editing of order settings, cooking surcharges, and existing toppings                                    | Pricing calculations                                    |
+| `PublicSite`                          | Public page routes and menu/cart entry                                                                        | Authoritative checkout logic                            |
+| `Dashboard`, `Analytics`, `Inventory` | Current route/page boundaries; `/admin` is reserved for the accepted quick-order Home slice                   | Functional analytics, quick-order UI, or stock behavior |
 
 ## Customers
 

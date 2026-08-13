@@ -10,16 +10,16 @@ final class OrderSummaryFormatter
     public function format(Order $order): string
     {
         $order->loadMissing(['items.compositions', 'toppings']);
-        $lines = ["Order {$order->public_id}", '', "Customer: {$order->customer_name_snapshot}",
-            'Delivery: '.CarbonImmutable::parse($order->delivery_date)->toDateString().' - '.$order->getRawOriginal('delivery_period'),
-            'Method: '.($order->delivery_type->value === 'delivery' ? 'Delivery' : 'Pickup'),
-            'Condition: '.($order->condition->value === 'cooked' ? 'Cooked' : 'Raw'), ''];
+        $lines = ["Pedido {$order->public_id}", '', "Cliente: {$order->customer_name_snapshot}",
+            'Entrega: '.CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' - '.$this->deliveryPeriod($order->getRawOriginal('delivery_period')),
+            'Modalidad: '.($order->delivery_type->value === 'delivery' ? 'Envío' : 'Retiro'),
+            'Condición: '.($order->condition->value === 'cooked' ? 'Cocinado' : 'Crudo'), ''];
         foreach ($order->items as $item) {
             $label = match ($item->getRawOriginal('pricing_mode')) {
-                'unit' => "{$item->quantity} unit(s) {$item->product_name}",
-                'half_dozen' => "{$item->quantity} half-dozen {$item->product_name}",
-                'dozen' => "{$item->quantity} dozen {$item->product_name}",
-                default => "{$item->quantity} combined dozen",
+                'unit' => $this->quantityLabel($item->quantity, 'unidad', 'unidades')." de {$item->product_name}",
+                'half_dozen' => $this->quantityLabel($item->quantity, 'media docena', 'medias docenas')." de {$item->product_name}",
+                'dozen' => $this->quantityLabel($item->quantity, 'docena', 'docenas')." de {$item->product_name}",
+                default => $this->quantityLabel($item->quantity, 'docena combinada', 'docenas combinadas'),
             };
             $lines[] = $label;
             foreach ($item->compositions as $part) {
@@ -33,16 +33,21 @@ final class OrderSummaryFormatter
             }
         }
         $lines[] = '';
-        $lines[] = 'Empanadas: '.$this->money((int) $order->items_subtotal);
+        $lines[] = ($order->items_base_subtotal === null ? 'Empanadas' : 'Empanadas base').': '.$this->money(
+            (int) ($order->items_base_subtotal ?? $order->items_subtotal),
+        );
+        if ($order->cooking_surcharge !== null && (int) $order->cooking_surcharge !== 0) {
+            $lines[] = 'Cocción: '.$this->signedMoney((int) $order->cooking_surcharge);
+        }
         $lines[] = 'Toppings: '.$this->money((int) $order->toppings_subtotal);
-        $lines[] = 'Shipping: '.$this->money((int) $order->shipping_fee_snapshot);
+        $lines[] = 'Envío: '.$this->money((int) $order->shipping_fee_snapshot);
         if ((int) $order->combined_dozen_savings > 0) {
-            $lines[] = 'Combined-dozen savings: '.$this->money((int) $order->combined_dozen_savings);
+            $lines[] = 'Ahorro por docena combinada: '.$this->money((int) $order->combined_dozen_savings);
         }
         $lines[] = 'Total: '.$this->money((int) $order->total);
         if ($order->notes !== null) {
             $lines[] = '';
-            $lines[] = "Note: {$order->notes}";
+            $lines[] = "Nota: {$order->notes}";
         }
 
         return implode("\n", $lines);
@@ -51,5 +56,27 @@ final class OrderSummaryFormatter
     private function money(int $amount): string
     {
         return '$'.number_format($amount, 0, ',', '.');
+    }
+
+    private function signedMoney(int $amount): string
+    {
+        $sign = $amount > 0 ? '+' : ($amount < 0 ? '-' : '');
+
+        return $sign.$this->money(abs($amount));
+    }
+
+    private function quantityLabel(int $quantity, string $singular, string $plural): string
+    {
+        return $quantity.' '.($quantity === 1 ? $singular : $plural);
+    }
+
+    private function deliveryPeriod(?string $period): string
+    {
+        return match ($period) {
+            'midday' => 'Mediodía',
+            'afternoon' => 'Tarde',
+            'night' => 'Noche',
+            default => $period ?? 'Sin franja',
+        };
     }
 }

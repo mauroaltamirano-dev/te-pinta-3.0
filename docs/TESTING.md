@@ -4,16 +4,18 @@ Tests prove backend authority, historical stability, and the two order creation 
 
 ## Focused suites
 
-| Suite                                                       | Proves                                                                                                                                         |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/Feature/Customers/PhoneNormalizerTest.php`           | Deterministic digits-only normalization and null handling                                                                                      |
-| `tests/Feature/Customers/CustomerManagementTest.php`        | Admin boundary, duplicate names, optional phone, active phone uniqueness, search, private notes, history/spend, soft deletion, safe logs       |
-| `tests/Feature/Orders/OrderPricingEngineTest.php`           | Grouping matrix, raw/cooked prices, fixed combined prices, savings, toppings, delivery/pickup, limits, availability, public slugs              |
-| `tests/Feature/Orders/OrderCheckoutHttpTest.php`            | Public/admin creation, backend price authority, privacy-safe matching, idempotency, rate limiting, states/payment, quick create, soft deletion |
-| `tests/Feature/Orders/OrderDatabaseConstraintTest.php`      | PostgreSQL sequence, snapshot/value checks, unique idempotency hash                                                                            |
-| `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                                   |
-| `tests/e2e/orders.spec.ts`                                  | Admin POS creation and lifecycle journey                                                                                                       |
-| `tests/e2e/public-checkout.spec.ts`                         | Persistence before mocked WhatsApp navigation                                                                                                  |
+| Suite                                                       | Proves                                                                                                                                          |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/Feature/Customers/PhoneNormalizerTest.php`           | Deterministic digits-only normalization and null handling                                                                                       |
+| `tests/Feature/Customers/CustomerManagementTest.php`        | Admin boundary, duplicate names, optional phone, active phone uniqueness, search, private notes, history/spend, soft deletion, safe logs        |
+| `tests/Feature/Orders/OrderPricingEngineTest.php`           | Grouping matrix, raw/cooked tiers, base/cooking breakdown, fixed combined price and surcharge, savings, toppings, delivery, limits, sellability |
+| `tests/Feature/Orders/OrderCheckoutHttpTest.php`            | Public/admin creation, price authority, snapshot-safe cooking output, legacy omission, matching, idempotency, throttling, state/payment         |
+| `tests/Feature/Orders/OrderDatabaseConstraintTest.php`      | PostgreSQL sequence, snapshot/value and cooking-breakdown checks, unique idempotency hash                                                       |
+| `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                                    |
+| `tests/Unit/Core/TestingDatabaseGuardTest.php`              | Testing-only database-name boundary, `DB_URL` precedence, and non-testing bypass                                                                |
+| `tests/e2e/orders.spec.ts`                                  | Cooked POS breakdown, insights panel, drawer/full detail, status/payment/copy, history navigation, desktop/mobile                               |
+| `tests/Feature/Orders/OrderDashboardDataTest.php`           | Real most-ordered product aggregation, combined-dozen composition, images, delivery and cooking-condition distributions, soft deletes           |
+| `tests/e2e/public-checkout.spec.ts`                         | Persistence before mocked WhatsApp navigation                                                                                                   |
 
 The pricing matrix includes 5/6/7/12/18 of one product, 3+3, 6+3+3, 6+6, and 24 varied units. When a grouping rule changes, update `docs/ORDER_PRICING.md` and its focused tests together.
 
@@ -50,13 +52,15 @@ The pricing matrix includes 5/6/7/12/18 of one product, 3+3, 6+3+3, 6+6, and 24 
 - Deleted/unavailable catalog entries cannot be sold.
 - Exact public retries create one order; changed-payload key reuse is rejected.
 - Product, customer address, delivery-fee, and topping changes do not alter snapshots.
+- New raw/cooked orders snapshot base and cooking values per line; legacy orders never derive them from current settings.
+- Cooking breakdown never changes the final total; combined dozen cooking remains cooked minus raw (`17500 - 16000 = 1500`).
 - Customer private notes never appear publicly or in WhatsApp.
 - Cancelled orders remain historical but do not contribute to effective spend.
 - Guests/non-admins cannot access administrative operations.
 
 ## Test data
 
-Persistence tests use `RefreshDatabase` and the isolated test connection. Playwright global setup seeds deterministic catalog/admin data through `tests/Support/PlaywrightDatabaseSeeder.php`. Never use `migrate:fresh` on the existing development database to prove clean migrations.
+Persistence tests use `RefreshDatabase` and the isolated test connection configured from `.env.testing.example`. `TestingDatabaseGuard` rejects `APP_ENV=testing` when the effective database name, including a `DB_URL` override, lacks a standalone `test` or `testing` segment. Playwright global setup seeds deterministic catalog/admin data through `tests/Support/PlaywrightDatabaseSeeder.php`. Never use `migrate:fresh` on the existing development database to prove clean migrations; follow [DEVELOPMENT.md](DEVELOPMENT.md#migration-safety).
 
 ## Delivery report
 

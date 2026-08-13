@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+    createContext,
+    useContext,
+    useMemo,
+    useSyncExternalStore,
+} from 'react';
 import type { PropsWithChildren } from 'react';
 import type { CartAddonLine, CartLine } from './types';
 
@@ -15,34 +20,28 @@ interface CartContextValue extends StoredCart {
     clear: () => void;
 }
 const STORAGE_KEY = 'te-pinta-order-cart-v1';
-const emptyCart = (): StoredCart => ({
+const emptyCart = (idempotencyKey = ''): StoredCart => ({
     items: [],
     addons: [],
-    idempotency_key: crypto.randomUUID(),
+    idempotency_key: idempotencyKey,
 });
+const serverCart = emptyCart();
+const listeners = new Set<() => void>();
+let browserCart: StoredCart | null = null;
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: PropsWithChildren) {
-    const [cart, setCart] = useState<StoredCart>(() => {
-        try {
-            const stored = sessionStorage.getItem(STORAGE_KEY);
-
-            return stored ? (JSON.parse(stored) as StoredCart) : emptyCart();
-        } catch {
-            sessionStorage.removeItem(STORAGE_KEY);
-
-            return emptyCart();
-        }
-    });
-    useEffect(() => {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-    }, [cart]);
+    const cart = useSyncExternalStore(
+        subscribeToCart,
+        getCartSnapshot,
+        () => serverCart,
+    );
     const value = useMemo<CartContextValue>(
         () => ({
             ...cart,
             count: cart.items.reduce((total, item) => total + item.quantity, 0),
             addProduct: (slug, quantity) =>
-                setCart((current) => ({
+                updateCart((current) => ({
                     ...current,
                     items: upsert(
                         current.items,
@@ -52,7 +51,7 @@ export function CartProvider({ children }: PropsWithChildren) {
                     ),
                 })),
             setProductQuantity: (slug, quantity) =>
-                setCart((current) => ({
+                updateCart((current) => ({
                     ...current,
                     items: replace(
                         current.items,
@@ -62,7 +61,7 @@ export function CartProvider({ children }: PropsWithChildren) {
                     ),
                 })),
             setAddonQuantity: (slug, quantity) =>
-                setCart((current) => ({
+                updateCart((current) => ({
                     ...current,
                     addons: replace(
                         current.addons,
@@ -71,7 +70,7 @@ export function CartProvider({ children }: PropsWithChildren) {
                         quantity,
                     ),
                 })),
-            clear: () => setCart(emptyCart()),
+            clear: () => updateCart(() => emptyCart(crypto.randomUUID())),
         }),
         [cart],
     );
@@ -79,6 +78,40 @@ export function CartProvider({ children }: PropsWithChildren) {
     return (
         <CartContext.Provider value={value}>{children}</CartContext.Provider>
     );
+}
+
+function subscribeToCart(listener: () => void) {
+    listeners.add(listener);
+
+    return () => listeners.delete(listener);
+}
+
+function getCartSnapshot(): StoredCart {
+    if (typeof window === 'undefined') {
+        return serverCart;
+    }
+
+    if (browserCart) {
+        return browserCart;
+    }
+
+    try {
+        const stored = sessionStorage.getItem(STORAGE_KEY);
+        browserCart = stored
+            ? (JSON.parse(stored) as StoredCart)
+            : emptyCart(crypto.randomUUID());
+    } catch {
+        sessionStorage.removeItem(STORAGE_KEY);
+        browserCart = emptyCart(crypto.randomUUID());
+    }
+
+    return browserCart;
+}
+
+function updateCart(updater: (current: StoredCart) => StoredCart) {
+    browserCart = updater(getCartSnapshot());
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(browserCart));
+    listeners.forEach((listener) => listener());
 }
 
 function upsert<

@@ -2,19 +2,21 @@
 
 Start with the smallest document that owns the change.
 
-| Need                                                            | Read                                       |
-| --------------------------------------------------------------- | ------------------------------------------ |
-| Understand boundaries and dependency direction                  | [ARCHITECTURE.md](ARCHITECTURE.md)         |
-| Find the exact owner of a route, rule, page, or setting         | [PROJECT_MAP.md](PROJECT_MAP.md)           |
-| Add or change a backend capability                              | [MODULES.md](MODULES.md)                   |
-| Change order grouping or totals                                 | [ORDER_PRICING.md](ORDER_PRICING.md)       |
-| Change tables, constraints, identifiers, or lifecycle           | [DATABASE.md](DATABASE.md)                 |
-| Change authorization, public checkout, or private data handling | [SECURITY.md](SECURITY.md)                 |
-| Change tokens, layouts, or reusable UI                          | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)       |
-| Set up, migrate, or run the application                         | [DEVELOPMENT.md](DEVELOPMENT.md)           |
-| Add an event or diagnose a failure                              | [LOGGING.md](LOGGING.md)                   |
-| Add or run automated checks                                     | [TESTING.md](TESTING.md)                   |
-| Understand recorded tradeoffs                                   | [decisions/README.md](decisions/README.md) |
+| Need                                                            | Read                                                       |
+| --------------------------------------------------------------- | ---------------------------------------------------------- |
+| Understand boundaries and dependency direction                  | [ARCHITECTURE.md](ARCHITECTURE.md)                         |
+| Find the exact owner of a route, rule, page, or setting         | [PROJECT_MAP.md](PROJECT_MAP.md)                           |
+| Add or change a backend capability                              | [MODULES.md](MODULES.md)                                   |
+| Change order grouping or totals                                 | [ORDER_PRICING.md](ORDER_PRICING.md)                       |
+| Change tables, constraints, identifiers, or lifecycle           | [DATABASE.md](DATABASE.md)                                 |
+| Change authorization, public checkout, or private data handling | [SECURITY.md](SECURITY.md)                                 |
+| Change tokens, layouts, or reusable UI                          | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)                       |
+| Set up, migrate, or run the application                         | [DEVELOPMENT.md](DEVELOPMENT.md)                           |
+| Add an event or diagnose a failure                              | [LOGGING.md](LOGGING.md)                                   |
+| Add or run automated checks                                     | [TESTING.md](TESTING.md)                                   |
+| Understand recorded tradeoffs                                   | [decisions/README.md](decisions/README.md)                 |
+| See what is complete and intentionally deferred                 | [CURRENT_STATE.md](CURRENT_STATE.md)                       |
+| Implement the next admin quick-order Home slice                 | [design/ADMIN_QUICK_ORDER.md](design/ADMIN_QUICK_ORDER.md) |
 
 ## Change checklist
 

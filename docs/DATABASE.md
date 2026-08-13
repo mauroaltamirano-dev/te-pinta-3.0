@@ -25,17 +25,19 @@ PostgreSQL is the application database and the final integrity boundary. Migrati
 
 ## Orders and snapshots
 
-`orders` stores customer reference plus customer name/phone snapshots; source; operational/payment state; raw/cooked condition; delivery type/date/period/time; delivery address snapshot; order notes; subtotal/savings/shipping/total values; and optional public idempotency hash/fingerprint.
+`orders` stores customer reference plus customer name/phone snapshots; source; operational/payment state; raw/cooked condition; delivery type/date/period/time; delivery address snapshot; order notes; subtotal/savings/shipping/total values; and optional public idempotency hash/fingerprint. New orders also snapshot `items_base_subtotal` and `cooking_surcharge`; both remain null together on legacy rows that predate the explicit breakdown.
 
-| Table                     | Historical responsibility                                                                                                                         |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `order_items`             | Product reference when applicable, sold name, commercial mode, block count, unit count, applied price, normal comparison price, savings, subtotal |
-| `order_item_compositions` | Product reference, sold name, and quantity for each combined-dozen part                                                                           |
-| `order_toppings`          | Optional addon reference plus sold name, quantity, applied unit price, subtotal                                                                   |
+| Table                     | Historical responsibility                                                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `order_items`             | Product reference when applicable, sold name, commercial mode, block count, unit count, raw-equivalent price/subtotal, cooking surcharge, applied price, normal comparison price, savings, subtotal |
+| `order_item_compositions` | Product reference, sold name, and quantity for each combined-dozen part                                                                                                                             |
+| `order_toppings`          | Optional addon reference plus sold name, quantity, applied unit price, subtotal                                                                                                                     |
 
 Combined-dozen lines have no single `product_id`; normal lines require one. Product/catalog foreign keys restrict deletion, while soft deletion keeps historical references usable. Order-owned item, composition, and topping rows cascade only when the physical order row is deleted; normal administration soft-deletes orders.
 
 Changing a product name/price/availability, customer address, topping price, or delivery fee does not change existing orders. Detail/resources/formatter read snapshots rather than current catalog/settings.
+
+Cooking snapshots follow the same rule. New line totals satisfy `line_total = base_line_total + cooking_surcharge`; the order aggregate satisfies `items_subtotal = items_base_subtotal + cooking_surcharge`. Cooking may not be backfilled on legacy orders because current product/settings values are not historical evidence.
 
 ## Database constraints
 

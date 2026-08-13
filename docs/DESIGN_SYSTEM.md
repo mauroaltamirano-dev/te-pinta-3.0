@@ -52,7 +52,7 @@ When the Figma integration and exact nodes are available:
 
 ## Products management composition
 
-`resources/js/pages/admin/products/index.tsx` integrates with the global dark admin shell through `resources/js/layouts/settings-layout.tsx`, which owns the Settings-local navigation rail. Products is the only available Settings destination; general configuration is explicitly unavailable. The feature preserves the reference's hierarchy: category filters and category management at the top, then a dense responsive product-card grid led by the Add product card.
+`resources/js/pages/admin/products/index.tsx` integrates with the global dark admin shell through `resources/js/layouts/settings-layout.tsx`, which owns the Settings-local navigation rail for General and Products. The Products feature preserves the reference's hierarchy: category filters and category management at the top, then a dense responsive product-card grid led by the Add product card.
 
 Product cards use circular imagery, a consistent image placeholder, compact base-price rows, vegetarian/unavailable status badges, and one clear edit action. Product/category editing uses focused, accessible dialogs so validation errors stay beside their fields.
 
@@ -62,25 +62,42 @@ Changes save per product or category. Closing/canceling a dialog discards its un
 
 The admin shell uses a small semantic palette sourced from the verified Figma nodes. Components consume the `admin-*` theme tokens defined in `resources/css/app.css`; they must not introduce near-duplicate dark or coral values.
 
-| Verified Figma node | Responsibility                                |
-| ------------------- | --------------------------------------------- |
-| `177:735`           | Global sidebar geometry and active state      |
-| `196:1985`          | Full 1194 × 834 admin composition and canvas  |
-| `201:2202`          | Settings panel hierarchy and surfaces         |
-| `186:100`           | Product card surface, border, and action band |
-| `175:888`           | Navigation selection treatment                |
-| `177:2031`          | Settings row content and active indicator     |
+| Verified Figma node | Responsibility                                       |
+| ------------------- | ---------------------------------------------------- |
+| `177:735`           | Global sidebar geometry and active state             |
+| `196:1985`          | Full 1194 × 834 admin composition and canvas         |
+| `201:2202`          | Settings panel hierarchy and surfaces                |
+| `186:100`           | Product card surface, border, and action band        |
+| `175:888`           | Navigation selection treatment                       |
+| `177:2031`          | Settings row content and active indicator            |
+| `207:40`            | Orders dashboard rhythm, summary cards, report table |
+| `232:8962`          | Order-detail overlay and right-panel geometry        |
+| `232:9613`          | Compact order-detail content hierarchy               |
+| `175:798`           | Reference icon weight and geometry                   |
+| `190:1280`          | Summary-card spacing and typography                  |
 
 | Semantic token         | Value                      | Use                                                      |
 | ---------------------- | -------------------------- | -------------------------------------------------------- |
 | `admin-canvas`         | `#252836`                  | Root admin workspace                                     |
 | `admin-surface`        | `#1F1D2B`                  | Global rail, Settings panels, dialogs, and product cards |
+| `admin-surface-raised` | `#2D303E`                  | Drawer detail sections and form-like raised content      |
 | `admin-border`         | `#393C49`                  | One-pixel product-card borders and internal dividers     |
 | `admin-accent`         | `#EA7C69`                  | Active controls, icons, labels, and focus emphasis       |
 | `admin-selection`      | `rgba(234, 124, 105, .16)` | Selected navigation rows                                 |
 | `admin-action`         | `rgba(234, 124, 105, .24)` | Product-card actions and restrained accent surfaces      |
 | `admin-text-primary`   | `#FFFFFF`                  | Primary text                                             |
 | `admin-text-secondary` | `#ABBBC2`                  | Supporting text                                          |
+| `admin-text-tertiary`  | `#889898`                  | Quiet metadata and placeholders                          |
+
+Orders uses the locally bundled Barlow 400/500/600 family from `resources/fonts/` through `font-orders`, matching the verified Figma typography without a runtime font request. Its OFL license is stored at `resources/fonts/OFL.txt`. Visible Orders copy is Argentine Spanish; enum and code identifiers remain English.
+
+## Orders composition and detail navigation
+
+`resources/js/pages/admin/orders/index.tsx` adapts the Figma dashboard into an Orders workspace: compact summary cards lead into filters and the operational report table. It does not copy template restaurant data.
+
+Selecting a TP identifier requests `/admin/orders?order=TP-*` through Inertia and opens `OrderDetailDrawer` while keeping the filtered list visible. Closing the drawer removes only the selection, so browser back/forward remains meaningful. Direct `/admin/orders/{public_id}` links still render the full page. Both surfaces compose the same `OrderDetailContent`; pricing, labels, and operations are not duplicated.
+
+On wide viewports, Orders uses the Figma two-column proportion: a `646:372` primary-to-insights ratio with a 24px gap, expanded to the available viewport width. At the 1194px reference frame this resolves to 646px and 372px; wider screens preserve the ratio instead of leaving unused space. Both columns fill the available viewport height and the document remains fixed; only the report body scrolls vertically, with its table header kept visible. The three summary cards share the primary width equally, start from the reference size of 199×143px, and keep 24px gaps. `OrdersInsightsPanel` divides its height using the reference `429:333` ratio; its lower card presents delivery type and cooking condition as two separate analytical rings so the unrelated dimensions remain readable. Below desktop it rejoins the document flow. Product counts, catalog images, delivery distribution, and condition distribution come from backend aggregates rather than template data.
 
 Settings panels use an opaque surface with an 8 px radius, no outer border or shadow, and a 24 px gap. Their header, filters, and content regions remain transparent over that surface. Product cards use the same 8 px surface with a one-pixel border and no shadow; the edit action is a 52 px high action band. Figma defines no hover variant for these surfaces, so hover must not invent a new fill.
 

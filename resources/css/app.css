@@ -2,6 +2,30 @@
 
 @import 'tw-animate-css';
 
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/barlow-regular-latin.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('../fonts/barlow-medium-latin.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/barlow-semibold-latin.woff2') format('woff2');
+}
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
@@ -14,6 +38,7 @@
         'Noto Color Emoji';
     --font-display:
         'Arial Narrow', 'Avenir Next Condensed', ui-sans-serif, sans-serif;
+    --font-orders: 'Barlow', var(--font-sans);
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -64,12 +89,14 @@
 
     --color-admin-canvas: #252836;
     --color-admin-surface: #1f1d2b;
+    --color-admin-surface-raised: #2d303e;
     --color-admin-border: #393c49;
     --color-admin-accent: #ea7c69;
     --color-admin-selection: rgb(234 124 105 / 16%);
     --color-admin-action: rgb(234 124 105 / 24%);
     --color-admin-text-primary: #ffffff;
     --color-admin-text-secondary: #abbcc2;
+    --color-admin-text-tertiary: #889898;
     --shadow-admin-nav-active: 0 8px 12px rgb(234 124 105 / 32%);
 }
 

@@ -5,13 +5,16 @@ namespace Tests\Feature\Orders;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Enums\OrderSettingKey;
+use App\Modules\Orders\Http\Resources\AdminOrderResource;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderSetting;
+use App\Modules\Orders\Support\OrderSummaryFormatter;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 final class OrderCheckoutHttpTest extends TestCase
@@ -48,6 +51,8 @@ final class OrderCheckoutHttpTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('data.status', 'pending_confirmation')
             ->assertJsonPath('data.payment_status', 'unpaid')
+            ->assertJsonPath('data.items_base_subtotal', 9000)
+            ->assertJsonPath('data.cooking_surcharge', 0)
             ->assertJsonPath('data.total', 9000)
             ->assertJsonMissingPath('data.customer_id')
             ->assertJsonPath('data.order_id', 'TP-000001');
@@ -57,6 +62,98 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertSame('Visitor name', $order->customer_name_snapshot);
         $this->assertSame(9000, (int) $order->total);
         $this->assertCount(1, $order->items);
+    }
+
+    public function test_cooked_checkout_persists_and_exposes_snapshot_safe_breakdown(): void
+    {
+        $payload = $this->payload();
+        $payload['condition'] = 'cooked';
+
+        $response = $this->postJson(route('public.orders.store'), $payload);
+        $response->assertCreated()
+            ->assertJsonPath('data.items_base_subtotal', 9000)
+            ->assertJsonPath('data.cooking_surcharge', 1000)
+            ->assertJsonPath('data.total', 10000);
+        $this->assertStringContainsString('Empanadas base: $9.000', $response->json('data.summary'));
+        $this->assertStringContainsString('Cocción: +$1.000', $response->json('data.summary'));
+
+        $order = Order::query()->with(['items.compositions', 'toppings'])->firstOrFail();
+        $item = $order->items->sole();
+        $this->assertSame([9000, 1000, 10000], [
+            (int) $order->items_base_subtotal,
+            (int) $order->cooking_surcharge,
+            (int) $order->total,
+        ]);
+        $this->assertSame([9000, 1000, 10000], [
+            (int) $item->base_line_total,
+            (int) $item->cooking_surcharge,
+            (int) $item->line_total,
+        ]);
+
+        CookingSurcharge::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
+        $this->product->update(['half_dozen_price' => 50000]);
+
+        $summary = app(OrderSummaryFormatter::class)->format($order->fresh(['items.compositions', 'toppings']));
+        $this->assertStringContainsString('Empanadas base: $9.000', $summary);
+        $this->assertStringContainsString('Cocción: +$1.000', $summary);
+        $this->assertStringContainsString('Total: $10.000', $summary);
+
+        $resource = (new AdminOrderResource($order->fresh(['items.compositions', 'toppings'])))->resolve();
+        $this->assertSame(9000, $resource['items_base_subtotal']);
+        $this->assertSame(1000, $resource['cooking_surcharge']);
+        $this->assertSame(9000, $resource['items'][0]['base_subtotal']);
+        $this->assertSame(1000, $resource['items'][0]['cooking_surcharge']);
+    }
+
+    public function test_cooked_combined_dozen_uses_its_own_raw_equivalent(): void
+    {
+        $secondProduct = Product::query()->create([
+            'category_id' => $this->product->category_id,
+            'name' => 'Humita',
+            'slug' => 'humita',
+            'unit_price' => 1600,
+            'half_dozen_price' => 9000,
+            'dozen_price' => 16000,
+            'is_available' => true,
+            'sort_order' => 2,
+        ]);
+        $payload = $this->payload();
+        $payload['condition'] = 'cooked';
+        $payload['items'] = [
+            ['product_slug' => $this->product->slug, 'quantity' => 6],
+            ['product_slug' => $secondProduct->slug, 'quantity' => 6],
+        ];
+
+        $response = $this->postJson(route('public.orders.store'), $payload);
+        $response->assertCreated()
+            ->assertJsonPath('data.items_base_subtotal', 16000)
+            ->assertJsonPath('data.cooking_surcharge', 1500)
+            ->assertJsonPath('data.total', 17500);
+        $this->assertStringContainsString('Cocción: +$1.500', $response->json('data.summary'));
+
+        $order = Order::query()->with('items')->firstOrFail();
+        $this->assertSame(1500, (int) $order->items->sole()->cooking_surcharge);
+    }
+
+    public function test_legacy_orders_without_breakdown_are_not_rebuilt_from_current_prices(): void
+    {
+        $customer = Customer::query()->create(['name' => 'Historical customer']);
+        $order = Order::query()->create([
+            'customer_id' => $customer->id,
+            'customer_name_snapshot' => $customer->name,
+            'delivery_date' => now()->toDateString(),
+            'items_subtotal' => 9000,
+            'total' => 9000,
+        ]);
+
+        CookingSurcharge::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
+        $order->refresh();
+        $summary = app(OrderSummaryFormatter::class)->format($order);
+
+        $this->assertNull($order->items_base_subtotal);
+        $this->assertNull($order->cooking_surcharge);
+        $this->assertStringContainsString('Empanadas: $9.000', $summary);
+        $this->assertStringNotContainsString('Cocción:', $summary);
     }
 
     public function test_public_checkout_rejects_internal_catalog_ids(): void
@@ -130,6 +227,13 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertSame('paid', $order->payment_status->value);
 
         $this->actingAs($admin)->get(route('admin.orders.show', $order->public_id))->assertOk();
+        $this->actingAs($admin)->get(route('admin.orders.index', ['order' => $order->public_id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/orders/index')
+                ->where('selectedOrder.id', $order->public_id)
+                ->has('selectedOrder.items', 1)
+                ->where('selectedOrderSummary', fn (string $summary) => str_contains($summary, $order->public_id)));
         $this->actingAs($admin)->get(route('admin.orders.show', $order->getKey()))->assertNotFound();
         $this->actingAs($admin)->patch(route('admin.orders.status.update', $order->public_id), ['status' => 'cancelled'])->assertRedirect();
         $this->actingAs($admin)->patch(route('admin.orders.payment-status.update', $order->public_id), ['payment_status' => 'unpaid'])->assertRedirect();

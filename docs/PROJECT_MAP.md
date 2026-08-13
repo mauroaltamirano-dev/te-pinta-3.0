@@ -4,24 +4,27 @@ Use this map to change a rule at its owner instead of searching the whole reposi
 
 ## Ordering maintainer map
 
-| Change                                                 | Source of truth                                                                                                 |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Product base prices and sellability                    | `app/Modules/Products/`, especially `Pricing/DatabaseProductPriceProvider.php`                                  |
-| Products-to-Orders contract                            | `app/Core/Contracts/ProductPriceProvider.php`, `app/Core/Data/SellableProductPrice.php`                         |
-| Grouping, totals, combined dozen, toppings, shipping   | `app/Modules/Orders/Pricing/OrderPricingEngine.php`                                                             |
-| Pricing result shapes                                  | `app/Modules/Orders/Pricing/OrderPriceQuote.php`, `PricingLine.php`, `PricingAddon.php`                         |
-| Order creation transaction, snapshots, idempotency     | `app/Modules/Orders/Actions/CreateOrder.php`, `Data/OrderCheckoutData.php`                                      |
-| Public product/topping slug resolution                 | `app/Modules/Orders/Actions/ResolvePublicCheckoutSelections.php`                                                |
-| Order ID generation                                    | `database/migrations/2026_08_11_000400_create_orders_tables.php` (`order_public_id_seq`)                        |
-| Operational/payment states                             | `app/Modules/Orders/Enums/OrderStatus.php`, `PaymentStatus.php`                                                 |
-| Shared text summary                                    | `app/Modules/Orders/Support/OrderSummaryFormatter.php`                                                          |
-| WhatsApp URL                                           | `app/Modules/Orders/Support/WhatsAppOrderLink.php`                                                              |
-| Customer matching/normalization                        | `app/Modules/Customers/Support/PhoneNormalizer.php`, `app/Modules/Orders/Actions/CreateOrder.php`               |
-| Customer CRUD/history                                  | `app/Modules/Customers/` and `resources/js/pages/admin/customers/`                                              |
-| Admin order list/POS/detail                            | `app/Modules/Orders/Http/`, `resources/js/pages/admin/orders/`, `resources/js/features/orders/`                 |
-| Public menu/cart/checkout                              | `app/Modules/PublicSite/routes.php`, `resources/js/pages/public/menu.tsx`, `resources/js/pages/public/cart.tsx` |
-| Combined prices, delivery, WhatsApp, cooking, toppings | `app/Modules/Settings/`, `resources/js/pages/admin/settings/general.tsx`                                        |
-| Pricing behavior guide                                 | `docs/ORDER_PRICING.md`                                                                                         |
+| Change                                                 | Source of truth                                                                                                               |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Product base prices and sellability                    | `app/Modules/Products/`, especially `Pricing/DatabaseProductPriceProvider.php`                                                |
+| Products-to-Orders contract                            | `app/Core/Contracts/ProductPriceProvider.php`, `app/Core/Data/SellableProductPrice.php`                                       |
+| Grouping, totals, combined dozen, toppings, shipping   | `app/Modules/Orders/Pricing/OrderPricingEngine.php`                                                                           |
+| Pricing result shapes                                  | `app/Modules/Orders/Pricing/OrderPriceQuote.php`, `PricingLine.php`, `PricingAddon.php`                                       |
+| Order creation transaction, snapshots, idempotency     | `app/Modules/Orders/Actions/CreateOrder.php`, `Data/OrderCheckoutData.php`                                                    |
+| Public product/topping slug resolution                 | `app/Modules/Orders/Actions/ResolvePublicCheckoutSelections.php`                                                              |
+| Order ID generation                                    | `database/migrations/2026_08_11_000400_create_orders_tables.php` (`order_public_id_seq`)                                      |
+| Operational/payment states                             | `app/Modules/Orders/Enums/OrderStatus.php`, `PaymentStatus.php`                                                               |
+| Shared text summary                                    | `app/Modules/Orders/Support/OrderSummaryFormatter.php`                                                                        |
+| WhatsApp URL                                           | `app/Modules/Orders/Support/WhatsAppOrderLink.php`                                                                            |
+| Customer matching/normalization                        | `app/Modules/Customers/Support/PhoneNormalizer.php`, `app/Modules/Orders/Actions/CreateOrder.php`                             |
+| Customer CRUD/history                                  | `app/Modules/Customers/` and `resources/js/pages/admin/customers/`                                                            |
+| Admin order list/POS/detail/drawer                     | `app/Modules/Orders/Http/`, `resources/js/pages/admin/orders/`, `resources/js/features/orders/`                               |
+| Orders insights panel and aggregates                   | `app/Modules/Orders/Actions/BuildOrderDashboardData.php`, `resources/js/features/orders/components/orders-insights-panel.tsx` |
+| Shared order detail content and presentation labels    | `resources/js/features/orders/components/order-detail-content.tsx`, `presentation.ts`                                         |
+| Public menu/cart/checkout                              | `app/Modules/PublicSite/routes.php`, `resources/js/pages/public/menu.tsx`, `resources/js/pages/public/cart.tsx`               |
+| Combined prices, delivery, WhatsApp, cooking, toppings | `app/Modules/Settings/`, `resources/js/pages/admin/settings/general.tsx`                                                      |
+| Pricing behavior guide                                 | `docs/ORDER_PRICING.md`                                                                                                       |
+| Current implementation and next admin Home slice       | `docs/CURRENT_STATE.md`, `docs/design/ADMIN_QUICK_ORDER.md`, `docs/decisions/0001-admin-home-is-quick-order.md`               |
 
 ## Routes
 
@@ -55,6 +58,7 @@ There is no public customer lookup endpoint.
 | Order base, public sequence, items                  | `2026_08_11_000400_create_orders_tables.php`                                                                                                      |
 | Ordering settings and toppings catalog              | `2026_08_12_050000_create_order_configuration_tables.php`                                                                                         |
 | Checkout snapshots, compositions, topping snapshots | `2026_08_12_060000_expand_orders_for_checkout.php`                                                                                                |
+| Raw-base and cooking-breakdown snapshots            | `2026_08_12_070000_add_cooking_breakdown_snapshots_to_orders.php`                                                                                 |
 | Product catalog/prices/surcharges                   | `2026_08_11_000200_create_catalog_tables.php`, `2026_08_11_000500_expand_product_catalog.php`, `2026_08_11_000600_add_product_catalog_checks.php` |
 
 ## Tests
@@ -70,15 +74,16 @@ There is no public customer lookup endpoint.
 
 ## Infrastructure
 
-| Need                                 | Location                                                                             |
-| ------------------------------------ | ------------------------------------------------------------------------------------ |
-| Application/module route composition | `routes/web.php`                                                                     |
-| Middleware registration              | `bootstrap/app.php`                                                                  |
-| Auth and identity                    | `app/Modules/Identity/`, `config/auth.php`, `config/fortify.php`                     |
-| Database                             | `config/database.php`, `database/migrations/`                                        |
-| Logging                              | `config/logging.php`, `storage/logs/`                                                |
-| Inertia entry/layouts                | `resources/js/app.tsx`, `resources/js/layouts/`                                      |
-| Design tokens                        | `resources/css/app.css`                                                              |
-| Quality configuration                | `composer.json`, `package.json`, `phpstan.neon`, `pint.json`, `playwright.config.ts` |
+| Need                                 | Location                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Application/module route composition | `routes/web.php`                                                                                                                            |
+| Middleware registration              | `bootstrap/app.php`                                                                                                                         |
+| Auth and identity                    | `app/Modules/Identity/`, `config/auth.php`, `config/fortify.php`                                                                            |
+| Database                             | `config/database.php`, `database/migrations/`                                                                                               |
+| Testing database isolation           | `.env.testing.example`, `app/Core/Support/TestingDatabaseGuard.php`, `tests/Unit/Core/TestingDatabaseGuardTest.php`, `playwright.config.ts` |
+| Logging                              | `config/logging.php`, `storage/logs/`                                                                                                       |
+| Inertia entry/layouts                | `resources/js/app.tsx`, `resources/js/layouts/`                                                                                             |
+| Design tokens                        | `resources/css/app.css`                                                                                                                     |
+| Quality configuration                | `composer.json`, `package.json`, `phpstan.neon`, `pint.json`, `playwright.config.ts`                                                        |
 
 Generated Wayfinder files under `resources/js/routes/`, `resources/js/actions/`, and `resources/js/wayfinder/` are outputs. Change their PHP source, not the generated files.

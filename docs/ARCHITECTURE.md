@@ -31,7 +31,7 @@ app/
   Modules/    business capabilities and their delivery/application code
 ```
 
-- `Products` owns catalog availability and base raw/cooked prices.
+- `Products` owns catalog availability, raw base prices, and configurable cooking surcharges.
 - `Orders` owns commercial grouping, final totals, snapshots, lifecycle, toppings, delivery, summaries, and checkout idempotency.
 - `Customers` owns profiles, phone normalization, administrative search, and customer history.
 - `Settings` provides the administrative write boundary for ordering settings, cooking surcharges, and existing toppings.

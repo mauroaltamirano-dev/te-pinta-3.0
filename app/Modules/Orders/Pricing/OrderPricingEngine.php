@@ -56,13 +56,21 @@ final readonly class OrderPricingEngine
         foreach ($quantities as $productId => &$quantity) {
             $dozens = intdiv($quantity, 12);
             if ($dozens > 0) {
-                $lines[] = $this->productLine($products[$productId], 'dozen', $dozens, 12, $products[$productId]->dozenPrice);
+                $lines[] = $this->productLine(
+                    $products[$productId],
+                    'dozen',
+                    $dozens,
+                    12,
+                    $products[$productId]->dozenPrice,
+                    $products[$productId]->baseDozenPrice,
+                );
                 $quantity %= 12;
             }
         }
         unset($quantity);
 
         // Mixed blocks are closed before half-dozens. Product-id order makes equivalent groupings stable.
+        $combinedBasePrice = OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice);
         $combinedPrice = OrderSetting::integer($condition === OrderCondition::Cooked
             ? OrderSettingKey::CombinedDozenCookedPrice
             : OrderSettingKey::CombinedDozenRawPrice);
@@ -76,6 +84,8 @@ final readonly class OrderPricingEngine
             $lines[] = new PricingLine(
                 pricingMode: 'combined_dozen', quantity: 1, unitsCount: 12,
                 unitPrice: $combinedPrice, lineTotal: $combinedPrice,
+                baseUnitPrice: $combinedBasePrice, baseLineTotal: $combinedBasePrice,
+                cookingSurcharge: $combinedPrice - $combinedBasePrice,
                 regularPriceTotal: $regularPrice, savings: $savings,
                 composition: $composition,
             );
@@ -85,15 +95,31 @@ final readonly class OrderPricingEngine
             $product = $products[$productId];
             $halves = intdiv($quantity, 6);
             if ($halves > 0) {
-                $lines[] = $this->productLine($product, 'half_dozen', $halves, 6, $product->halfDozenPrice);
+                $lines[] = $this->productLine(
+                    $product,
+                    'half_dozen',
+                    $halves,
+                    6,
+                    $product->halfDozenPrice,
+                    $product->baseHalfDozenPrice,
+                );
             }
             $units = $quantity % 6;
             if ($units > 0) {
-                $lines[] = $this->productLine($product, 'unit', $units, 1, $product->unitPrice);
+                $lines[] = $this->productLine(
+                    $product,
+                    'unit',
+                    $units,
+                    1,
+                    $product->unitPrice,
+                    $product->baseUnitPrice,
+                );
             }
         }
 
         $pricedAddons = $this->priceAddons($addons);
+        $productsBaseSubtotal = array_sum(array_map(fn (PricingLine $line): int => $line->baseLineTotal, $lines));
+        $cookingSurcharge = array_sum(array_map(fn (PricingLine $line): int => $line->cookingSurcharge, $lines));
         $productsSubtotal = array_sum(array_map(fn (PricingLine $line): int => $line->lineTotal, $lines));
         $addonsSubtotal = array_sum(array_map(fn (PricingAddon $addon): int => $addon->lineTotal, $pricedAddons));
         $shippingFee = $deliveryType === DeliveryType::Delivery
@@ -103,16 +129,25 @@ final readonly class OrderPricingEngine
 
         return new OrderPriceQuote(
             $condition, $deliveryType, $lines, $pricedAddons,
+            $productsBaseSubtotal, $cookingSurcharge,
             $productsSubtotal, $addonsSubtotal, $shippingFee, $savings,
             $productsSubtotal + $addonsSubtotal + $shippingFee,
         );
     }
 
-    private function productLine(SellableProductPrice $product, string $mode, int $quantity, int $units, int $price): PricingLine
-    {
+    private function productLine(
+        SellableProductPrice $product,
+        string $mode,
+        int $quantity,
+        int $units,
+        int $price,
+        int $basePrice,
+    ): PricingLine {
         return new PricingLine(
             pricingMode: $mode, quantity: $quantity, unitsCount: $quantity * $units,
             unitPrice: $price, lineTotal: $quantity * $price,
+            baseUnitPrice: $basePrice, baseLineTotal: $quantity * $basePrice,
+            cookingSurcharge: $quantity * ($price - $basePrice),
             regularPriceTotal: $quantity * $price, savings: 0,
             productId: $product->id, productName: $product->name,
         );

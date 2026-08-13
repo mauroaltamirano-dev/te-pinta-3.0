@@ -96,6 +96,9 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
             unitPrice: $product->unit_price + ($surcharges[PriceTier::Unit->value] ?? 0),
             halfDozenPrice: $product->half_dozen_price + ($surcharges[PriceTier::HalfDozen->value] ?? 0),
             dozenPrice: $product->dozen_price + ($surcharges[PriceTier::Dozen->value] ?? 0),
+            baseUnitPrice: $product->unit_price,
+            baseHalfDozenPrice: $product->half_dozen_price,
+            baseDozenPrice: $product->dozen_price,
         ))->values()->all();
     }
 }

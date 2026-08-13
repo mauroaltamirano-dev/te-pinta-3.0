@@ -68,6 +68,8 @@ export interface PriceQuote {
     }>;
     products_subtotal?: number;
     empanadas_subtotal?: number;
+    products_base_subtotal?: number;
+    cooking_surcharge?: number;
     toppings_subtotal?: number;
     addons_subtotal?: number;
     shipping_fee?: number;
@@ -97,6 +99,8 @@ export interface AdminOrder {
     delivery_address: string | null;
     notes: string | null;
     items_subtotal: number;
+    items_base_subtotal: number | null;
+    cooking_surcharge: number | null;
     toppings_subtotal: number;
     shipping_fee: number;
     combined_dozen_savings: number;
@@ -109,6 +113,9 @@ export interface AdminOrder {
         units_count: number;
         unit_price: number;
         subtotal: number;
+        base_unit_price?: number | null;
+        base_subtotal?: number | null;
+        cooking_surcharge?: number | null;
         regular_price_total: number;
         savings: number;
         composition: Array<{ product_name: string; quantity: number }>;
@@ -127,4 +134,21 @@ export interface PaginatedOrders {
     prev_page_url: string | null;
     next_page_url: string | null;
     total: number;
+}
+
+export interface OrderInsightsProduct {
+    product_id: number;
+    name: string;
+    units_count: number;
+    image_url: string | null;
+}
+
+export interface OrderInsightsDeliveryType {
+    type: DeliveryType;
+    orders_count: number;
+}
+
+export interface OrderInsightsCondition {
+    condition: OrderCondition;
+    orders_count: number;
 }

@@ -37,7 +37,7 @@ Exact idempotent retries return the existing order. Reusing a key for a changed 
 - Customer notes are administrative only. They are not copied to orders, public resources, or WhatsApp summaries.
 - Order notes are separate and may appear in the order summary/WhatsApp message.
 - Do not log complete phone numbers, addresses, notes, request payloads, tokens, cookies, or secrets.
-- Public checkout returns only Order ID, state, payment state, backend total/summary, and WhatsApp URL.
+- Public checkout returns only Order ID, state, payment state, nullable backend base/cooking breakdown, backend total/summary, and WhatsApp URL.
 - Historical displays use order snapshots; current customer/catalog data cannot silently rewrite them.
 
 ## WhatsApp

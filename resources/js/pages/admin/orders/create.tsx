@@ -177,19 +177,19 @@ export default function CreateOrder({
 
     return (
         <>
-            <Head title="New order" />
-            <section className="grid gap-6">
+            <Head title="Nuevo pedido" />
+            <section className="grid gap-6 font-orders">
                 <header>
                     <Link
                         href="/admin/orders"
                         className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground"
                     >
-                        <ArrowLeft className="size-4" /> Orders
+                        <ArrowLeft className="size-4" /> Pedidos
                     </Link>
-                    <h1 className="text-2xl font-bold">Create order</h1>
+                    <h1 className="text-2xl font-bold">Crear pedido</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Products → Customer → Delivery → Summary. Backend
-                        pricing is authoritative.
+                        Productos → Cliente → Entrega → Resumen. El precio final
+                        siempre lo determina el sistema.
                     </p>
                 </header>
                 <form
@@ -199,12 +199,15 @@ export default function CreateOrder({
                     <div className="grid gap-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>1. Products</CardTitle>
+                                <CardTitle>1. Productos</CardTitle>
                             </CardHeader>
                             <CardContent className="grid gap-5">
                                 <div className="flex gap-2">
                                     <Button
                                         type="button"
+                                        aria-pressed={
+                                            form.data.condition === 'raw'
+                                        }
                                         variant={
                                             form.data.condition === 'raw'
                                                 ? 'default'
@@ -214,10 +217,13 @@ export default function CreateOrder({
                                             form.setData('condition', 'raw')
                                         }
                                     >
-                                        Raw
+                                        Crudo
                                     </Button>
                                     <Button
                                         type="button"
+                                        aria-pressed={
+                                            form.data.condition === 'cooked'
+                                        }
                                         variant={
                                             form.data.condition === 'cooked'
                                                 ? 'default'
@@ -227,7 +233,7 @@ export default function CreateOrder({
                                             form.setData('condition', 'cooked')
                                         }
                                     >
-                                        Cooked
+                                        Cocinado
                                     </Button>
                                 </div>
                                 <div className="grid gap-3 sm:grid-cols-2">
@@ -249,14 +255,14 @@ export default function CreateOrder({
                                                         {product.name}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        Quantity: {quantity}
+                                                        Cantidad: {quantity}
                                                     </p>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     <Button
                                                         type="button"
                                                         size="sm"
-                                                        aria-label={`Add one ${product.name}`}
+                                                        aria-label={`Agregar una unidad de ${product.name}`}
                                                         onClick={() =>
                                                             changeProduct(
                                                                 product.id,
@@ -264,12 +270,13 @@ export default function CreateOrder({
                                                             )
                                                         }
                                                     >
-                                                        <Plus /> Unit
+                                                        <Plus /> Unidad
                                                     </Button>
                                                     <Button
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
+                                                        aria-label={`Agregar media docena de ${product.name}`}
                                                         onClick={() =>
                                                             changeProduct(
                                                                 product.id,
@@ -283,6 +290,7 @@ export default function CreateOrder({
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
+                                                        aria-label={`Agregar una docena de ${product.name}`}
                                                         onClick={() =>
                                                             changeProduct(
                                                                 product.id,
@@ -297,7 +305,7 @@ export default function CreateOrder({
                                                             type="button"
                                                             size="icon"
                                                             variant="ghost"
-                                                            aria-label={`Remove one ${product.name}`}
+                                                            aria-label={`Quitar una unidad de ${product.name}`}
                                                             onClick={() =>
                                                                 changeProduct(
                                                                     product.id,
@@ -315,7 +323,7 @@ export default function CreateOrder({
                                 </div>
                                 <fieldset className="grid gap-3">
                                     <legend className="font-medium">
-                                        Toppings
+                                        Adicionales
                                     </legend>
                                     {addons.map((addon) => {
                                         const quantity =
@@ -335,7 +343,7 @@ export default function CreateOrder({
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        aria-label={`Remove one ${addon.name}`}
+                                                        aria-label={`Quitar un adicional ${addon.name}`}
                                                         onClick={() =>
                                                             changeAddon(
                                                                 addon.id,
@@ -350,7 +358,7 @@ export default function CreateOrder({
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        aria-label={`Add one ${addon.name}`}
+                                                        aria-label={`Agregar un adicional ${addon.name}`}
                                                         onClick={() =>
                                                             changeAddon(
                                                                 addon.id,
@@ -369,12 +377,12 @@ export default function CreateOrder({
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>2. Customer</CardTitle>
+                                <CardTitle>2. Cliente</CardTitle>
                             </CardHeader>
                             <CardContent className="grid gap-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="customer-selection">
-                                        Customer
+                                        Cliente
                                     </Label>
                                     <Select
                                         value={
@@ -388,7 +396,7 @@ export default function CreateOrder({
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="new">
-                                                Quick-create customer
+                                                Crear cliente rápido
                                             </SelectItem>
                                             {customers.map((customer) => (
                                                 <SelectItem
@@ -408,7 +416,7 @@ export default function CreateOrder({
                                     <>
                                         <Field
                                             id="new-customer-name"
-                                            label="Name"
+                                            label="Nombre"
                                             value={form.data.customer.name}
                                             onChange={(value) =>
                                                 form.setData('customer', {
@@ -420,7 +428,7 @@ export default function CreateOrder({
                                         />
                                         <Field
                                             id="new-customer-phone"
-                                            label="Phone"
+                                            label="Teléfono"
                                             value={form.data.customer.phone}
                                             onChange={(value) =>
                                                 form.setData('customer', {
@@ -431,7 +439,7 @@ export default function CreateOrder({
                                         />
                                         <Field
                                             id="new-customer-address"
-                                            label="Address"
+                                            label="Dirección"
                                             value={form.data.customer.address}
                                             onChange={(value) => {
                                                 form.setData((data) => ({
@@ -452,7 +460,7 @@ export default function CreateOrder({
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>3. Delivery</CardTitle>
+                                <CardTitle>3. Entrega</CardTitle>
                             </CardHeader>
                             <CardContent className="grid gap-4">
                                 <div className="flex gap-2">
@@ -470,7 +478,7 @@ export default function CreateOrder({
                                             )
                                         }
                                     >
-                                        Pickup
+                                        Retiro
                                     </Button>
                                     <Button
                                         type="button"
@@ -487,13 +495,13 @@ export default function CreateOrder({
                                             )
                                         }
                                     >
-                                        Delivery
+                                        Envío
                                     </Button>
                                 </div>
                                 {form.data.delivery_type === 'delivery' && (
                                     <Field
                                         id="delivery-address"
-                                        label="Delivery address"
+                                        label="Dirección de entrega"
                                         value={form.data.delivery_address}
                                         onChange={(value) =>
                                             form.setData(
@@ -508,7 +516,7 @@ export default function CreateOrder({
                                     id="delivery-date"
                                     type="date"
                                     min={today}
-                                    label="Delivery date"
+                                    label="Fecha de entrega"
                                     value={form.data.delivery_date}
                                     onChange={(value) =>
                                         form.setData('delivery_date', value)
@@ -517,7 +525,7 @@ export default function CreateOrder({
                                 />
                                 <div className="grid gap-2">
                                     <Label htmlFor="delivery-period">
-                                        Period
+                                        Franja horaria
                                     </Label>
                                     <Select
                                         value={form.data.delivery_period}
@@ -533,13 +541,13 @@ export default function CreateOrder({
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="midday">
-                                                Midday
+                                                Mediodía
                                             </SelectItem>
                                             <SelectItem value="afternoon">
-                                                Afternoon
+                                                Tarde
                                             </SelectItem>
                                             <SelectItem value="night">
-                                                Night
+                                                Noche
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -547,7 +555,7 @@ export default function CreateOrder({
                                 <Field
                                     id="delivery-time"
                                     type="time"
-                                    label="Optional time"
+                                    label="Hora opcional"
                                     value={form.data.delivery_time}
                                     onChange={(value) =>
                                         form.setData('delivery_time', value)
@@ -555,7 +563,7 @@ export default function CreateOrder({
                                 />
                                 <div className="grid gap-2">
                                     <Label htmlFor="order-notes">
-                                        Order notes
+                                        Notas del pedido
                                     </Label>
                                     <Textarea
                                         id="order-notes"
@@ -572,7 +580,7 @@ export default function CreateOrder({
                         </Card>
                     </div>
                     <aside className="grid content-start gap-4">
-                        <h2 className="text-lg font-semibold">4. Summary</h2>
+                        <h2 className="text-lg font-semibold">4. Resumen</h2>
                         <PriceSummary
                             quote={form.data.items.length ? quote : null}
                             loading={quoteLoading}
@@ -582,7 +590,8 @@ export default function CreateOrder({
                                 role="alert"
                                 className="text-sm text-destructive"
                             >
-                                {quoteError}
+                                No pudimos calcular el precio. Revisá los
+                                productos e intentá nuevamente.
                             </p>
                         )}
                         <label className="flex items-center gap-2 rounded-lg border p-3">
@@ -595,14 +604,15 @@ export default function CreateOrder({
                                     )
                                 }
                             />
-                            Paid
+                            Pagado
                         </label>
                         {Object.keys(form.errors).length > 0 && (
                             <p
                                 role="alert"
                                 className="text-sm text-destructive"
                             >
-                                Review the order fields and try again.
+                                Revisá los datos del pedido e intentá
+                                nuevamente.
                             </p>
                         )}
                         <Button
@@ -610,7 +620,7 @@ export default function CreateOrder({
                             size="lg"
                             disabled={form.processing || quoteLoading || !quote}
                         >
-                            Create order
+                            Crear pedido
                         </Button>
                     </aside>
                 </form>

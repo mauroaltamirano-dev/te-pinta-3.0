@@ -1,17 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatOrderMoney, pricingModeLabels } from '../presentation';
 import type { PriceQuote } from '../types';
-
-const money = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-});
-const formatLabels: Record<string, string> = {
-    unit: 'Unit',
-    half_dozen: 'Half dozen',
-    dozen: 'Dozen',
-    combined_dozen: 'Combined dozen',
-};
 export function PriceSummary({
     quote,
     loading = false,
@@ -23,7 +12,7 @@ export function PriceSummary({
         return (
             <Card aria-busy="true">
                 <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                    Calculating backend price…
+                    Calculando el precio…
                 </CardContent>
             </Card>
         );
@@ -33,7 +22,7 @@ export function PriceSummary({
         return (
             <Card>
                 <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                    Add products to see the backend price breakdown.
+                    Agregá productos para ver el desglose del precio.
                 </CardContent>
             </Card>
         );
@@ -42,7 +31,7 @@ export function PriceSummary({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Price summary</CardTitle>
+                <CardTitle>Resumen del pedido</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
                 <ul className="grid gap-3">
@@ -54,7 +43,7 @@ export function PriceSummary({
                             <div>
                                 <p className="font-medium">
                                     {line.quantity} ×{' '}
-                                    {formatLabels[
+                                    {pricingModeLabels[
                                         line.format ?? line.pricingMode ?? ''
                                     ] ??
                                         line.format ??
@@ -77,7 +66,7 @@ export function PriceSummary({
                                 )}
                             </div>
                             <span className="tabular-nums">
-                                {money.format(
+                                {formatOrderMoney.format(
                                     line.subtotal ?? line.lineTotal ?? 0,
                                 )}
                             </span>
@@ -93,7 +82,7 @@ export function PriceSummary({
                             {addon.name} ×{addon.quantity}
                         </span>
                         <span>
-                            {money.format(
+                            {formatOrderMoney.format(
                                 addon.subtotal ?? addon.lineTotal ?? 0,
                             )}
                         </span>
@@ -101,19 +90,31 @@ export function PriceSummary({
                 ))}
                 <dl className="grid gap-2 border-t pt-4 text-sm">
                     <div className="flex justify-between">
-                        <dt>Empanadas</dt>
+                        <dt>Empanadas base</dt>
                         <dd>
-                            {money.format(
-                                quote.products_subtotal ??
+                            {formatOrderMoney.format(
+                                quote.products_base_subtotal ??
+                                    quote.products_subtotal ??
                                     quote.empanadas_subtotal ??
                                     0,
                             )}
                         </dd>
                     </div>
+                    {(quote.cooking_surcharge ?? 0) > 0 && (
+                        <div className="flex justify-between">
+                            <dt>Cocción</dt>
+                            <dd>
+                                +
+                                {formatOrderMoney.format(
+                                    quote.cooking_surcharge ?? 0,
+                                )}
+                            </dd>
+                        </div>
+                    )}
                     <div className="flex justify-between">
-                        <dt>Toppings</dt>
+                        <dt>Adicionales</dt>
                         <dd>
-                            {money.format(
+                            {formatOrderMoney.format(
                                 quote.addons_subtotal ??
                                     quote.toppings_subtotal ??
                                     0,
@@ -121,15 +122,17 @@ export function PriceSummary({
                         </dd>
                     </div>
                     <div className="flex justify-between">
-                        <dt>Shipping</dt>
-                        <dd>{money.format(quote.shipping_fee ?? 0)}</dd>
+                        <dt>Envío</dt>
+                        <dd>
+                            {formatOrderMoney.format(quote.shipping_fee ?? 0)}
+                        </dd>
                     </div>
                     {(quote.savings ?? quote.combined_dozen_savings ?? 0) >
                         0 && (
                         <div className="flex justify-between text-emerald-600">
-                            <dt>Combined-dozen savings</dt>
+                            <dt>Ahorro por docena combinada</dt>
                             <dd>
-                                {money.format(
+                                {formatOrderMoney.format(
                                     quote.savings ??
                                         quote.combined_dozen_savings ??
                                         0,
@@ -139,7 +142,7 @@ export function PriceSummary({
                     )}
                     <div className="flex justify-between border-t pt-3 text-lg font-bold">
                         <dt>Total</dt>
-                        <dd>{money.format(quote.total)}</dd>
+                        <dd>{formatOrderMoney.format(quote.total)}</dd>
                     </div>
                 </dl>
             </CardContent>

@@ -16,6 +16,8 @@ The engine receives final quantities per product, one order-wide condition (`raw
 
 Initial combined prices are 16000 raw and 17500 cooked. Cooked combined-dozen price is independent; do not derive it from the standard dozen surcharge.
 
+Every quote also carries an explicit cooking breakdown. For each commercial line, the backend snapshots the raw equivalent and calculates `cooking_surcharge = applied cooked price - raw equivalent`. Unit, half-dozen, and dozen lines compare the matching product tier. A combined dozen compares its independent settings, so the initial 16000 raw / 17500 cooked pair produces a 1500 cooking surcharge, not the standard dozen surcharge of 2000. This breakdown only explains the existing applied price; it never changes the charged total.
+
 ## Deterministic grouping
 
 The algorithm is rule-driven, not a generic cheapest-price optimizer:
@@ -78,9 +80,12 @@ The initial delivery fee is the safe placeholder `0`. Configure the real value i
 Order creation persists the quote, not a reference to a future calculation:
 
 - normal lines: sold product name, mode, block quantity, unit count, applied price, subtotal;
-- combined lines: fixed price, regular comparison total, savings, and product-name/quantity composition;
+- every new line: raw-equivalent unit/base subtotal and cooking-surcharge snapshots alongside the applied values;
+- combined lines: fixed price, raw-equivalent fixed price, cooking surcharge, regular comparison total, savings, and product-name/quantity composition;
 - toppings: sold name, quantity, applied unit price, subtotal;
 - order: customer/contact snapshots, delivery address, shipping fee, subtotals, savings, total.
+
+New orders also persist aggregate base-product and cooking-surcharge values. The invariant is `items subtotal = base-product subtotal + cooking surcharge`; the final total remains `items + toppings + shipping`. Pre-existing orders keep these additive columns null because reconstructing their raw equivalent from current products or settings would rewrite history. Their summaries therefore omit the cooking line rather than inventing a value.
 
 Opening an order never reruns pricing. Current catalog, customer, topping, or setting changes must not affect existing snapshots.
 

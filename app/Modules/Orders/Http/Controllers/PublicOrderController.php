@@ -27,6 +27,8 @@ final class PublicOrderController
                 'order_id' => $order->public_id,
                 'status' => $order->status->value,
                 'payment_status' => $order->payment_status->value,
+                'items_base_subtotal' => $order->items_base_subtotal === null ? null : (int) $order->items_base_subtotal,
+                'cooking_surcharge' => $order->cooking_surcharge === null ? null : (int) $order->cooking_surcharge,
                 'total' => (int) $order->total,
                 'summary' => $formatter->format($order),
                 'whatsapp_url' => $whatsApp->for($order),

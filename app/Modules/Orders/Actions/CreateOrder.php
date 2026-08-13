@@ -47,6 +47,8 @@ final readonly class CreateOrder
                     'delivery_time' => $data->deliveryTime,
                     'delivery_address_snapshot' => $data->deliveryType->value === 'delivery' ? $data->deliveryAddress : null,
                     'notes' => $data->notes,
+                    'items_base_subtotal' => $quote->productsBaseSubtotal,
+                    'cooking_surcharge' => $quote->cookingSurcharge,
                     'items_subtotal' => $quote->productsSubtotal,
                     'toppings_subtotal' => $quote->addonsSubtotal,
                     'shipping_fee_snapshot' => $quote->shippingFee,
@@ -65,6 +67,9 @@ final readonly class CreateOrder
                         'units_count' => $line->unitsCount,
                         'unit_price' => $line->unitPrice,
                         'line_total' => $line->lineTotal,
+                        'base_unit_price' => $line->baseUnitPrice,
+                        'base_line_total' => $line->baseLineTotal,
+                        'cooking_surcharge' => $line->cookingSurcharge,
                         'regular_price_total' => $line->regularPriceTotal,
                         'savings' => $line->savings,
                     ]);

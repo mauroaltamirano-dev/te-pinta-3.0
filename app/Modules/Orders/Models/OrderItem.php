@@ -20,6 +20,9 @@ final class OrderItem extends Model
         'units_count',
         'unit_price',
         'line_total',
+        'base_unit_price',
+        'base_line_total',
+        'cooking_surcharge',
         'regular_price_total',
         'savings',
     ];
@@ -32,6 +35,9 @@ final class OrderItem extends Model
             'units_count' => 'integer',
             'unit_price' => 'integer',
             'line_total' => 'integer',
+            'base_unit_price' => 'integer',
+            'base_line_total' => 'integer',
+            'cooking_surcharge' => 'integer',
             'regular_price_total' => 'integer',
             'savings' => 'integer',
         ];

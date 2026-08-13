@@ -119,6 +119,51 @@ final class OrderPricingEngineTest extends TestCase
         $this->assertSame(17500, $combined->total);
     }
 
+    public function test_cooking_breakdown_uses_each_commercial_tier_without_changing_totals(): void
+    {
+        [$a, $b] = [$this->product('A'), $this->product('B')];
+
+        $unit = $this->engine()->quote($this->items([$a, 1]), OrderCondition::Cooked);
+        $half = $this->engine()->quote($this->items([$a, 6]), OrderCondition::Cooked);
+        $dozen = $this->engine()->quote($this->items([$a, 12]), OrderCondition::Cooked);
+        $combined = $this->engine()->quote($this->items([$a, 6], [$b, 6]), OrderCondition::Cooked);
+
+        $this->assertSame([1600, 200, 1800], [
+            $unit->lines[0]->baseLineTotal,
+            $unit->lines[0]->cookingSurcharge,
+            $unit->total,
+        ]);
+        $this->assertSame([9000, 1000, 10000], [
+            $half->lines[0]->baseLineTotal,
+            $half->lines[0]->cookingSurcharge,
+            $half->total,
+        ]);
+        $this->assertSame([16000, 2000, 18000], [
+            $dozen->lines[0]->baseLineTotal,
+            $dozen->lines[0]->cookingSurcharge,
+            $dozen->total,
+        ]);
+        $this->assertSame([16000, 1500, 17500], [
+            $combined->lines[0]->baseLineTotal,
+            $combined->lines[0]->cookingSurcharge,
+            $combined->total,
+        ]);
+        $this->assertSame(16000, $combined->productsBaseSubtotal);
+        $this->assertSame(1500, $combined->cookingSurcharge);
+        $this->assertSame(17500, $combined->productsSubtotal);
+    }
+
+    public function test_raw_quotes_snapshot_the_applied_price_as_base_with_zero_cooking(): void
+    {
+        $product = $this->product('A');
+        $quote = $this->engine()->quote($this->items([$product, 18]), OrderCondition::Raw);
+
+        $this->assertSame(25000, $quote->productsBaseSubtotal);
+        $this->assertSame(0, $quote->cookingSurcharge);
+        $this->assertSame(25000, $quote->productsSubtotal);
+        $this->assertSame([0, 0], array_column($quote->toArray()['lines'], 'cookingSurcharge'));
+    }
+
     public function test_positive_combined_savings_are_reported_but_never_negative(): void
     {
         [$a, $b] = [$this->product('A'), $this->product('B')];
