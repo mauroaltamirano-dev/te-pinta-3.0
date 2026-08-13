@@ -4,13 +4,20 @@ import type { PriceQuote } from '../types';
 export function PriceSummary({
     quote,
     loading = false,
+    compact = false,
 }: {
     quote: PriceQuote | null;
     loading?: boolean;
+    compact?: boolean;
 }) {
     if (loading) {
         return (
-            <Card aria-busy="true">
+            <Card
+                aria-busy="true"
+                className={
+                    compact ? 'border-0 bg-transparent shadow-none' : undefined
+                }
+            >
                 <CardContent className="py-10 text-center text-sm text-muted-foreground">
                     Calculando el precio…
                 </CardContent>
@@ -20,7 +27,11 @@ export function PriceSummary({
 
     if (!quote) {
         return (
-            <Card>
+            <Card
+                className={
+                    compact ? 'border-0 bg-transparent shadow-none' : undefined
+                }
+            >
                 <CardContent className="py-10 text-center text-sm text-muted-foreground">
                     Agregá productos para ver el desglose del precio.
                 </CardContent>
@@ -29,11 +40,17 @@ export function PriceSummary({
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Resumen del pedido</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
+        <Card
+            className={
+                compact ? 'border-0 bg-transparent shadow-none' : undefined
+            }
+        >
+            {!compact && (
+                <CardHeader>
+                    <CardTitle>Resumen del pedido</CardTitle>
+                </CardHeader>
+            )}
+            <CardContent className={compact ? 'grid gap-4 p-0' : 'grid gap-4'}>
                 <ul className="grid gap-3">
                     {(quote.lines ?? quote.items ?? []).map((line, index) => (
                         <li

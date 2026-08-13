@@ -6,6 +6,7 @@ use App\Modules\Orders\Http\Controllers\OrderPricingController;
 use App\Modules\Orders\Http\Controllers\OrderStatusController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', [OrderManagementController::class, 'home'])->name('home');
 Route::get('/orders', [OrderManagementController::class, 'index'])->name('orders.index');
 Route::get('/orders/create', [OrderManagementController::class, 'create'])->name('orders.create');
 Route::post('/orders', [OrderManagementController::class, 'store'])->name('orders.store');

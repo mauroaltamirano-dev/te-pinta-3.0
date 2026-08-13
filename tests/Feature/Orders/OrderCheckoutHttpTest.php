@@ -241,6 +241,31 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertSoftDeleted($order);
     }
 
+    public function test_admin_json_store_creates_exactly_one_waiting_order_with_selected_payment_status(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = Customer::query()->create(['name' => 'Quick POS customer']);
+        $payload = $this->payload();
+        unset($payload['idempotency_key'], $payload['customer']);
+        $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 6]];
+        $payload['customer_id'] = $customer->id;
+        $payload['payment_status'] = 'paid';
+
+        $response = $this->actingAs($admin)->postJson(route('admin.orders.store'), $payload);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'waiting')
+            ->assertJsonPath('data.payment_status', 'paid')
+            ->assertJsonPath('data.total', 9000);
+        $this->assertDatabaseCount('orders', 1);
+
+        $order = Order::query()->sole();
+        $this->assertMatchesRegularExpression('/^TP-\d{6}$/', $response->json('data.order_id'));
+        $this->assertSame($order->public_id, $response->json('data.order_id'));
+        $this->assertSame('waiting', $order->status->value);
+        $this->assertSame('paid', $order->payment_status->value);
+    }
+
     public function test_admin_quick_create_does_not_silently_attach_duplicate_phone(): void
     {
         $admin = User::factory()->administrator()->create();

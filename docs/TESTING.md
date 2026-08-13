@@ -14,6 +14,8 @@ Tests prove backend authority, historical stability, and the two order creation 
 | `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                                    |
 | `tests/Unit/Core/TestingDatabaseGuardTest.php`              | Testing-only database-name boundary, `DB_URL` precedence, and non-testing bypass                                                                |
 | `tests/e2e/orders.spec.ts`                                  | Cooked POS breakdown, insights panel, drawer/full detail, status/payment/copy, history navigation, desktop/mobile                               |
+| `tests/Feature/Orders/AdminQuickOrderHomeTest.php`          | Quick Home authorization, sellable catalog/category filtering, props, and Dashboard separation                                                  |
+| `tests/e2e/admin-quick-order.spec.ts`                       | Fast quantities, backend preview, continuation, exact-one confirmation, cancel/discard non-persistence, and screenshots                         |
 | `tests/Feature/Orders/OrderDashboardDataTest.php`           | Real most-ordered product aggregation, combined-dozen composition, images, delivery and cooking-condition distributions, soft deletes           |
 | `tests/e2e/public-checkout.spec.ts`                         | Persistence before mocked WhatsApp navigation                                                                                                   |
 
@@ -44,6 +46,8 @@ The pricing matrix includes 5/6/7/12/18 of one product, 3+3, 6+3+3, 6+6, and 24 
 ```
 
 `composer ci:check` combines frontend lint/format/types with `composer test`; it does not run Vite build, Playwright, or dependency audits.
+
+Quick Order visual captures are written to `storage/app/admin-quick-order-home.png` and `storage/app/admin-quick-order-continuation.png`. They are verification artifacts and are not versioned.
 
 ## Required regression invariants
 

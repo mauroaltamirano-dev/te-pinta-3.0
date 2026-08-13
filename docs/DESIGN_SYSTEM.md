@@ -93,6 +93,14 @@ Orders uses the locally bundled Barlow 400/500/600 family from `resources/fonts/
 
 ## Orders composition and detail navigation
 
+### Quick Order Home
+
+`resources/js/pages/admin/home.tsx` follows the 1194 × 834 POS reference as a real responsive composition: the existing 104 px rail, a fluid catalog column resolving to 681 px, and a 409 px current-order panel. The catalog keeps 24 px insets; at the reference width this leaves 633 px for three 192 × 260 cards with 28 px gaps and 132 px circular artwork.
+
+Category tabs, selected quantities, empty/loading/error states, and the coral action use the existing `admin-*` tokens. The continuation stage uses the shared Sheet primitive with a 70% black overlay and an 814 px maximum panel split into two content columns. It reuses Te Pinta fields rather than the template payment UI. Below the content-driven two-column threshold, the order becomes an accessible bottom sheet instead of shrinking the POS columns.
+
+`use-admin-order-draft.ts` owns local in-memory behavior, backend preview coordination, stale-response protection, and submission locking. `AdminOrderDetailsFields`, `AdminProductSelector`, and `PriceSummary` are shared with `/admin/orders/create`; the Home-specific catalog and current-order panel remain separate presentations.
+
 `resources/js/pages/admin/orders/index.tsx` adapts the Figma dashboard into an Orders workspace: compact summary cards lead into filters and the operational report table. It does not copy template restaurant data.
 
 Selecting a TP identifier requests `/admin/orders?order=TP-*` through Inertia and opens `OrderDetailDrawer` while keeping the filtered list visible. Closing the drawer removes only the selection, so browser back/forward remains meaningful. Direct `/admin/orders/{public_id}` links still render the full page. Both surfaces compose the same `OrderDetailContent`; pricing, labels, and operations are not duplicated.

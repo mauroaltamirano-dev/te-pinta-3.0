@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 const destinations = [
-    { label: 'Dashboard', path: '/admin', expectedPath: '/admin' },
+    { label: 'Inicio', path: '/admin', expectedPath: '/admin' },
+    {
+        label: 'Dashboard',
+        path: '/admin/dashboard',
+        expectedPath: '/admin/dashboard',
+    },
     { label: 'Pedidos', path: '/admin/orders', expectedPath: '/admin/orders' },
     {
         label: 'Clientes',

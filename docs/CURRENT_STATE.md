@@ -10,12 +10,16 @@ Te Pinta 3.0 currently has a complete ordering vertical slice: catalog and confi
 | Settings          | Combined-dozen raw/cooked prices, delivery fee, WhatsApp number, and toppings                                                      |
 | Customers         | CRUD, normalized optional phone, private notes, order history, and effective spend                                                 |
 | Admin orders      | Creation, search/filtering, operational list, detail drawer, full detail, status/payment changes, copy, and soft delete            |
+| Admin Home        | Product-first Quick Order POS with local draft, backend preview, continuation sheet, and final confirmation                        |
 | Public checkout   | Menu, session cart, backend preview, safe customer matching, idempotent persistence, and WhatsApp handoff                          |
 | Pricing           | Unit, half-dozen, dozen, combined dozen, toppings, shipping, savings, and explicit cooking breakdown                               |
 | Historical safety | Product/customer/delivery/topping/base/cooking values are snapshotted; legacy cooking is never reconstructed from current settings |
 
 ## Orders UI
 
+- `/admin` is the operational Home: catalog cards increment real empanada quantities, while the fixed order panel renders the authoritative backend preview.
+- **Continuar** opens the customer/condition/addons/fulfillment/payment sheet without persisting. Only **Confirmar pedido** calls the existing admin order store and `CreateOrder` boundary.
+- The same draft hook and field components power `/admin/orders/create`, which remains the complete fallback flow. Dashboard is available at `/admin/dashboard`.
 - `/admin/orders` uses a Figma-aligned two-column operational workspace.
 - Selecting an order opens a right drawer through `/admin/orders?order=TP-*`; direct `/admin/orders/{public_id}` remains the full detail page.
 - `OrderDetailContent` is shared by drawer and full detail.
@@ -33,7 +37,6 @@ Te Pinta 3.0 currently has a complete ordering vertical slice: catalog and confi
 
 ## Intentionally deferred
 
-- The current `/admin` dashboard page remains a placeholder until the quick-order Home slice described in [ADMIN_QUICK_ORDER.md](design/ADMIN_QUICK_ORDER.md) is implemented.
 - Analytics and Inventory remain route/page boundaries without invented business behavior.
 - Online payment is not part of the product; checkout confirmation uses WhatsApp.
 

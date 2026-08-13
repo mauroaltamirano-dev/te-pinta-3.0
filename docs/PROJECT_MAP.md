@@ -19,6 +19,7 @@ Use this map to change a rule at its owner instead of searching the whole reposi
 | Customer matching/normalization                        | `app/Modules/Customers/Support/PhoneNormalizer.php`, `app/Modules/Orders/Actions/CreateOrder.php`                             |
 | Customer CRUD/history                                  | `app/Modules/Customers/` and `resources/js/pages/admin/customers/`                                                            |
 | Admin order list/POS/detail/drawer                     | `app/Modules/Orders/Http/`, `resources/js/pages/admin/orders/`, `resources/js/features/orders/`                               |
+| Admin Quick Order Home and shared draft                | `resources/js/pages/admin/home.tsx`, `resources/js/features/orders/hooks/use-admin-order-draft.ts`, shared order components   |
 | Orders insights panel and aggregates                   | `app/Modules/Orders/Actions/BuildOrderDashboardData.php`, `resources/js/features/orders/components/orders-insights-panel.tsx` |
 | Shared order detail content and presentation labels    | `resources/js/features/orders/components/order-detail-content.tsx`, `presentation.ts`                                         |
 | Public menu/cart/checkout                              | `app/Modules/PublicSite/routes.php`, `resources/js/pages/public/menu.tsx`, `resources/js/pages/public/cart.tsx`               |
@@ -87,3 +88,5 @@ There is no public customer lookup endpoint.
 | Quality configuration                | `composer.json`, `package.json`, `phpstan.neon`, `pint.json`, `playwright.config.ts`                                                        |
 
 Generated Wayfinder files under `resources/js/routes/`, `resources/js/actions/`, and `resources/js/wayfinder/` are outputs. Change their PHP source, not the generated files.
+
+`GET /admin` is owned by Orders and renders the Quick Order Home. `GET /admin/dashboard` preserves Dashboard as a secondary destination. Quick confirmation negotiates JSON from the existing `POST /admin/orders`; the full create route still receives its redirect response.

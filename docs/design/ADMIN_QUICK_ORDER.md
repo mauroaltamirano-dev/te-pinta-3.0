@@ -1,6 +1,6 @@
-# Admin Home quick-order brief
+# Admin Home quick-order implementation
 
-The next administrative slice replaces the placeholder dashboard at `/admin` with the fastest path to create an order. Dashboard analytics becomes a secondary destination; Home becomes a product-first POS.
+The administrative Home at `/admin` is the fastest path to create an order. Dashboard remains available at `/admin/dashboard`; Home is the product-first POS.
 
 ## Target experience
 
@@ -49,6 +49,19 @@ The CSS exported by the user is measurement evidence, not production CSS. Implem
 - Use real product categories, images, names, availability, and prices; never copy template dishes.
 - Keep Home draft state local to the administrative flow unless an explicit persistence requirement is added.
 
+## Implemented ownership
+
+| Responsibility                                                             | Owner                                                                    |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| In-memory draft, quantity/addon mutations, preview sequencing, submit lock | `features/orders/hooks/use-admin-order-draft.ts`                         |
+| Shared customer, condition, addons, fulfillment, notes, and payment fields | `features/orders/components/admin-order-details-fields.tsx`              |
+| Backend economic breakdown                                                 | shared `PriceSummary` calling `POST /admin/orders/price-preview`         |
+| Final persistence                                                          | existing `POST /admin/orders` → `StoreAdminOrderRequest` → `CreateOrder` |
+| Quick presentation                                                         | `pages/admin/home.tsx` plus Quick Order catalog/current-order components |
+| Full fallback presentation                                                 | `pages/admin/orders/create.tsx` using the same hook and shared fields    |
+
+The store negotiates a JSON confirmation for Quick Order and preserves the Inertia redirect for full create. Both responses execute the same validated transaction. Closing/cancelling only changes React state; explicit discard resets that state; neither performs a persistence request.
+
 ## Navigation and state
 
 - `/admin` is the canonical quick-order entry.
@@ -58,12 +71,12 @@ The CSS exported by the user is measurement evidence, not production CSS. Implem
 
 ## Acceptance checklist
 
-- [ ] Clicking a product increments the draft and updates the backend preview.
-- [ ] Quantities can be changed and lines removed from the order panel.
-- [ ] Continue is unavailable for an empty draft.
-- [ ] The details stage reuses every field and rule from admin order creation.
-- [ ] Raw/cooked base and cooking surcharge remain explicit without changing total.
-- [ ] Cancel never persists an order; confirm persists exactly one.
-- [ ] Direct `/admin/orders/create` still works.
-- [ ] Keyboard, tablet, mobile, long-name, missing-image, and long-order states are covered.
-- [ ] Playwright compares stage one and stage two against the supplied screenshots.
+- [x] Clicking a product increments the draft and updates the backend preview.
+- [x] Quantities can be changed and lines removed from the order panel.
+- [x] Continue is unavailable for an empty draft.
+- [x] The details stage reuses every field and rule from admin order creation.
+- [x] Raw/cooked base and cooking surcharge remain explicit without changing total.
+- [x] Cancel never persists an order; confirm persists exactly one.
+- [x] Direct `/admin/orders/create` still works.
+- [x] Keyboard, tablet, mobile, long-name, missing-image, and long-order states are covered by responsive/accessibility behavior and browser tests.
+- [x] Playwright captures stage one and stage two for comparison with the supplied screenshots.

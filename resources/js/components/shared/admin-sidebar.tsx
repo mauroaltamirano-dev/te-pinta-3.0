@@ -18,7 +18,8 @@ import {
 import { cn } from '@/lib/utils';
 
 const navigation = [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { label: 'Inicio', href: '/admin', icon: Store },
+    { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Pedidos', href: '/admin/orders', icon: ShoppingBasket },
     { label: 'Clientes', href: '/admin/customers', icon: Users },
     { label: 'Analíticas', href: '/admin/analytics', icon: BarChart3 },
@@ -49,7 +50,7 @@ export function AdminSidebar() {
 
             <nav
                 aria-label="Administration navigation"
-                className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:h-[38.25rem] md:w-[5.75rem] md:flex-none md:flex-col md:overflow-visible"
+                className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:min-h-0 md:w-[5.75rem] md:flex-col md:overflow-visible"
             >
                 {navigation.map(({ label, href, icon: Icon }) => {
                     const active =
@@ -61,7 +62,7 @@ export function AdminSidebar() {
                         <div
                             key={href}
                             data-active={active}
-                            className="admin-nav-slot relative flex size-12 shrink-0 items-center justify-center md:h-[6.375rem] md:w-[5.75rem] md:justify-start md:pl-3"
+                            className="admin-nav-slot relative flex size-12 shrink-0 items-center justify-center md:min-h-[4.5rem] md:w-[5.75rem] md:flex-1 md:justify-start md:pl-3"
                         >
                             <Tooltip>
                                 <TooltipTrigger asChild>
