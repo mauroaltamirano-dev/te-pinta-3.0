@@ -99,7 +99,8 @@ export default function CreateOrder({
                             disabled={
                                 draft.form.processing ||
                                 draft.quoteLoading ||
-                                !draft.quote
+                                !draft.quote ||
+                                !draft.paymentReady
                             }
                         >
                             Crear pedido

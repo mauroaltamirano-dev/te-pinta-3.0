@@ -97,6 +97,10 @@
     --color-admin-text-primary: #ffffff;
     --color-admin-text-secondary: #abbcc2;
     --color-admin-text-tertiary: #889898;
+    --color-ticket-paper: #fff8ed;
+    --color-ticket-ink: #2f2925;
+    --color-ticket-muted: #796e66;
+    --color-ticket-rule: #d9cbbd;
     --shadow-admin-nav-active: 0 8px 12px rgb(234 124 105 / 32%);
 }
 

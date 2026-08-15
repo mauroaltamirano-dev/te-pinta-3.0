@@ -3,7 +3,9 @@ export type DeliveryType = 'delivery' | 'pickup';
 export type DeliveryPeriod = 'midday' | 'afternoon' | 'night';
 export type OrderStatus =
     'pending_confirmation' | 'waiting' | 'prepared' | 'delivered' | 'cancelled';
-export type PaymentStatus = 'paid' | 'unpaid';
+export type PaymentStatus = 'paid' | 'unpaid' | 'not_required';
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'debit_card';
+export type DiscountType = 'percentage' | 'fixed_amount';
 
 export interface PublicProduct {
     slug: string;
@@ -75,6 +77,10 @@ export interface PriceQuote {
     shipping_fee?: number;
     combined_dozen_savings?: number;
     savings?: number;
+    discountable_subtotal?: number;
+    discount_type?: DiscountType | null;
+    discount_value?: number | null;
+    discount_amount?: number;
     total: number;
 }
 export interface CreatedOrderResponse {
@@ -91,6 +97,7 @@ export interface AdminOrder {
     source: string;
     status: OrderStatus;
     payment_status: PaymentStatus;
+    payment_method?: PaymentMethod | null;
     condition: OrderCondition;
     delivery_type: DeliveryType;
     delivery_period: DeliveryPeriod;
@@ -104,6 +111,9 @@ export interface AdminOrder {
     toppings_subtotal: number;
     shipping_fee: number;
     combined_dozen_savings: number;
+    discount_type?: DiscountType | null;
+    discount_value?: number | null;
+    discount_amount?: number;
     total: number;
     version?: number;
     items?: Array<{

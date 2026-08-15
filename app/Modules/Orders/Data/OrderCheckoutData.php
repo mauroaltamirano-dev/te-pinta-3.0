@@ -5,7 +5,9 @@ namespace App\Modules\Orders\Data;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Enums\DeliveryPeriod;
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
+use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -30,6 +32,9 @@ final readonly class OrderCheckoutData
         public ?string $customerPhoneNormalized,
         public ?string $customerAddress,
         public PaymentStatus $paymentStatus,
+        public ?PaymentMethod $paymentMethod = null,
+        public ?DiscountType $discountType = null,
+        public ?int $discountValue = null,
         public ?string $idempotencyKey = null,
     ) {}
 
@@ -64,6 +69,9 @@ final readonly class OrderCheckoutData
             customerPhoneNormalized: $customerPhoneNormalized,
             customerAddress: $customerAddress,
             paymentStatus: $public ? PaymentStatus::Unpaid : PaymentStatus::from($request->validated('payment_status', 'unpaid')),
+            paymentMethod: $public ? null : ($request->validated('payment_method') === null ? null : PaymentMethod::from($request->validated('payment_method'))),
+            discountType: $public || $request->validated('discount_type') === null ? null : DiscountType::from($request->validated('discount_type')),
+            discountValue: $public ? null : $request->validated('discount_value'),
             idempotencyKey: $public ? $request->validated('idempotency_key') : null,
         );
     }

@@ -113,6 +113,7 @@ final class AdminOrderEditingTest extends TestCase
         $payload['delivery_address'] = 'Order-only corrected address';
         $payload['customer_id'] = $other->id;
         $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'debit_card';
         $payload['notes'] = 'Private corrected note';
         $payload['delivery_period'] = 'midday';
         $payload['delivery_time'] = '12:30';
@@ -128,9 +129,29 @@ final class AdminOrderEditingTest extends TestCase
         $this->assertSame('Other private address', $other->fresh()->address);
         $this->assertSame('paid', $order->payment_status->value);
         $revision = $order->revisions()->sole();
-        $this->assertSame(['fields' => ['customer', 'items', 'condition', 'delivery_type', 'delivery_period', 'delivery_time', 'delivery_address', 'notes', 'payment_status'], 'economic_change' => true], $revision->changed_fields);
+        $this->assertSame(['fields' => ['customer', 'items', 'condition', 'delivery_type', 'delivery_period', 'delivery_time', 'delivery_address', 'notes', 'payment_status', 'payment_method'], 'economic_change' => true], $revision->changed_fields);
         $this->assertStringNotContainsString('Order-only corrected address', json_encode($revision->changed_fields, JSON_THROW_ON_ERROR));
         $this->assertStringNotContainsString('Private corrected note', json_encode($revision->changed_fields, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_selected_customer_hydration_does_not_trigger_its_own_phone_unique_rule(): void
+    {
+        $this->customer->update(['phone_normalized' => '111']);
+        $order = $this->createOrder(OrderStatus::Waiting);
+        $payload = $this->updatePayload($order);
+        $payload['customer'] = [
+            'name' => $this->customer->name,
+            'phone' => $this->customer->phone,
+            'address' => $this->customer->address,
+        ];
+        $payload['delivery_type'] = 'delivery';
+        $payload['delivery_address'] = 'Address used only by this order';
+
+        $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $this->assertSame('Address used only by this order', $order->fresh()->delivery_address_snapshot);
+        $this->assertSame('Private customer address', $this->customer->fresh()->address);
     }
 
     public function test_concurrency_and_unavailable_historical_policy_are_enforced(): void
@@ -148,7 +169,7 @@ final class AdminOrderEditingTest extends TestCase
         $payload['items'][0]['quantity'] = 7;
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertSessionHasErrors('items');
 
-        $this->actingAs($this->admin)->patch(route('admin.orders.payment-status.update', $order), ['payment_status' => 'paid'])->assertRedirect();
+        $this->actingAs($this->admin)->patch(route('admin.orders.payment-status.update', $order), ['payment_status' => 'paid', 'payment_method' => 'cash'])->assertRedirect();
         $payload['items'][0]['quantity'] = 6;
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertSessionHasErrors('expected_version');
         $this->assertSame(3, $order->refresh()->edit_version);
@@ -182,6 +203,54 @@ final class AdminOrderEditingTest extends TestCase
             (int) $order->items_base_subtotal, (int) $order->cooking_surcharge,
             (int) $order->toppings_subtotal, (int) $order->shipping_fee_snapshot, (int) $order->total,
         ]);
+    }
+
+    public function test_edit_reprices_discount_and_versions_payment_method_changes(): void
+    {
+        $order = $this->createOrder(OrderStatus::Waiting);
+        $payload = $this->updatePayload($order);
+        $payload['discount_type'] = 'fixed_amount';
+        $payload['discount_value'] = 2000;
+        $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'bank_transfer';
+
+        $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
+        $order->refresh();
+        $this->assertSame(7000, (int) $order->total);
+        $this->assertSame(2000, (int) $order->discount_amount);
+        $this->assertSame('bank_transfer', $order->payment_method->value);
+        $this->assertSame(['fields' => ['payment_status', 'payment_method', 'discount'], 'economic_change' => true], $order->revisions()->sole()->changed_fields);
+
+        $payload['expected_version'] = 2;
+        $payload['payment_method'] = 'cash';
+        $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
+        $order->refresh();
+        $this->assertSame(7000, (int) $order->total);
+        $this->assertSame(3, $order->edit_version);
+        $this->assertSame('cash', $order->payment_method->value);
+        $this->assertFalse($order->revisions()->latest('id')->firstOrFail()->changed_fields['economic_change']);
+
+        $this->actingAs($this->admin)->patch(route('admin.orders.payment-status.update', $order), ['payment_status' => 'unpaid'])->assertRedirect();
+        $order->refresh();
+        $this->assertNull($order->payment_method);
+        $this->assertSame(4, $order->edit_version);
+    }
+
+    public function test_economic_edit_to_zero_total_clears_payment_without_fabricating_one(): void
+    {
+        $order = $this->createOrder(OrderStatus::Waiting);
+        $payload = $this->updatePayload($order);
+        $payload['discount_type'] = 'percentage';
+        $payload['discount_value'] = 100;
+        $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'cash';
+
+        $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
+
+        $order->refresh();
+        $this->assertSame(0, (int) $order->total);
+        $this->assertSame('not_required', $order->payment_status->value);
+        $this->assertNull($order->payment_method);
     }
 
     public function test_current_configuration_is_snapshotted_only_when_economic_edit_is_confirmed(): void

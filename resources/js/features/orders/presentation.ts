@@ -3,6 +3,7 @@ import type {
     DeliveryType,
     OrderCondition,
     OrderStatus,
+    PaymentMethod,
     PaymentStatus,
 } from '@/features/orders/types';
 
@@ -25,6 +26,13 @@ export const orderStatusStyles: Record<OrderStatus, string> = {
 export const paymentStatusLabels: Record<PaymentStatus, string> = {
     paid: 'Pagado',
     unpaid: 'No pagado',
+    not_required: 'No requiere pago',
+};
+
+export const paymentMethodLabels: Record<PaymentMethod, string> = {
+    cash: 'Efectivo',
+    bank_transfer: 'Transferencia',
+    debit_card: 'Débito',
 };
 
 export const orderConditionLabels: Record<OrderCondition, string> = {
@@ -57,3 +65,9 @@ export const formatOrderMoney = new Intl.NumberFormat('es-AR', {
     currency: 'ARS',
     maximumFractionDigits: 0,
 });
+
+export function formatOrderDate(value: string): string {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+}

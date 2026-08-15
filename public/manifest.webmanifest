@@ -1,0 +1,46 @@
+{
+    "id": "/admin",
+    "name": "Te Pinta 3.0",
+    "short_name": "Te Pinta",
+    "description": "Administración y carga rápida de pedidos de Te Pinta.",
+    "start_url": "/admin",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#252836",
+    "theme_color": "#1f1d2b",
+    "icons": [
+        {
+            "src": "/icons/te-pinta-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/te-pinta-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/te-pinta-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Crear pedido",
+            "short_name": "Nuevo pedido",
+            "description": "Abrir el formulario administrativo de pedidos.",
+            "url": "/admin/orders/create",
+            "icons": [
+                {
+                    "src": "/icons/te-pinta-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ]
+}

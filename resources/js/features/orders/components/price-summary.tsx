@@ -138,6 +138,29 @@ export function PriceSummary({
                             )}
                         </dd>
                     </div>
+                    {quote.discount_type !== null &&
+                        quote.discount_type !== undefined &&
+                        quote.discountable_subtotal !== undefined && (
+                            <div className="flex justify-between border-t pt-2 font-medium">
+                                <dt>Subtotal descontable</dt>
+                                <dd>
+                                    {formatOrderMoney.format(
+                                        quote.discountable_subtotal,
+                                    )}
+                                </dd>
+                            </div>
+                        )}
+                    {(quote.discount_amount ?? 0) > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                            <dt>Descuento</dt>
+                            <dd>
+                                −
+                                {formatOrderMoney.format(
+                                    quote.discount_amount ?? 0,
+                                )}
+                            </dd>
+                        </div>
+                    )}
                     <div className="flex justify-between">
                         <dt>Envío</dt>
                         <dd>
@@ -159,7 +182,9 @@ export function PriceSummary({
                     )}
                     <div className="flex justify-between border-t pt-3 text-lg font-bold">
                         <dt>Total</dt>
-                        <dd>{formatOrderMoney.format(quote.total)}</dd>
+                        <dd data-testid="order-total" aria-live="polite">
+                            {formatOrderMoney.format(quote.total)}
+                        </dd>
                     </div>
                 </dl>
             </CardContent>

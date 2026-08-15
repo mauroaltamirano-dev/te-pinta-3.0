@@ -26,7 +26,6 @@ import type {
     PublicProduct,
 } from '@/features/orders/types';
 
-const today = new Date().toISOString().slice(0, 10);
 export default function Cart() {
     const cart = useCart();
     const [catalog, setCatalog] = useState<PublicProduct[]>([]);
@@ -35,7 +34,8 @@ export default function Cart() {
     const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
     const [deliveryPeriod, setDeliveryPeriod] =
         useState<DeliveryPeriod>('night');
-    const [deliveryDate, setDeliveryDate] = useState(today);
+    const [businessToday, setBusinessToday] = useState('');
+    const [deliveryDate, setDeliveryDate] = useState('');
     const [deliveryTime, setDeliveryTime] = useState('');
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -55,11 +55,15 @@ export default function Cart() {
             fetch('/checkout/options', {
                 headers: { Accept: 'application/json' },
             }).then((response) => response.json()) as Promise<{
-                data: { addons: OrderAddon[] };
+                data: { addons: OrderAddon[]; today: string };
             }>,
         ]).then(([catalogPayload, optionsPayload]) => {
             setCatalog(catalogPayload.data);
             setAvailableAddons(optionsPayload.data.addons);
+            setBusinessToday(optionsPayload.data.today);
+            setDeliveryDate(
+                (currentDate) => currentDate || optionsPayload.data.today,
+            );
         });
     }, []);
     const requestBody = useMemo(
@@ -421,7 +425,7 @@ export default function Cart() {
                                         value={deliveryDate}
                                         onChange={setDeliveryDate}
                                         required
-                                        min={today}
+                                        min={businessToday || undefined}
                                     />
                                     <div className="grid gap-2">
                                         <Label htmlFor="delivery-period">
@@ -490,7 +494,9 @@ export default function Cart() {
                             <Button
                                 type="submit"
                                 size="lg"
-                                disabled={submitting || loadingQuote}
+                                disabled={
+                                    submitting || loadingQuote || !businessToday
+                                }
                             >
                                 {submitting
                                     ? 'Creating order…'

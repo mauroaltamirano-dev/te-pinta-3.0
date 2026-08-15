@@ -1,4 +1,26 @@
 import { expect, test } from '@playwright/test';
+
+test('public checkout hydrates its minimum delivery date from options.today', async ({
+    page,
+}) => {
+    await page.route('**/checkout/options', async (route) => {
+        await route.fulfill({
+            json: { data: { addons: [], today: '2026-08-13' } },
+        });
+    });
+    await page.goto('/menu');
+    const product = page
+        .getByText('Salteña', { exact: true })
+        .locator('xpath=ancestor::*[.//button[normalize-space()="Unit"]][1]');
+    await product.getByRole('button', { name: 'Add one Salteña' }).click();
+    await page.getByRole('link', { name: /View cart/ }).click();
+    await expect(page.getByLabel('Delivery date')).toHaveValue('2026-08-13');
+    await expect(page.getByLabel('Delivery date')).toHaveAttribute(
+        'min',
+        '2026-08-13',
+    );
+});
+
 test('public checkout persists an order before opening WhatsApp', async ({
     page,
 }) => {

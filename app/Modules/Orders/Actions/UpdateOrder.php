@@ -5,6 +5,8 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Enums\PaymentMethod;
+use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use Carbon\CarbonImmutable;
@@ -19,6 +21,7 @@ final readonly class UpdateOrder
         private ResolveOrderCustomer $customers,
         private PersistOrderQuote $quotes,
         private BuildAdminOrderFormOptions $formOptions,
+        private ResolveOrderPayment $payments,
     ) {}
 
     public function execute(
@@ -46,9 +49,23 @@ final readonly class UpdateOrder
             $economicChange = $oldItems !== $newItems
                 || $oldAddons !== $newAddons
                 || $locked->condition !== $data->condition
-                || $locked->delivery_type !== $data->deliveryType;
+                || $locked->delivery_type !== $data->deliveryType
+                || $locked->discount_type !== $data->discountType
+                || $locked->discount_value !== $data->discountValue;
             $beforeTotal = (int) $locked->total;
-            $changedFields = $this->changedFields($locked, $data, $status, $oldItems, $newItems, $oldAddons, $newAddons);
+            $quote = $economicChange
+                ? $this->pricing->quote(
+                    $data->items,
+                    $data->condition,
+                    $data->addons,
+                    $data->deliveryType,
+                    $data->discountType,
+                    $data->discountValue,
+                )
+                : null;
+            $paymentTotal = $economicChange ? $quote->total : $beforeTotal;
+            $payment = $this->payments->forTotal($paymentTotal, $data->paymentStatus, $data->paymentMethod);
+            $changedFields = $this->changedFields($locked, $data, $status, $payment['status'], $payment['method'], $oldItems, $newItems, $oldAddons, $newAddons);
 
             $customerAttributes = [];
             if ($data->customerId !== $locked->customer_id) {
@@ -63,7 +80,8 @@ final readonly class UpdateOrder
             $attributes = [
                 ...$customerAttributes,
                 'status' => $status,
-                'payment_status' => $data->paymentStatus,
+                'payment_status' => $payment['status'],
+                'payment_method' => $payment['method'],
                 'condition' => $data->condition,
                 'delivery_type' => $data->deliveryType,
                 'delivery_period' => $data->deliveryPeriod,
@@ -77,7 +95,7 @@ final readonly class UpdateOrder
             if ($economicChange) {
                 // Current sellability is deliberately revalidated here. Historical unavailable
                 // selections can survive only while the economic selection remains unchanged.
-                $quote = $this->pricing->quote($data->items, $data->condition, $data->addons, $data->deliveryType);
+                assert($quote !== null);
                 $attributes = [...$attributes, ...$this->quotes->totals($quote)];
                 $locked->update($attributes);
                 $this->quotes->execute($locked, $quote, true);
@@ -130,7 +148,7 @@ final readonly class UpdateOrder
      * @param  array<int, int>  $newAddons
      * @return array<int, string>
      */
-    private function changedFields(Order $order, OrderCheckoutData $data, OrderStatus $status, array $oldItems, array $newItems, array $oldAddons, array $newAddons): array
+    private function changedFields(Order $order, OrderCheckoutData $data, OrderStatus $status, PaymentStatus $paymentStatus, ?PaymentMethod $paymentMethod, array $oldItems, array $newItems, array $oldAddons, array $newAddons): array
     {
         $changes = [];
         $comparisons = [
@@ -144,7 +162,9 @@ final readonly class UpdateOrder
             'delivery_time' => ($order->delivery_time === null ? null : CarbonImmutable::parse($order->delivery_time)->format('H:i')) !== $data->deliveryTime,
             'delivery_address' => ($order->delivery_address_snapshot ?? null) !== $data->deliveryAddress,
             'notes' => ($order->notes ?? null) !== $data->notes,
-            'payment_status' => $order->payment_status !== $data->paymentStatus,
+            'payment_status' => $order->payment_status !== $paymentStatus,
+            'payment_method' => $order->payment_method !== $paymentMethod,
+            'discount' => $order->discount_type !== $data->discountType || $order->discount_value !== $data->discountValue,
             'status' => $order->status !== $status,
         ];
         foreach ($comparisons as $field => $changed) {

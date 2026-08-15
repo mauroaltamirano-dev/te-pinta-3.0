@@ -25,7 +25,7 @@ PostgreSQL is the application database and the final integrity boundary. Migrati
 
 ## Orders and snapshots
 
-`orders` stores customer reference plus customer name/phone snapshots; source; operational/payment state; raw/cooked condition; delivery type/date/period/time; delivery address snapshot; order notes; subtotal/savings/shipping/total values; optional public idempotency hash/fingerprint; and `edit_version` for optimistic concurrency. New orders also snapshot `items_base_subtotal` and `cooking_surcharge`; both remain null together on legacy rows that predate the explicit breakdown.
+`orders` stores customer reference plus customer name/phone snapshots; source; operational/payment state and optional method; raw/cooked condition; delivery type/date/period/time; delivery address snapshot; order notes; subtotal/savings/shipping/discount/total values; optional public idempotency hash/fingerprint; and `edit_version` for optimistic concurrency. New orders also snapshot `items_base_subtotal` and `cooking_surcharge`; both remain null together on legacy rows that predate the explicit breakdown.
 
 | Table                     | Historical responsibility                                                                                                                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,6 +39,10 @@ Changing a product name/price/availability, customer address, topping price, or 
 
 Confirmed economic editing replaces the item/composition/topping and aggregate pricing snapshots of the selected order only. The replacement and order update are atomic. Non-economic editing leaves those pricing rows and totals intact.
 
+Discount snapshots are `discount_type`, `discount_value`, and the applied backend result `discount_amount`. The discount base is `items_subtotal + toppings_subtotal`; shipping is excluded. Percentage is 0–100 with half-up whole-peso rounding, fixed amounts are non-negative, and both are capped at the discount base.
+
+`payment_method` is nullable and enum-constrained to cash, bank transfer, or debit card. New and updated rows obey: `paid` requires a method, `unpaid` requires null, and `not_required` requires both a zero total and a null method. The PostgreSQL check is `NOT VALID` so unknown methods are not fabricated for pre-migration paid history, while every subsequently inserted or updated row is enforced.
+
 `order_revisions` is the Orders-specific audit table. Each successful edit stores the order FK, admin FK, status at persistence, before/after totals, a JSON list of changed field names plus the economic-change flag, an optional bounded closed-edit reason, and timestamp. It deliberately does not duplicate phone, address, or note values. Revisions cascade with physical order deletion; administrator deletion is restricted while referenced.
 
 Cooking snapshots follow the same rule. New line totals satisfy `line_total = base_line_total + cooking_surcharge`; the order aggregate satisfies `items_subtotal = items_base_subtotal + cooking_surcharge`. Cooking may not be backfilled on legacy orders because current product/settings values are not historical evidence.
@@ -49,7 +53,9 @@ PostgreSQL checks enforce:
 
 - valid status, payment status, source, condition, delivery type, delivery period, and pricing mode;
 - positive bounded quantities and non-negative monetary values;
-- `total = items_subtotal + toppings_subtotal + shipping_fee_snapshot`;
+- `total = items_subtotal + toppings_subtotal + shipping_fee_snapshot - discount_amount`;
+- discount type/value/applied amount are absent together, or match the percentage/fixed calculation over items plus toppings with the result capped to that base;
+- paid rows have an allowed payment method, unpaid rows have none, and `not_required` is restricted to zero-total rows (enforced for new/updated rows without inventing legacy history);
 - pickup has zero shipping; delivery has a non-blank address snapshot;
 - combined-dozen item shape and `savings = regular_price_total - line_total`;
 - exactly one typed value per `order_settings` row;
@@ -58,6 +64,16 @@ PostgreSQL checks enforce:
 Application row locking plus `orders.edit_version` provides optimistic concurrency. Every full edit and standalone status/payment mutation increments the version; stale full-edit submissions fail before changing snapshots.
 
 The unique `public_checkout_idempotency_hash` resolves concurrent duplicate submissions.
+
+## Deletion and restoration
+
+Orders and customers retain `deleted_at` and are deleted/restored through Eloquent soft deletion. No administrative force-delete route exists. The `orders.customer_id` relationship does not cascade on customer deletion, and restoring either record operates on the same row: Order ID, snapshots, items, revisions, and relationships are not recreated.
+
+The active-customer phone index deliberately excludes deleted customers. `RestoreCustomer` therefore rechecks whether another active row now owns the normalized phone and rejects the restore atomically on conflict rather than mutating or merging data.
+
+## Time storage and business dates
+
+Application timestamps and PostgreSQL persistence remain UTC. `delivery_date` is a calendar date, not an instant; “today” validation comes from `OrderBusinessDate` using `ORDERS_TIMEZONE` (`America/Argentina/Buenos_Aires` by default). Public checkout receives that authoritative date from `/checkout/options` rather than deriving it from browser UTC.
 
 ## Configuration tables
 

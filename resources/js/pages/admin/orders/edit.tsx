@@ -23,6 +23,7 @@ import {
     formatOrderMoney,
     orderStatusLabels,
     orderStatuses,
+    paymentMethodLabels,
     paymentStatusLabels,
 } from '@/features/orders/presentation';
 import type { OrderStatus } from '@/features/orders/types';
@@ -194,6 +195,16 @@ export default function EditOrder({
                                         ]
                                     }
                                 />
+                                {order.payment_method && (
+                                    <SummaryRow
+                                        label="Medio de pago"
+                                        value={
+                                            paymentMethodLabels[
+                                                order.payment_method
+                                            ]
+                                        }
+                                    />
+                                )}
                             </CardContent>
                         </Card>
                         <div>
@@ -248,7 +259,8 @@ export default function EditOrder({
                             disabled={
                                 draft.form.processing ||
                                 draft.quoteLoading ||
-                                !draft.quote
+                                !draft.quote ||
+                                !draft.paymentReady
                             }
                         >
                             Guardar cambios

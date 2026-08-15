@@ -2,6 +2,7 @@
 
 namespace App\Modules\Orders\Actions;
 
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPriceQuote;
 
@@ -45,7 +46,7 @@ final class PersistOrderQuote
         }
     }
 
-    /** @return array<string, int> */
+    /** @return array<string, DiscountType|int|null> */
     public function totals(OrderPriceQuote $quote): array
     {
         return [
@@ -55,6 +56,9 @@ final class PersistOrderQuote
             'toppings_subtotal' => $quote->addonsSubtotal,
             'shipping_fee_snapshot' => $quote->shippingFee,
             'combined_dozen_savings' => $quote->savings,
+            'discount_type' => $quote->discountType,
+            'discount_value' => $quote->discountValue,
+            'discount_amount' => $quote->discountAmount,
             'total' => $quote->total,
         ];
     }

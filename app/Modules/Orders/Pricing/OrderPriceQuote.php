@@ -3,6 +3,7 @@
 namespace App\Modules\Orders\Pricing;
 
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 
 final readonly class OrderPriceQuote
@@ -22,6 +23,10 @@ final readonly class OrderPriceQuote
         public int $addonsSubtotal,
         public int $shippingFee,
         public int $savings,
+        public int $discountableSubtotal,
+        public ?DiscountType $discountType,
+        public ?int $discountValue,
+        public int $discountAmount,
         public int $total,
     ) {}
 
@@ -39,6 +44,10 @@ final readonly class OrderPriceQuote
             'addons_subtotal' => $this->addonsSubtotal,
             'shipping_fee' => $this->shippingFee,
             'savings' => $this->savings,
+            'discountable_subtotal' => $this->discountableSubtotal,
+            'discount_type' => $this->discountType?->value,
+            'discount_value' => $this->discountValue,
+            'discount_amount' => $this->discountAmount,
             'total' => $this->total,
         ];
     }

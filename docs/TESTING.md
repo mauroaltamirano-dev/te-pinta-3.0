@@ -4,21 +4,25 @@ Tests prove backend authority, historical stability, and the two order creation 
 
 ## Focused suites
 
-| Suite                                                       | Proves                                                                                                                                          |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/Feature/Customers/PhoneNormalizerTest.php`           | Deterministic digits-only normalization and null handling                                                                                       |
-| `tests/Feature/Customers/CustomerManagementTest.php`        | Admin boundary, duplicate names, optional phone, active phone uniqueness, search, private notes, history/spend, soft deletion, safe logs        |
-| `tests/Feature/Orders/OrderPricingEngineTest.php`           | Grouping matrix, raw/cooked tiers, base/cooking breakdown, fixed combined price and surcharge, savings, toppings, delivery, limits, sellability |
-| `tests/Feature/Orders/OrderCheckoutHttpTest.php`            | Public/admin creation, price authority, snapshot-safe cooking output, legacy omission, matching, idempotency, throttling, state/payment         |
-| `tests/Feature/Orders/OrderDatabaseConstraintTest.php`      | PostgreSQL sequence, snapshot/value and cooking-breakdown checks, unique idempotency hash                                                       |
-| `tests/Feature/Orders/AdminOrderEditingTest.php`            | Active/closed editing, structured quantities, current-rule repricing, immutable ID, audit, rollback, unavailable history, and concurrency       |
-| `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                                    |
-| `tests/Unit/Core/TestingDatabaseGuardTest.php`              | Testing-only database-name boundary, `DB_URL` precedence, and non-testing bypass                                                                |
-| `tests/e2e/orders.spec.ts`                                  | Cooked POS breakdown, insights/detail plus edit/save/cancel, closed-order unlock, immutable ID, and total comparison                            |
-| `tests/Feature/Orders/AdminQuickOrderHomeTest.php`          | Quick Home authorization, sellable catalog/category filtering, props, and Dashboard separation                                                  |
-| `tests/e2e/admin-quick-order.spec.ts`                       | Fast quantities, backend preview, continuation, exact-one confirmation, cancel/discard non-persistence, and screenshots                         |
-| `tests/Feature/Orders/OrderDashboardDataTest.php`           | Real most-ordered product aggregation, combined-dozen composition, images, delivery and cooking-condition distributions, soft deletes           |
-| `tests/e2e/public-checkout.spec.ts`                         | Persistence before mocked WhatsApp navigation                                                                                                   |
+| Suite                                                       | Proves                                                                                                                                    |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/Feature/Customers/PhoneNormalizerTest.php`           | Deterministic digits-only normalization and null handling                                                                                 |
+| `tests/Feature/Customers/CustomerManagementTest.php`        | Admin boundary, duplicate names, optional phone, active phone uniqueness, search, private notes, history/spend, soft deletion, safe logs  |
+| `tests/Feature/Customers/CustomerTrashRestorationTest.php`  | Admin trash/restore, unchanged linked orders, active-only restore, and no-mutation phone-conflict rejection                               |
+| `tests/Feature/Orders/OrderPricingEngineTest.php`           | Grouping, cooking snapshots, discounts/rounding/caps, toppings, delivery, limits, and sellability                                         |
+| `tests/Feature/Orders/OrderCheckoutHttpTest.php`            | Public/admin creation, Argentina business date, backend discount, payment invariant, copy ticket, snapshots, idempotency, throttling      |
+| `tests/Feature/Orders/OrderDatabaseConstraintTest.php`      | PostgreSQL sequence, snapshot/discount/payment constraints, cooking checks, unique idempotency hash                                       |
+| `tests/Feature/Orders/AdminOrderEditingTest.php`            | Active/closed editing, structured quantities, current-rule repricing, immutable ID, audit, rollback, unavailable history, and concurrency |
+| `tests/Feature/Orders/OrderTrashRestorationTest.php`        | Admin-only trash and restore by immutable public ID                                                                                       |
+| `tests/Feature/Settings/OrderingSettingsManagementTest.php` | Admin-only typed settings and atomic updates                                                                                              |
+| `tests/Unit/Core/TestingDatabaseGuardTest.php`              | Testing-only database-name boundary, `DB_URL` precedence, and non-testing bypass                                                          |
+| `tests/e2e/orders.spec.ts`                                  | Ticket dialog/copy, mobile two-column catalog/navigation, quick status/payment, edit/cancel, closed unlock, immutable ID, and repricing   |
+| `tests/Feature/Orders/AdminQuickOrderHomeTest.php`          | Quick Home authorization, sellable catalog/category filtering, props, and Dashboard separation                                            |
+| `tests/e2e/admin-quick-order.spec.ts`                       | Fast quantities, backend discount/payment, success copy/detail, exact-one confirmation, cancel/discard, and screenshots                   |
+| `tests/Feature/Orders/OrderDashboardDataTest.php`           | Real most-ordered product aggregation, combined-dozen composition, images, delivery and cooking-condition distributions, soft deletes     |
+| `tests/e2e/public-checkout.spec.ts`                         | Persistence before mocked WhatsApp navigation                                                                                             |
+| `tests/e2e/trash-restoration.spec.ts`                       | Orders/customers trash restore journey and actionable customer phone-conflict feedback                                                    |
+| `tests/Feature/PwaManifestTest.php`                         | Manifest metadata, icons/shortcut, layout linkage, and absence of a service worker                                                        |
 
 The pricing matrix includes 5/6/7/12/18 of one product, 3+3, 6+3+3, 6+6, and 24 varied units. When a grouping rule changes, update `docs/ORDER_PRICING.md` and its focused tests together.
 
@@ -48,7 +52,7 @@ The pricing matrix includes 5/6/7/12/18 of one product, 3+3, 6+3+3, 6+6, and 24 
 
 `composer ci:check` combines frontend lint/format/types with `composer test`; it does not run Vite build, Playwright, or dependency audits.
 
-Quick Order visual captures are written to `storage/app/admin-quick-order-home.png` and `storage/app/admin-quick-order-continuation.png`. They are verification artifacts and are not versioned.
+Quick Order and order-ticket visual captures are written under `storage/app/`, including `admin-quick-order-mobile-grid.png`, `orders-ticket-dialog.png`, and `orders-ticket-mobile.png`. They are verification artifacts and are not versioned.
 
 ## Required regression invariants
 
@@ -59,6 +63,9 @@ Quick Order visual captures are written to `storage/app/admin-quick-order-home.p
 - Product, customer address, delivery-fee, and topping changes do not alter snapshots.
 - New raw/cooked orders snapshot base and cooking values per line; legacy orders never derive them from current settings.
 - Cooking breakdown never changes the final total; combined dozen cooking remains cooked minus raw (`17500 - 16000 = 1500`).
+- Percentage/fixed discounts are backend-calculated over items (including cooking) plus toppings, exclude shipping, round/cap correctly, and snapshot the applied result.
+- Paid orders require a valid method; unpaid orders persist none; public checkout can set neither payment method nor discount.
+- Delivery-date minimums come from `OrderBusinessDate` in the configured Argentina timezone, not browser UTC; timestamps remain stored in UTC.
 - Customer private notes never appear publicly or in WhatsApp.
 - Cancelled orders remain historical but do not contribute to effective spend.
 - Guests/non-admins cannot access administrative operations.
@@ -67,6 +74,9 @@ Quick Order visual captures are written to `storage/app/admin-quick-order-home.p
 - Economic edits reprice the complete order with current rules and replace snapshots only for that order; non-economic edits keep the persisted quote.
 - Historical unavailable selections remain visible and unchanged for non-economic corrections, but block current-rule repricing until removed or replaced.
 - Revision failure rolls back order fields, totals, item/composition/topping replacement, version, and audit together.
+- Soft-deleted orders/customers can be restored only by an admin; no force-delete path is exposed and customer lifecycle never cascades to orders.
+- A restore-time normalized-phone conflict leaves both customer records unchanged.
+- The installable manifest starts at `/admin`, links valid icons/shortcut, and registers no service worker.
 
 ## Test data
 

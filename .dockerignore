@@ -1,0 +1,15 @@
+.git
+.codegraph
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+bootstrap/cache/*
+storage/*
+tests
+test-results
+playwright-report

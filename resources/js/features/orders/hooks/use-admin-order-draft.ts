@@ -21,6 +21,9 @@ const createInitialDraft = (today: string): AdminOrderForm => ({
     delivery_address: '',
     notes: '',
     payment_status: 'unpaid',
+    payment_method: null,
+    discount_type: null,
+    discount_value: null,
 });
 
 interface AdminOrderDraftOptions {
@@ -42,6 +45,8 @@ export function useAdminOrderDraft(
         addons: initialDraft.addons,
         condition: initialDraft.condition,
         delivery_type: initialDraft.delivery_type,
+        discount_type: initialDraft.discount_type,
+        discount_value: initialDraft.discount_value,
     });
     const [quote, setQuote] = useState<PriceQuote | null>(
         options.initialQuote ?? null,
@@ -64,12 +69,16 @@ export function useAdminOrderDraft(
             addons: form.data.addons,
             condition: form.data.condition,
             delivery_type: form.data.delivery_type,
+            discount_type: form.data.discount_type,
+            discount_value: form.data.discount_value,
         }),
         [
             form.data.items,
             form.data.addons,
             form.data.condition,
             form.data.delivery_type,
+            form.data.discount_type,
+            form.data.discount_value,
         ],
     );
     const previewKey = JSON.stringify(preview);
@@ -84,6 +93,10 @@ export function useAdminOrderDraft(
         preview.items.length > 0 &&
         !isInitialEconomicDraft &&
         (quoteLoading || quotedPreviewKey !== previewKey);
+    const paymentReady =
+        currentQuote?.total === 0 ||
+        form.data.payment_status !== 'paid' ||
+        form.data.payment_method !== null;
 
     useEffect(() => {
         const sequence = ++previewSequence.current;
@@ -254,6 +267,28 @@ export function useAdminOrderDraft(
         form.setData('delivery_address', deliveryAddress);
     };
 
+    const setCustomerAddress = (customerAddress: string) => {
+        form.setData((data) => {
+            const shouldSyncDeliveryAddress =
+                data.delivery_type === 'delivery' &&
+                (!data.delivery_address ||
+                    data.delivery_address ===
+                        autoFilledDeliveryAddress.current);
+
+            if (shouldSyncDeliveryAddress) {
+                autoFilledDeliveryAddress.current = customerAddress || null;
+            }
+
+            return {
+                ...data,
+                customer: { ...data.customer, address: customerAddress },
+                delivery_address: shouldSyncDeliveryAddress
+                    ? customerAddress
+                    : data.delivery_address,
+            };
+        });
+    };
+
     const discard = () => {
         previewSequence.current += 1;
         autoFilledDeliveryAddress.current = null;
@@ -267,7 +302,16 @@ export function useAdminOrderDraft(
     };
 
     const submitQuickOrder = async () => {
-        if (quickSubmitLocked.current || !currentQuote || currentQuoteLoading) {
+        if (
+            quickSubmitLocked.current ||
+            !currentQuote ||
+            currentQuoteLoading ||
+            !paymentReady
+        ) {
+            if (!paymentReady) {
+                form.setError('payment_method', 'Seleccioná un medio de pago.');
+            }
+
             return null;
         }
 
@@ -306,6 +350,12 @@ export function useAdminOrderDraft(
     };
 
     const submitFullOrder = () => {
+        if (!paymentReady) {
+            form.setError('payment_method', 'Seleccioná un medio de pago.');
+
+            return;
+        }
+
         const url = options.submitUrl ?? '/admin/orders';
 
         if (options.submitMethod === 'put') {
@@ -322,12 +372,14 @@ export function useAdminOrderDraft(
         quote: currentQuote,
         quoteLoading: currentQuoteLoading,
         quoteError,
+        paymentReady,
         changeProduct,
         removeProduct,
         changeAddon,
         selectCustomer,
         selectDeliveryType,
         setDeliveryAddress,
+        setCustomerAddress,
         discard,
         submitFullOrder,
         submitQuickOrder,

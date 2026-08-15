@@ -5,6 +5,7 @@ namespace App\Modules\Orders\Http\Requests;
 use App\Modules\Orders\Enums\DeliveryPeriod;
 use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Enums\OrderCondition;
+use App\Modules\Orders\Support\OrderBusinessDate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +33,7 @@ final class StorePublicOrderRequest extends FormRequest
             'condition' => ['required', Rule::enum(OrderCondition::class)],
             'delivery_type' => ['required', Rule::enum(DeliveryType::class)],
             'delivery_period' => ['required', Rule::enum(DeliveryPeriod::class)],
-            'delivery_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'delivery_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.app(OrderBusinessDate::class)->todayString()],
             'delivery_time' => ['nullable', 'date_format:H:i'],
             'delivery_address' => ['nullable', 'required_if:delivery_type,delivery', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -42,7 +43,8 @@ final class StorePublicOrderRequest extends FormRequest
             'customer.phone_normalized' => ['required', 'string', 'max:40'],
             'customer.address' => ['nullable', 'string', 'max:1000'],
             'idempotency_key' => ['required', 'string', 'min:16', 'max:100'],
-            'customer_id' => ['prohibited'], 'payment_status' => ['prohibited'], 'status' => ['prohibited'],
+            'customer_id' => ['prohibited'], 'payment_status' => ['prohibited'], 'payment_method' => ['prohibited'], 'status' => ['prohibited'],
+            'discount_type' => ['prohibited'], 'discount_value' => ['prohibited'], 'discount_amount' => ['prohibited'],
             'total' => ['prohibited'], 'shipping_fee' => ['prohibited'], 'combined_price' => ['prohibited'],
         ];
     }

@@ -88,6 +88,10 @@ The admin shell uses a small semantic palette sourced from the verified Figma no
 | `admin-text-primary`   | `#FFFFFF`                  | Primary text                                             |
 | `admin-text-secondary` | `#ABBBC2`                  | Supporting text                                          |
 | `admin-text-tertiary`  | `#889898`                  | Quiet metadata and placeholders                          |
+| `ticket-paper`         | `#FFF8ED`                  | Compact order receipt surface                            |
+| `ticket-ink`           | `#2F2925`                  | Receipt primary text                                     |
+| `ticket-muted`         | `#796E66`                  | Receipt metadata                                         |
+| `ticket-rule`          | `#D9CBBD`                  | Dashed receipt separators and quiet borders              |
 
 Orders uses the locally bundled Barlow 400/500/600 family from `resources/fonts/` through `font-orders`, matching the verified Figma typography without a runtime font request. Its OFL license is stored at `resources/fonts/OFL.txt`. Visible Orders copy is Argentine Spanish; enum and code identifiers remain English.
 
@@ -95,7 +99,7 @@ Orders uses the locally bundled Barlow 400/500/600 family from `resources/fonts/
 
 ### Quick Order Home
 
-`resources/js/pages/admin/home.tsx` follows the 1194 × 834 POS reference as a real responsive composition: the existing 104 px rail, a fluid catalog column resolving to 681 px, and a 409 px current-order panel. The catalog keeps 24 px insets; at the reference width this leaves 633 px for three 192 × 260 cards with 28 px gaps and 132 px circular artwork.
+`resources/js/pages/admin/home.tsx` follows the 1194 × 834 POS reference as a real responsive composition: the existing 104 px rail, a fluid catalog column resolving to 681 px, and a 409 px current-order panel. The catalog keeps 24 px insets; at the reference width this leaves 633 px for three 192 × 260 cards with 28 px gaps and 132 px circular artwork. On phones it deliberately becomes a dense two-column catalog with compact artwork and 44 px quantity targets rather than scaling the desktop cards into one long column.
 
 Category tabs, selected quantities, empty/loading/error states, and the coral action use the existing `admin-*` tokens. The continuation stage uses the shared Sheet primitive with a 70% black overlay and an 814 px maximum panel split into two content columns. It reuses Te Pinta fields rather than the template payment UI. Below the content-driven two-column threshold, the order becomes an accessible bottom sheet instead of shrinking the POS columns.
 
@@ -103,7 +107,9 @@ Category tabs, selected quantities, empty/loading/error states, and the coral ac
 
 `resources/js/pages/admin/orders/index.tsx` adapts the Figma dashboard into an Orders workspace: compact summary cards lead into filters and the operational report table. It does not copy template restaurant data.
 
-Selecting a TP identifier requests `/admin/orders?order=TP-*` through Inertia and opens `OrderDetailDrawer` while keeping the filtered list visible. Closing the drawer removes only the selection, so browser back/forward remains meaningful. Direct `/admin/orders/{public_id}` links still render the full page. Both surfaces compose the same `OrderDetailContent`; pricing, labels, and operations are not duplicated.
+Selecting a TP identifier requests `/admin/orders?order=TP-*` through Inertia and opens `OrderTicketDialog` while keeping the filtered list visible. Its warm paper surface is a compact production receipt, not a second full detail: it shows structured order snapshots and exactly Copy, Edit, and close actions. Closing it removes only the selection, so browser back/forward remains meaningful. Direct `/admin/orders/{public_id}` links still render the complete `OrderDetailContent` page. Closed-order Edit still invokes the same reasoned enable flow.
+
+The report table owns quick operational controls. Status uses the existing typed Select and carries each status color in the trigger and menu. Payment remains a switch in the row; enabling it opens the existing method choice because a paid order without cash, transfer, or debit would violate the backend invariant.
 
 On wide viewports, Orders uses the Figma two-column proportion: a `646:372` primary-to-insights ratio with a 24px gap, expanded to the available viewport width. At the 1194px reference frame this resolves to 646px and 372px; wider screens preserve the ratio instead of leaving unused space. Both columns fill the available viewport height and the document remains fixed; only the report body scrolls vertically, with its table header kept visible. The three summary cards share the primary width equally, start from the reference size of 199×143px, and keep 24px gaps. `OrdersInsightsPanel` divides its height using the reference `429:333` ratio; its lower card presents delivery type and cooking condition as two separate analytical rings so the unrelated dimensions remain readable. Below desktop it rejoins the document flow. Product counts, catalog images, delivery distribution, and condition distribution come from backend aggregates rather than template data.
 
@@ -115,6 +121,6 @@ On desktop, the Settings workspace fills the height remaining below the admin he
 
 `resources/js/components/shared/admin-sidebar.tsx` owns the global administration destinations and active-route logic. `AdminLayout` only composes this rail with the administration header and page content; feature-local navigation remains inside its feature layout, such as `SettingsLayout`.
 
-At desktop and tablet widths, the rail follows Figma node `177:735`: 104 px wide with the `#1F1D2B` surface, a 56 px brand tile with a 12 px radius and 40 px store glyph, six 102 px navigation slots, 24 px fine-stroke icon wrappers, and a bottom-aligned logout control. Desktop controls start at x=24. The active control uses `#EA7C69`, an 8 px radius, the specified coral shadow, and a `#252836` recessed right-edge treatment. At smaller widths, the same icon-only destinations recompose into a horizontally scrollable top rail; accessible Spanish labels remain available through link names and tooltips.
+At desktop and tablet widths, the rail follows Figma node `177:735`: 104 px wide with the `#1F1D2B` surface, a 56 px brand tile with a 12 px radius and 40 px store glyph, six 102 px navigation slots, 24 px fine-stroke icon wrappers, and a bottom-aligned logout control. Desktop controls start at x=24. The active control uses `#EA7C69`, an 8 px radius, the specified coral shadow, and a `#252836` recessed right-edge treatment. On phones, navigation becomes a safe-area-aware bottom bar with Inicio, Pedidos, Clientes, and Más; secondary destinations and logout live in the Más bottom sheet.
 
 Playwright comparison captures are generated under `storage/app/` and are intentionally not versioned. The Figma nodes and the semantic contract in this document are the durable source of truth.

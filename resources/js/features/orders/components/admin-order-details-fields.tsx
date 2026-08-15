@@ -47,6 +47,7 @@ export function AdminOrderDetailsFields({
     const selectedCustomer = customers.find(
         (customer) => customer.id === form.data.customer_id,
     );
+    const noPaymentRequired = draft.quote?.total === 0;
 
     return (
         <div className="grid gap-6 lg:grid-cols-2">
@@ -153,14 +154,7 @@ export function AdminOrderDetailsFields({
                                 id="new-customer-address"
                                 label="Dirección"
                                 value={form.data.customer.address}
-                                onChange={(address) =>
-                                    form.setData((data) => ({
-                                        ...data,
-                                        customer: { ...data.customer, address },
-                                        delivery_address:
-                                            data.delivery_address || address,
-                                    }))
-                                }
+                                onChange={draft.setCustomerAddress}
                             />
                         </>
                     )}
@@ -332,23 +326,193 @@ export function AdminOrderDetailsFields({
                         }
                         placeholder="Opcional"
                     />
+                </section>
+
+                <fieldset className="grid gap-3">
+                    <legend className="font-semibold">Descuento</legend>
+                    <label className="flex items-center gap-3 rounded-lg bg-admin-surface-raised p-3">
+                        <Checkbox
+                            checked={form.data.discount_type !== null}
+                            onCheckedChange={(checked) => {
+                                form.setData((data) => ({
+                                    ...data,
+                                    discount_type:
+                                        checked === true
+                                            ? (data.discount_type ??
+                                              'percentage')
+                                            : null,
+                                    discount_value:
+                                        checked === true
+                                            ? (data.discount_value ?? 0)
+                                            : null,
+                                }));
+                            }}
+                        />
+                        <span>Aplicar descuento</span>
+                    </label>
+                    {form.data.discount_type !== null && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="discount-type">
+                                    Tipo de descuento
+                                </Label>
+                                <Select
+                                    value={form.data.discount_type}
+                                    onValueChange={(
+                                        discountType:
+                                            'percentage' | 'fixed_amount',
+                                    ) =>
+                                        form.setData((data) => ({
+                                            ...data,
+                                            discount_type: discountType,
+                                            discount_value: 0,
+                                        }))
+                                    }
+                                >
+                                    <SelectTrigger id="discount-type">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="percentage">
+                                            Porcentaje
+                                        </SelectItem>
+                                        <SelectItem value="fixed_amount">
+                                            Monto fijo
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="discount-value">
+                                    {form.data.discount_type === 'percentage'
+                                        ? 'Porcentaje'
+                                        : 'Monto en pesos'}
+                                </Label>
+                                <Input
+                                    id="discount-value"
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={0}
+                                    max={
+                                        form.data.discount_type === 'percentage'
+                                            ? 100
+                                            : undefined
+                                    }
+                                    step={1}
+                                    aria-describedby="discount-help"
+                                    value={form.data.discount_value ?? ''}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        form.setData(
+                                            'discount_value',
+                                            value === ''
+                                                ? null
+                                                : Number.parseInt(value, 10),
+                                        );
+                                    }}
+                                    required
+                                />
+                            </div>
+                            <p
+                                id="discount-help"
+                                className="text-xs text-admin-text-secondary sm:col-span-2"
+                            >
+                                Se aplica a productos, cocción y adicionales. El
+                                envío no se descuenta.
+                            </p>
+                        </div>
+                    )}
+                </fieldset>
+
+                <fieldset className="grid gap-3">
+                    <legend className="font-semibold">Pago</legend>
                     <label className="flex items-center gap-3 rounded-lg bg-admin-surface-raised p-3">
                         <Checkbox
                             checked={form.data.payment_status === 'paid'}
-                            onCheckedChange={(checked) =>
-                                form.setData(
-                                    'payment_status',
-                                    checked === true ? 'paid' : 'unpaid',
-                                )
-                            }
+                            disabled={noPaymentRequired}
+                            onCheckedChange={(checked) => {
+                                if (checked !== true) {
+                                    form.clearErrors('payment_method');
+                                }
+
+                                form.setData((data) => ({
+                                    ...data,
+                                    payment_status:
+                                        checked === true ? 'paid' : 'unpaid',
+                                    payment_method:
+                                        checked === true
+                                            ? data.payment_method
+                                            : null,
+                                }));
+                            }}
                         />
                         <span>
-                            {form.data.payment_status === 'paid'
-                                ? 'Pagado'
-                                : 'No pagado'}
+                            {noPaymentRequired
+                                ? 'No requiere pago — total $0'
+                                : form.data.payment_status === 'paid'
+                                  ? 'Pagado'
+                                  : 'No pagado'}
                         </span>
                     </label>
-                </section>
+                    {!noPaymentRequired &&
+                        form.data.payment_status === 'paid' && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="payment-method">
+                                    Medio de pago
+                                </Label>
+                                <Select
+                                    value={form.data.payment_method ?? ''}
+                                    onValueChange={(
+                                        paymentMethod:
+                                            | 'cash'
+                                            | 'bank_transfer'
+                                            | 'debit_card',
+                                    ) => {
+                                        form.clearErrors('payment_method');
+                                        form.setData(
+                                            'payment_method',
+                                            paymentMethod,
+                                        );
+                                    }}
+                                    required
+                                >
+                                    <SelectTrigger
+                                        id="payment-method"
+                                        aria-describedby="payment-method-help"
+                                        aria-invalid={
+                                            form.errors.payment_method
+                                                ? true
+                                                : undefined
+                                        }
+                                    >
+                                        <SelectValue placeholder="Seleccioná un medio" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cash">
+                                            Efectivo
+                                        </SelectItem>
+                                        <SelectItem value="bank_transfer">
+                                            Transferencia
+                                        </SelectItem>
+                                        <SelectItem value="debit_card">
+                                            Débito
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p
+                                    id="payment-method-help"
+                                    className={
+                                        form.errors.payment_method
+                                            ? 'text-sm text-destructive'
+                                            : 'text-xs text-admin-text-secondary'
+                                    }
+                                >
+                                    {form.errors.payment_method ??
+                                        'Es obligatorio para marcar el pedido como pagado.'}
+                                </p>
+                            </div>
+                        )}
+                </fieldset>
             </div>
         </div>
     );

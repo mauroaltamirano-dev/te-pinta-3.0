@@ -34,8 +34,8 @@ export function QuickOrderCatalog({
               );
 
     return (
-        <section className="min-w-0 p-5 sm:p-6 lg:h-screen lg:overflow-y-auto">
-            <header className="mb-6">
+        <section className="min-w-0 px-3 py-4 sm:p-6 lg:h-screen lg:overflow-y-auto">
+            <header className="mb-5 sm:mb-6">
                 <p className="text-sm text-admin-text-secondary">
                     {new Intl.DateTimeFormat('es-AR', {
                         weekday: 'long',
@@ -48,7 +48,7 @@ export function QuickOrderCatalog({
 
             <nav
                 aria-label="Categorías de productos"
-                className="mb-6 flex gap-6 overflow-x-auto border-b border-admin-border"
+                className="mb-5 flex gap-5 overflow-x-auto border-b border-admin-border sm:mb-6 sm:gap-6"
             >
                 <button
                     type="button"
@@ -79,16 +79,16 @@ export function QuickOrderCatalog({
                 ))}
             </nav>
 
-            <div className="mb-7 flex items-end justify-between gap-4">
+            <div className="mb-5 flex items-end justify-between gap-3 sm:mb-7 sm:gap-4">
                 <div>
-                    <h2 className="text-xl font-semibold">
+                    <h2 className="text-lg font-semibold sm:text-xl">
                         Elegí las variedades
                     </h2>
                     <p className="mt-1 text-sm text-admin-text-secondary">
                         Sumá por docena, media docena o unidad.
                     </p>
                 </div>
-                <span className="shrink-0 text-sm text-admin-text-secondary">
+                <span className="shrink-0 text-xs text-admin-text-secondary sm:text-sm">
                     {visibleProducts.length} disponibles
                 </span>
             </div>
@@ -98,7 +98,7 @@ export function QuickOrderCatalog({
                     No hay productos disponibles para vender.
                 </div>
             ) : (
-                <div className="grid gap-x-7 gap-y-10 sm:grid-cols-2 min-[74.625rem]:grid-cols-3">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-7 sm:gap-y-10 min-[74.625rem]:grid-cols-3">
                     {visibleProducts.map((product) => {
                         const quantity =
                             draft.form.data.items.find(
@@ -108,9 +108,9 @@ export function QuickOrderCatalog({
                         return (
                             <article
                                 key={product.id}
-                                className="relative flex h-[16.25rem] flex-col items-center rounded-2xl bg-admin-surface px-4 pt-16 pb-5 text-center"
+                                className="relative flex min-h-[13.5rem] flex-col items-center rounded-xl bg-admin-surface px-2 pt-11 pb-3 text-center sm:h-[16.25rem] sm:rounded-2xl sm:px-4 sm:pt-16 sm:pb-5"
                             >
-                                <span className="absolute -top-[1.125rem] grid size-[8.25rem] place-items-center overflow-hidden rounded-full bg-admin-surface-raised ring-4 ring-admin-canvas">
+                                <span className="absolute -top-3 grid size-[5.5rem] place-items-center overflow-hidden rounded-full bg-admin-surface-raised ring-[3px] ring-admin-canvas sm:-top-[1.125rem] sm:size-[8.25rem] sm:ring-4">
                                     {product.image_url ? (
                                         <img
                                             src={product.image_url}
@@ -119,25 +119,25 @@ export function QuickOrderCatalog({
                                         />
                                     ) : (
                                         <ImageIcon
-                                            className="size-12 text-admin-text-tertiary"
+                                            className="size-9 text-admin-text-tertiary sm:size-12"
                                             strokeWidth={1.4}
                                         />
                                     )}
                                 </span>
-                                <span className="mt-14 line-clamp-2 min-h-10 font-medium">
+                                <span className="mt-9 line-clamp-2 min-h-10 text-sm leading-tight font-medium sm:mt-14 sm:text-base sm:leading-normal">
                                     {product.name}
                                 </span>
-                                <span className="mt-2 text-sm text-admin-text-secondary">
+                                <span className="mt-1 text-xs text-admin-text-secondary sm:mt-2 sm:text-sm">
                                     Desde{' '}
                                     {formatOrderMoney.format(
                                         product.unit_price,
                                     )}
                                 </span>
-                                <span className="mt-1 text-xs text-admin-text-tertiary">
+                                <span className="mt-1 hidden text-xs text-admin-text-tertiary sm:block">
                                     {product.category.name}
                                 </span>
                                 <div
-                                    className="mt-auto grid w-full grid-cols-3 gap-2 pt-3"
+                                    className="mt-auto grid w-full grid-cols-3 gap-1 pt-2 sm:gap-2 sm:pt-3"
                                     aria-label={`Agregar ${product.name} al pedido`}
                                 >
                                     {[12, 6, 1].map((increment) => (
@@ -151,14 +151,14 @@ export function QuickOrderCatalog({
                                                     increment,
                                                 )
                                             }
-                                            className="rounded-lg border border-admin-border py-1.5 text-sm font-semibold text-admin-accent transition-colors hover:border-admin-accent hover:bg-admin-accent/10 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
+                                            className="h-11 rounded-lg border border-admin-border text-xs font-semibold text-admin-accent transition-[border-color,background-color,transform] hover:border-admin-accent hover:bg-admin-accent/10 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none active:scale-[0.96] sm:text-sm"
                                         >
                                             {increment}
                                         </button>
                                     ))}
                                 </div>
                                 {quantity > 0 && (
-                                    <span className="absolute top-3 right-3 grid size-8 place-items-center rounded-full bg-admin-accent font-semibold text-white shadow-admin-nav-active">
+                                    <span className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-admin-accent text-sm font-semibold text-white shadow-admin-nav-active sm:top-3 sm:right-3 sm:size-8 sm:text-base">
                                         {quantity}
                                     </span>
                                 )}

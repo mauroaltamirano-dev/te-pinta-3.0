@@ -1,4 +1,5 @@
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ArrowLeft, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import type {
@@ -8,6 +9,7 @@ import type {
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
 import { formatOrderMoney } from '../presentation';
 import { AdminOrderDetailsFields } from './admin-order-details-fields';
+import { CopyOrderDetailButton } from './copy-order-detail-button';
 import { PriceSummary } from './price-summary';
 
 export function OrderContinuationPanel({
@@ -44,25 +46,52 @@ export function OrderContinuationPanel({
                 className="admin-shell dark w-full max-w-none gap-0 overflow-hidden border-admin-border bg-admin-surface p-0 text-admin-text-primary sm:max-w-[51rem]"
             >
                 {draft.createdOrder ? (
-                    <div className="grid h-full place-items-center p-8 text-center">
-                        <div className="max-w-md">
+                    <div className="grid h-full place-items-center p-5 sm:p-8">
+                        <div className="w-full max-w-md text-center">
                             <CheckCircle2 className="mx-auto size-14 text-emerald-400" />
                             <p className="mt-5 text-sm text-admin-text-secondary">
                                 Pedido confirmado
                             </p>
-                            <SheetTitle className="mt-1 text-3xl text-admin-text-primary">
-                                {draft.createdOrder.order_id}
-                            </SheetTitle>
-                            <p className="mt-3 text-lg">
-                                Total{' '}
-                                {formatOrderMoney.format(
-                                    draft.createdOrder.total,
-                                )}
-                            </p>
+                            <div
+                                data-testid="quick-order-success-ticket"
+                                className="mt-5 border-y border-dashed border-admin-border bg-admin-surface-raised px-5 py-6 text-left"
+                            >
+                                <p className="text-xs font-medium tracking-[0.14em] text-admin-accent uppercase">
+                                    Orden de producción
+                                </p>
+                                <div className="mt-2 flex items-end justify-between gap-4">
+                                    <SheetTitle className="text-2xl text-admin-text-primary sm:text-3xl">
+                                        {draft.createdOrder.order_id}
+                                    </SheetTitle>
+                                    <div className="text-right">
+                                        <p className="text-xs text-admin-text-tertiary">
+                                            Total
+                                        </p>
+                                        <p className="text-xl font-semibold text-white tabular-nums">
+                                            {formatOrderMoney.format(
+                                                draft.createdOrder.total,
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                <CopyOrderDetailButton
+                                    summary={draft.createdOrder.summary}
+                                    className="w-full"
+                                />
+                                <Button asChild>
+                                    <Link
+                                        href={`/admin/orders/${draft.createdOrder.order_id}`}
+                                    >
+                                        Ver pedido <ExternalLink />
+                                    </Link>
+                                </Button>
+                            </div>
                             <Button
                                 type="button"
-                                size="lg"
-                                className="mt-8"
+                                variant="ghost"
+                                className="mt-3 w-full"
                                 onClick={closePanel}
                             >
                                 Crear otro pedido
@@ -128,7 +157,8 @@ export function OrderContinuationPanel({
                                 disabled={
                                     draft.submittingQuickOrder ||
                                     draft.quoteLoading ||
-                                    !draft.quote
+                                    !draft.quote ||
+                                    !draft.paymentReady
                                 }
                             >
                                 {draft.submittingQuickOrder

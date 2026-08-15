@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Search } from 'lucide-react';
+import { ArchiveRestore, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
@@ -45,9 +45,16 @@ export default function Customers({
                             Search profiles and review their order history.
                         </p>
                     </div>
-                    <Button type="button" onClick={() => setFormOpen(true)}>
-                        <Plus /> Create customer
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild variant="outline">
+                            <Link href="/admin/customers/trash">
+                                <ArchiveRestore /> Trash
+                            </Link>
+                        </Button>
+                        <Button type="button" onClick={() => setFormOpen(true)}>
+                            <Plus /> Create customer
+                        </Button>
+                    </div>
                 </header>
                 <Card>
                     <CardHeader>

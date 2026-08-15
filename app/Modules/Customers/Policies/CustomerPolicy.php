@@ -31,4 +31,9 @@ final class CustomerPolicy
     {
         return $user->is_admin;
     }
+
+    public function restore(User $user, Customer $customer): bool
+    {
+        return $user->is_admin;
+    }
 }

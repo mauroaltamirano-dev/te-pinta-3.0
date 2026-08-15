@@ -5,12 +5,15 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderAddon;
+use App\Modules\Orders\Support\OrderBusinessDate;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use Illuminate\Support\Facades\Storage;
 
 final class BuildAdminOrderFormOptions
 {
+    public function __construct(private readonly OrderBusinessDate $businessDate) {}
+
     /** @return array{products: array<int, array<string, mixed>>, customers: mixed, addons: mixed, today: string} */
     public function execute(?Order $historicalOrder = null): array
     {
@@ -60,7 +63,7 @@ final class BuildAdminOrderFormOptions
             'products' => $products,
             'addons' => $addons,
             'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'phone', 'address']),
-            'today' => now()->toDateString(),
+            'today' => $this->businessDate->todayString(),
         ];
     }
 

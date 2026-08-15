@@ -12,11 +12,10 @@ export default function AdminLayout({ children }: PropsWithChildren) {
         component === 'admin/settings/general';
 
     return (
-        <div className="dark admin-shell min-h-screen bg-background text-foreground md:grid md:grid-cols-[6.5rem_1fr]">
-            <AdminSidebar />
+        <div className="dark admin-shell relative isolate z-0 min-h-screen bg-background pb-24 text-foreground md:grid md:grid-cols-[6.5rem_1fr] md:pb-0">
             <div
                 className={cn(
-                    'min-w-0',
+                    'min-w-0 md:col-start-2 md:row-start-1',
                     usesSettingsWorkspace &&
                         'lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden',
                 )}
@@ -39,6 +38,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     {children}
                 </main>
             </div>
+            <AdminSidebar />
         </div>
     );
 }

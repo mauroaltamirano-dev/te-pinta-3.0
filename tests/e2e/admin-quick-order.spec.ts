@@ -50,6 +50,55 @@ function countOrderPosts(page: Page) {
     return () => count;
 }
 
+async function captureCopiedOrderDetail(page: Page) {
+    await page.evaluate(() => {
+        const target = window as Window & { copiedOrderDetail?: string };
+        target.copiedOrderDetail = '';
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+                writeText: async (value: string) => {
+                    target.copiedOrderDetail = value;
+                },
+            },
+        });
+    });
+}
+
+async function changeDraftPricing(
+    page: Page,
+    action: () => Promise<void>,
+): Promise<{
+    discountable_subtotal: number;
+    discount_amount: number;
+    shipping_fee: number;
+    total: number;
+}> {
+    const preview = page.waitForResponse((response) => {
+        const request = response.request();
+
+        return (
+            request.method() === 'POST' &&
+            new URL(response.url()).pathname ===
+                '/admin/orders/price-preview' &&
+            response.ok()
+        );
+    });
+
+    await action();
+
+    return (
+        (await (await preview).json()) as {
+            data: {
+                discountable_subtotal: number;
+                discount_amount: number;
+                shipping_fee: number;
+                total: number;
+            };
+        }
+    ).data;
+}
+
 test.describe.configure({ mode: 'serial' });
 test.beforeEach(({ page }, testInfo) => {
     void page;
@@ -143,14 +192,96 @@ test('quick order edits the draft, previews backend pricing, and creates exactly
     await expect(continuation.getByLabel('Dirección de entrega')).toHaveValue(
         'Calle del pedido 456',
     );
-    await continuation.getByRole('checkbox').click();
+
+    await changeDraftPricing(page, () =>
+        continuation
+            .getByText('Aplicar descuento', { exact: true })
+            .locator('..')
+            .getByRole('checkbox')
+            .click(),
+    );
+    const percentageQuote = await changeDraftPricing(page, () =>
+        continuation.getByLabel('Porcentaje', { exact: true }).fill('10'),
+    );
+    expect(percentageQuote.discount_amount).toBe(
+        Math.round(percentageQuote.discountable_subtotal * 0.1),
+    );
+    expect(percentageQuote.total).toBe(
+        percentageQuote.discountable_subtotal -
+            percentageQuote.discount_amount +
+            percentageQuote.shipping_fee,
+    );
+    await expect(
+        continuation.getByText(
+            'Se aplica a productos, cocción y adicionales. El envío no se descuenta.',
+        ),
+    ).toBeVisible();
+
+    await changeDraftPricing(page, () =>
+        continuation.getByRole('button', { name: 'Retiro en local' }).click(),
+    );
+    const zeroTotalQuote = await changeDraftPricing(page, () =>
+        continuation.getByLabel('Porcentaje', { exact: true }).fill('100'),
+    );
+    expect(zeroTotalQuote.total).toBe(0);
+    const noPaymentRequired = continuation
+        .getByText('No requiere pago — total $0')
+        .locator('..');
+    await expect(noPaymentRequired.getByRole('checkbox')).toBeDisabled();
+
+    await changeDraftPricing(page, () =>
+        continuation.getByRole('button', { name: 'Envío' }).click(),
+    );
+    await changeDraftPricing(page, () =>
+        continuation.getByLabel('Porcentaje', { exact: true }).fill('10'),
+    );
+
+    await changeDraftPricing(page, async () => {
+        await continuation.getByLabel('Tipo de descuento').click();
+        await page
+            .getByRole('option', { name: 'Monto fijo', exact: true })
+            .click();
+    });
+    const fixedQuote = await changeDraftPricing(page, () =>
+        continuation.getByLabel('Monto en pesos').fill('1000'),
+    );
+    expect(fixedQuote.discount_amount).toBe(1000);
+    expect(fixedQuote.total).toBe(
+        fixedQuote.discountable_subtotal - 1000 + fixedQuote.shipping_fee,
+    );
+
+    await continuation
+        .getByText('No pagado', { exact: true })
+        .locator('..')
+        .getByRole('checkbox')
+        .click();
     await expect(
         continuation.getByText('Pagado', { exact: true }),
     ).toBeVisible();
-
     const confirm = continuation.getByRole('button', {
         name: 'Confirmar pedido',
     });
+    await expect(confirm).toBeDisabled();
+    await continuation.getByLabel('Medio de pago').click();
+    await page.getByRole('option', { name: 'Efectivo', exact: true }).click();
+    await expect(confirm).toBeEnabled();
+    await continuation
+        .getByText('Pagado', { exact: true })
+        .locator('..')
+        .getByRole('checkbox')
+        .click();
+    await expect(continuation.getByLabel('Medio de pago')).toHaveCount(0);
+    await expect(confirm).toBeEnabled();
+    await continuation
+        .getByText('No pagado', { exact: true })
+        .locator('..')
+        .getByRole('checkbox')
+        .click();
+    await expect(confirm).toBeDisabled();
+    await continuation.getByLabel('Medio de pago').click();
+    await page
+        .getByRole('option', { name: 'Transferencia', exact: true })
+        .click();
     await expect(confirm).toBeEnabled();
     await confirm.click();
 
@@ -159,6 +290,28 @@ test('quick order edits the draft, previews backend pricing, and creates exactly
     const orderId = (await orderHeading.textContent())?.trim();
     expect(orderId).toMatch(/^TP-\d+$/);
     expect(orderPostCount()).toBe(1);
+    await expect(
+        continuation.getByTestId('quick-order-success-ticket'),
+    ).toContainText(orderId ?? '');
+    await captureCopiedOrderDetail(page);
+    await continuation.getByRole('button', { name: 'Copiar detalle' }).click();
+    await expect(
+        continuation.getByRole('button', { name: 'Detalle copiado' }),
+    ).toBeVisible();
+    const copied = await page.evaluate(
+        () =>
+            (window as Window & { copiedOrderDetail?: string })
+                .copiedOrderDetail ?? '',
+    );
+    expect(copied).toContain(`🧾 *PEDIDO ${orderId}*`);
+    expect(copied).toContain('👤 *Cliente:* Cliente habitual');
+    await expect(
+        continuation.getByRole('link', { name: 'Ver pedido' }),
+    ).toHaveAttribute('href', `/admin/orders/${orderId}`);
+    await page.screenshot({
+        path: 'storage/app/admin-quick-order-success.png',
+        fullPage: true,
+    });
 
     await page.goto('/admin/orders');
     await expect(page.getByRole('button', { name: orderId })).toHaveCount(1);
@@ -199,6 +352,35 @@ test('closing or cancelling continuation keeps the draft and persists nothing', 
     expect(orderPostCount()).toBe(0);
     await page.goto('/admin/orders');
     await expect(page.getByText('No persistir cierre')).toHaveCount(0);
+});
+
+test('new-customer address stays synchronized without overwriting a manual order address', async ({
+    page,
+}) => {
+    await logIn(page);
+    await addProduct(page, 'Salteña');
+    await openDraftOnMobile(page);
+    await draftPanel(page).getByRole('button', { name: 'Continuar' }).click();
+
+    const continuation = page.getByRole('dialog');
+    await continuation.getByRole('button', { name: 'Envío' }).click();
+    const customerAddress = continuation.getByRole('textbox', {
+        name: 'Dirección',
+        exact: true,
+    });
+    await customerAddress.pressSequentially('San Martín 1234');
+    await expect(continuation.getByLabel('Dirección de entrega')).toHaveValue(
+        'San Martín 1234',
+    );
+
+    await continuation
+        .getByLabel('Dirección de entrega')
+        .fill('Dirección exclusiva del pedido');
+    await customerAddress.fill('');
+    await customerAddress.pressSequentially('San Martín 9999');
+    await expect(continuation.getByLabel('Dirección de entrega')).toHaveValue(
+        'Dirección exclusiva del pedido',
+    );
 });
 
 test('discard clears the draft without persisting an order', async ({

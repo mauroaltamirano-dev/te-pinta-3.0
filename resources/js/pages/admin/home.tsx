@@ -44,7 +44,7 @@ export default function AdminHome({
                 type="button"
                 size="lg"
                 onClick={() => setMobileCartOpen(true)}
-                className="fixed right-5 bottom-5 z-40 h-12 shadow-admin-nav-active lg:hidden"
+                className="fixed right-4 bottom-24 z-40 h-12 shadow-admin-nav-active lg:hidden"
             >
                 <ShoppingBasket /> Pedido
                 {totalUnits > 0 && (

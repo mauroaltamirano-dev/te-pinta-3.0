@@ -1,9 +1,11 @@
 import type {
     DeliveryPeriod,
     DeliveryType,
+    DiscountType,
     OrderCondition,
     OrderStatus,
     PaymentStatus,
+    PaymentMethod,
     PriceQuote,
 } from './types';
 
@@ -48,6 +50,9 @@ export interface AdminOrderForm {
     delivery_address: string;
     notes: string;
     payment_status: PaymentStatus;
+    payment_method: PaymentMethod | null;
+    discount_type: DiscountType | null;
+    discount_value: number | null;
     status?: OrderStatus;
     expected_version?: number;
 }
@@ -56,6 +61,7 @@ export interface AdminOrderEditContext {
     id: string;
     status: OrderStatus;
     payment_status: PaymentStatus;
+    payment_method: PaymentMethod | null;
     total: number;
     version: number;
     closed: boolean;
@@ -74,5 +80,10 @@ export interface AdminCreatedOrder {
     order_id: string;
     status: OrderStatus;
     payment_status: PaymentStatus;
+    payment_method: PaymentMethod | null;
+    discount_type: DiscountType | null;
+    discount_value: number | null;
+    discount_amount: number;
     total: number;
+    summary: string;
 }

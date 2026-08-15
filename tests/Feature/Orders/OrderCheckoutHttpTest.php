@@ -13,6 +13,7 @@ use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -43,9 +44,12 @@ final class OrderCheckoutHttpTest extends TestCase
     public function test_public_checkout_is_backend_priced_persisted_and_safe(): void
     {
         $response = $this->postJson(route('public.orders.store'), $this->payload() + [
-            'total' => 1, 'shipping_fee' => 0, 'payment_status' => 'paid', 'status' => 'delivered',
+            'total' => 1, 'shipping_fee' => 0, 'payment_status' => 'paid', 'payment_method' => 'cash',
+            'discount_type' => 'percentage', 'discount_value' => 100, 'discount_amount' => 9000, 'status' => 'delivered',
         ]);
-        $response->assertUnprocessable()->assertJsonValidationErrors(['total', 'shipping_fee', 'payment_status', 'status']);
+        $response->assertUnprocessable()->assertJsonValidationErrors([
+            'total', 'shipping_fee', 'payment_status', 'payment_method', 'discount_type', 'discount_value', 'discount_amount', 'status',
+        ]);
 
         $response = $this->postJson(route('public.orders.store'), $this->payload());
         $response->assertCreated()
@@ -62,6 +66,36 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertSame('Visitor name', $order->customer_name_snapshot);
         $this->assertSame(9000, (int) $order->total);
         $this->assertCount(1, $order->items);
+    }
+
+    public function test_public_and_admin_checkout_validate_against_the_orders_business_date(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-08-14 00:30:00 UTC'));
+
+        $this->getJson(route('public.orders.options'))
+            ->assertOk()
+            ->assertJsonPath('data.today', '2026-08-13');
+
+        $publicPayload = $this->payload();
+        $publicPayload['delivery_date'] = '2026-08-13';
+        $this->postJson(route('public.orders.store'), $publicPayload)->assertCreated();
+
+        $publicPayload['delivery_date'] = '2026-08-12';
+        $publicPayload['idempotency_key'] = 'checkout-business-date-old';
+        $this->postJson(route('public.orders.store'), $publicPayload)
+            ->assertUnprocessable()->assertJsonValidationErrors('delivery_date');
+
+        $adminPayload = $this->payload();
+        unset($adminPayload['idempotency_key'], $adminPayload['customer']);
+        $adminPayload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
+        $adminPayload['customer_id'] = Customer::query()->create(['name' => 'Business date customer'])->id;
+        $adminPayload['delivery_date'] = '2026-08-13';
+        $this->actingAs(User::factory()->administrator()->create())
+            ->postJson(route('admin.orders.store'), $adminPayload)->assertCreated();
+
+        $adminPayload['delivery_date'] = '2026-08-12';
+        $this->postJson(route('admin.orders.store'), $adminPayload)
+            ->assertUnprocessable()->assertJsonValidationErrors('delivery_date');
     }
 
     public function test_cooked_checkout_persists_and_exposes_snapshot_safe_breakdown(): void
@@ -133,6 +167,151 @@ final class OrderCheckoutHttpTest extends TestCase
 
         $order = Order::query()->with('items')->firstOrFail();
         $this->assertSame(1500, (int) $order->items->sole()->cooking_surcharge);
+    }
+
+    public function test_admin_summary_formats_a_structured_combined_order_for_whatsapp_copy(): void
+    {
+        $customer = Customer::query()->create(['name' => 'Agostina Salomón']);
+        $order = Order::query()->forceCreate([
+            'public_id' => 'TP-000015',
+            'customer_id' => $customer->id,
+            'source' => 'admin',
+            'customer_name_snapshot' => $customer->name,
+            'customer_phone_snapshot' => '11 5555-9999',
+            'status' => 'prepared',
+            'payment_status' => 'unpaid',
+            'condition' => 'cooked',
+            'delivery_type' => 'delivery',
+            'delivery_period' => 'night',
+            'delivery_date' => '2026-08-14',
+            'delivery_address_snapshot' => 'Dirección privada que no se copia',
+            'notes' => 'Sin cebolla',
+            'items_base_subtotal' => 18800,
+            'cooking_surcharge' => 1900,
+            'items_subtotal' => 20700,
+            'toppings_subtotal' => 0,
+            'shipping_fee_snapshot' => 2000,
+            'combined_dozen_savings' => 3500,
+            'total' => 22700,
+        ]);
+        $order->items()->create([
+            'product_id' => $this->product->id,
+            'product_name' => 'Jamón y Queso',
+            'pricing_mode' => 'unit',
+            'quantity' => 2,
+            'units_count' => 2,
+            'unit_price' => 1600,
+            'line_total' => 3200,
+            'base_unit_price' => 1450,
+            'base_line_total' => 2900,
+            'cooking_surcharge' => 300,
+            'regular_price_total' => 3200,
+            'savings' => 0,
+        ]);
+        $combined = $order->items()->create([
+            'product_name' => 'Docena combinada',
+            'pricing_mode' => 'combined_dozen',
+            'quantity' => 1,
+            'units_count' => 12,
+            'unit_price' => 17500,
+            'line_total' => 17500,
+            'base_unit_price' => 16000,
+            'base_line_total' => 16000,
+            'cooking_surcharge' => 1500,
+            'regular_price_total' => 21000,
+            'savings' => 3500,
+        ]);
+        $combined->compositions()->createMany([
+            ['product_id' => $this->product->id, 'product_name' => 'Salteñas', 'quantity' => 4],
+            ['product_id' => $this->product->id, 'product_name' => 'Pollo y portobellos', 'quantity' => 2],
+            ['product_id' => $this->product->id, 'product_name' => 'Matambre y verduras asadas', 'quantity' => 2],
+            ['product_id' => $this->product->id, 'product_name' => 'Jamón y Queso', 'quantity' => 4],
+        ]);
+
+        $summary = app(OrderSummaryFormatter::class)->formatAdmin($order);
+
+        $this->assertSame(<<<'TEXT'
+🧾 *PEDIDO TP-000015*
+
+👤 *Cliente:* Agostina Salomón
+📅 *Entrega:* 14/08/2026 · Noche
+🛵 *Modalidad:* Envío
+🔥 *Condición:* Cocinadas
+
+*DETALLE DEL PEDIDO*
+
+• 2 × Jamón y Queso
+
+• 1 × Docena combinada
+└ 4 Salteñas
+└ 2 Pollo y portobellos
+└ 2 Matambre y verduras asadas
+└ 4 Jamón y Queso
+
+*RESUMEN*
+
+Empanadas: $18.800
+Cocción: +$1.900
+Envío: +$2.000
+Toppings: $0
+
+💰 *TOTAL: $22.700*
+
+🏷️ *Ahorro incluido por docena combinada: $3.500*
+
+*El ahorro de la docena combinada ya está aplicado en el precio de las empanadas.*
+
+📝 *Nota:* Sin cebolla
+TEXT, $summary);
+        $this->assertStringNotContainsString('11 5555-9999', $summary);
+        $this->assertStringNotContainsString('Dirección privada que no se copia', $summary);
+    }
+
+    public function test_admin_summary_omits_optional_cooking_savings_addons_time_and_note(): void
+    {
+        $customer = Customer::query()->create(['name' => 'Paisa']);
+        $order = Order::query()->forceCreate([
+            'public_id' => 'TP-000014',
+            'customer_id' => $customer->id,
+            'source' => 'admin',
+            'customer_name_snapshot' => $customer->name,
+            'status' => 'waiting',
+            'payment_status' => 'unpaid',
+            'condition' => 'raw',
+            'delivery_type' => 'pickup',
+            'delivery_period' => 'midday',
+            'delivery_date' => '2026-08-14',
+            'items_base_subtotal' => 1600,
+            'cooking_surcharge' => 0,
+            'items_subtotal' => 1600,
+            'toppings_subtotal' => 0,
+            'shipping_fee_snapshot' => 0,
+            'combined_dozen_savings' => 0,
+            'total' => 1600,
+        ]);
+        $order->items()->create([
+            'product_id' => $this->product->id,
+            'product_name' => 'Salteña',
+            'pricing_mode' => 'unit',
+            'quantity' => 1,
+            'units_count' => 1,
+            'unit_price' => 1600,
+            'line_total' => 1600,
+            'base_unit_price' => 1600,
+            'base_line_total' => 1600,
+            'cooking_surcharge' => 0,
+            'regular_price_total' => 1600,
+            'savings' => 0,
+        ]);
+
+        $summary = app(OrderSummaryFormatter::class)->formatAdmin($order);
+
+        $this->assertStringContainsString('📅 *Entrega:* 14/08/2026 · Mediodía', $summary);
+        $this->assertStringContainsString('🔥 *Condición:* Crudas', $summary);
+        $this->assertStringNotContainsString('Cocción:', $summary);
+        $this->assertStringNotContainsString('Ahorro incluido', $summary);
+        $this->assertStringNotContainsString('*ADICIONALES*', $summary);
+        $this->assertStringNotContainsString('📝 *Nota:*', $summary);
     }
 
     public function test_legacy_orders_without_breakdown_are_not_rebuilt_from_current_prices(): void
@@ -219,12 +398,14 @@ final class OrderCheckoutHttpTest extends TestCase
         $payload['customer_id'] = $customer->id;
         unset($payload['customer']);
         $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'cash';
 
         $response = $this->actingAs($admin)->post(route('admin.orders.store'), $payload);
         $order = Order::query()->firstOrFail();
         $response->assertRedirect(route('admin.orders.show', $order->public_id));
         $this->assertSame('waiting', $order->status->value);
         $this->assertSame('paid', $order->payment_status->value);
+        $this->assertSame('cash', $order->payment_method->value);
 
         $this->actingAs($admin)->get(route('admin.orders.show', $order->public_id))->assertOk();
         $this->actingAs($admin)->get(route('admin.orders.index', ['order' => $order->public_id]))
@@ -250,13 +431,15 @@ final class OrderCheckoutHttpTest extends TestCase
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 6]];
         $payload['customer_id'] = $customer->id;
         $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'bank_transfer';
 
         $response = $this->actingAs($admin)->postJson(route('admin.orders.store'), $payload);
 
         $response->assertCreated()
             ->assertJsonPath('data.status', 'waiting')
             ->assertJsonPath('data.payment_status', 'paid')
-            ->assertJsonPath('data.total', 9000);
+            ->assertJsonPath('data.total', 9000)
+            ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, '🧾 *PEDIDO TP-'));
         $this->assertDatabaseCount('orders', 1);
 
         $order = Order::query()->sole();
@@ -264,6 +447,96 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertSame($order->public_id, $response->json('data.order_id'));
         $this->assertSame('waiting', $order->status->value);
         $this->assertSame('paid', $order->payment_status->value);
+        $this->assertSame('bank_transfer', $order->payment_method->value);
+    }
+
+    public function test_admin_preview_and_create_apply_only_backend_calculated_discount(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = Customer::query()->create(['name' => 'Discount customer']);
+        $payload = $this->payload();
+        unset($payload['idempotency_key'], $payload['customer']);
+        $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 6]];
+        $payload['customer_id'] = $customer->id;
+        $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'debit_card';
+        $payload['discount_type'] = 'percentage';
+        $payload['discount_value'] = 10;
+
+        $this->actingAs($admin)->postJson(route('admin.orders.price-preview'), [
+            'items' => $payload['items'],
+            'addons' => [],
+            'condition' => 'raw',
+            'delivery_type' => 'pickup',
+            'discount_type' => 'percentage',
+            'discount_value' => 10,
+        ])->assertOk()
+            ->assertJsonPath('data.discountable_subtotal', 9000)
+            ->assertJsonPath('data.discount_amount', 900)
+            ->assertJsonPath('data.total', 8100);
+
+        $tampered = $payload + ['discount_amount' => 8999, 'total' => 1];
+        $this->actingAs($admin)->post(route('admin.orders.store'), $tampered)
+            ->assertSessionHasErrors(['discount_amount', 'total']);
+        $this->assertDatabaseCount('orders', 0);
+
+        $this->actingAs($admin)->postJson(route('admin.orders.store'), $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.total', 8100)
+            ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, 'Descuento: -$900'));
+        $order = Order::query()->sole();
+        $this->assertSame('percentage', $order->discount_type->value);
+        $this->assertSame(10, $order->discount_value);
+        $this->assertSame(900, (int) $order->discount_amount);
+        $this->assertSame('debit_card', $order->payment_method->value);
+    }
+
+    public function test_zero_total_order_requires_no_payment_instead_of_recording_a_false_payment(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = Customer::query()->create(['name' => 'Zero total customer']);
+        $payload = $this->payload();
+        unset($payload['idempotency_key'], $payload['customer']);
+        $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
+        $payload['customer_id'] = $customer->id;
+        $payload['payment_status'] = 'paid';
+        $payload['payment_method'] = 'cash';
+        $payload['discount_type'] = 'percentage';
+        $payload['discount_value'] = 100;
+
+        $this->actingAs($admin)->postJson(route('admin.orders.store'), $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.total', 0)
+            ->assertJsonPath('data.payment_status', 'not_required')
+            ->assertJsonPath('data.payment_method', null);
+
+        $order = Order::query()->sole();
+        $this->assertSame('not_required', $order->payment_status->value);
+        $this->assertNull($order->payment_method);
+
+        $this->actingAs($admin)->patch(route('admin.orders.payment-status.update', $order), [
+            'payment_status' => 'paid',
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+        $this->assertSame('not_required', $order->refresh()->payment_status->value);
+        $this->assertNull($order->payment_method);
+    }
+
+    public function test_paid_requires_method_and_unpaid_prohibits_it(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = Customer::query()->create(['name' => 'Payment customer']);
+        $payload = $this->payload();
+        unset($payload['idempotency_key'], $payload['customer']);
+        $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
+        $payload['customer_id'] = $customer->id;
+        $payload['payment_status'] = 'paid';
+
+        $this->actingAs($admin)->post(route('admin.orders.store'), $payload)->assertSessionHasErrors('payment_method');
+        $payload['payment_status'] = 'unpaid';
+        $payload['payment_method'] = 'cash';
+        $this->actingAs($admin)->post(route('admin.orders.store'), $payload)->assertSessionHasErrors('payment_method');
+        $this->assertDatabaseCount('orders', 0);
     }
 
     public function test_admin_quick_create_does_not_silently_attach_duplicate_phone(): void

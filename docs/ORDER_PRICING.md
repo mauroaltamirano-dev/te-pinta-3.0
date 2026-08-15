@@ -4,7 +4,7 @@
 
 ## Inputs and price sources
 
-The engine receives final quantities per product, one order-wide condition (`raw` or `cooked`), topping quantities, and delivery type. It does not receive trusted prices.
+The engine receives final quantities per product, one order-wide condition (`raw` or `cooked`), topping quantities, delivery type, and optional administrative discount type/value. It does not receive trusted prices or a client-calculated discount amount.
 
 | Value                       | Source                                               |
 | --------------------------- | ---------------------------------------------------- |
@@ -13,6 +13,7 @@ The engine receives final quantities per product, one order-wide condition (`raw
 | Combined dozen              | `order_settings` fixed raw/cooked prices             |
 | Topping                     | available `order_addons.price`                       |
 | Shipping                    | `delivery_fee` for delivery; zero for pickup         |
+| Discount                    | Backend enum/value applied by `OrderPricingEngine`   |
 
 Initial combined prices are 16000 raw and 17500 cooked. Cooked combined-dozen price is independent; do not derive it from the standard dozen surcharge.
 
@@ -75,6 +76,18 @@ Toppings are not Products. Each available addon is priced as `quantity × curren
 
 The initial delivery fee is the safe placeholder `0`. Configure the real value in `/admin/settings/general` before taking delivery orders.
 
+## Administrative discounts
+
+Discounts are available only to authenticated administrative create/edit/Quick Order flows. The supported types are `percentage` (whole percentage from 0–100) and `fixed_amount` (whole pesos). Type and value must be supplied together.
+
+```text
+discountable subtotal = items subtotal + toppings subtotal
+discount amount       = min(calculated amount, discountable subtotal)
+total                 = discountable subtotal - discount amount + shipping
+```
+
+`items subtotal` already contains the applied raw/cooked price, so cooking participates in the discount. Shipping never does. Percentage results round half-up to a whole peso; a fixed discount cannot consume shipping or make the commercial subtotal negative. Public preview/checkout prohibits all discount fields.
+
 ## Persisted history
 
 Order creation persists the quote, not a reference to a future calculation:
@@ -83,9 +96,9 @@ Order creation persists the quote, not a reference to a future calculation:
 - every new line: raw-equivalent unit/base subtotal and cooking-surcharge snapshots alongside the applied values;
 - combined lines: fixed price, raw-equivalent fixed price, cooking surcharge, regular comparison total, savings, and product-name/quantity composition;
 - toppings: sold name, quantity, applied unit price, subtotal;
-- order: customer/contact snapshots, delivery address, shipping fee, subtotals, savings, total.
+- order: customer/contact snapshots, delivery address, shipping fee, subtotals, savings, discount type/value/applied amount, payment method, and total.
 
-New orders also persist aggregate base-product and cooking-surcharge values. The invariant is `items subtotal = base-product subtotal + cooking surcharge`; the final total remains `items + toppings + shipping`. Pre-existing orders keep these additive columns null because reconstructing their raw equivalent from current products or settings would rewrite history. Their summaries therefore omit the cooking line rather than inventing a value.
+New orders also persist aggregate base-product and cooking-surcharge values. The invariants are `items subtotal = base-product subtotal + cooking surcharge` and `total = items + toppings + shipping - discount`. Pre-existing orders keep additive cooking columns null because reconstructing their raw equivalent from current products or settings would rewrite history. Their summaries therefore omit the cooking line rather than inventing a value.
 
 Opening an order never reruns pricing. Current catalog, customer, topping, or setting changes must not affect existing snapshots.
 
@@ -96,7 +109,7 @@ The edit page starts from two structured backend values:
 - a draft rebuilt from persisted item/composition/topping records as real product and addon quantities;
 - `original_quote`, built only from the order's current snapshots for the **Before** summary.
 
-The shared draft hook calls the existing `/admin/orders/price-preview` whenever products, quantities, condition, toppings, or delivery type change. It compares that current backend quote with the persisted total; React does not calculate a replacement price.
+The shared draft hook calls the existing `/admin/orders/price-preview` whenever products, quantities, condition, toppings, delivery type, or discount change. It compares that current backend quote with the persisted total; React does not calculate a replacement price. Payment method is not economic and does not invalidate the preview.
 
 `UpdateOrder` independently classifies those same fields as economic. If any changed, it runs the complete order through `OrderPricingEngine` with configuration and sellability valid at confirmation time. `PersistOrderQuote` then replaces item, composition, topping, aggregate pricing, shipping, and savings snapshots for that order in the same transaction. Other historical orders are never recalculated.
 

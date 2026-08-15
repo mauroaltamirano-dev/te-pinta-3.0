@@ -11,6 +11,29 @@ async function logIn(page: Page) {
     await expect(page).toHaveURL(/\/admin$/);
 }
 
+async function captureCopiedOrderDetail(page: Page) {
+    await page.evaluate(() => {
+        const target = window as Window & { copiedOrderDetail?: string };
+        target.copiedOrderDetail = '';
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+                writeText: async (value: string) => {
+                    target.copiedOrderDetail = value;
+                },
+            },
+        });
+    });
+}
+
+async function copiedOrderDetail(page: Page) {
+    return page.evaluate(
+        () =>
+            (window as Window & { copiedOrderDetail?: string })
+                .copiedOrderDetail ?? '',
+    );
+}
+
 async function createOrder(page: Page, customerName: string) {
     await page.goto('/admin/orders/create');
     await page
@@ -56,6 +79,48 @@ async function addOneSaltenaAndWaitForPreview(page: Page) {
 
 test.describe.configure({ mode: 'serial' });
 
+test('inicio móvil muestra navegación práctica y variedades en dos columnas', async ({
+    page,
+}, testInfo) => {
+    test.skip(
+        testInfo.project.name !== 'mobile-chromium',
+        'La adaptación táctil se valida en el viewport móvil.',
+    );
+    await logIn(page);
+    await page.goto('/admin');
+
+    const navigation = page.getByRole('navigation', {
+        name: 'Navegación principal',
+    });
+    await expect(navigation).toBeVisible();
+    await expect(
+        navigation.getByRole('link', { name: 'Inicio' }),
+    ).toBeVisible();
+    await expect(
+        navigation.getByRole('link', { name: 'Pedidos' }),
+    ).toBeVisible();
+    await expect(
+        navigation.getByRole('link', { name: 'Clientes' }),
+    ).toBeVisible();
+    await expect(
+        navigation.getByRole('button', { name: 'Abrir más opciones' }),
+    ).toBeVisible();
+
+    const cards = page.locator('article').filter({
+        has: page.getByRole('button', { name: /Agregar 1 unidad de/ }),
+    });
+    await expect(cards).toHaveCount(9);
+    const first = await cards.nth(0).boundingBox();
+    const second = await cards.nth(1).boundingBox();
+    expect(Math.abs((first?.y ?? 0) - (second?.y ?? 0))).toBeLessThan(2);
+    expect(second?.x ?? 0).toBeGreaterThan(first?.x ?? 0);
+
+    await page.screenshot({
+        path: 'storage/app/admin-quick-order-mobile-grid.png',
+        fullPage: true,
+    });
+});
+
 test('administrador crea un pedido cocinado con desglose explícito', async ({
     page,
 }) => {
@@ -81,7 +146,47 @@ test('administrador crea un pedido cocinado con desglose explícito', async ({
     await expect(page.getByText('Cocción')).toBeVisible();
 });
 
-test('lista abre un drawer operativo y conserva navegación completa', async ({
+test('detalle compartido prioriza el ticket y copia el resumen estructurado', async ({
+    page,
+}, testInfo) => {
+    test.skip(
+        testInfo.project.name !== 'chromium',
+        'Desktop validates the shared ticket identity; mobile has its own responsive capture.',
+    );
+    await logIn(page);
+    await page.goto('/admin/orders');
+    const orderButton = page.getByRole('button', { name: /TP-/ }).first();
+    const orderId = await orderButton.textContent();
+    await orderButton.click();
+
+    const ticket = page.getByTestId('order-ticket-dialog');
+    await expect(ticket).toContainText(orderId ?? '');
+    await captureCopiedOrderDetail(page);
+    await ticket.getByRole('button', { name: 'Copiar detalle' }).click();
+    await expect(
+        ticket.getByRole('button', { name: 'Detalle copiado' }),
+    ).toBeVisible();
+    const copied = await copiedOrderDetail(page);
+    expect(copied).toContain(`🧾 *PEDIDO ${orderId}*`);
+    expect(copied).toContain('👤 *Cliente:* Cliente Playwright');
+    expect(copied).toContain('🔥 *Condición:* Cocinadas');
+    expect(copied).toContain('• 1 × Docena de Salteña');
+    expect(copied).toContain('💰 *TOTAL:');
+    expect(copied).not.toContain('5555-0101');
+
+    await page.waitForTimeout(600);
+    await page.screenshot({
+        path: 'storage/app/orders-detail-ticket-desktop.png',
+        fullPage: true,
+    });
+
+    await expect(ticket.getByRole('link', { name: 'Editar' })).toHaveAttribute(
+        'href',
+        `/admin/orders/${orderId}/edit`,
+    );
+});
+
+test('lista abre un ticket y permite actualizar estado y pago rápidamente', async ({
     page,
 }, testInfo) => {
     if (testInfo.project.name === 'chromium') {
@@ -172,49 +277,38 @@ test('lista abre un drawer operativo y conserva navegación completa', async ({
     const orderId = await orderButton.textContent();
     await orderButton.click();
 
-    const drawer = page.getByRole('dialog');
-    await expect(drawer).toBeVisible();
-    await expect(
-        drawer.getByRole('heading', { name: orderId ?? /TP-/ }),
-    ).toBeVisible();
-    await expect(
-        drawer.getByRole('link', { name: 'Cliente Playwright' }),
-    ).toBeVisible();
+    const ticket = page.getByTestId('order-ticket-dialog');
+    await expect(ticket).toBeVisible();
+    await expect(ticket).toContainText(orderId ?? '');
+    await expect(ticket.getByText('Cliente Playwright')).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`order=${orderId}`));
 
     if (testInfo.project.name === 'chromium') {
         await page.waitForTimeout(600);
         await page.screenshot({
-            path: 'storage/app/orders-redesign-drawer.png',
+            path: 'storage/app/orders-ticket-dialog.png',
             fullPage: true,
         });
     }
 
-    await drawer.getByLabel('Estado del pedido').click();
+    await ticket.getByRole('button', { name: 'Cerrar' }).click();
+    await page.getByLabel(`Estado de ${orderId}`).click();
     await page.getByRole('option', { name: 'Preparado' }).click();
-    await expect(drawer.getByLabel('Estado del pedido')).toHaveText(
+    await expect(page.getByLabel(`Estado de ${orderId}`)).toHaveText(
         /Preparado/,
     );
 
-    await drawer.getByLabel('Estado del pago').click();
-    await page.getByRole('option', { name: 'Pagado', exact: true }).click();
-    await expect(drawer.getByLabel('Estado del pago')).toHaveText(/Pagado/);
-
-    await drawer.getByRole('button', { name: 'Copiar detalle' }).click();
+    await page
+        .getByRole('switch', { name: `Marcar como pagado ${orderId}` })
+        .click();
+    await page.getByLabel(`Medio de pago de ${orderId}`).click();
+    await page.getByRole('option', { name: 'Efectivo', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirmar pago' }).click();
     await expect(
-        drawer.getByRole('button', { name: 'Detalle copiado' }),
-    ).toBeVisible();
+        page.getByRole('switch', { name: `Marcar como no pagado ${orderId}` }),
+    ).toHaveAttribute('aria-checked', 'true');
 
-    const fullDetail = drawer.getByRole('link', {
-        name: 'Ver detalle completo',
-    });
-    await expect(fullDetail).toHaveAttribute(
-        'href',
-        `/admin/orders/${orderId}`,
-    );
-
-    await drawer.getByRole('button', { name: 'Close' }).click();
-    await expect(drawer).toBeHidden();
+    await expect(ticket).toBeHidden();
     await expect(page).toHaveURL(/\/admin\/orders(?:\?.*)?$/);
 
     await page.goBack();
@@ -227,26 +321,41 @@ test('lista abre un drawer operativo y conserva navegación completa', async ({
         page.getByRole('heading', { name: orderId ?? /TP-/ }),
     ).toBeVisible();
     await expect(page.getByText('Resumen del pedido')).toBeVisible();
+    await expect(page.getByTestId('order-ticket-header')).toContainText(
+        orderId ?? '',
+    );
+    await expect(
+        page.getByRole('button', { name: 'Copiar detalle' }),
+    ).toBeVisible();
 });
 
-test('drawer mantiene el detalle usable en viewport móvil', async ({
+test('ticket mantiene el resumen usable en viewport móvil', async ({
     page,
 }, testInfo) => {
     await logIn(page);
     await page.goto('/admin/orders');
     await page.getByRole('button', { name: /TP-/ }).first().click();
 
-    const drawer = page.getByRole('dialog');
-    await expect(drawer).toBeVisible();
-    const drawerWidth = (await drawer.boundingBox())?.width ?? 0;
+    const ticket = page.getByTestId('order-ticket-dialog');
+    await expect(ticket).toBeVisible();
+    const ticketWidth = (await ticket.boundingBox())?.width ?? 0;
     const viewportWidth = page.viewportSize()?.width ?? 0;
-    expect(drawerWidth).toBeLessThanOrEqual(viewportWidth);
+    expect(ticketWidth).toBeLessThanOrEqual(viewportWidth - 16);
+
+    await expect(ticket.getByText('Comprobante de pedido')).toBeVisible();
+    await expect(ticket.getByText(/\d{2}\/\d{2}\/\d{4} ·/)).toBeVisible();
+    await expect(
+        ticket.getByRole('button', { name: 'Copiar detalle' }),
+    ).toBeVisible();
+    await expect(ticket.getByRole('link', { name: 'Editar' })).toBeVisible();
 
     if (testInfo.project.name === 'mobile-chromium') {
-        expect(drawerWidth).toBe(viewportWidth);
+        await page.waitForTimeout(600);
+        await page.screenshot({
+            path: 'storage/app/orders-ticket-mobile.png',
+            fullPage: true,
+        });
     }
-
-    await expect(drawer.getByText('Operaciones')).toBeVisible();
 });
 
 test.describe('edición administrativa segura', () => {
@@ -258,7 +367,7 @@ test.describe('edición administrativa segura', () => {
         await logIn(page);
     });
 
-    test('edita desde detalle y drawer, repricing mediante backend y conserva el Order ID', async ({
+    test('edita desde el ticket, repricing mediante backend y conserva el Order ID', async ({
         page,
     }) => {
         const orderId = await createOrder(page, 'Edición activa Playwright');
@@ -271,16 +380,11 @@ test.describe('edición administrativa segura', () => {
 
         await page.goto(`/admin/orders?search=${orderId}`);
         await page.getByRole('button', { name: orderId, exact: true }).click();
-        const drawer = page.getByRole('dialog');
+        const ticket = page.getByTestId('order-ticket-dialog');
         await expect(
-            drawer.getByRole('link', { name: 'Editar pedido' }),
+            ticket.getByRole('link', { name: 'Editar' }),
         ).toHaveAttribute('href', `/admin/orders/${orderId}/edit`);
-        await drawer
-            .getByRole('link', { name: 'Ver detalle completo' })
-            .click();
-
-        await expect(page).toHaveURL(`/admin/orders/${orderId}`);
-        await page.getByRole('link', { name: 'Editar pedido' }).click();
+        await ticket.getByRole('link', { name: 'Editar' }).click();
         await expect(page).toHaveURL(`/admin/orders/${orderId}/edit`);
         await expect(page.getByText(`Editando ${orderId}`)).toBeVisible();
 
@@ -379,9 +483,15 @@ test.describe('edición administrativa segura', () => {
         await expect(
             page.getByRole('link', { name: 'Editar pedido' }),
         ).toHaveCount(0);
-        await page.getByRole('button', { name: 'Habilitar edición' }).click();
 
-        const confirmation = page.getByRole('dialog');
+        await page.goto(`/admin/orders?search=${orderId}`);
+        await page.getByRole('button', { name: orderId, exact: true }).click();
+        const ticket = page.getByTestId('order-ticket-dialog');
+        await ticket.getByRole('button', { name: 'Editar' }).click();
+
+        const confirmation = page
+            .getByRole('dialog')
+            .filter({ hasText: `Habilitar edición de ${orderId}` });
         await expect(
             confirmation.getByText('Vas a modificar un pedido cerrado.'),
         ).toBeVisible();

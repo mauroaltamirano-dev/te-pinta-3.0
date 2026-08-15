@@ -1,17 +1,8 @@
 import { Link, router } from '@inertiajs/react';
-import { Check, Clipboard, ExternalLink, Pencil } from 'lucide-react';
+import { ExternalLink, ReceiptText } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -19,20 +10,24 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { CopyOrderDetailButton } from '@/features/orders/components/copy-order-detail-button';
+import { OrderEditButton } from '@/features/orders/components/order-edit-button';
 import {
     deliveryPeriodLabels,
     deliveryTypeLabels,
+    formatOrderDate,
     formatOrderMoney,
     orderConditionLabels,
     orderStatusLabels,
     orderStatuses,
+    paymentMethodLabels,
     paymentStatusLabels,
     pricingModeLabels,
 } from '@/features/orders/presentation';
 import type {
     AdminOrder,
     OrderStatus,
+    PaymentMethod,
     PaymentStatus,
 } from '@/features/orders/types';
 
@@ -51,7 +46,7 @@ function DetailSection({
     children: React.ReactNode;
 }) {
     return (
-        <section className="rounded-lg bg-admin-surface-raised p-4 sm:p-5">
+        <section className="rounded-lg bg-admin-surface-raised p-4 text-admin-text-secondary sm:p-5">
             <h2 className="mb-4 text-sm font-semibold text-white">{title}</h2>
             {children}
         </section>
@@ -64,10 +59,12 @@ export function OrderDetailContent({
     compact = false,
     showFullDetailLink = false,
 }: OrderDetailContentProps) {
-    const [copied, setCopied] = useState(false);
-    const [enableEditOpen, setEnableEditOpen] = useState(false);
-    const [enableEditReason, setEnableEditReason] = useState('');
-    const [enablingEdit, setEnablingEdit] = useState(false);
+    const [paymentSelection, setPaymentSelection] = useState<PaymentStatus>(
+        order.payment_status,
+    );
+    const [paymentMethodSelection, setPaymentMethodSelection] = useState<
+        PaymentMethod | ''
+    >(order.payment_method ?? '');
     const closed = order.status === 'delivered' || order.status === 'cancelled';
     const changeStatus = (status: OrderStatus) =>
         router.patch(
@@ -75,47 +72,85 @@ export function OrderDetailContent({
             { status },
             { preserveScroll: true },
         );
-    const changePayment = (payment_status: PaymentStatus) =>
+    const changePayment = (
+        payment_status: PaymentStatus,
+        payment_method: PaymentMethod | null,
+    ) =>
         router.patch(
             `/admin/orders/${order.id}/payment-status`,
-            { payment_status },
+            { payment_status, payment_method },
             { preserveScroll: true },
         );
-    const copy = async () => {
-        try {
-            await navigator.clipboard.writeText(summary);
-        } catch {
-            const textarea = document.createElement('textarea');
-            textarea.value = summary;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            textarea.remove();
-        }
-
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 2000);
-    };
-
     const hasCookingBreakdown = order.items_base_subtotal !== null;
     const baseSubtotal = order.items_base_subtotal ?? order.items_subtotal;
     const cookingSurcharge = order.cooking_surcharge ?? 0;
 
     return (
         <div className="grid gap-4 font-orders">
-            <div className="flex flex-wrap items-center gap-2">
-                <Badge className="border-admin-accent/30 bg-admin-accent/10 text-admin-accent">
-                    {orderStatusLabels[order.status]}
-                </Badge>
-                <Badge variant="outline">
-                    {paymentStatusLabels[order.payment_status]}
-                </Badge>
-                <span className="ml-auto text-sm text-admin-text-tertiary">
-                    {orderConditionLabels[order.condition]}
-                </span>
-            </div>
+            <section
+                data-testid="order-ticket-header"
+                className="border-y border-dashed border-admin-border bg-admin-surface px-4 py-5 sm:px-5"
+            >
+                <div className="flex items-start justify-between gap-5">
+                    <div className="min-w-0">
+                        <p className="flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-admin-accent uppercase">
+                            <ReceiptText className="size-4" /> Orden de
+                            producción
+                        </p>
+                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                            {order.id}
+                        </h2>
+                    </div>
+                    <div className="shrink-0 text-right">
+                        <p className="text-xs text-admin-text-tertiary">
+                            Total
+                        </p>
+                        <p className="mt-1 text-xl font-semibold text-white tabular-nums sm:text-2xl">
+                            {formatOrderMoney.format(order.total)}
+                        </p>
+                    </div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border pt-4">
+                    <Badge className="border-admin-accent/30 bg-admin-accent/10 text-admin-accent">
+                        {orderStatusLabels[order.status]}
+                    </Badge>
+                    <Badge
+                        variant="outline"
+                        className={
+                            order.payment_status === 'paid'
+                                ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400'
+                                : order.payment_status === 'not_required'
+                                  ? 'border-sky-400/40 bg-sky-400/10 text-sky-300'
+                                  : undefined
+                        }
+                    >
+                        {paymentStatusLabels[order.payment_status]}
+                        {order.payment_method
+                            ? ` · ${paymentMethodLabels[order.payment_method]}`
+                            : ''}
+                    </Badge>
+                    <span className="text-sm text-admin-text-tertiary sm:ml-auto">
+                        {orderConditionLabels[order.condition]}
+                    </span>
+                </div>
+                <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+                    <CopyOrderDetailButton
+                        summary={summary}
+                        className="w-full sm:w-auto"
+                    />
+                    {showFullDetailLink && (
+                        <Button
+                            asChild
+                            variant="ghost"
+                            className="text-admin-text-secondary hover:text-white"
+                        >
+                            <Link href={`/admin/orders/${order.id}`}>
+                                Ver detalle completo <ExternalLink />
+                            </Link>
+                        </Button>
+                    )}
+                </div>
+            </section>
 
             <DetailSection title="Cliente">
                 <Link
@@ -147,7 +182,7 @@ export function OrderDetailContent({
                                     {formatOrderMoney.format(item.unit_price)}
                                 </p>
                                 {item.composition.length > 0 && (
-                                    <ul className="mt-2 grid gap-1 text-sm text-muted-foreground">
+                                    <ul className="mt-2 grid gap-1 text-sm text-admin-text-secondary">
                                         {item.composition.map((part) => (
                                             <li
                                                 key={`${part.product_name}-${part.quantity}`}
@@ -198,13 +233,13 @@ export function OrderDetailContent({
                     <p className="font-medium text-white">
                         {deliveryTypeLabels[order.delivery_type]}
                     </p>
-                    <p className="text-muted-foreground">
-                        {order.delivery_date} ·{' '}
+                    <p className="text-admin-text-secondary">
+                        {formatOrderDate(order.delivery_date)} ·{' '}
                         {deliveryPeriodLabels[order.delivery_period]}
                         {order.delivery_time ? ` · ${order.delivery_time}` : ''}
                     </p>
                     {order.delivery_address && (
-                        <p className="text-muted-foreground">
+                        <p className="text-admin-text-secondary">
                             {order.delivery_address}
                         </p>
                     )}
@@ -262,6 +297,17 @@ export function OrderDetailContent({
                             </span>
                         </div>
                     )}
+                    {(order.discount_amount ?? 0) > 0 && (
+                        <div className="flex justify-between gap-4 text-emerald-400">
+                            <span>Descuento</span>
+                            <span className="tabular-nums">
+                                −
+                                {formatOrderMoney.format(
+                                    order.discount_amount ?? 0,
+                                )}
+                            </span>
+                        </div>
+                    )}
                     <div className="mt-2 flex justify-between border-t border-border pt-4 text-lg font-semibold text-white">
                         <span>Total</span>
                         <span className="tabular-nums">
@@ -300,10 +346,21 @@ export function OrderDetailContent({
                     <label className="grid gap-2 text-xs text-admin-text-tertiary">
                         Pago
                         <Select
-                            value={order.payment_status}
-                            onValueChange={(value) =>
-                                changePayment(value as PaymentStatus)
-                            }
+                            value={paymentSelection}
+                            onValueChange={(value) => {
+                                const status = value as PaymentStatus;
+                                setPaymentSelection(status);
+
+                                if (status === 'unpaid') {
+                                    setPaymentMethodSelection('');
+                                    changePayment('unpaid', null);
+                                } else if (paymentMethodSelection) {
+                                    changePayment(
+                                        'paid',
+                                        paymentMethodSelection,
+                                    );
+                                }
+                            }}
                         >
                             <SelectTrigger aria-label="Estado del pago">
                                 <SelectValue />
@@ -318,34 +375,42 @@ export function OrderDetailContent({
                             </SelectContent>
                         </Select>
                     </label>
+                    {paymentSelection === 'paid' && (
+                        <label className="grid gap-2 text-xs text-admin-text-tertiary">
+                            Medio de pago
+                            <Select
+                                value={paymentMethodSelection}
+                                onValueChange={(value) => {
+                                    const method = value as PaymentMethod;
+                                    setPaymentMethodSelection(method);
+                                    changePayment('paid', method);
+                                }}
+                            >
+                                <SelectTrigger aria-label="Medio de pago">
+                                    <SelectValue placeholder="Seleccioná un medio" />
+                                </SelectTrigger>
+                                <SelectContent position="popper" side="top">
+                                    {Object.entries(paymentMethodLabels).map(
+                                        ([value, label]) => (
+                                            <SelectItem
+                                                key={value}
+                                                value={value}
+                                            >
+                                                {label}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </label>
+                    )}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                    {closed ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setEnableEditOpen(true)}
-                        >
-                            <Pencil /> Habilitar edición
-                        </Button>
-                    ) : (
-                        <Button asChild type="button">
-                            <Link href={`/admin/orders/${order.id}/edit`}>
-                                <Pencil /> Editar pedido
-                            </Link>
-                        </Button>
-                    )}
-                    <Button type="button" variant="outline" onClick={copy}>
-                        {copied ? <Check /> : <Clipboard />}
-                        {copied ? 'Detalle copiado' : 'Copiar detalle'}
-                    </Button>
-                    {showFullDetailLink && (
-                        <Button asChild variant="ghost">
-                            <Link href={`/admin/orders/${order.id}`}>
-                                Ver detalle completo <ExternalLink />
-                            </Link>
-                        </Button>
-                    )}
+                    <OrderEditButton
+                        orderId={order.id}
+                        version={order.version}
+                        closed={closed}
+                    />
                 </div>
                 {closed && (
                     <p className="mt-3 text-sm font-medium text-amber-400">
@@ -353,66 +418,6 @@ export function OrderDetailContent({
                     </p>
                 )}
             </DetailSection>
-
-            <Dialog open={enableEditOpen} onOpenChange={setEnableEditOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            Habilitar edición de {order.id}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Vas a modificar un pedido cerrado. Su estado no
-                            cambiará automáticamente y la acción quedará
-                            registrada.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-2">
-                        <Label htmlFor={`closed-edit-reason-${order.id}`}>
-                            Motivo breve
-                        </Label>
-                        <Textarea
-                            id={`closed-edit-reason-${order.id}`}
-                            value={enableEditReason}
-                            maxLength={240}
-                            onChange={(event) =>
-                                setEnableEditReason(event.target.value)
-                            }
-                            placeholder="Indicá por qué necesitás corregirlo"
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setEnableEditOpen(false)}
-                        >
-                            Volver
-                        </Button>
-                        <Button
-                            type="button"
-                            disabled={
-                                enablingEdit ||
-                                enableEditReason.trim().length < 3
-                            }
-                            onClick={() => {
-                                setEnablingEdit(true);
-                                router.post(
-                                    `/admin/orders/${order.id}/enable-edit`,
-                                    {
-                                        reason: enableEditReason.trim(),
-                                        expected_version: order.version,
-                                    },
-                                    {
-                                        onFinish: () => setEnablingEdit(false),
-                                    },
-                                );
-                            }}
-                        >
-                            Confirmar y editar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

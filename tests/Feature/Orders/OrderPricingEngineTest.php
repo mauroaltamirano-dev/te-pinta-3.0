@@ -4,6 +4,7 @@ namespace Tests\Feature\Orders;
 
 use App\Core\Contracts\ProductPriceProvider;
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
@@ -192,6 +193,80 @@ final class OrderPricingEngineTest extends TestCase
         $this->assertSame(2500, $delivery->shippingFee);
         $this->assertSame(5100, $delivery->total);
         $this->assertSame(0, $pickup->shippingFee);
+    }
+
+    public function test_percentage_discount_uses_products_and_addons_but_excludes_shipping(): void
+    {
+        $product = $this->product('Discounted');
+        $addon = OrderAddon::query()->where('name', 'Lactonesa')->firstOrFail();
+        OrderSetting::query()->where('key', OrderSettingKey::DeliveryFee->value)->update(['integer_value' => 2500]);
+
+        $quote = $this->engine()->quote(
+            $this->items([$product, 1]),
+            OrderCondition::Raw,
+            [['addon_id' => $addon->id, 'quantity' => 1]],
+            DeliveryType::Delivery,
+            DiscountType::Percentage,
+            10,
+        );
+
+        $this->assertSame(2100, $quote->discountableSubtotal);
+        $this->assertSame(210, $quote->discountAmount);
+        $this->assertSame(4390, $quote->total);
+        $this->assertSame('percentage', $quote->toArray()['discount_type']);
+    }
+
+    public function test_percentage_discount_rounds_half_up_to_integer_ars(): void
+    {
+        $product = $this->product('Rounding');
+        $product->update(['unit_price' => 1005]);
+
+        $quote = $this->engine()->quote(
+            $this->items([$product, 1]),
+            OrderCondition::Raw,
+            discountType: DiscountType::Percentage,
+            discountValue: 50,
+        );
+
+        $this->assertSame(503, $quote->discountAmount);
+        $this->assertSame(502, $quote->total);
+    }
+
+    public function test_fixed_discount_is_capped_to_discountable_subtotal_without_consuming_shipping(): void
+    {
+        $product = $this->product('Capped');
+        OrderSetting::query()->where('key', OrderSettingKey::DeliveryFee->value)->update(['integer_value' => 2500]);
+
+        $quote = $this->engine()->quote(
+            $this->items([$product, 1]),
+            OrderCondition::Raw,
+            deliveryType: DeliveryType::Delivery,
+            discountType: DiscountType::FixedAmount,
+            discountValue: 999999,
+        );
+
+        $this->assertSame(1600, $quote->discountAmount);
+        $this->assertSame(2500, $quote->total);
+    }
+
+    public function test_discount_type_and_value_must_be_valid_and_paired(): void
+    {
+        $product = $this->product('Invalid discount');
+
+        try {
+            $this->engine()->quote($this->items([$product, 1]), OrderCondition::Raw, discountValue: 10);
+            $this->fail('An untyped discount should be rejected.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('discount', $exception->errors());
+        }
+
+        $this->expectException(ValidationException::class);
+        $this->engine()->quote(
+            $this->items([$product, 1]),
+            OrderCondition::Raw,
+            discountType: DiscountType::Percentage,
+            discountValue: 101,
+        );
     }
 
     public function test_unavailable_or_deleted_products_and_addons_are_rejected(): void

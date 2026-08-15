@@ -11,7 +11,7 @@ Start with the smallest document that owns the change.
 | Change tables, constraints, identifiers, or lifecycle           | [DATABASE.md](DATABASE.md)                                 |
 | Change authorization, public checkout, or private data handling | [SECURITY.md](SECURITY.md)                                 |
 | Change tokens, layouts, or reusable UI                          | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)                       |
-| Set up, migrate, or run the application                         | [DEVELOPMENT.md](DEVELOPMENT.md)                           |
+| Set up, migrate, run, or expose the application                 | [DEVELOPMENT.md](DEVELOPMENT.md)                           |
 | Add an event or diagnose a failure                              | [LOGGING.md](LOGGING.md)                                   |
 | Add or run automated checks                                     | [TESTING.md](TESTING.md)                                   |
 | Understand recorded tradeoffs                                   | [decisions/README.md](decisions/README.md)                 |
@@ -25,3 +25,5 @@ Start with the smallest document that owns the change.
 3. Preserve order snapshots; never rebuild history from current catalog/settings.
 4. Run targeted checks, then the full applicable quality gate.
 5. Update this documentation when a durable boundary or rule changes.
+
+For mobile installation and the Tailscale runtime, start at [DEVELOPMENT.md](DEVELOPMENT.md#operational-runtime-and-mobile-installation). The operational service runs on loopback port `8082`; use `deploy/tailscale/route.sh status` rather than assuming route state from a running container.

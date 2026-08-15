@@ -94,6 +94,46 @@ Install Chromium once with `./vendor/bin/sail npx playwright install chromium`. 
 
 Application/database/session/log values come from `.env`; `.env.example` is the non-secret reference. Ordering prices, toppings, delivery fee, and WhatsApp destination live in the typed database settings UI instead of environment variables.
 
+## Operational runtime and mobile installation
+
+The mutable Sail checkout on `:8000` is for development. Do not point Tailscale Serve at it: when `public/hot` exists, rendered pages reference the Vite server and a phone would resolve `localhost:5173` as the phone itself.
+
+`deploy/tailscale/` prepares a separate production-like image on loopback `127.0.0.1:8082`. It uses compiled assets, keeps `APP_DEBUG=false`, contains no project `.env`, and does not copy local storage, logs, screenshots, tests, or development artifacts into the image.
+
+Prepare the local runtime configuration without modifying the development `.env`:
+
+```bash
+cp deploy/tailscale/.env.example deploy/tailscale/.env
+# Fill a new APP_KEY and the existing PostgreSQL credentials locally.
+# Keep APP_URL=https://tuki-notebook.tail2b1906.ts.net.
+deploy/tailscale/prepare-runtime.sh
+OPERATIONAL_RUNTIME_CONFIRM=yes deploy/tailscale/runtime.sh start
+OPERATIONAL_RUNTIME_CONFIRM=yes deploy/tailscale/runtime.sh migrate
+deploy/tailscale/runtime.sh verify
+```
+
+`deploy/tailscale/.env` is ignored and must never be committed. The runtime joins the existing PostgreSQL Docker network, mounts only public product media, and creates `public/storage` inside the immutable image so those mounted images remain web-accessible. Runtime verification requests one real product asset when media exists. Create and validate a database backup before migrations or cutover.
+
+The route change is intentionally separate and confirmation-gated:
+
+```bash
+deploy/tailscale/route.sh status
+TAILSCALE_ROUTE_CONFIRM=yes deploy/tailscale/route.sh cutover
+
+# Immediate rollback to Te Pinta 2.0 on 127.0.0.1:8080:
+TAILSCALE_ROUTE_CONFIRM=yes deploy/tailscale/route.sh rollback
+```
+
+Tailscale Serve remains tailnet-only; do not enable Funnel. Verify `/up`, login, CSRF-protected writes, built assets, and `/manifest.webmanifest` from the phone before treating the cutover as complete. The notebook must remain awake with Docker and Tailscale running.
+
+The operational environment sets `TRUSTED_PROXIES=REMOTE_ADDR` because Tailscale Serve terminates HTTPS and forwards the request to the loopback-only container over HTTP. This lets Laravel honor the direct proxy's `X-Forwarded-Proto: https` header and prevents mixed-content asset URLs without trusting arbitrary proxies in development.
+
+The initial Te Pinta 3.0 cutover was completed and verified on 2026-08-14. `route.sh status` is still the authority because an administrator can deliberately roll back later.
+
+For Android, connect the phone to the same tailnet, open the stable HTTPS URL in Chrome, sign in with **Remember me**, then use **Add to Home screen**. The manifest launches `/admin` as a standalone app and exposes a **Crear pedido** shortcut. No service worker is registered: authenticated pages and order writes are never cached for offline use.
+
+`APP_URL` defines the Fortify/WebAuthn origin. A passkey registered on `localhost` does not belong to the `*.ts.net` origin; after the cutover, sign in with the password once and register a new passkey from the stable HTTPS URL.
+
 ## Dependency policy
 
 Prefer Laravel, React, Tailwind, shadcn/ui, and platform-native capabilities. Add a production dependency only after documenting the concrete responsibility, maintenance/security cost, and why composition with existing tools is insufficient.

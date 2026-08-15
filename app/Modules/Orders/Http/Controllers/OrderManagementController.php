@@ -67,7 +67,7 @@ final class OrderManagementController
             'orders' => $orders->through(fn (Order $order) => (new AdminOrderResource($order))->resolve($request)),
             'filters' => ['search' => $search, 'status' => $filters['status'] ?? null, 'date' => $filters['date'] ?? null],
             'selectedOrder' => $selectedOrder === null ? null : (new AdminOrderResource($selectedOrder))->resolve($request),
-            'selectedOrderSummary' => $selectedOrder === null ? null : $formatter->format($selectedOrder),
+            'selectedOrderSummary' => $selectedOrder === null ? null : $formatter->formatAdmin($selectedOrder),
             ...$dashboardData->execute(),
         ]);
     }
@@ -79,7 +79,7 @@ final class OrderManagementController
         return Inertia::render('admin/orders/create', $options->execute());
     }
 
-    public function store(StoreAdminOrderRequest $request, CreateOrder $createOrder): RedirectResponse|JsonResponse
+    public function store(StoreAdminOrderRequest $request, CreateOrder $createOrder, OrderSummaryFormatter $formatter): RedirectResponse|JsonResponse
     {
         $order = $createOrder->execute(OrderCheckoutData::fromRequest($request, false), OrderSource::Admin, (int) $request->user()->getAuthIdentifier());
 
@@ -89,7 +89,12 @@ final class OrderManagementController
                     'order_id' => $order->public_id,
                     'status' => $order->status->value,
                     'payment_status' => $order->payment_status->value,
+                    'payment_method' => $order->payment_method?->value,
+                    'discount_type' => $order->discount_type?->value,
+                    'discount_value' => $order->discount_value,
+                    'discount_amount' => (int) $order->discount_amount,
                     'total' => (int) $order->total,
+                    'summary' => $formatter->formatAdmin($order),
                 ],
             ], 201);
         }
@@ -102,7 +107,7 @@ final class OrderManagementController
         Gate::authorize('view', $order);
         $order->load(['items.compositions', 'toppings']);
 
-        return Inertia::render('admin/orders/show', ['order' => (new AdminOrderResource($order))->resolve($request), 'summary' => $formatter->format($order)]);
+        return Inertia::render('admin/orders/show', ['order' => (new AdminOrderResource($order))->resolve($request), 'summary' => $formatter->formatAdmin($order)]);
     }
 
     public function edit(Request $request, Order $order, BuildAdminOrderEditData $editData, BuildAdminOrderFormOptions $options): Response
@@ -145,6 +150,10 @@ final class OrderManagementController
                 'order_id' => $updated->public_id,
                 'status' => $updated->status->value,
                 'payment_status' => $updated->payment_status->value,
+                'payment_method' => $updated->payment_method?->value,
+                'discount_type' => $updated->discount_type?->value,
+                'discount_value' => $updated->discount_value,
+                'discount_amount' => (int) $updated->discount_amount,
                 'total' => (int) $updated->total,
                 'version' => (int) $updated->edit_version,
             ]]);

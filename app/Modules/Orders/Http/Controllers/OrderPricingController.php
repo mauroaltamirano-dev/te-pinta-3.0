@@ -4,6 +4,7 @@ namespace App\Modules\Orders\Http\Controllers;
 
 use App\Modules\Orders\Actions\CalculateOrderPrice;
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Http\Requests\PreviewOrderPriceRequest;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
@@ -21,6 +22,8 @@ final class OrderPricingController
             OrderCondition::from($request->validated('condition')),
             $request->validated('addons', []),
             DeliveryType::from($request->validated('delivery_type', 'pickup')),
+            $request->validated('discount_type') === null ? null : DiscountType::from($request->validated('discount_type')),
+            $request->validated('discount_value'),
         );
 
         return response()->json(['data' => $quote->toArray()]);

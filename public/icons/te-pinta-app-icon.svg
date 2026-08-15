@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+    <title id="title">Te Pinta</title>
+    <rect width="512" height="512" fill="#1f1d2b" />
+    <circle cx="256" cy="256" r="164" fill="#ea7c69" />
+    <g transform="translate(112 112) scale(6)" fill="none">
+        <path d="M7 27C7 17.6112 14.6112 10 24 10C33.3888 10 41 17.6112 41 27H7Z" fill="#fff" />
+        <path d="M10 27C13.9 33.6 18.5667 37 24 37C29.4333 37 34.1 33.6 38 27" stroke="#fff" stroke-width="3" stroke-linecap="round" />
+        <path d="M14 25L17 28M20 25L23 30M26 25L29 30M32 25L35 28" stroke="#1f1d2b" stroke-width="2" stroke-linecap="round" />
+    </g>
+</svg>

@@ -3,6 +3,7 @@
 namespace App\Modules\Orders\Http\Requests;
 
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\PricingMode;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,7 +33,9 @@ final class PreviewOrderPriceRequest extends FormRequest
             'addons.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'condition' => ['nullable', Rule::enum(OrderCondition::class)],
             'delivery_type' => ['nullable', Rule::enum(DeliveryType::class)],
-            'total' => ['prohibited'], 'shipping_fee' => ['prohibited'], 'combined_price' => ['prohibited'],
+            'discount_type' => ['nullable', Rule::enum(DiscountType::class), 'required_with:discount_value'],
+            'discount_value' => ['nullable', 'integer', 'min:0', 'required_with:discount_type', Rule::when($this->input('discount_type') === DiscountType::Percentage->value, ['max:100'], ['max:999999999'])],
+            'total' => ['prohibited'], 'shipping_fee' => ['prohibited'], 'combined_price' => ['prohibited'], 'discount_amount' => ['prohibited'],
         ];
     }
 }

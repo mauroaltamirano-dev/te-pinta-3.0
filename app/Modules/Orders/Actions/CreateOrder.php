@@ -18,6 +18,7 @@ final readonly class CreateOrder
         private OrderPricingEngine $pricing,
         private ResolveOrderCustomer $customers,
         private PersistOrderQuote $quotes,
+        private ResolveOrderPayment $payments,
     ) {}
 
     public function execute(OrderCheckoutData $data, OrderSource $source, ?int $adminId = null): Order
@@ -34,7 +35,15 @@ final readonly class CreateOrder
         try {
             $order = DB::transaction(function () use ($data, $source, $idempotencyHash, $fingerprint): Order {
                 $customer = $this->customers->execute($data, $source);
-                $quote = $this->pricing->quote($data->items, $data->condition, $data->addons, $data->deliveryType);
+                $quote = $this->pricing->quote(
+                    $data->items,
+                    $data->condition,
+                    $data->addons,
+                    $data->deliveryType,
+                    $data->discountType,
+                    $data->discountValue,
+                );
+                $payment = $this->payments->forTotal($quote->total, $data->paymentStatus, $data->paymentMethod);
 
                 $order = Order::query()->create([
                     'customer_id' => $customer->id,
@@ -42,7 +51,8 @@ final readonly class CreateOrder
                     'customer_name_snapshot' => $data->customerName,
                     'customer_phone_snapshot' => $data->customerPhone,
                     'status' => $source === OrderSource::PublicCheckout ? OrderStatus::PendingConfirmation : OrderStatus::Waiting,
-                    'payment_status' => $data->paymentStatus,
+                    'payment_status' => $payment['status'],
+                    'payment_method' => $payment['method'],
                     'condition' => $data->condition,
                     'delivery_type' => $data->deliveryType,
                     'delivery_period' => $data->deliveryPeriod,

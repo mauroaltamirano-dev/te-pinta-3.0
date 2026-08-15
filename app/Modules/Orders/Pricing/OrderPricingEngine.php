@@ -5,6 +5,7 @@ namespace App\Modules\Orders\Pricing;
 use App\Core\Contracts\ProductPriceProvider;
 use App\Core\Data\SellableProductPrice;
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
@@ -24,6 +25,8 @@ final readonly class OrderPricingEngine
         OrderCondition $condition,
         array $addons = [],
         DeliveryType $deliveryType = DeliveryType::Pickup,
+        ?DiscountType $discountType = null,
+        ?int $discountValue = null,
     ): OrderPriceQuote {
         $quantities = [];
 
@@ -126,12 +129,15 @@ final readonly class OrderPricingEngine
             ? OrderSetting::integer(OrderSettingKey::DeliveryFee)
             : 0;
         $savings = array_sum(array_map(fn (PricingLine $line): int => $line->savings, $lines));
+        $discountableSubtotal = $productsSubtotal + $addonsSubtotal;
+        $discountAmount = $this->discountAmount($discountType, $discountValue, $discountableSubtotal);
 
         return new OrderPriceQuote(
             $condition, $deliveryType, $lines, $pricedAddons,
             $productsBaseSubtotal, $cookingSurcharge,
             $productsSubtotal, $addonsSubtotal, $shippingFee, $savings,
-            $productsSubtotal + $addonsSubtotal + $shippingFee,
+            $discountableSubtotal, $discountType, $discountValue, $discountAmount,
+            $discountableSubtotal - $discountAmount + $shippingFee,
         );
     }
 
@@ -184,6 +190,25 @@ final readonly class OrderPricingEngine
         $units = $remainder % 6;
 
         return ($dozens * $product->dozenPrice) + ($halves * $product->halfDozenPrice) + ($units * $product->unitPrice);
+    }
+
+    private function discountAmount(?DiscountType $type, ?int $value, int $discountableSubtotal): int
+    {
+        if ($type === null && $value === null) {
+            return 0;
+        }
+        if ($type === null || $value === null || $value < 0) {
+            throw ValidationException::withMessages(['discount' => 'Discount type and value must be provided together with a non-negative value.']);
+        }
+        if ($type === DiscountType::Percentage && $value > 100) {
+            throw ValidationException::withMessages(['discount_value' => 'Percentage discounts cannot exceed 100.']);
+        }
+
+        $amount = $type === DiscountType::Percentage
+            ? intdiv(($discountableSubtotal * $value) + 50, 100)
+            : $value;
+
+        return min($amount, $discountableSubtotal);
     }
 
     /** @param array<int, array{addon_id: int, quantity: int}> $addons

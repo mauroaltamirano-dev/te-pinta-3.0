@@ -14,6 +14,8 @@ For each administrative write:
 4. Execute the focused action/transaction.
 5. Return an explicit resource or redirect.
 
+Paid administrative orders require an enum-backed payment method (`cash`, `bank_transfer`, or `debit_card`); unpaid orders prohibit and clear it. A backend-calculated zero total is canonicalized as `not_required` with no method, so a 100% discount never fabricates a payment. Admin discount inputs contain only a validated type/value. The backend calculates and persists `discount_amount`; public requests prohibit discount and payment-method fields.
+
 ## Safe administrative order editing
 
 - Edit, enable-edit, and update routes resolve `Order` by immutable `public_id`, require the admin middleware stack, authorize the order policy, and use CSRF-protected web requests.
@@ -49,6 +51,23 @@ Exact idempotent retries return the existing order. Reusing a key for a changed 
 - Public checkout returns only Order ID, state, payment state, nullable backend base/cooking breakdown, backend total/summary, and WhatsApp URL.
 - Historical displays use order snapshots; current customer/catalog data cannot silently rewrite them.
 
+## Recoverable deletion
+
+- Order and customer deletion is soft deletion. Trash listing and restore are protected by the normal administrator middleware and policies.
+- There is no force-delete route or UI. Customer deletion/restoration never cascades, deletes, or rewrites linked orders.
+- Restoring a customer rechecks active normalized-phone uniqueness on the backend. A conflict is rejected without mutation; the system does not merge records or clear either phone to make the restore pass.
+- Restore resources expose only the fields required by their administrative trash screens.
+
+## Mobile installation and origin security
+
+The web manifest makes the authenticated admin UI installable but does not weaken its normal session, CSRF, authorization, or secure-cookie boundaries. There is intentionally no service worker: Te Pinta does not cache authenticated HTML, order data, or writes for offline use.
+
+Install only from the stable HTTPS Tailscale origin after the route is deliberately cut over. `SESSION_SECURE_COOKIE=true`, an encrypted database session, `HttpOnly`, and `SameSite=Lax` are part of the operational template. “Remember me” may keep the browser session convenient, but it is not a substitute for device lock or explicit logout on a shared/lost phone.
+
+The Tailscale runtime trusts only its direct caller as a reverse proxy (`TRUSTED_PROXIES=REMOTE_ADDR`). The service remains bound to loopback, so Laravel can honor Tailscale Serve's forwarded HTTPS scheme without extending that trust to the LAN-facing development runtime.
+
+Fortify derives the passkey relying-party ID and allowed origin from `APP_URL`. Passkeys registered on `localhost` belong to a different origin and cannot authenticate at the `*.ts.net` URL; after password login, register a passkey on the stable HTTPS origin instead of broadening allowed origins.
+
 ## WhatsApp
 
 The business destination number comes from `whatsapp_order_phone`. No real phone is hardcoded. The initial value is empty: checkout persists the order, then link generation returns an explicit “not configured” validation error until an administrator sets the number.
@@ -63,3 +82,5 @@ The application generates a `wa.me` URL only. It does not send a message, authen
 - [ ] WhatsApp destination and delivery fee are deliberately configured.
 - [ ] Logs/monitoring are access-controlled and do not contain PII payloads.
 - [ ] Guest/admin, tampered-price, public-field, idempotency, and rate-limit tests pass.
+- [ ] The operational `APP_URL` is the stable HTTPS origin and session-cookie settings are secure.
+- [ ] Tailscale Serve cutover is verified explicitly; staging port `8082` alone is not proof of exposure.

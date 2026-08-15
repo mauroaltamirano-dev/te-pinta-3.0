@@ -18,7 +18,7 @@ Each module owns one business capability and only the layers its implemented beh
 
 ```text
 Customers/
-  Actions/       create, update, soft delete and structured events
+  Actions/       create, update, soft delete, restore and structured events
   Data/          validated customer command data
   Http/          admin controller, requests, explicit resource
   Models/        Customer and Orders relationship
@@ -30,6 +30,8 @@ Customers/
 Names are not unique. Phone is optional for administrative records. When present, it is normalized centrally and must be unique among active customers. Private notes are only returned by the authenticated admin resource and are never copied to orders or public responses.
 
 Customer history reads persisted orders. Effective historical spend excludes soft-deleted orders through Eloquent and excludes `cancelled` orders explicitly.
+
+Deletion is recoverable: the module exposes an administrator-only trash and `RestoreCustomer`. It never force-deletes and never cascades into Orders. Because active-phone uniqueness ignores deleted rows, restore checks for a new active owner of the same `phone_normalized`; on conflict it rejects the restore without changing or merging either customer.
 
 ## Orders
 
@@ -46,7 +48,7 @@ Orders/
   routes.php
 ```
 
-`CreateOrder` is the shared application boundary for POS and public checkout. In one transaction it resolves/creates the customer, calculates the quote, creates the order, persists item/composition/topping snapshots, and stores totals. Public source fixes status to `pending_confirmation` and payment to `unpaid`; admin source starts at `waiting` and may select `paid` or `unpaid`.
+`CreateOrder` is the shared application boundary for POS and public checkout. In one transaction it resolves/creates the customer, calculates the quote, resolves payment semantics, creates the order, persists item/composition/topping snapshots, and stores totals. Public source fixes status to `pending_confirmation`; admin source starts at `waiting`. `ResolveOrderPayment` canonicalizes every backend-calculated zero total as `not_required` without a method.
 
 `UpdateOrder` is the administrative correction boundary. Create and edit share `OrderCheckoutData`, `ResolveOrderCustomer`, `OrderPricingEngine`, and `PersistOrderQuote`; the update action does not contain a second pricing implementation. `BuildAdminOrderEditData` reconstructs real quantities from normal items plus combined-dozen compositions and builds the original persisted quote. `BuildAdminOrderFormOptions` includes current sellable choices plus unavailable historical selections needed to render the draft.
 
@@ -55,6 +57,10 @@ Every update locks the order, compares `expected_version` with `orders.edit_vers
 Delivered and cancelled orders require a short reason. The grant is stored in the authenticated admin session, bound to the order and its current version, consumed after one successful update, and does not transition the order's status.
 
 Public requests use product/topping slugs. `ResolvePublicCheckoutSelections` converts them to internal IDs only after checking current sellability. The pricing engine then calls `ProductPriceProvider`; callers never calculate authoritative totals.
+
+Admin create/edit/Quick Order may apply a percentage or fixed-amount discount and choose a payment method. Discount calculation remains inside `OrderPricingEngine`; paid requires one of the `PaymentMethod` enum values, unpaid clears the method, and a zero total becomes `not_required`. Public checkout fixes both features off. `OrderBusinessDate` provides the Argentina calendar day used by admin form options and public date validation without changing UTC timestamp storage.
+
+Order deletion is also recoverable. The administrator-only trash restores the same order row, public ID, revisions, and snapshots; no force-delete route or UI exists.
 
 ## Settings
 

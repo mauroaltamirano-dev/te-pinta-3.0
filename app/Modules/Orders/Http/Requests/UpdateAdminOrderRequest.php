@@ -22,7 +22,7 @@ final class UpdateAdminOrderRequest extends FormRequest
         $rules['delivery_date'] = ['required', 'date_format:Y-m-d'];
         $rules['status'] = ['required', Rule::enum(OrderStatus::class)];
         $rules['expected_version'] = ['required', 'integer', 'min:1'];
-        foreach (['id', 'public_id', 'created_at', 'updated_at', 'edit_version', 'revision', 'subtotal', 'unit_price', 'items_subtotal', 'toppings_subtotal', 'cooking_surcharge'] as $field) {
+        foreach (['id', 'public_id', 'created_at', 'updated_at', 'edit_version', 'revision', 'subtotal', 'unit_price', 'items_subtotal', 'toppings_subtotal', 'cooking_surcharge', 'discount_amount'] as $field) {
             $rules[$field] = ['prohibited'];
         }
 

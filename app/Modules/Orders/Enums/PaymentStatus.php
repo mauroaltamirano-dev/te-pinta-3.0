@@ -6,4 +6,5 @@ enum PaymentStatus: string
 {
     case Unpaid = 'unpaid';
     case Paid = 'paid';
+    case NotRequired = 'not_required';
 }

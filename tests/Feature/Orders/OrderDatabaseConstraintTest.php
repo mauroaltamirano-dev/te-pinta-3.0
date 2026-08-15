@@ -18,6 +18,9 @@ final class OrderDatabaseConstraintTest extends TestCase
             ->whereIn('conname', [
                 'orders_status_valid',
                 'orders_payment_status_valid',
+                'orders_payment_method_valid',
+                'orders_payment_matches_total',
+                'orders_discount_valid',
                 'orders_source_valid',
                 'orders_condition_valid',
                 'orders_delivery_type_valid',
@@ -40,6 +43,9 @@ final class OrderDatabaseConstraintTest extends TestCase
         $this->assertEqualsCanonicalizing([
             'orders_status_valid',
             'orders_payment_status_valid',
+            'orders_payment_method_valid',
+            'orders_payment_matches_total',
+            'orders_discount_valid',
             'orders_source_valid',
             'orders_condition_valid',
             'orders_delivery_type_valid',

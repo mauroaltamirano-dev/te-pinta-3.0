@@ -5,6 +5,7 @@ namespace Tests\Feature\Orders;
 use App\Modules\Identity\Models\User;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -49,6 +50,16 @@ final class AdminQuickOrderHomeTest extends TestCase
                 ->has('customers')
                 ->has('addons')
                 ->has('today'));
+    }
+
+    public function test_admin_home_uses_the_orders_business_date_instead_of_utc(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-08-14 00:30:00 UTC'));
+
+        $this->actingAs(User::factory()->administrator()->create())
+            ->get(route('admin.home'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('today', '2026-08-13'));
     }
 
     private function category(string $name, string $slug, bool $active, int $sortOrder): Category

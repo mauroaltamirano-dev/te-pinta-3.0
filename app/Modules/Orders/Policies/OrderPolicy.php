@@ -31,4 +31,9 @@ final class OrderPolicy
     {
         return $user->is_admin;
     }
+
+    public function restore(User $user, Order $order): bool
+    {
+        return $user->is_admin;
+    }
 }

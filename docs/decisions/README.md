@@ -40,3 +40,10 @@ Which credible alternative was rejected, and why?
 ```
 
 The current foundational choices are summarized in `docs/ARCHITECTURE.md`. Create individual ADRs when those choices change or need deeper rationale.
+
+## Accepted records
+
+- [0001 — Admin Home is Quick Order](0001-admin-home-is-quick-order.md)
+- [0002 — Safe administrative order editing](0002-safe-administrative-order-editing.md)
+- [0003 — Backend order discounts and payment methods](0003-backend-order-discounts-and-payment-methods.md)
+- [0004 — Recoverable administrative deletion](0004-recoverable-administrative-deletion.md)

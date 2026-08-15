@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
     CalendarDays,
+    ArchiveRestore,
     Bookmark,
     ChevronLeft,
     ChevronRight,
@@ -14,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,16 +24,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { OrderDetailDrawer } from '@/features/orders/components/order-detail-drawer';
+import {
+    OrderPaymentToggle,
+    OrderStatusSelect,
+} from '@/features/orders/components/order-quick-controls';
+import { OrderTicketDialog } from '@/features/orders/components/order-ticket-dialog';
 import { OrdersInsightsPanel } from '@/features/orders/components/orders-insights-panel';
 import {
     deliveryPeriodLabels,
     deliveryTypeLabels,
     formatOrderMoney,
     orderStatusLabels,
-    orderStatusStyles,
     orderStatuses,
-    paymentStatusLabels,
 } from '@/features/orders/presentation';
 import type {
     AdminOrder,
@@ -139,11 +141,25 @@ export default function Orders({
                                     solo lugar.
                                 </p>
                             </div>
-                            <Button asChild className="h-12 rounded-lg px-5">
-                                <Link href="/admin/orders/create">
-                                    <Plus /> Nuevo pedido
-                                </Link>
-                            </Button>
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="h-12 rounded-lg px-5"
+                                >
+                                    <Link href="/admin/orders/trash">
+                                        <ArchiveRestore /> Papelera
+                                    </Link>
+                                </Button>
+                                <Button
+                                    asChild
+                                    className="h-12 rounded-lg px-5"
+                                >
+                                    <Link href="/admin/orders/create">
+                                        <Plus /> Nuevo pedido
+                                    </Link>
+                                </Button>
+                            </div>
                         </header>
 
                         <div className="grid gap-4 sm:grid-cols-3 sm:gap-6">
@@ -366,32 +382,14 @@ export default function Orders({
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-4 2xl:px-6">
-                                                        <Badge
-                                                            className={`rounded-[30px] border-0 px-3 py-1 text-sm leading-[1.3] font-medium shadow-none ${orderStatusStyles[order.status]}`}
-                                                        >
-                                                            {
-                                                                orderStatusLabels[
-                                                                    order.status
-                                                                ]
-                                                            }
-                                                        </Badge>
+                                                        <OrderStatusSelect
+                                                            order={order}
+                                                        />
                                                     </td>
                                                     <td className="px-4 py-5 2xl:px-6">
-                                                        <Badge
-                                                            variant={
-                                                                order.payment_status ===
-                                                                'paid'
-                                                                    ? 'default'
-                                                                    : 'secondary'
-                                                            }
-                                                        >
-                                                            {
-                                                                paymentStatusLabels[
-                                                                    order
-                                                                        .payment_status
-                                                                ]
-                                                            }
-                                                        </Badge>
+                                                        <OrderPaymentToggle
+                                                            order={order}
+                                                        />
                                                     </td>
                                                 </tr>
                                             ))}
@@ -455,7 +453,7 @@ export default function Orders({
                 </div>
             </section>
 
-            <OrderDetailDrawer
+            <OrderTicketDialog
                 order={selectedOrder}
                 summary={selectedOrderSummary}
                 onClose={closeOrder}

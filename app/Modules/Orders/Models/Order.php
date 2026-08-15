@@ -6,9 +6,11 @@ use App\Core\Contracts\PublicIdentifier;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Enums\DeliveryPeriod;
 use App\Modules\Orders\Enums\DeliveryType;
+use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +30,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|numeric-string $combined_dozen_savings
  * @property OrderStatus $status
  * @property PaymentStatus $payment_status
+ * @property PaymentMethod|null $payment_method
+ * @property DiscountType|null $discount_type
+ * @property int|null $discount_value
+ * @property int|numeric-string $discount_amount
  * @property OrderSource $source
  * @property OrderCondition $condition
  * @property DeliveryType $delivery_type
@@ -44,6 +50,7 @@ final class Order extends Model implements PublicIdentifier
         'customer_phone_snapshot',
         'status',
         'payment_status',
+        'payment_method',
         'condition',
         'delivery_type',
         'delivery_period',
@@ -57,6 +64,9 @@ final class Order extends Model implements PublicIdentifier
         'toppings_subtotal',
         'shipping_fee_snapshot',
         'combined_dozen_savings',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
         'total',
         'public_checkout_idempotency_hash',
         'public_checkout_fingerprint',
@@ -69,6 +79,10 @@ final class Order extends Model implements PublicIdentifier
             'source' => OrderSource::class,
             'status' => OrderStatus::class,
             'payment_status' => PaymentStatus::class,
+            'payment_method' => PaymentMethod::class,
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'integer',
+            'discount_amount' => 'integer',
             'condition' => OrderCondition::class,
             'delivery_type' => DeliveryType::class,
             'delivery_period' => DeliveryPeriod::class,
