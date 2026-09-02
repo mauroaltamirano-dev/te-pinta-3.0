@@ -139,15 +139,20 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
             </button>
 
             <Dialog open={methodOpen} onOpenChange={setMethodOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Marcar {order.id} como pagado</DialogTitle>
-                        <DialogDescription>
+                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface font-orders text-admin-text-primary shadow-2xl sm:max-w-md [&>button]:text-admin-text-secondary [&>button:hover]:text-white">
+                    <DialogHeader className="gap-3 border-b border-admin-border pb-4">
+                        <p className="text-xs font-semibold text-admin-accent uppercase">
+                            Cobro del pedido
+                        </p>
+                        <DialogTitle className="text-xl text-white">
+                            Marcar {order.id} como pagado
+                        </DialogTitle>
+                        <DialogDescription className="text-admin-text-secondary">
                             Elegí cómo se recibió el pago. El pedido no se
                             marcará como pagado hasta confirmarlo.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-2">
+                    <div className="grid gap-3 rounded-xl border border-admin-border bg-admin-surface-raised p-4">
                         <Label htmlFor={`payment-method-${order.id}`}>
                             Medio de pago
                         </Label>
@@ -160,13 +165,18 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
                             <SelectTrigger
                                 id={`payment-method-${order.id}`}
                                 aria-label={`Medio de pago de ${order.id}`}
+                                className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
                             >
                                 <SelectValue placeholder="Seleccioná un medio" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary">
                                 {Object.entries(paymentMethodLabels).map(
                                     ([value, label]) => (
-                                        <SelectItem key={value} value={value}>
+                                        <SelectItem
+                                            key={value}
+                                            value={value}
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
                                             {label}
                                         </SelectItem>
                                     ),
@@ -174,7 +184,7 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
                             </SelectContent>
                         </Select>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="border-t border-admin-border pt-4">
                         <Button
                             type="button"
                             variant="outline"

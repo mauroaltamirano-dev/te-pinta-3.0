@@ -108,7 +108,7 @@ export function QuickOrderCatalog({
                         return (
                             <article
                                 key={product.id}
-                                className="relative flex min-h-[13.5rem] flex-col items-center rounded-xl bg-admin-surface px-2 pt-11 pb-3 text-center sm:h-[16.25rem] sm:rounded-2xl sm:px-4 sm:pt-16 sm:pb-5"
+                                className="relative flex min-h-[13.5rem] flex-col items-center rounded-xl bg-admin-surface px-2 pt-11 pb-3 text-center sm:min-h-[18.5rem] sm:rounded-2xl sm:px-4 sm:pt-16 sm:pb-5"
                             >
                                 <span className="absolute -top-3 grid size-[5.5rem] place-items-center overflow-hidden rounded-full bg-admin-surface-raised ring-[3px] ring-admin-canvas sm:-top-[1.125rem] sm:size-[8.25rem] sm:ring-4">
                                     {product.image_url ? (
@@ -127,11 +127,15 @@ export function QuickOrderCatalog({
                                 <span className="mt-9 line-clamp-2 min-h-10 text-sm leading-tight font-medium sm:mt-14 sm:text-base sm:leading-normal">
                                     {product.name}
                                 </span>
-                                <span className="mt-1 text-xs text-admin-text-secondary sm:mt-2 sm:text-sm">
-                                    Desde{' '}
-                                    {formatOrderMoney.format(
-                                        product.unit_price,
-                                    )}
+                                <span className="mt-1 text-admin-text-secondary sm:mt-2">
+                                    <span className="block text-[0.6875rem] font-medium uppercase sm:text-xs">
+                                        Desde · docena cocinada
+                                    </span>
+                                    <span className="mt-0.5 block text-sm font-semibold text-admin-text-primary tabular-nums">
+                                        {formatOrderMoney.format(
+                                            product.dozen_price,
+                                        )}
+                                    </span>
                                 </span>
                                 <span className="mt-1 hidden text-xs text-admin-text-tertiary sm:block">
                                     {product.category.name}
@@ -151,7 +155,7 @@ export function QuickOrderCatalog({
                                                     increment,
                                                 )
                                             }
-                                            className="h-11 rounded-lg border border-admin-border text-xs font-semibold text-admin-accent transition-[border-color,background-color,transform] hover:border-admin-accent hover:bg-admin-accent/10 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none active:scale-[0.96] sm:text-sm"
+                                            className="h-11 rounded-lg border border-admin-accent/50 bg-admin-action text-xs font-semibold text-admin-accent transition-[border-color,background-color,transform] hover:border-admin-accent hover:bg-admin-accent/35 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none active:scale-[0.96] sm:text-sm"
                                         >
                                             {increment}
                                         </button>

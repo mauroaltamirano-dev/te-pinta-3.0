@@ -20,6 +20,6 @@ final class OrderPaymentStatusController
             (int) $request->user()->getAuthIdentifier(),
         );
 
-        return back()->with('success', 'Payment status updated.');
+        return back()->with('success', 'Estado del pago actualizado.');
     }
 }

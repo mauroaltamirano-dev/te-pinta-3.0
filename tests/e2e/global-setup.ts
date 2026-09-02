@@ -1,13 +1,10 @@
 import { execFileSync } from 'node:child_process';
+import { assertSafeTestingDatabaseName } from './support/database-safety';
 
 export default function globalSetup(): void {
     const database = process.env.PLAYWRIGHT_DB_DATABASE ?? 'testing_playwright';
 
-    if (!/^[a-z0-9_]+$/.test(database)) {
-        throw new Error(
-            'PLAYWRIGHT_DB_DATABASE must be a safe PostgreSQL identifier.',
-        );
-    }
+    assertSafeTestingDatabaseName(database);
 
     execFileSync(
         'php',

@@ -12,9 +12,9 @@ export function AddProductCard({ onClick }: { onClick: () => void }) {
             <span className="flex size-12 items-center justify-center rounded-full border border-admin-accent/30 bg-admin-selection">
                 <Plus className="size-6" />
             </span>
-            <span className="font-semibold">Add product</span>
+            <span className="font-semibold">Agregar producto</span>
             <span className="max-w-40 text-xs leading-relaxed font-normal text-wrap text-admin-text-secondary">
-                Create a new catalog item in this category
+                Creá un producto nuevo en esta categoría
             </span>
         </Button>
     );

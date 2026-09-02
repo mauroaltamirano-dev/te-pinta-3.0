@@ -35,14 +35,14 @@ final readonly class OrderPricingEngine
             $quantity = $item['quantity'];
 
             if ($quantity < 1 || $quantity > 120 || isset($quantities[$productId])) {
-                throw ValidationException::withMessages(['items' => 'Products must be unique with quantities between 1 and 120.']);
+                throw ValidationException::withMessages(['items' => 'Los productos no pueden repetirse y sus cantidades deben estar entre 1 y 120.']);
             }
 
             $quantities[$productId] = $quantity;
         }
 
         if ($quantities === []) {
-            throw ValidationException::withMessages(['items' => 'At least one product is required.']);
+            throw ValidationException::withMessages(['items' => 'Se requiere al menos un producto.']);
         }
 
         ksort($quantities);
@@ -51,7 +51,7 @@ final readonly class OrderPricingEngine
             $condition === OrderCondition::Cooked,
         );
         if (count($products) !== count($quantities)) {
-            throw ValidationException::withMessages(['items' => 'Every product must be available.']);
+            throw ValidationException::withMessages(['items' => 'Todos los productos deben estar disponibles.']);
         }
         $lines = [];
 
@@ -65,7 +65,7 @@ final readonly class OrderPricingEngine
                     $dozens,
                     12,
                     $products[$productId]->dozenPrice,
-                    $products[$productId]->baseDozenPrice,
+                    $products[$productId]->cookedDozenPrice,
                 );
                 $quantity %= 12;
             }
@@ -73,7 +73,7 @@ final readonly class OrderPricingEngine
         unset($quantity);
 
         // Mixed blocks are closed before half-dozens. Product-id order makes equivalent groupings stable.
-        $combinedBasePrice = OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice);
+        $combinedCookedPrice = OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice);
         $combinedPrice = OrderSetting::integer($condition === OrderCondition::Cooked
             ? OrderSettingKey::CombinedDozenCookedPrice
             : OrderSettingKey::CombinedDozenRawPrice);
@@ -87,8 +87,8 @@ final readonly class OrderPricingEngine
             $lines[] = new PricingLine(
                 pricingMode: 'combined_dozen', quantity: 1, unitsCount: 12,
                 unitPrice: $combinedPrice, lineTotal: $combinedPrice,
-                baseUnitPrice: $combinedBasePrice, baseLineTotal: $combinedBasePrice,
-                cookingSurcharge: $combinedPrice - $combinedBasePrice,
+                cookedUnitPrice: $combinedCookedPrice, cookedLineTotal: $combinedCookedPrice,
+                rawDiscount: $combinedCookedPrice - $combinedPrice,
                 regularPriceTotal: $regularPrice, savings: $savings,
                 composition: $composition,
             );
@@ -104,7 +104,7 @@ final readonly class OrderPricingEngine
                     $halves,
                     6,
                     $product->halfDozenPrice,
-                    $product->baseHalfDozenPrice,
+                    $product->cookedHalfDozenPrice,
                 );
             }
             $units = $quantity % 6;
@@ -115,14 +115,14 @@ final readonly class OrderPricingEngine
                     $units,
                     1,
                     $product->unitPrice,
-                    $product->baseUnitPrice,
+                    $product->cookedUnitPrice,
                 );
             }
         }
 
         $pricedAddons = $this->priceAddons($addons);
-        $productsBaseSubtotal = array_sum(array_map(fn (PricingLine $line): int => $line->baseLineTotal, $lines));
-        $cookingSurcharge = array_sum(array_map(fn (PricingLine $line): int => $line->cookingSurcharge, $lines));
+        $productsCookedSubtotal = array_sum(array_map(fn (PricingLine $line): int => $line->cookedLineTotal, $lines));
+        $rawDiscount = array_sum(array_map(fn (PricingLine $line): int => $line->rawDiscount, $lines));
         $productsSubtotal = array_sum(array_map(fn (PricingLine $line): int => $line->lineTotal, $lines));
         $addonsSubtotal = array_sum(array_map(fn (PricingAddon $addon): int => $addon->lineTotal, $pricedAddons));
         $shippingFee = $deliveryType === DeliveryType::Delivery
@@ -134,7 +134,7 @@ final readonly class OrderPricingEngine
 
         return new OrderPriceQuote(
             $condition, $deliveryType, $lines, $pricedAddons,
-            $productsBaseSubtotal, $cookingSurcharge,
+            $productsCookedSubtotal, $rawDiscount,
             $productsSubtotal, $addonsSubtotal, $shippingFee, $savings,
             $discountableSubtotal, $discountType, $discountValue, $discountAmount,
             $discountableSubtotal - $discountAmount + $shippingFee,
@@ -147,13 +147,13 @@ final readonly class OrderPricingEngine
         int $quantity,
         int $units,
         int $price,
-        int $basePrice,
+        int $cookedPrice,
     ): PricingLine {
         return new PricingLine(
             pricingMode: $mode, quantity: $quantity, unitsCount: $quantity * $units,
             unitPrice: $price, lineTotal: $quantity * $price,
-            baseUnitPrice: $basePrice, baseLineTotal: $quantity * $basePrice,
-            cookingSurcharge: $quantity * ($price - $basePrice),
+            cookedUnitPrice: $cookedPrice, cookedLineTotal: $quantity * $cookedPrice,
+            rawDiscount: $quantity * ($cookedPrice - $price),
             regularPriceTotal: $quantity * $price, savings: 0,
             productId: $product->id, productName: $product->name,
         );
@@ -198,10 +198,10 @@ final readonly class OrderPricingEngine
             return 0;
         }
         if ($type === null || $value === null || $value < 0) {
-            throw ValidationException::withMessages(['discount' => 'Discount type and value must be provided together with a non-negative value.']);
+            throw ValidationException::withMessages(['discount' => 'El tipo y el valor del descuento deben informarse juntos con un valor no negativo.']);
         }
         if ($type === DiscountType::Percentage && $value > 100) {
-            throw ValidationException::withMessages(['discount_value' => 'Percentage discounts cannot exceed 100.']);
+            throw ValidationException::withMessages(['discount_value' => 'Los descuentos porcentuales no pueden superar 100.']);
         }
 
         $amount = $type === DiscountType::Percentage
@@ -220,12 +220,12 @@ final readonly class OrderPricingEngine
         $seen = [];
         foreach ($addons as $input) {
             if ($input['quantity'] < 1 || $input['quantity'] > 100 || isset($seen[$input['addon_id']])) {
-                throw ValidationException::withMessages(['addons' => 'Addons must be unique with quantities between 1 and 100.']);
+                throw ValidationException::withMessages(['addons' => 'Los adicionales no pueden repetirse y sus cantidades deben estar entre 1 y 100.']);
             }
             $seen[$input['addon_id']] = true;
             $addon = OrderAddon::query()->whereKey($input['addon_id'])->where('is_available', true)->first();
             if (! $addon) {
-                throw ValidationException::withMessages(['addons' => 'Every addon must be available.']);
+                throw ValidationException::withMessages(['addons' => 'Todos los adicionales deben estar disponibles.']);
             }
             $priced[] = new PricingAddon($addon->id, $addon->name, $input['quantity'], $addon->price, $input['quantity'] * $addon->price);
         }

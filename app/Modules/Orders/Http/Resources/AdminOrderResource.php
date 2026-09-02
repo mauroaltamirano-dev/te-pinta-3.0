@@ -32,6 +32,8 @@ final class AdminOrderResource extends JsonResource
             'notes' => $this->notes,
             'items_base_subtotal' => $this->items_base_subtotal === null ? null : (int) $this->items_base_subtotal,
             'cooking_surcharge' => $this->cooking_surcharge === null ? null : (int) $this->cooking_surcharge,
+            'items_cooked_subtotal' => $this->items_cooked_subtotal === null ? null : (int) $this->items_cooked_subtotal,
+            'raw_discount' => $this->raw_discount === null ? null : (int) $this->raw_discount,
             'items_subtotal' => (int) $this->items_subtotal,
             'toppings_subtotal' => (int) $this->toppings_subtotal,
             'shipping_fee' => (int) $this->shipping_fee_snapshot,
@@ -50,6 +52,9 @@ final class AdminOrderResource extends JsonResource
                 'base_unit_price' => $item->base_unit_price,
                 'base_subtotal' => $item->base_line_total,
                 'cooking_surcharge' => $item->cooking_surcharge,
+                'cooked_unit_price' => $item->cooked_unit_price,
+                'cooked_subtotal' => $item->cooked_line_total,
+                'raw_discount' => $item->raw_discount,
                 'regular_price_total' => $item->regular_price_total,
                 'savings' => $item->savings,
                 'composition' => $item->relationLoaded('compositions') ? $item->compositions->map(fn (OrderItemComposition $part): array => [

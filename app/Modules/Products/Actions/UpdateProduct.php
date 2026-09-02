@@ -22,7 +22,7 @@ final class UpdateProduct
         $newImagePath = $image?->store('products', 'public');
 
         if ($image && ! $newImagePath) {
-            throw new RuntimeException('The product image could not be stored.');
+            throw new RuntimeException('No se pudo guardar la imagen del producto.');
         }
 
         $removeImage = $data->removeImage && ! $newImagePath;

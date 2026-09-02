@@ -1,9 +1,22 @@
+import type {
+    DeliveryType,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+} from '@/features/orders/types';
+
 export interface CustomerOrderSummary {
     id: string;
     date: string;
-    status: string;
+    status: OrderStatus;
+    delivery_type: DeliveryType;
+    payment_status: PaymentStatus;
+    payment_method: PaymentMethod | null;
     total: number;
 }
+
+export type CustomerSort = 'name' | 'orders_count' | 'historical_spend';
+export type CustomerSortDirection = 'asc' | 'desc';
 
 export interface Customer {
     id: number;
@@ -12,6 +25,8 @@ export interface Customer {
     address: string | null;
     notes: string | null;
     historical_spend: number;
+    orders_count: number;
+    latest_order_date: string | null;
     orders?: CustomerOrderSummary[];
 }
 

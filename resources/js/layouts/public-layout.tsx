@@ -4,9 +4,9 @@ import type { PropsWithChildren } from 'react';
 import { CartProvider, useCart } from '@/features/orders/cart-context';
 
 const navigation = [
-    { label: 'Home', href: '/' },
-    { label: 'Menu', href: '/menu' },
-    { label: 'Cart', href: '/cart' },
+    { label: 'Inicio', href: '/' },
+    { label: 'Menú', href: '/menu' },
+    { label: 'Carrito', href: '/cart' },
 ];
 
 export default function PublicLayout({ children }: PropsWithChildren) {
@@ -26,13 +26,22 @@ function PublicShell({ children }: PropsWithChildren) {
             <header className="border-b bg-background/95 backdrop-blur">
                 <nav
                     className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6"
-                    aria-label="Public navigation"
+                    aria-label="Navegación pública"
                 >
                     <Link
                         href="/"
-                        className="font-display text-xl font-bold tracking-tight"
+                        className="flex shrink-0 items-center gap-2 font-display font-bold tracking-tight"
                     >
-                        Te Pinta
+                        <img
+                            src="/icons/te-pinta-logo.svg"
+                            width={512}
+                            height={512}
+                            alt=""
+                            className="size-9 rounded-lg sm:size-10"
+                        />
+                        <span className="sr-only text-xl sm:not-sr-only">
+                            Te Pinta
+                        </span>
                     </Link>
                     <div className="flex items-center gap-1 sm:gap-3">
                         {navigation.map((item) => (
@@ -54,7 +63,7 @@ function PublicShell({ children }: PropsWithChildren) {
                                 {item.href === '/cart' && count > 0 && (
                                     <span
                                         className="ml-1 tabular-nums"
-                                        aria-label={`${count} items`}
+                                        aria-label={`${count} productos`}
                                     >
                                         ({count})
                                     </span>
@@ -71,8 +80,8 @@ function PublicShell({ children }: PropsWithChildren) {
                         Te Pinta 3.0
                     </p>
                     <p className="sm:text-right">
-                        Orders are confirmed through WhatsApp. Online payment is
-                        not available.
+                        Los pedidos se confirman por WhatsApp. No hay pago en
+                        línea.
                     </p>
                 </div>
             </footer>

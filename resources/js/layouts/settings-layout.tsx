@@ -5,14 +5,14 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
     {
-        label: 'Product management',
-        description: 'Categories, prices and availability',
+        label: 'Gestión de productos',
+        description: 'Categorías, precios y disponibilidad',
         icon: PackageOpen,
         href: '/admin/settings/products',
     },
     {
-        label: 'General configuration',
-        description: 'Ordering prices and WhatsApp',
+        label: 'Configuración general',
+        description: 'Precios de pedidos y WhatsApp',
         icon: Settings2,
         href: '/admin/settings/general',
     },
@@ -29,7 +29,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     className="rounded-[0.5rem] bg-admin-surface lg:min-h-0 lg:overflow-y-auto"
                 >
                     <nav
-                        aria-label="Settings navigation"
+                        aria-label="Navegación de configuración"
                         className="flex gap-1 overflow-x-auto p-3 lg:flex-col lg:p-4"
                     >
                         {navigation.map(

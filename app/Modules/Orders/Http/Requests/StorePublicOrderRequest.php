@@ -49,6 +49,22 @@ final class StorePublicOrderRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'delivery_date.after_or_equal' => 'La fecha de entrega debe ser igual o posterior al '.app(OrderBusinessDate::class)->today()->format('d/m/Y').'.',
+        ];
+    }
+
+    /** @return array<string, string> */
+    public function attributes(): array
+    {
+        return [
+            'delivery_date' => 'fecha de entrega',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $this->normalizeCheckoutInput();

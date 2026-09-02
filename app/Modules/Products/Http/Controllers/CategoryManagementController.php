@@ -16,13 +16,13 @@ final class CategoryManagementController
     {
         $createCategory->execute(CategoryData::fromRequest($request));
 
-        return to_route('admin.products.index')->with('success', 'Category created.');
+        return to_route('admin.products.index')->with('success', 'Categoría creada.');
     }
 
     public function update(UpdateCategoryRequest $request, Category $category, UpdateCategory $updateCategory): RedirectResponse
     {
         $updateCategory->execute($category, CategoryData::fromRequest($request));
 
-        return to_route('admin.products.index')->with('success', 'Category updated.');
+        return to_route('admin.products.index')->with('success', 'Categoría actualizada.');
     }
 }

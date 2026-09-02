@@ -34,7 +34,7 @@ final class EnableClosedOrderEditController
             'version' => $version,
         ]);
 
-        return to_route('admin.orders.edit', $order)->with('success', 'Closed order editing enabled.');
+        return to_route('admin.orders.edit', $order)->with('success', 'Edición del pedido cerrado habilitada.');
     }
 
     public static function sessionKey(Order $order): string

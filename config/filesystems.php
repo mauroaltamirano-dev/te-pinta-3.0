@@ -32,7 +32,19 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => storage_path(env('APP_ENV') === 'testing'
+                ? 'framework/testing/disks/local'
+                : 'app/private'),
+            'visibility' => 'private',
+            'directory_visibility' => 'private',
+            'permissions' => [
+                'file' => [
+                    'private' => 0660,
+                ],
+                'dir' => [
+                    'private' => 0770,
+                ],
+            ],
             'serve' => true,
             'throw' => false,
             'report' => false,

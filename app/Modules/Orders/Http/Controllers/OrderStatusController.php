@@ -14,6 +14,6 @@ final class OrderStatusController
     {
         $update->execute($order, OrderStatus::from($request->validated('status')), (int) $request->user()->getAuthIdentifier());
 
-        return back()->with('success', 'Order status updated.');
+        return back()->with('success', 'Estado del pedido actualizado.');
     }
 }

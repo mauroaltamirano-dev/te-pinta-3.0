@@ -33,12 +33,12 @@ export function CategoryManagerDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <SlidersHorizontal />
-                        Manage categories
+                        Gestionar categorías
                     </DialogTitle>
                     <DialogDescription>
-                        Categories are ordered manually. Inactive categories and
-                        their products remain available in administration but
-                        are hidden from the public menu.
+                        Las categorías se ordenan manualmente. Las inactivas y
+                        sus productos siguen disponibles en administración, pero
+                        no aparecen en el menú público.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -57,7 +57,7 @@ export function CategoryManagerDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
-                        Close
+                        Cerrar
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -88,7 +88,7 @@ function CategoryRow({ category }: { category: ProductCategory }) {
             className="grid gap-3 rounded-lg border border-border/80 bg-card/45 p-4 sm:grid-cols-[1fr_7rem_auto_auto] sm:items-end"
         >
             <div className="flex flex-col gap-2">
-                <Label htmlFor={nameId}>Name</Label>
+                <Label htmlFor={nameId}>Nombre</Label>
                 <Input
                     id={nameId}
                     value={form.data.name}
@@ -104,7 +104,7 @@ function CategoryRow({ category }: { category: ProductCategory }) {
                 <FieldError id={`${nameId}-error`} message={form.errors.name} />
             </div>
             <div className="flex flex-col gap-2">
-                <Label htmlFor={orderId}>Order</Label>
+                <Label htmlFor={orderId}>Orden</Label>
                 <Input
                     id={orderId}
                     type="number"
@@ -141,7 +141,7 @@ function CategoryRow({ category }: { category: ProductCategory }) {
                         }
                         aria-required="true"
                     />
-                    Active
+                    Activa
                 </label>
                 <FieldError
                     id={`${activeId}-error`}
@@ -159,7 +159,7 @@ function CategoryRow({ category }: { category: ProductCategory }) {
                         className="animate-spin"
                     />
                 )}
-                Update
+                Actualizar
             </Button>
         </form>
     );
@@ -183,14 +183,14 @@ function CreateCategoryForm() {
     return (
         <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
-                <h3 className="text-sm font-semibold">Add category</h3>
+                <h3 className="text-sm font-semibold">Agregar categoría</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                    Slugs are generated safely by the backend.
+                    El servidor genera los slugs de forma segura.
                 </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-[1fr_7rem_auto_auto] sm:items-end">
                 <div className="flex flex-col gap-2">
-                    <Label htmlFor="new-category-name">Name</Label>
+                    <Label htmlFor="new-category-name">Nombre</Label>
                     <Input
                         id="new-category-name"
                         value={form.data.name}
@@ -204,7 +204,7 @@ function CreateCategoryForm() {
                                 : undefined
                         }
                         required
-                        placeholder="Category name"
+                        placeholder="Nombre de la categoría"
                     />
                     <FieldError
                         id="new-category-name-error"
@@ -212,7 +212,7 @@ function CreateCategoryForm() {
                     />
                 </div>
                 <div className="flex flex-col gap-2">
-                    <Label htmlFor="new-category-order">Order</Label>
+                    <Label htmlFor="new-category-order">Orden</Label>
                     <Input
                         id="new-category-order"
                         type="number"
@@ -251,7 +251,7 @@ function CreateCategoryForm() {
                             }
                             aria-required="true"
                         />
-                        Active
+                        Activa
                     </label>
                     <FieldError
                         id="new-category-active-error"
@@ -265,7 +265,7 @@ function CreateCategoryForm() {
                             className="animate-spin"
                         />
                     )}
-                    Add
+                    Agregar
                 </Button>
             </div>
         </form>

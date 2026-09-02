@@ -15,14 +15,16 @@ const seededProducts = {
 async function logInAsAdministrator(page: Page) {
     await page.goto('/login');
     await page
-        .getByLabel('Email address')
+        .getByLabel('Correo electrónico')
         .fill('playwright-admin@example.test');
     await page.locator('#password').fill('playwright-password');
-    await page.getByRole('button', { name: 'Log in' }).click();
+    await page
+        .getByRole('button', { name: 'Iniciar sesión', exact: true })
+        .click();
     await expect(page).toHaveURL(/\/admin$/);
 }
 
-test('settings opens product management with the seeded catalog', async ({
+test('configuración abre la gestión de productos con el catálogo inicial', async ({
     page,
 }) => {
     await logInAsAdministrator(page);
@@ -30,7 +32,7 @@ test('settings opens product management with the seeded catalog', async ({
     await page.goto('/admin/settings');
     await expect(page).toHaveURL(/\/admin\/settings\/products$/);
     await expect(
-        page.getByRole('heading', { name: 'Products management' }),
+        page.getByRole('heading', { name: 'Gestión de productos' }),
     ).toBeVisible();
 
     for (const product of seededProducts.Clásicas) {
@@ -46,9 +48,48 @@ test('settings opens product management with the seeded catalog', async ({
             page.getByRole('heading', { name: product, exact: true }),
         ).toBeVisible();
     }
+
+    const saltena = page.locator('[data-slot="card"]').filter({
+        has: page.getByRole('heading', { name: 'Salteña', exact: true }),
+    });
+    await expect(
+        saltena.getByText('Docena cocinada', { exact: true }),
+    ).toBeVisible();
+    await expect(saltena).toContainText(/18[.\s]000/);
 });
 
-test('settings keeps both panels inside the desktop viewport', async ({
+test('configuración presenta precios cocinados y descuentos crudos positivos', async ({
+    page,
+}) => {
+    await logInAsAdministrator(page);
+    await page.goto('/admin/settings/general');
+
+    await expect(
+        page.getByRole('heading', { name: 'Configuración de pedidos' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Docena combinada cocinada')).toHaveValue(
+        '17500',
+    );
+    await expect(page.getByLabel('Docena combinada cruda')).toHaveValue(
+        '16000',
+    );
+    const rawDiscounts = page.getByRole('group', {
+        name: 'Descuentos por preparación en crudo',
+    });
+    await expect(
+        rawDiscounts.getByLabel('Unidad', { exact: true }),
+    ).toHaveValue('200');
+    await expect(
+        rawDiscounts.getByLabel('Media docena', { exact: true }),
+    ).toHaveValue('1000');
+    await expect(
+        rawDiscounts.getByLabel('Docena', { exact: true }),
+    ).toHaveValue('2000');
+    await expect(page.getByText('Cooking surcharges')).toHaveCount(0);
+    await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
+});
+
+test('configuración mantiene ambos paneles dentro del viewport de escritorio', async ({
     page,
 }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium');
@@ -71,7 +112,7 @@ test('settings keeps both panels inside the desktop viewport', async ({
         );
 
         if (!navigation || !content) {
-            throw new Error('Settings panels were not rendered.');
+            throw new Error('No se renderizaron los paneles de configuración.');
         }
 
         return {
@@ -91,38 +132,40 @@ test('settings keeps both panels inside the desktop viewport', async ({
     expect(layout.contentOverflowY).toBe('auto');
 });
 
-test('administrator creates, edits, and changes product availability', async ({
+test('administrador crea, edita y cambia la disponibilidad de un producto', async ({
     page,
 }, testInfo) => {
-    const productName = `Playwright Product ${testInfo.project.name}`;
-    const editedName = `${productName} Edited`;
+    const productName = `Producto Playwright ${testInfo.project.name}`;
+    const editedName = `${productName} editado`;
     await logInAsAdministrator(page);
 
     await page.goto('/admin/settings/products');
     await expect(
-        page.getByRole('heading', { name: 'Products management' }),
+        page.getByRole('heading', { name: 'Gestión de productos' }),
     ).toBeVisible();
     await expect(
         page.getByRole('heading', { name: 'Criolla Salada' }),
     ).toBeVisible();
 
-    await page.getByRole('button', { name: 'Add product' }).click();
-    const createDialog = page.getByRole('dialog', { name: 'Add product' });
-    await createDialog.getByLabel('Name', { exact: true }).fill(productName);
+    await page.getByRole('button', { name: 'Agregar producto' }).click();
+    const createDialog = page.getByRole('dialog', { name: 'Agregar producto' });
+    await createDialog.getByLabel('Nombre', { exact: true }).fill(productName);
     await createDialog
-        .getByLabel('Short description')
-        .fill('Created through the administrative flow.');
-    await createDialog.getByLabel('Unit', { exact: true }).fill('1800');
-    await createDialog.getByLabel('Half dozen', { exact: true }).fill('10000');
-    await createDialog.getByLabel('Dozen', { exact: true }).fill('18000');
-    await createDialog.getByLabel('Order within category').fill('99');
+        .getByLabel('Descripción breve')
+        .fill('Creado mediante el flujo administrativo.');
+    await createDialog.getByLabel('Unidad', { exact: true }).fill('1800');
+    await createDialog
+        .getByLabel('Media docena', { exact: true })
+        .fill('10000');
+    await createDialog.getByLabel('Docena', { exact: true }).fill('18000');
+    await createDialog.getByLabel('Orden dentro de la categoría').fill('99');
     const vegetarianTag = createDialog.getByRole('checkbox', {
         name: 'Vegetariana',
     });
     await vegetarianTag.focus();
     await vegetarianTag.press('Space');
     const createProduct = createDialog.getByRole('button', {
-        name: 'Create product',
+        name: 'Crear producto',
     });
     await createProduct.focus();
     await createProduct.press('Enter');
@@ -133,23 +176,23 @@ test('administrator creates, edits, and changes product availability', async ({
     });
     await expect(createdCard).toBeVisible();
     await expect(
-        createdCard.getByText('Vegetarian', { exact: true }),
+        createdCard.getByText('Vegetariano', { exact: true }),
     ).toBeVisible();
 
     const editProduct = createdCard.getByRole('button', {
-        name: 'Edit product',
+        name: 'Editar producto',
     });
     await editProduct.focus();
     await editProduct.press('Enter');
-    const editDialog = page.getByRole('dialog', { name: 'Edit product' });
-    await editDialog.getByLabel('Name', { exact: true }).fill(editedName);
+    const editDialog = page.getByRole('dialog', { name: 'Editar producto' });
+    await editDialog.getByLabel('Nombre', { exact: true }).fill(editedName);
     const availability = editDialog.getByRole('checkbox', {
-        name: /Available for sale/,
+        name: /Disponible para la venta/,
     });
     await availability.focus();
     await availability.press('Space');
     const saveProduct = editDialog.getByRole('button', {
-        name: 'Save changes',
+        name: 'Guardar cambios',
     });
     await saveProduct.focus();
     await saveProduct.press('Enter');
@@ -160,6 +203,6 @@ test('administrator creates, edits, and changes product availability', async ({
     });
     await expect(editedCard).toBeVisible();
     await expect(
-        editedCard.getByText('Unavailable', { exact: true }),
+        editedCard.getByText('No disponible', { exact: true }),
     ).toBeVisible();
 });

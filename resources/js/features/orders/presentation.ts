@@ -36,8 +36,8 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
 };
 
 export const orderConditionLabels: Record<OrderCondition, string> = {
-    raw: 'Crudo',
-    cooked: 'Cocinado',
+    raw: 'Crudas',
+    cooked: 'Cocinadas',
 };
 
 export const deliveryTypeLabels: Record<DeliveryType, string> = {

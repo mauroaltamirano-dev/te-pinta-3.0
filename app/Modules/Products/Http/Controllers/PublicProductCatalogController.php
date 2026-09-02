@@ -4,8 +4,8 @@ namespace App\Modules\Products\Http\Controllers;
 
 use App\Modules\Products\Http\Resources\PublicProductResource;
 use App\Modules\Products\Models\Category;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -38,7 +38,7 @@ final class PublicProductCatalogController
                     'slug' => $category->slug,
                     'name' => $category->name,
                 ])->all(),
-            'cooking_surcharges' => CookingSurcharge::query()->pluck('amount', 'pricing_mode'),
+            'raw_price_discounts' => RawPriceDiscount::query()->pluck('amount', 'pricing_mode'),
         ]);
     }
 }

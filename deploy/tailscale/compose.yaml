@@ -15,15 +15,43 @@ services:
             - host.docker.internal:host-gateway
         volumes:
             - ../../storage/app/public:/var/www/html/storage/app/public
+            - ../../storage/app/private/instagram:/var/www/html/storage/app/private/instagram
+            - ../../storage/app/private/management:/var/www/html/storage/app/private/management
             - operational-logs:/var/www/html/storage/logs
         networks:
-            - database
+            database:
+                aliases:
+                    - tepinta-operational
         healthcheck:
             test: [CMD, curl, --fail, --silent, http://127.0.0.1/up]
             interval: 15s
             timeout: 5s
             retries: 5
             start_period: 20s
+
+    scheduler:
+        image: ${APP_IMAGE:-tepinta3-operational:local}
+        restart: unless-stopped
+        entrypoint: []
+        user: '1337:1000'
+        env_file:
+            - ${RUNTIME_ENV_FILE:-.env}
+        command: ["/bin/bash", "-lc", "umask 0007; exec php artisan schedule:work"]
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        volumes:
+            - ../../storage/app/public:/var/www/html/storage/app/public
+            - ../../storage/app/private/instagram:/var/www/html/storage/app/private/instagram
+            - ../../storage/app/private/management:/var/www/html/storage/app/private/management
+            - operational-logs:/var/www/html/storage/logs
+        networks:
+            - database
+        healthcheck:
+            test: [CMD-SHELL, "ps -eo args | grep -q '[a]rtisan schedule:work'"]
+            interval: 15s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
 
 networks:
     database:

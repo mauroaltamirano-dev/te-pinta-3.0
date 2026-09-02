@@ -55,9 +55,11 @@ final class OrderSummaryFormatter
         $lines[] = '';
         $lines[] = '*RESUMEN*';
         $lines[] = '';
-        $lines[] = 'Empanadas: '.$this->money((int) ($order->items_base_subtotal ?? $order->items_subtotal));
-        if ($order->cooking_surcharge !== null && (int) $order->cooking_surcharge !== 0) {
-            $lines[] = 'Cocción: '.$this->signedMoney((int) $order->cooking_surcharge);
+        $lines[] = ($order->items_cooked_subtotal === null ? 'Empanadas' : 'Empanadas cocinadas').': '.$this->money(
+            (int) ($order->items_cooked_subtotal ?? $order->items_subtotal),
+        );
+        if ($order->raw_discount !== null && (int) $order->raw_discount !== 0) {
+            $lines[] = 'Descuento por preparación cruda: -'.$this->money((int) $order->raw_discount);
         }
         $lines[] = 'Envío: '.$this->signedMoney((int) $order->shipping_fee_snapshot);
         $lines[] = 'Toppings: '.$this->money((int) $order->toppings_subtotal);
@@ -107,11 +109,11 @@ final class OrderSummaryFormatter
             }
         }
         $lines[] = '';
-        $lines[] = ($order->items_base_subtotal === null ? 'Empanadas' : 'Empanadas base').': '.$this->money(
-            (int) ($order->items_base_subtotal ?? $order->items_subtotal),
+        $lines[] = ($order->items_cooked_subtotal === null ? 'Empanadas' : 'Empanadas cocinadas').': '.$this->money(
+            (int) ($order->items_cooked_subtotal ?? $order->items_subtotal),
         );
-        if ($order->cooking_surcharge !== null && (int) $order->cooking_surcharge !== 0) {
-            $lines[] = 'Cocción: '.$this->signedMoney((int) $order->cooking_surcharge);
+        if ($order->raw_discount !== null && (int) $order->raw_discount !== 0) {
+            $lines[] = 'Descuento por preparación cruda: -'.$this->money((int) $order->raw_discount);
         }
         $lines[] = 'Toppings: '.$this->money((int) $order->toppings_subtotal);
         $lines[] = 'Envío: '.$this->money((int) $order->shipping_fee_snapshot);

@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|numeric-string $total
  * @property int|numeric-string|null $items_base_subtotal
  * @property int|numeric-string|null $cooking_surcharge
+ * @property int|numeric-string|null $items_cooked_subtotal
+ * @property int|numeric-string|null $raw_discount
  * @property int|numeric-string $items_subtotal
  * @property int|numeric-string $toppings_subtotal
  * @property int|numeric-string $shipping_fee_snapshot
@@ -60,6 +62,8 @@ final class Order extends Model implements PublicIdentifier
         'notes',
         'items_base_subtotal',
         'cooking_surcharge',
+        'items_cooked_subtotal',
+        'raw_discount',
         'items_subtotal',
         'toppings_subtotal',
         'shipping_fee_snapshot',
@@ -89,6 +93,8 @@ final class Order extends Model implements PublicIdentifier
             'delivery_date' => 'date',
             'items_base_subtotal' => 'integer',
             'cooking_surcharge' => 'integer',
+            'items_cooked_subtotal' => 'integer',
+            'raw_discount' => 'integer',
             'items_subtotal' => 'integer',
             'toppings_subtotal' => 'integer',
             'shipping_fee_snapshot' => 'integer',

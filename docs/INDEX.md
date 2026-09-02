@@ -1,29 +1,35 @@
-# Documentation index
+# Índice de documentación
 
-Start with the smallest document that owns the change.
+Comience por el documento más acotado que sea responsable del cambio.
 
-| Need                                                            | Read                                                       |
-| --------------------------------------------------------------- | ---------------------------------------------------------- |
-| Understand boundaries and dependency direction                  | [ARCHITECTURE.md](ARCHITECTURE.md)                         |
-| Find the exact owner of a route, rule, page, or setting         | [PROJECT_MAP.md](PROJECT_MAP.md)                           |
-| Add or change a backend capability                              | [MODULES.md](MODULES.md)                                   |
-| Change order grouping or totals                                 | [ORDER_PRICING.md](ORDER_PRICING.md)                       |
-| Change tables, constraints, identifiers, or lifecycle           | [DATABASE.md](DATABASE.md)                                 |
-| Change authorization, public checkout, or private data handling | [SECURITY.md](SECURITY.md)                                 |
-| Change tokens, layouts, or reusable UI                          | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)                       |
-| Set up, migrate, run, or expose the application                 | [DEVELOPMENT.md](DEVELOPMENT.md)                           |
-| Add an event or diagnose a failure                              | [LOGGING.md](LOGGING.md)                                   |
-| Add or run automated checks                                     | [TESTING.md](TESTING.md)                                   |
-| Understand recorded tradeoffs                                   | [decisions/README.md](decisions/README.md)                 |
-| See what is complete and intentionally deferred                 | [CURRENT_STATE.md](CURRENT_STATE.md)                       |
-| Implement the next admin quick-order Home slice                 | [design/ADMIN_QUICK_ORDER.md](design/ADMIN_QUICK_ORDER.md) |
+| Necesidad                                                                   | Documento                                                  |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Comprender los límites y la dirección de las dependencias                   | [ARCHITECTURE.md](ARCHITECTURE.md)                         |
+| Encontrar al responsable exacto de una ruta, regla, página o configuración  | [PROJECT_MAP.md](PROJECT_MAP.md)                           |
+| Agregar o modificar una capacidad del backend                               | [MODULES.md](MODULES.md)                                   |
+| Modificar la agrupación o los totales de pedidos                            | [ORDER_PRICING.md](ORDER_PRICING.md)                       |
+| Modificar estados, pagos o integración financiera de pedidos                | [ORDERS.md](ORDERS.md)                                     |
+| Modificar tablas, restricciones, identificadores o ciclos de vida           | [DATABASE.md](DATABASE.md)                                 |
+| Modificar autorización, checkout público o manejo de datos privados         | [SECURITY.md](SECURITY.md)                                 |
+| Modificar métricas, períodos o reglas de alertas operativas del Dashboard   | [DASHBOARD.md](DASHBOARD.md)                               |
+| Modificar billeteras, ledger, egresos, saldos o auditoría de Gestión        | [MANAGEMENT.md](MANAGEMENT.md)                             |
+| Modificar la programación de Featured Product o Marketing público           | [MARKETING.md](MARKETING.md)                               |
+| Operar o ampliar la automatización de Instagram Story                       | [instagram-automation.md](instagram-automation.md)         |
+| Modificar tokens, layouts o UI reutilizable                                 | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)                       |
+| Ejecutar comandos habituales locales, de Docker, calidad u operación        | [COMMANDS.md](COMMANDS.md)                                 |
+| Configurar, migrar, ejecutar o exponer la aplicación                        | [DEVELOPMENT.md](DEVELOPMENT.md)                           |
+| Agregar un evento o diagnosticar una falla                                  | [LOGGING.md](LOGGING.md)                                   |
+| Agregar o ejecutar verificaciones automatizadas                             | [TESTING.md](TESTING.md)                                   |
+| Comprender las compensaciones registradas                                   | [decisions/README.md](decisions/README.md)                 |
+| Ver qué está completo y qué se pospuso intencionalmente                     | [CURRENT_STATE.md](CURRENT_STATE.md)                       |
+| Implementar el próximo slice de Inicio para pedidos rápidos administrativos | [design/ADMIN_QUICK_ORDER.md](design/ADMIN_QUICK_ORDER.md) |
 
-## Change checklist
+## Lista de verificación para cambios
 
-1. Identify the owning module and read its focused guide.
-2. Keep authorization, validation, prices, and totals on the backend.
-3. Preserve order snapshots; never rebuild history from current catalog/settings.
-4. Run targeted checks, then the full applicable quality gate.
-5. Update this documentation when a durable boundary or rule changes.
+1. Identifique el módulo responsable y lea su guía específica.
+2. Mantenga la autorización, la validación, los precios y los totales en el backend.
+3. Preserve los snapshots de pedidos; nunca recalcule el historial a partir del catálogo o la configuración actuales.
+4. Ejecute las verificaciones específicas y luego el control de calidad completo que corresponda.
+5. Actualice esta documentación cuando cambie un límite o una regla duradera.
 
-For mobile installation and the Tailscale runtime, start at [DEVELOPMENT.md](DEVELOPMENT.md#operational-runtime-and-mobile-installation). The operational service runs on loopback port `8082`; use `deploy/tailscale/route.sh status` rather than assuming route state from a running container.
+Para la instalación móvil y el runtime de Tailscale, comience por [DEVELOPMENT.md](DEVELOPMENT.md#operational-runtime-and-mobile-installation). El servicio operativo se ejecuta en el puerto loopback `8082`; use `deploy/tailscale/route.sh status` en lugar de inferir el estado de la ruta a partir de un contenedor en ejecución.

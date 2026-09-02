@@ -17,7 +17,7 @@ usage() {
 Usage: $0 status|start|verify|migrate|stop
 
   status   Show the isolated operational container state.
-  start    Start the already prepared image on its loopback-only port.
+  start    Start the already prepared app and scheduler containers.
   verify   Check health, built assets, and manifest metadata.
   migrate  Run versioned migrations after explicit confirmation.
   stop     Stop only the isolated Te Pinta 3.0 operational container.
@@ -40,7 +40,7 @@ case "${1:-}" in
         ;;
     start)
         require_confirmation
-        "${compose[@]}" up --detach --no-build --wait --wait-timeout 60 app
+        "${compose[@]}" up --detach --no-build --wait --wait-timeout 60 app scheduler
         ;;
     verify)
         "$deployment/verify-runtime.sh"
@@ -51,7 +51,7 @@ case "${1:-}" in
         ;;
     stop)
         require_confirmation
-        "${compose[@]}" stop app
+        "${compose[@]}" stop app scheduler
         ;;
     *)
         usage

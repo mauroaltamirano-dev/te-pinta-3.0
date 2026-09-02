@@ -1,9 +1,16 @@
-import { Minus, Plus } from 'lucide-react';
+import { es } from 'date-fns/locale';
+import { CalendarIcon, Minus, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -17,6 +24,7 @@ import type {
     AdminCustomerOption,
 } from '../admin-order-types';
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
+import { formatOrderDate } from '../presentation';
 
 export function AdminOrderDetailsFields({
     draft,
@@ -161,26 +169,26 @@ export function AdminOrderDetailsFields({
                 </section>
 
                 <section className="grid gap-3">
-                    <h3 className="font-semibold">Condición</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                        {(['raw', 'cooked'] as const).map((condition) => (
-                            <Button
-                                key={condition}
-                                type="button"
-                                aria-pressed={form.data.condition === condition}
-                                variant={
-                                    form.data.condition === condition
-                                        ? 'default'
-                                        : 'outline'
-                                }
-                                onClick={() =>
-                                    form.setData('condition', condition)
-                                }
-                            >
-                                {condition === 'raw' ? 'Crudo' : 'Cocinado'}
-                            </Button>
-                        ))}
-                    </div>
+                    <h3 className="font-semibold">Preparación</h3>
+                    <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-admin-surface-raised p-3">
+                        <Checkbox
+                            checked={form.data.condition === 'raw'}
+                            onCheckedChange={(checked) =>
+                                form.setData(
+                                    'condition',
+                                    checked === true ? 'raw' : 'cooked',
+                                )
+                            }
+                        />
+                        <span>
+                            <span className="block text-sm font-medium">
+                                Entregar crudas
+                            </span>
+                            <span className="mt-1 block text-xs text-admin-text-secondary">
+                                Sin seleccionar, el pedido se prepara cocinado.
+                            </span>
+                        </span>
+                    </label>
                 </section>
 
                 <fieldset className="grid gap-3">
@@ -272,20 +280,12 @@ export function AdminOrderDetailsFields({
                             required
                         />
                     )}
-                    <Field
-                        id="delivery-date"
-                        type="date"
-                        min={
-                            minimumDeliveryDate === undefined
-                                ? draft.today
-                                : (minimumDeliveryDate ?? undefined)
-                        }
-                        label="Fecha"
+                    <DeliveryDatePicker
                         value={form.data.delivery_date}
+                        minimumDate={minimumDeliveryDate}
                         onChange={(value) =>
                             form.setData('delivery_date', value)
                         }
-                        required
                     />
                     <div className="grid gap-2">
                         <Label htmlFor="delivery-period">Franja</Label>
@@ -295,13 +295,31 @@ export function AdminOrderDetailsFields({
                                 value: 'midday' | 'afternoon' | 'night',
                             ) => form.setData('delivery_period', value)}
                         >
-                            <SelectTrigger id="delivery-period">
+                            <SelectTrigger
+                                id="delivery-period"
+                                className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
+                            >
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="midday">Mediodía</SelectItem>
-                                <SelectItem value="afternoon">Tarde</SelectItem>
-                                <SelectItem value="night">Noche</SelectItem>
+                            <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                <SelectItem
+                                    value="midday"
+                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                >
+                                    Mediodía
+                                </SelectItem>
+                                <SelectItem
+                                    value="afternoon"
+                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                >
+                                    Tarde
+                                </SelectItem>
+                                <SelectItem
+                                    value="night"
+                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                >
+                                    Noche
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -369,14 +387,23 @@ export function AdminOrderDetailsFields({
                                         }))
                                     }
                                 >
-                                    <SelectTrigger id="discount-type">
+                                    <SelectTrigger
+                                        id="discount-type"
+                                        className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
+                                    >
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="percentage">
+                                    <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                        <SelectItem
+                                            value="percentage"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
                                             Porcentaje
                                         </SelectItem>
-                                        <SelectItem value="fixed_amount">
+                                        <SelectItem
+                                            value="fixed_amount"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
                                             Monto fijo
                                         </SelectItem>
                                     </SelectContent>
@@ -417,8 +444,8 @@ export function AdminOrderDetailsFields({
                                 id="discount-help"
                                 className="text-xs text-admin-text-secondary sm:col-span-2"
                             >
-                                Se aplica a productos, cocción y adicionales. El
-                                envío no se descuenta.
+                                Se aplica a productos y adicionales. El envío no
+                                se descuenta.
                             </p>
                         </div>
                     )}
@@ -479,6 +506,7 @@ export function AdminOrderDetailsFields({
                                     <SelectTrigger
                                         id="payment-method"
                                         aria-describedby="payment-method-help"
+                                        className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
                                         aria-invalid={
                                             form.errors.payment_method
                                                 ? true
@@ -487,14 +515,23 @@ export function AdminOrderDetailsFields({
                                     >
                                         <SelectValue placeholder="Seleccioná un medio" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="cash">
+                                    <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                        <SelectItem
+                                            value="cash"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
                                             Efectivo
                                         </SelectItem>
-                                        <SelectItem value="bank_transfer">
+                                        <SelectItem
+                                            value="bank_transfer"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
                                             Transferencia
                                         </SelectItem>
-                                        <SelectItem value="debit_card">
+                                        <SelectItem
+                                            value="debit_card"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
                                             Débito
                                         </SelectItem>
                                     </SelectContent>
@@ -516,6 +553,87 @@ export function AdminOrderDetailsFields({
             </div>
         </div>
     );
+}
+
+function DeliveryDatePicker({
+    value,
+    minimumDate,
+    onChange,
+}: {
+    value: string;
+    minimumDate?: string | null;
+    onChange: (value: string) => void;
+}) {
+    const selectedDate = value ? parseDate(value) : undefined;
+
+    return (
+        <div className="grid gap-2">
+            <Label>Fecha</Label>
+
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="justify-start border-admin-border !bg-admin-canvas text-left font-normal text-admin-text-primary hover:!bg-admin-selection hover:text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
+                    >
+                        <CalendarIcon className="size-4" />
+
+                        {selectedDate
+                            ? formatOrderDate(value)
+                            : 'Seleccionar fecha'}
+                    </Button>
+                </PopoverTrigger>
+
+                <PopoverContent
+                    className="admin-shell dark w-auto border-admin-border !bg-admin-surface-raised p-0 !text-admin-text-primary shadow-xl"
+                    align="start"
+                >
+                    <Calendar
+                        mode="single"
+                        locale={es}
+                        selected={selectedDate}
+                        className="!bg-admin-surface-raised !text-admin-text-primary"
+                        classNames={{
+                            weekday:
+                                'flex-1 rounded-md text-[0.8rem] font-normal text-admin-text-secondary select-none',
+                            outside:
+                                'text-admin-text-tertiary aria-selected:text-admin-text-tertiary',
+                            disabled: 'text-admin-text-tertiary opacity-40',
+                            today: 'rounded-md bg-admin-selection text-admin-accent data-[selected=true]:bg-admin-accent data-[selected=true]:text-white',
+                        }}
+                        disabled={
+                            minimumDate
+                                ? { before: parseDate(minimumDate) }
+                                : undefined
+                        }
+                        onSelect={(date) => {
+                            if (!date) {
+                                return;
+                            }
+
+                            onChange(formatDateValue(date));
+                        }}
+                        autoFocus
+                    />
+                </PopoverContent>
+            </Popover>
+        </div>
+    );
+}
+
+function parseDate(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+
+    return new Date(year, month - 1, day);
+}
+
+function formatDateValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
 }
 
 function Field({

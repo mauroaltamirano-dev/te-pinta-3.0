@@ -12,7 +12,7 @@ interface OrderingSettings {
     combined_dozen_cooked_price: number;
     delivery_fee: number;
     whatsapp_order_phone: string;
-    cooking_surcharges: { unit: number; half_dozen: number; dozen: number };
+    raw_price_discounts: { unit: number; half_dozen: number; dozen: number };
     addons: Array<{
         id: number;
         name: string;
@@ -34,37 +34,28 @@ export default function GeneralSettings({
 
     return (
         <>
-            <Head title="General configuration" />
+            <Head title="Configuración general" />
             <SettingsLayout>
                 <header className="border-b border-admin-border px-5 py-5 sm:px-7">
                     <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent uppercase">
-                        Settings
+                        Configuración
                     </p>
                     <h1 className="mt-1 text-xl font-bold">
-                        Ordering configuration
+                        Configuración de pedidos
                     </h1>
                     <p className="mt-1 text-sm text-admin-text-secondary">
-                        Global prices and the WhatsApp destination used by
-                        backend pricing and checkout.
+                        Precios globales y destino de WhatsApp usados por el
+                        cálculo de precios y el proceso de compra.
                     </p>
                 </header>
                 <form onSubmit={submit} className="grid gap-6 p-5 sm:p-7">
                     <fieldset className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
                         <legend className="px-1 font-semibold">
-                            Combined dozen and delivery
+                            Docena combinada y entrega
                         </legend>
                         <MoneyField
-                            id="combined-raw"
-                            label="Raw combined dozen"
-                            value={form.data.combined_dozen_raw_price}
-                            error={form.errors.combined_dozen_raw_price}
-                            onChange={(value) =>
-                                form.setData('combined_dozen_raw_price', value)
-                            }
-                        />
-                        <MoneyField
                             id="combined-cooked"
-                            label="Cooked combined dozen"
+                            label="Docena combinada cocinada"
                             value={form.data.combined_dozen_cooked_price}
                             error={form.errors.combined_dozen_cooked_price}
                             onChange={(value) =>
@@ -75,8 +66,17 @@ export default function GeneralSettings({
                             }
                         />
                         <MoneyField
+                            id="combined-raw"
+                            label="Docena combinada cruda"
+                            value={form.data.combined_dozen_raw_price}
+                            error={form.errors.combined_dozen_raw_price}
+                            onChange={(value) =>
+                                form.setData('combined_dozen_raw_price', value)
+                            }
+                        />
+                        <MoneyField
                             id="delivery-fee"
-                            label="Delivery fee"
+                            label="Costo de envío"
                             value={form.data.delivery_fee}
                             error={form.errors.delivery_fee}
                             onChange={(value) =>
@@ -85,7 +85,7 @@ export default function GeneralSettings({
                         />
                         <div className="grid gap-2">
                             <Label htmlFor="whatsapp-phone">
-                                WhatsApp order phone
+                                Teléfono de pedidos por WhatsApp
                             </Label>
                             <Input
                                 id="whatsapp-phone"
@@ -110,8 +110,8 @@ export default function GeneralSettings({
                                 id="whatsapp-phone-help"
                                 className="text-xs text-muted-foreground"
                             >
-                                Use the international number without a hardcoded
-                                frontend fallback.
+                                Usá el número internacional completo. El sistema
+                                no agrega un número alternativo.
                             </p>
                             <ErrorText
                                 id="whatsapp-phone-error"
@@ -121,29 +121,35 @@ export default function GeneralSettings({
                     </fieldset>
                     <fieldset className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3">
                         <legend className="px-1 font-semibold">
-                            Cooking surcharges
+                            Descuentos por preparación en crudo
                         </legend>
+                        <p className="text-sm text-admin-text-secondary sm:col-span-3">
+                            Estos importes se descuentan del precio cocinado.
+                            Deben ser positivos y nunca se aplican como
+                            recargos.
+                        </p>
                         {(['unit', 'half_dozen', 'dozen'] as const).map(
                             (tier) => (
                                 <MoneyField
                                     key={tier}
-                                    id={`surcharge-${tier}`}
+                                    id={`raw-discount-${tier}`}
+                                    min={1}
                                     label={
                                         tier === 'unit'
-                                            ? 'Unit'
+                                            ? 'Unidad'
                                             : tier === 'half_dozen'
-                                              ? 'Half dozen'
-                                              : 'Dozen'
+                                              ? 'Media docena'
+                                              : 'Docena'
                                     }
-                                    value={form.data.cooking_surcharges[tier]}
+                                    value={form.data.raw_price_discounts[tier]}
                                     error={
                                         form.errors[
-                                            `cooking_surcharges.${tier}`
+                                            `raw_price_discounts.${tier}`
                                         ]
                                     }
                                     onChange={(value) =>
-                                        form.setData('cooking_surcharges', {
-                                            ...form.data.cooking_surcharges,
+                                        form.setData('raw_price_discounts', {
+                                            ...form.data.raw_price_discounts,
                                             [tier]: value,
                                         })
                                     }
@@ -152,7 +158,9 @@ export default function GeneralSettings({
                         )}
                     </fieldset>
                     <fieldset className="grid gap-4 rounded-lg border p-4">
-                        <legend className="px-1 font-semibold">Toppings</legend>
+                        <legend className="px-1 font-semibold">
+                            Adicionales
+                        </legend>
                         {form.data.addons.map((addon, index) => (
                             <div
                                 key={addon.id}
@@ -160,7 +168,7 @@ export default function GeneralSettings({
                             >
                                 <div className="grid gap-2">
                                     <Label htmlFor={`addon-name-${addon.id}`}>
-                                        Name
+                                        Nombre
                                     </Label>
                                     <Input
                                         id={`addon-name-${addon.id}`}
@@ -185,7 +193,7 @@ export default function GeneralSettings({
                                 </div>
                                 <MoneyField
                                     id={`addon-price-${addon.id}`}
-                                    label="Price"
+                                    label="Precio"
                                     value={addon.price}
                                     onChange={(value) =>
                                         form.setData(
@@ -222,7 +230,7 @@ export default function GeneralSettings({
                                             )
                                         }
                                     />
-                                    Available
+                                    Disponible
                                 </label>
                             </div>
                         ))}
@@ -233,14 +241,14 @@ export default function GeneralSettings({
                                 role="alert"
                                 className="mb-3 text-sm text-destructive"
                             >
-                                Review the highlighted configuration values.
+                                Revisá los valores de configuración marcados.
                             </p>
                         )}
                         <Button type="submit" disabled={form.processing}>
                             {form.processing && (
                                 <LoaderCircle className="animate-spin" />
                             )}
-                            Save configuration
+                            Guardar configuración
                         </Button>
                     </div>
                 </form>
@@ -253,12 +261,14 @@ function MoneyField({
     label,
     value,
     error,
+    min = 0,
     onChange,
 }: {
     id: string;
     label: string;
     value: number;
     error?: string;
+    min?: number;
     onChange: (value: number) => void;
 }) {
     return (
@@ -267,7 +277,7 @@ function MoneyField({
             <Input
                 id={id}
                 type="number"
-                min="0"
+                min={min}
                 step="1"
                 value={value}
                 onChange={(event) => onChange(Number(event.target.value))}

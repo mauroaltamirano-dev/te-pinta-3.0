@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/dashboard', 'admin/dashboard')->name('dashboard');
+Route::get('/dashboard', DashboardController::class)->name('dashboard');

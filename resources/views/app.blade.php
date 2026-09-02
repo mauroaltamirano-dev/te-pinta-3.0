@@ -30,9 +30,8 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/icons/te-pinta-app-icon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/icons/te-pinta-192.png">
+        <link rel="icon" href="/icons/te-pinta-logo.svg" type="image/svg+xml" sizes="any">
+        <link rel="apple-touch-icon" href="/icons/te-pinta-logo-192.png">
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#1f1d2b">
         <meta name="application-name" content="Te Pinta 3.0">

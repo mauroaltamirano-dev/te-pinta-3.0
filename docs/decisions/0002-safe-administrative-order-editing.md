@@ -1,36 +1,37 @@
-# 0002: Safe administrative order editing
+# 0002: Edición administrativa segura de pedidos
 
-Status: accepted
-Date: 2026-08-13
+Estado: aceptado
+Fecha: 2026-08-13
 
-## Context
+## Contexto
 
-Administrators need to correct complete orders without inventing a second form or pricing path. Orders are historical snapshots, closed orders require stronger intent, current catalog rules may differ from the original sale, and concurrent admin surfaces must not overwrite each other silently.
+Los administradores necesitan corregir pedidos completos sin crear otro formulario ni otro flujo de precios. Los pedidos son snapshots históricos, los pedidos cerrados requieren una intención más firme, las reglas actuales del catálogo pueden diferir de las de la venta original y las superficies administrativas concurrentes no deben sobrescribirse silenciosamente.
 
-## Decision
+## Decisión
 
-`/admin/orders/{public_id}/edit` hydrates the shared admin draft from structured order items, combined-dozen compositions, toppings, and order snapshots. Create and edit share `OrderCheckoutData`, customer resolution, `OrderPricingEngine`, `PersistOrderQuote`, preview, fields, and draft state. `UpdateOrder` remains a distinct transactional use case.
+`/admin/orders/{public_id}/edit` hidrata el borrador administrativo compartido a partir de los items estructurados del pedido, las composiciones de docena combinada, los toppings y los snapshots del pedido. La creación y la edición comparten `OrderCheckoutData`, la resolución del cliente, `OrderPricingEngine`, `PersistOrderQuote`, la vista previa, los fields y el estado del borrador. `UpdateOrder` permanece como un caso de uso transaccional separado.
 
-An economic edit reprices the complete order with current rules and atomically replaces snapshots for that order only. A non-economic edit keeps the persisted quote. Historical unavailable selections may remain only when the complete economic selection is unchanged; current-rule repricing requires removing or replacing them.
+Una edición económica vuelve a calcular el precio del pedido completo con las reglas actuales y reemplaza atómicamente los snapshots únicamente de ese pedido. Una edición no económica conserva la quote persistida. Las selecciones históricas no disponibles solo pueden mantenerse cuando la selección económica completa no cambia; para volver a calcular con las reglas actuales es necesario quitarlas o reemplazarlas.
 
-Every mutation advances `orders.edit_version`. Full editing locks the row and requires the version observed at hydration. Delivered/cancelled orders additionally require a brief reason and a single-use authenticated-session grant bound to the order and version; granting permission does not transition status.
+Cada mutación incrementa `orders.edit_version`. La edición completa bloquea la fila y exige la versión observada durante la hidratación. Los pedidos delivered/cancelled también exigen un motivo breve y un permiso de sesión autenticada de un solo uso, vinculado al pedido y a la versión; conceder el permiso no cambia el estado.
 
-Each successful full edit writes one Orders-specific `order_revisions` record containing identity, admin, timestamp, status, before/after totals, changed field names, economic-change flag, and the closed-edit reason when applicable. It does not store complete phone, address, or note values.
+Cada edición completa exitosa escribe un registro específico de Orders en `order_revisions` que contiene la identidad, el administrador, el timestamp, el estado, los totales anteriores y posteriores, los nombres de los fields modificados, un indicador de cambio económico y, cuando corresponda, el motivo de edición del pedido cerrado. No almacena valores completos de teléfono, dirección ni nota.
 
-## Consequences
+## Consecuencias
 
-- The backend remains the sole price and sellability authority; React only previews and compares totals.
-- Existing creation and Quick Order behavior remain on the same boundaries.
-- Economic corrections intentionally adopt current configuration for the whole edited order rather than mixing historical and current rules.
-- Closed-order permission cannot be reused after a successful edit or after the order version changes.
-- Revision persistence and snapshot replacement succeed or roll back together.
-- Historical unavailable selections cannot participate in a newly calculated quote.
+- El backend continúa siendo la única autoridad sobre precios y disponibilidad para la venta; React solo muestra vistas previas y compara totales.
+- El comportamiento existente de creación y Quick Order permanece dentro de los mismos límites.
+- Las correcciones económicas adoptan intencionalmente la configuración actual para todo el pedido editado, en lugar de mezclar reglas históricas y actuales.
+- El permiso para pedidos cerrados no puede reutilizarse después de una edición exitosa ni después de que cambie la versión del pedido.
+- La persistencia de revisiones y el reemplazo de snapshots se confirman o revierten en conjunto.
+- Las selecciones históricas no disponibles no pueden formar parte de una quote calculada nuevamente.
+- Fuera de una edición económica explícita, los snapshots históricos son inmutables y nunca se recalculan.
 
-## Alternatives considered
+## Alternativas consideradas
 
-- **A separate edit pricing engine or form:** rejected because it would duplicate validation, grouping, and UI behavior.
-- **Preserve original prices for unchanged lines during economic edits:** rejected because it mixes rule generations within one commercial closure.
-- **Allow repricing unavailable historical products from snapshots:** rejected because snapshots do not establish current sellability or a complete current-rule quote.
-- **Last write wins:** rejected because status, payment, and full-edit surfaces can otherwise lose accepted admin changes.
-- **Generic application-wide auditing:** rejected because Orders needs a narrow structured revision record and no other module currently demonstrates that abstraction need.
-- **Reopen closed orders by changing status:** rejected because permission to correct data is not an operational state transition.
+- **Un motor de precios o formulario separado para la edición:** rechazado porque duplicaría la validación, la agrupación y el comportamiento de la UI.
+- **Conservar los precios originales de las líneas sin cambios durante las ediciones económicas:** rechazado porque mezcla generaciones de reglas dentro de un mismo cierre comercial.
+- **Volver a calcular productos históricos no disponibles a partir de snapshots:** rechazado porque los snapshots no demuestran la disponibilidad actual para la venta ni constituyen una quote completa con las reglas actuales.
+- **La última escritura prevalece:** rechazado porque, de otro modo, las superficies de estado, pago y edición completa podrían perder cambios administrativos aceptados.
+- **Auditoría genérica para toda la aplicación:** rechazado porque Orders necesita un registro de revisión estructurado y acotado, y ningún otro módulo demuestra actualmente la necesidad de esa abstracción.
+- **Reabrir pedidos cerrados cambiando el estado:** rechazado porque el permiso para corregir datos no es una transición de estado operativo.

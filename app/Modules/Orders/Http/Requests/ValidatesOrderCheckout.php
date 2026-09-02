@@ -9,7 +9,6 @@ use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
-use App\Modules\Orders\Support\OrderBusinessDate;
 use Illuminate\Validation\Rule;
 
 trait ValidatesOrderCheckout
@@ -31,7 +30,10 @@ trait ValidatesOrderCheckout
             'condition' => ['required', Rule::enum(OrderCondition::class)],
             'delivery_type' => ['required', Rule::enum(DeliveryType::class)],
             'delivery_period' => ['required', Rule::enum(DeliveryPeriod::class)],
-            'delivery_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.app(OrderBusinessDate::class)->todayString()],
+            'delivery_date' => [
+                'required',
+                'date_format:Y-m-d',
+            ],
             'delivery_time' => ['nullable', 'date_format:H:i'],
             'delivery_address' => ['nullable', 'required_if:delivery_type,delivery', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:5000'],

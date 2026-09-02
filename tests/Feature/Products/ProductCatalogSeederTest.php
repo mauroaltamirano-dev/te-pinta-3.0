@@ -3,8 +3,8 @@
 namespace Tests\Feature\Products;
 
 use App\Modules\Products\Enums\PriceTier;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use Database\Seeders\ProductCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -22,21 +22,21 @@ final class ProductCatalogSeederTest extends TestCase
         $this->assertDatabaseCount('categories', 2);
         $this->assertDatabaseCount('tags', 1);
         $this->assertDatabaseCount('products', 9);
-        $this->assertDatabaseCount('cooking_surcharges', 3);
+        $this->assertDatabaseCount('raw_price_discounts', 3);
         $this->assertDatabaseHas('categories', ['name' => 'Clásicas', 'slug' => 'clasicas']);
         $this->assertDatabaseHas('categories', ['name' => 'Especiales', 'slug' => 'especiales']);
         $this->assertDatabaseHas('tags', ['name' => 'Vegetariana', 'slug' => 'vegetariana']);
 
         $expected = [
-            'Salteña' => [1600, 9000, 16000, 'especiales', false],
-            'Humita Tucumana' => [1500, 8500, 15000, 'especiales', true],
-            'Hongos al puerro' => [1600, 9000, 16000, 'especiales', true],
-            'Pollo y portobellos' => [1600, 9000, 16000, 'especiales', false],
-            'Matambre y verduras asadas' => [1700, 9500, 17000, 'especiales', false],
-            'Criolla Salada' => [1600, 9000, 16000, 'clasicas', false],
-            'Criolla Dulce' => [1600, 9000, 16000, 'clasicas', false],
-            'Jamón y Queso' => [1400, 8000, 14000, 'clasicas', false],
-            'Caprese' => [1400, 8000, 14000, 'clasicas', true],
+            'Salteña' => [1800, 10000, 18000, 'especiales', false],
+            'Humita Tucumana' => [1700, 9500, 17000, 'especiales', true],
+            'Hongos al puerro' => [1800, 10000, 18000, 'especiales', true],
+            'Pollo y portobellos' => [1800, 10000, 18000, 'especiales', false],
+            'Matambre y verduras asadas' => [1900, 10500, 19000, 'especiales', false],
+            'Criolla Salada' => [1800, 10000, 18000, 'clasicas', false],
+            'Criolla Dulce' => [1800, 10000, 18000, 'clasicas', false],
+            'Jamón y Queso' => [1600, 9000, 16000, 'clasicas', false],
+            'Caprese' => [1600, 9000, 16000, 'clasicas', true],
         ];
 
         foreach ($expected as $name => [$unit, $halfDozen, $dozen, $categorySlug, $vegetarian]) {
@@ -70,9 +70,9 @@ final class ProductCatalogSeederTest extends TestCase
                 ->all(),
         );
 
-        $this->assertSame(200, $this->surcharge(PriceTier::Unit));
-        $this->assertSame(1000, $this->surcharge(PriceTier::HalfDozen));
-        $this->assertSame(2000, $this->surcharge(PriceTier::Dozen));
+        $this->assertSame(200, $this->discount(PriceTier::Unit));
+        $this->assertSame(1000, $this->discount(PriceTier::HalfDozen));
+        $this->assertSame(2000, $this->discount(PriceTier::Dozen));
     }
 
     public function test_reseeding_never_overwrites_admin_changes_or_resurrects_deleted_catalog_records(): void
@@ -92,7 +92,7 @@ final class ProductCatalogSeederTest extends TestCase
 
         $category = $product->category;
         $category->update(['sort_order' => 77, 'is_active' => false]);
-        CookingSurcharge::query()->where('pricing_mode', PriceTier::Unit)->update(['amount' => 725]);
+        RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->update(['amount' => 725]);
 
         $deleted = Product::query()->where('slug', 'caprese')->sole();
         $deleted->delete();
@@ -106,14 +106,14 @@ final class ProductCatalogSeederTest extends TestCase
         $this->assertTrue($product->tags->contains('slug', 'vegetariana'));
         $this->assertSame(77, $category->refresh()->sort_order);
         $this->assertFalse($category->is_active);
-        $this->assertSame(725, $this->surcharge(PriceTier::Unit));
+        $this->assertSame(725, $this->discount(PriceTier::Unit));
         $this->assertTrue(Product::query()->withTrashed()->where('slug', 'caprese')->sole()->trashed());
         $this->assertSame(9, Product::query()->withTrashed()->count());
         Storage::disk('public')->assertExists('products/admin-image.jpg');
     }
 
-    private function surcharge(PriceTier $tier): int
+    private function discount(PriceTier $tier): int
     {
-        return CookingSurcharge::query()->where('pricing_mode', $tier)->sole()->amount;
+        return RawPriceDiscount::query()->where('pricing_mode', $tier)->sole()->amount;
     }
 }

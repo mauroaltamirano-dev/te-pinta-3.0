@@ -4,6 +4,8 @@ namespace Tests\Feature\Orders;
 
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
+use App\Modules\Management\Models\ManagementOrderPayment;
+use App\Modules\Management\Models\Wallet;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Http\Resources\AdminOrderResource;
 use App\Modules\Orders\Models\Order;
@@ -11,8 +13,8 @@ use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Orders\Support\OrderSummaryFormatter;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -27,13 +29,14 @@ final class OrderCheckoutHttpTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Wallet::query()->create(['name' => 'Order receipts', 'is_order_payment_default' => true]);
         $category = Category::query()->create(['name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true]);
         $this->product = Product::query()->create([
             'category_id' => $category->id, 'name' => 'Salteña', 'slug' => 'saltena',
-            'unit_price' => 1600, 'half_dozen_price' => 9000, 'dozen_price' => 16000,
+            'unit_price' => 1800, 'half_dozen_price' => 10000, 'dozen_price' => 18000,
             'is_available' => true, 'sort_order' => 1,
         ]);
-        CookingSurcharge::query()->insert([
+        RawPriceDiscount::query()->insert([
             ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
             ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
             ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
@@ -55,8 +58,10 @@ final class OrderCheckoutHttpTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('data.status', 'pending_confirmation')
             ->assertJsonPath('data.payment_status', 'unpaid')
-            ->assertJsonPath('data.items_base_subtotal', 9000)
-            ->assertJsonPath('data.cooking_surcharge', 0)
+            ->assertJsonPath('data.items_base_subtotal', null)
+            ->assertJsonPath('data.cooking_surcharge', null)
+            ->assertJsonPath('data.items_cooked_subtotal', 10000)
+            ->assertJsonPath('data.raw_discount', 1000)
             ->assertJsonPath('data.total', 9000)
             ->assertJsonMissingPath('data.customer_id');
         $this->assertMatchesRegularExpression('/^TP-\d{6}$/', $response->json('data.order_id'));
@@ -68,7 +73,7 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertCount(1, $order->items);
     }
 
-    public function test_public_and_admin_checkout_validate_against_the_orders_business_date(): void
+    public function test_public_checkout_uses_the_orders_business_date_while_admin_can_register_past_orders(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-08-14 00:30:00 UTC'));
 
@@ -83,19 +88,19 @@ final class OrderCheckoutHttpTest extends TestCase
         $publicPayload['delivery_date'] = '2026-08-12';
         $publicPayload['idempotency_key'] = 'checkout-business-date-old';
         $this->postJson(route('public.orders.store'), $publicPayload)
-            ->assertUnprocessable()->assertJsonValidationErrors('delivery_date');
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('delivery_date')
+            ->assertJsonPath('errors.delivery_date.0', 'La fecha de entrega debe ser igual o posterior al 13/08/2026.');
 
         $adminPayload = $this->payload();
         unset($adminPayload['idempotency_key'], $adminPayload['customer']);
         $adminPayload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
         $adminPayload['customer_id'] = Customer::query()->create(['name' => 'Business date customer'])->id;
-        $adminPayload['delivery_date'] = '2026-08-13';
+        $adminPayload['delivery_date'] = '2026-08-12';
         $this->actingAs(User::factory()->administrator()->create())
             ->postJson(route('admin.orders.store'), $adminPayload)->assertCreated();
 
-        $adminPayload['delivery_date'] = '2026-08-12';
-        $this->postJson(route('admin.orders.store'), $adminPayload)
-            ->assertUnprocessable()->assertJsonValidationErrors('delivery_date');
+        $this->assertDatabaseHas('orders', ['delivery_date' => '2026-08-12']);
     }
 
     public function test_cooked_checkout_persists_and_exposes_snapshot_safe_breakdown(): void
@@ -105,38 +110,42 @@ final class OrderCheckoutHttpTest extends TestCase
 
         $response = $this->postJson(route('public.orders.store'), $payload);
         $response->assertCreated()
-            ->assertJsonPath('data.items_base_subtotal', 9000)
-            ->assertJsonPath('data.cooking_surcharge', 1000)
+            ->assertJsonPath('data.items_base_subtotal', null)
+            ->assertJsonPath('data.cooking_surcharge', null)
+            ->assertJsonPath('data.items_cooked_subtotal', 10000)
+            ->assertJsonPath('data.raw_discount', 0)
             ->assertJsonPath('data.total', 10000);
-        $this->assertStringContainsString('Empanadas base: $9.000', $response->json('data.summary'));
-        $this->assertStringContainsString('Cocción: +$1.000', $response->json('data.summary'));
+        $this->assertStringContainsString('Empanadas cocinadas: $10.000', $response->json('data.summary'));
+        $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with(['items.compositions', 'toppings'])->firstOrFail();
         $item = $order->items->sole();
-        $this->assertSame([9000, 1000, 10000], [
-            (int) $order->items_base_subtotal,
-            (int) $order->cooking_surcharge,
+        $this->assertSame([10000, 0, 10000], [
+            (int) $order->items_cooked_subtotal,
+            (int) $order->raw_discount,
             (int) $order->total,
         ]);
-        $this->assertSame([9000, 1000, 10000], [
-            (int) $item->base_line_total,
-            (int) $item->cooking_surcharge,
+        $this->assertSame([10000, 0, 10000], [
+            (int) $item->cooked_line_total,
+            (int) $item->raw_discount,
             (int) $item->line_total,
         ]);
 
-        CookingSurcharge::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
+        RawPriceDiscount::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
         $this->product->update(['half_dozen_price' => 50000]);
 
         $summary = app(OrderSummaryFormatter::class)->format($order->fresh(['items.compositions', 'toppings']));
-        $this->assertStringContainsString('Empanadas base: $9.000', $summary);
-        $this->assertStringContainsString('Cocción: +$1.000', $summary);
+        $this->assertStringContainsString('Empanadas cocinadas: $10.000', $summary);
+        $this->assertStringNotContainsString('Descuento por preparación cruda', $summary);
         $this->assertStringContainsString('Total: $10.000', $summary);
 
         $resource = (new AdminOrderResource($order->fresh(['items.compositions', 'toppings'])))->resolve();
-        $this->assertSame(9000, $resource['items_base_subtotal']);
-        $this->assertSame(1000, $resource['cooking_surcharge']);
-        $this->assertSame(9000, $resource['items'][0]['base_subtotal']);
-        $this->assertSame(1000, $resource['items'][0]['cooking_surcharge']);
+        $this->assertNull($resource['items_base_subtotal']);
+        $this->assertNull($resource['cooking_surcharge']);
+        $this->assertSame(10000, $resource['items_cooked_subtotal']);
+        $this->assertSame(0, $resource['raw_discount']);
+        $this->assertSame(10000, $resource['items'][0]['cooked_subtotal']);
+        $this->assertSame(0, $resource['items'][0]['raw_discount']);
     }
 
     public function test_cooked_combined_dozen_uses_its_own_raw_equivalent(): void
@@ -145,9 +154,9 @@ final class OrderCheckoutHttpTest extends TestCase
             'category_id' => $this->product->category_id,
             'name' => 'Humita',
             'slug' => 'humita',
-            'unit_price' => 1600,
-            'half_dozen_price' => 9000,
-            'dozen_price' => 16000,
+            'unit_price' => 1800,
+            'half_dozen_price' => 10000,
+            'dozen_price' => 18000,
             'is_available' => true,
             'sort_order' => 2,
         ]);
@@ -160,13 +169,13 @@ final class OrderCheckoutHttpTest extends TestCase
 
         $response = $this->postJson(route('public.orders.store'), $payload);
         $response->assertCreated()
-            ->assertJsonPath('data.items_base_subtotal', 16000)
-            ->assertJsonPath('data.cooking_surcharge', 1500)
+            ->assertJsonPath('data.items_cooked_subtotal', 17500)
+            ->assertJsonPath('data.raw_discount', 0)
             ->assertJsonPath('data.total', 17500);
-        $this->assertStringContainsString('Cocción: +$1.500', $response->json('data.summary'));
+        $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with('items')->firstOrFail();
-        $this->assertSame(1500, (int) $order->items->sole()->cooking_surcharge);
+        $this->assertSame(0, (int) $order->items->sole()->raw_discount);
     }
 
     public function test_admin_summary_formats_a_structured_combined_order_for_whatsapp_copy(): void
@@ -250,8 +259,7 @@ final class OrderCheckoutHttpTest extends TestCase
 
 *RESUMEN*
 
-Empanadas: $18.800
-Cocción: +$1.900
+Empanadas: $20.700
 Envío: +$2.000
 Toppings: $0
 
@@ -325,7 +333,7 @@ TEXT, $summary);
             'total' => 9000,
         ]);
 
-        CookingSurcharge::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
+        RawPriceDiscount::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
         $order->refresh();
         $summary = app(OrderSummaryFormatter::class)->format($order);
 
@@ -406,6 +414,9 @@ TEXT, $summary);
         $this->assertSame('waiting', $order->status->value);
         $this->assertSame('paid', $order->payment_status->value);
         $this->assertSame('cash', $order->payment_method->value);
+        $payment = ManagementOrderPayment::query()->sole();
+        $this->assertSame($order->id, $payment->order_id);
+        $this->assertSame(9000, (int) $payment->amount);
 
         $this->actingAs($admin)->get(route('admin.orders.show', $order->public_id))->assertOk();
         $this->actingAs($admin)->get(route('admin.orders.index', ['order' => $order->public_id]))
@@ -448,6 +459,7 @@ TEXT, $summary);
         $this->assertSame('waiting', $order->status->value);
         $this->assertSame('paid', $order->payment_status->value);
         $this->assertSame('bank_transfer', $order->payment_method->value);
+        $this->assertSame($order->id, ManagementOrderPayment::query()->sole()->order_id);
     }
 
     public function test_admin_preview_and_create_apply_only_backend_calculated_discount(): void

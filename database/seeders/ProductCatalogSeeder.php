@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Modules\Products\Models\Category;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Models\Tag;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -36,15 +36,15 @@ final class ProductCatalogSeeder extends Seeder
             );
 
             $products = [
-                ['category' => 'especiales', 'name' => 'Salteña', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000],
-                ['category' => 'especiales', 'name' => 'Humita Tucumana', 'unit' => 1500, 'half' => 8500, 'dozen' => 15000, 'vegetarian' => true],
-                ['category' => 'especiales', 'name' => 'Hongos al puerro', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000, 'vegetarian' => true],
-                ['category' => 'especiales', 'name' => 'Pollo y portobellos', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000],
-                ['category' => 'especiales', 'name' => 'Matambre y verduras asadas', 'unit' => 1700, 'half' => 9500, 'dozen' => 17000],
-                ['category' => 'clasicas', 'name' => 'Criolla Salada', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000],
-                ['category' => 'clasicas', 'name' => 'Criolla Dulce', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000],
-                ['category' => 'clasicas', 'name' => 'Jamón y Queso', 'unit' => 1400, 'half' => 8000, 'dozen' => 14000],
-                ['category' => 'clasicas', 'name' => 'Caprese', 'unit' => 1400, 'half' => 8000, 'dozen' => 14000, 'vegetarian' => true],
+                ['category' => 'especiales', 'name' => 'Salteña', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'especiales', 'name' => 'Humita Tucumana', 'unit' => 1700, 'half' => 9500, 'dozen' => 17000, 'vegetarian' => true],
+                ['category' => 'especiales', 'name' => 'Hongos al puerro', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000, 'vegetarian' => true],
+                ['category' => 'especiales', 'name' => 'Pollo y portobellos', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'especiales', 'name' => 'Matambre y verduras asadas', 'unit' => 1900, 'half' => 10500, 'dozen' => 19000],
+                ['category' => 'clasicas', 'name' => 'Criolla Salada', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'clasicas', 'name' => 'Criolla Dulce', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'clasicas', 'name' => 'Jamón y Queso', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000],
+                ['category' => 'clasicas', 'name' => 'Caprese', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000, 'vegetarian' => true],
             ];
 
             $sortOrders = [];
@@ -84,7 +84,7 @@ final class ProductCatalogSeeder extends Seeder
             }
 
             foreach (['unit' => 200, 'half_dozen' => 1000, 'dozen' => 2000] as $mode => $amount) {
-                CookingSurcharge::query()->firstOrCreate(
+                RawPriceDiscount::query()->firstOrCreate(
                     ['pricing_mode' => $mode],
                     ['amount' => $amount],
                 );

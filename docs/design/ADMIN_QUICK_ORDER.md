@@ -1,88 +1,92 @@
-# Admin Home quick-order implementation
+# Implementación de pedidos rápidos en el Inicio administrativo
 
-The administrative Home at `/admin` is the fastest path to create an order. Dashboard remains available at `/admin/dashboard`; Home is the product-first POS.
+El Inicio administrativo en `/admin` es el camino más rápido para crear un pedido. El Dashboard permanece disponible en `/admin/dashboard`; el Inicio es el POS centrado en productos.
 
-## Target experience
+## Experiencia objetivo
 
 ```text
 Sidebar | Product catalog | Current order
                          └─ Continue → customer and fulfillment panel
 ```
 
-1. Home lists the real available product varieties with 12, 6, and 1-unit shortcuts.
-2. Each shortcut increments that product in an in-progress administrative order.
-3. The fixed right column shows lines, quantities, applied preview prices, savings, and subtotal.
-4. **Continuar** opens the second-stage panel over a darkened catalog.
-5. That stage captures the existing admin fields: customer, toppings, raw/cooked condition, delivery/pickup, date/period/time/address, notes, optional discount, and payment status/method.
-6. Confirming calls the existing administrative order creation boundary; cancelling returns without persisting an order.
+1. El Inicio muestra las variedades reales de productos disponibles con accesos rápidos de 12, 6 y 1 unidad.
+2. Cada acceso rápido incrementa ese producto en un pedido administrativo en curso.
+3. La columna derecha fija muestra líneas, cantidades, precios aplicados en la previsualización, ahorros y subtotal.
+4. **Continuar** abre el panel de la segunda etapa sobre un catálogo oscurecido.
+5. Esa etapa captura los campos administrativos existentes: cliente, adicionales, condición cruda o cocinada, envío o retiro, fecha, período, hora, dirección, notas, descuento opcional y estado o método de pago.
+6. La confirmación llama al límite existente de creación administrativa de pedidos; cancelar regresa sin persistir un pedido.
 
-## Visual reference
+## Referencia visual
 
-| Element           | Reference decision                                                     |
-| ----------------- | ---------------------------------------------------------------------- |
-| Frame             | 1194 × 834, canvas `#252836`                                           |
-| Sidebar           | Existing global 104px rail; do not duplicate it inside the page        |
-| Catalog column    | Reference width 633px after the rail, 24px top/side rhythm             |
-| Order column      | 409px wide, 24px padding, `#1F1D2B`, 8px radius                        |
-| Product card      | 192 × 260; body begins 34px from top; `#1F1D2B`; 16px radius           |
-| Product artwork   | 132 × 132 circular image, centered at the top of the card              |
-| Product rows      | Three cards per 632px reference row with 28px gaps                     |
-| Order action      | 361 × 48 coral button with the existing accent shadow                  |
-| Stage-two overlay | `rgba(0,0,0,.7)` over the catalog; panel enters from the right         |
-| Stage-two panel   | Reference popup is 814px wide and split into two 361px content columns |
+| Elemento | Decisión de referencia |
+| --- | --- |
+| Marco | 1194 × 834, lienzo `#252836` |
+| Barra lateral | Riel global existente de 104 px; no duplicarlo dentro de la página |
+| Columna de catálogo | Ancho de referencia de 633 px después del riel, ritmo superior y lateral de 24 px |
+| Columna del pedido | 409 px de ancho, 24 px de relleno, `#1F1D2B`, radio de 8 px |
+| Tarjeta de producto | 192 × 260; el cuerpo comienza a 34 px desde arriba; `#1F1D2B`; radio de 16 px |
+| Imagen del producto | Imagen circular de 132 × 132, centrada en la parte superior de la tarjeta |
+| Filas de productos | Tres tarjetas por cada fila de referencia de 632 px, con separaciones de 28 px |
+| Acción del pedido | Botón coral de 361 × 48 con la sombra de acento existente |
+| Superposición de la segunda etapa | `rgba(0,0,0,.7)` sobre el catálogo; el panel ingresa desde la derecha |
+| Panel de la segunda etapa | La ventana emergente de referencia tiene 814 px de ancho y se divide en dos columnas de contenido de 361 px |
 
-Primary screenshots:
+Capturas principales:
 
-- `docs/design/reference/Captura de pantalla 2026-08-13 131709.png` — Home/product selection.
-- `docs/design/reference/Captura de pantalla 2026-08-13 132047.png` — second-stage overlay.
+- `docs/design/reference/Captura de pantalla 2026-08-13 131709.png` — Inicio o selección de productos.
+- `docs/design/reference/Captura de pantalla 2026-08-13 132047.png` — superposición de la segunda etapa.
 
-The CSS exported by the user is measurement evidence, not production CSS. Implement with responsive layout and semantic tokens rather than absolute-positioning the full page.
+El CSS exportado por el usuario constituye evidencia de medidas, no CSS de producción. La implementación debe usar un diseño adaptable y tokens semánticos en lugar de posicionar toda la página de forma absoluta.
 
-## Architecture constraints
+## Restricciones de arquitectura
 
-- Reuse `CreateOrder`, the admin price-preview endpoint, validation, snapshots, and pricing DTOs.
-- Extract reusable form state/content from the current admin create page instead of building a second order form.
-- Product cards may display catalog prices, but selected-line grouping and totals must come from backend preview.
-- Do not create an order on product click; persistence happens only after final confirmation.
-- Payment method and discount controls reuse the same typed draft, validation, and backend preview used by full Create/Edit; the visual template never defines domain values or totals.
-- Preserve `/admin/orders/create` as a direct/fallback full-page creation route.
-- Use real product categories, images, names, availability, and prices; never copy template dishes.
-- Keep Home draft state local to the administrative flow unless an explicit persistence requirement is added.
+- Reutilizar `CreateOrder`, el endpoint administrativo de previsualización de precios, la validación, los snapshots y los DTO de precios.
+- Extraer estado y contenido reutilizables del formulario de la página administrativa de creación actual en lugar de construir un segundo formulario de pedidos.
+- Las tarjetas de productos muestran como referencia el precio actual de la docena cocinada; la agrupación de líneas seleccionadas y los totales deben provenir de la previsualización del backend.
+- El precio base es el cocinado. La alternativa cruda aplica los descuentos positivos de `raw_price_discounts`; los campos `cooking_*` sólo se conservan como compatibilidad explícita con snapshots históricos y nunca representan la regla económica actual.
+- No crear un pedido al seleccionar un producto; la persistencia ocurre únicamente después de la confirmación final.
+- La creación administrativa permite registrar una fecha de entrega pasada para cargar pedidos históricos; el mínimo de fecha comercial permanece restringido al checkout público.
+- Los controles de método de pago y descuento reutilizan el mismo borrador tipado, la validación y la previsualización del backend que Create/Edit completos; la plantilla visual nunca define valores de dominio ni totales.
+- Conservar `/admin/orders/create` como ruta directa o alternativa de creación en página completa.
+- Usar categorías, imágenes, nombres, disponibilidad y precios reales de productos; nunca copiar platos de una plantilla.
+- Mantener el estado del borrador del Inicio dentro del flujo administrativo, salvo que se agregue un requisito explícito de persistencia.
 
-## Implemented ownership
+## Responsabilidades implementadas
 
-| Responsibility                                                             | Owner                                                                    |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| In-memory draft, quantity/addon mutations, preview sequencing, submit lock | `features/orders/hooks/use-admin-order-draft.ts`                         |
-| Shared customer, condition, addons, fulfillment, notes, and payment fields | `features/orders/components/admin-order-details-fields.tsx`              |
-| Backend economic breakdown                                                 | shared `PriceSummary` calling `POST /admin/orders/price-preview`         |
-| Final persistence                                                          | existing `POST /admin/orders` → `StoreAdminOrderRequest` → `CreateOrder` |
-| Quick presentation                                                         | `pages/admin/home.tsx` plus Quick Order catalog/current-order components |
-| Full fallback presentation                                                 | `pages/admin/orders/create.tsx` using the same hook and shared fields    |
+| Responsabilidad | Responsable |
+| --- | --- |
+| Borrador en memoria, mutaciones de cantidades o adicionales, secuenciación de previsualizaciones y bloqueo de envío | `features/orders/hooks/use-admin-order-draft.ts` |
+| Campos compartidos de cliente, condición, adicionales, entrega, notas y pago | `features/orders/components/admin-order-details-fields.tsx` |
+| Desglose económico del backend | `PriceSummary` compartido que llama a `POST /admin/orders/price-preview` |
+| Persistencia final | `POST /admin/orders` existente → `StoreAdminOrderRequest` → `CreateOrder` |
+| Presentación rápida | `pages/admin/home.tsx` junto con los componentes del catálogo y pedido actual de Quick Order |
+| Presentación alternativa completa | `pages/admin/orders/create.tsx` con el mismo hook y los campos compartidos |
 
-The store negotiates a JSON confirmation for Quick Order and preserves the Inertia redirect for full create. Both responses execute the same validated transaction. The JSON confirmation includes the backend administrative copy ticket so the success state can copy it and open the persisted Order ID without rebuilding detail in React. Closing/cancelling only changes React state; explicit discard resets that state; neither performs a persistence request.
+El almacenamiento negocia una confirmación JSON para Quick Order y conserva la redirección de Inertia para la creación completa. Ambas respuestas ejecutan la misma transacción validada. La confirmación JSON incluye el comprobante administrativo generado por el backend para que el estado de éxito pueda copiarlo y abrir el ID del Order persistido sin reconstruir el detalle en React. Cerrar o cancelar sólo cambia el estado de React; el descarte explícito restablece ese estado; ninguna de estas acciones realiza una solicitud de persistencia.
 
-## Navigation and state
+## Navegación y estado
 
-- `/admin` is the canonical quick-order entry.
-- Stage one and stage two are states of the same draft, not separate persisted orders.
-- Browser back/close must dismiss stage two without losing selected lines; leaving the flow may request confirmation when the draft is non-empty.
-- Desktop/tablet keeps the full POS split. On mobile, the catalog uses two columns, the order action remains above the bottom navigation, and the order/details panels may occupy the viewport as sheets.
+- `/admin` es el punto de entrada canónico de Quick Order.
+- La primera y la segunda etapa son estados del mismo borrador, no pedidos persistidos separados.
+- Volver o cerrar desde el navegador debe descartar la segunda etapa sin perder las líneas seleccionadas; abandonar el flujo puede solicitar confirmación cuando el borrador no está vacío.
+- En escritorio y tablet se conserva la división completa del POS. En dispositivos móviles, el catálogo usa dos columnas, la acción del pedido permanece sobre la navegación inferior y los paneles del pedido o de detalles pueden ocupar el viewport como paneles deslizables.
 
-## Acceptance checklist
+## Lista de verificación de aceptación
 
-- [x] Product shortcuts add 12, 6, or 1 units and update the backend preview.
-- [x] Customer matches appear while typing and can be selected immediately.
-- [x] Delivery reuses a selected customer's address without replacing a per-order edit.
-- [x] Quantities can be changed and lines removed from the order panel.
-- [x] Continue is unavailable for an empty draft.
-- [x] The details stage reuses every field and rule from admin order creation.
-- [x] Raw/cooked base and cooking surcharge remain explicit without changing total.
-- [x] Percentage/fixed discounts preview through the backend, exclude shipping, and remain capped to the eligible subtotal.
-- [x] Paid requires cash, transfer, or debit; returning to unpaid clears the method.
-- [x] Cancel never persists an order; confirm persists exactly one.
-- [x] Success can copy the backend ticket or open the persisted order.
-- [x] Direct `/admin/orders/create` still works.
-- [x] Keyboard, tablet, mobile, long-name, missing-image, and long-order states are covered by responsive/accessibility behavior and browser tests.
-- [x] Mobile renders two product cards per row and keeps primary navigation inside the thumb zone.
-- [x] Playwright captures stage one and stage two for comparison with the supplied screenshots.
+- [x] Los accesos rápidos de productos agregan 12, 6 o 1 unidad y actualizan la previsualización del backend.
+- [x] Cada tarjeta contiene sus accesos rápidos sobre `admin-action` y muestra el precio de la docena cocinada sin desbordar los controles.
+- [x] Las coincidencias de clientes aparecen mientras se escribe y pueden seleccionarse de inmediato.
+- [x] El envío reutiliza la dirección del cliente seleccionado sin reemplazar una edición específica del pedido.
+- [x] Las cantidades pueden modificarse y las líneas pueden quitarse desde el panel del pedido.
+- [x] Continuar no está disponible cuando el borrador está vacío.
+- [x] La etapa de detalles reutiliza todos los campos y reglas de la creación administrativa de pedidos.
+- [x] El precio base cocinado y los descuentos positivos de `raw_price_discounts` para la alternativa cruda permanecen explícitos; los campos heredados `cooking_*` no recalculan pedidos históricos.
+- [x] Los descuentos porcentuales o fijos se previsualizan mediante el backend, excluyen el envío y permanecen limitados al subtotal elegible.
+- [x] El estado pagado exige efectivo, transferencia o débito; volver al estado sin pagar limpia el método.
+- [x] Cancelar nunca persiste un pedido; confirmar persiste exactamente uno.
+- [x] El estado de éxito puede copiar el comprobante del backend o abrir el pedido persistido.
+- [x] La ruta directa `/admin/orders/create` continúa funcionando.
+- [x] Quick Order y la creación administrativa directa permiten registrar pedidos con fecha de entrega pasada.
+- [x] Los estados de teclado, tablet, móvil, nombre largo, imagen faltante y pedido extenso están cubiertos por el comportamiento adaptable y accesible y por las pruebas de navegador.
+- [x] En dispositivos móviles se muestran dos tarjetas de producto por fila y la navegación principal permanece en la zona de alcance del pulgar.
+- [x] Playwright captura la primera y la segunda etapa para compararlas con las capturas provistas.

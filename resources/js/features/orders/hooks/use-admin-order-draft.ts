@@ -11,7 +11,7 @@ import type { PriceQuote } from '../types';
 const createInitialDraft = (today: string): AdminOrderForm => ({
     items: [],
     addons: [],
-    condition: 'raw',
+    condition: 'cooked',
     customer_id: null,
     customer: { name: '', phone: '', address: '' },
     delivery_type: 'pickup',

@@ -42,17 +42,51 @@ final class OrderManagementController
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:160'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
+            'group' => ['nullable', Rule::in(['all', 'in_progress', 'delivered', 'cancelled'])],
             'date' => ['nullable', 'date_format:Y-m-d'],
+            'sort' => ['nullable', Rule::in(['delivery_date', 'customer', 'total', 'id'])],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+            'view' => ['nullable', Rule::in(['grid', 'list'])],
             'order' => ['nullable', 'string', 'max:32', 'regex:/^TP-[0-9]+$/'],
         ]);
         $search = trim((string) ($filters['search'] ?? ''));
-        $orders = Order::query()->with('customer:id,name')
+        $status = $filters['status'] ?? null;
+        $group = $status === null
+            ? ($filters['group'] ?? 'all')
+            : match ($status) {
+                OrderStatus::Delivered->value => 'delivered',
+                OrderStatus::Cancelled->value => 'cancelled',
+                default => 'in_progress',
+            };
+        $sort = $filters['sort'] ?? 'delivery_date';
+        $direction = $filters['direction'] ?? 'desc';
+        $sortColumn = match ($sort) {
+            'customer' => 'customer_name_snapshot',
+            'total' => 'total',
+            'id' => 'id',
+            default => 'delivery_date',
+        };
+        $orders = Order::query()->with([
+            'items.compositions',
+            'toppings',
+        ])
             ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->where('public_id', 'ilike', "%{$search}%")
                 ->orWhere('customer_name_snapshot', 'ilike', "%{$search}%")))
-            ->when(isset($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when($status !== null, fn ($query) => $query->where('status', $status))
+            ->when($status === null && $group === 'all', fn ($query) => $query->where('status', '!=', OrderStatus::Cancelled))
+            ->when($status === null && $group === 'in_progress', fn ($query) => $query->whereIn('status', [
+                OrderStatus::PendingConfirmation,
+                OrderStatus::Waiting,
+                OrderStatus::Prepared,
+            ]))
+            ->when($status === null && $group === 'delivered', fn ($query) => $query->where('status', OrderStatus::Delivered))
+            ->when($status === null && $group === 'cancelled', fn ($query) => $query->where('status', OrderStatus::Cancelled))
             ->when(isset($filters['date']), fn ($query) => $query->whereDate('delivery_date', $filters['date']))
-            ->orderByDesc('delivery_date')->orderByDesc('id')->paginate(25)->withQueryString();
+            ->orderBy($sortColumn, $direction)
+            ->when($sortColumn !== 'id', fn ($query) => $query->orderBy('id', $direction))
+            ->paginate(25)
+            ->withQueryString();
 
         $selectedOrder = isset($filters['order'])
             ? Order::query()->where('public_id', $filters['order'])->firstOrFail()
@@ -65,7 +99,15 @@ final class OrderManagementController
 
         return Inertia::render('admin/orders/index', [
             'orders' => $orders->through(fn (Order $order) => (new AdminOrderResource($order))->resolve($request)),
-            'filters' => ['search' => $search, 'status' => $filters['status'] ?? null, 'date' => $filters['date'] ?? null],
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'group' => $group,
+                'date' => $filters['date'] ?? null,
+                'sort' => $sort,
+                'direction' => $direction,
+                'view' => $filters['view'] ?? 'grid',
+            ],
             'selectedOrder' => $selectedOrder === null ? null : (new AdminOrderResource($selectedOrder))->resolve($request),
             'selectedOrderSummary' => $selectedOrder === null ? null : $formatter->formatAdmin($selectedOrder),
             ...$dashboardData->execute(),
@@ -99,7 +141,7 @@ final class OrderManagementController
             ], 201);
         }
 
-        return to_route('admin.orders.show', $order)->with('success', 'Order created.');
+        return to_route('admin.orders.show', $order)->with('success', 'Pedido creado.');
     }
 
     public function show(Request $request, Order $order, OrderSummaryFormatter $formatter): Response
@@ -159,7 +201,7 @@ final class OrderManagementController
             ]]);
         }
 
-        return to_route('admin.orders.show', $updated)->with('success', 'Order updated.');
+        return to_route('admin.orders.show', $updated)->with('success', 'Pedido actualizado.');
     }
 
     public function destroy(Request $request, Order $order): RedirectResponse
@@ -168,6 +210,6 @@ final class OrderManagementController
         $order->delete();
         Log::info('[Orders] order.deleted', ['module' => 'Orders', 'order_id' => $order->public_id, 'admin_id' => $request->user()->getAuthIdentifier()]);
 
-        return to_route('admin.orders.index')->with('success', 'Order removed.');
+        return to_route('admin.orders.index')->with('success', 'Pedido enviado a la papelera.');
     }
 }

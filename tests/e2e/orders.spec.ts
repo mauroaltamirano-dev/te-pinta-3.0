@@ -1,13 +1,15 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 
 async function logIn(page: Page) {
     await page.goto('/login');
     await page
-        .getByLabel('Email address')
+        .getByLabel('Correo electrónico')
         .fill('playwright-admin@example.test');
     await page.locator('#password').fill('playwright-password');
-    await page.getByRole('button', { name: 'Log in' }).click();
+    await page
+        .getByRole('button', { name: 'Iniciar sesión', exact: true })
+        .click();
     await expect(page).toHaveURL(/\/admin$/);
 }
 
@@ -48,6 +50,77 @@ async function createOrder(page: Page, customerName: string) {
     expect(orderId).toMatch(/^TP-\d+$/);
 
     return orderId as string;
+}
+
+async function configureOrderPaymentWallet(page: Page, walletName: string) {
+    await page.goto('/admin/management');
+    await page
+        .getByRole('button', { name: 'Nueva billetera', exact: true })
+        .click();
+    const dialog = page.getByRole('dialog');
+
+    await dialog.getByLabel('Nombre').fill(walletName);
+    await dialog.getByLabel('Recibir cobros de pedidos').check();
+    await dialog
+        .getByRole('button', { name: 'Crear billetera', exact: true })
+        .click();
+    await expect(dialog).toHaveCount(0);
+    await page.waitForLoadState('networkidle');
+}
+
+async function createCombinedOrder(page: Page, customerName: string) {
+    await page.goto('/admin/orders/create');
+    await page
+        .getByRole('button', { name: 'Agregar media docena de Salteña' })
+        .click();
+    await page
+        .getByRole('button', {
+            name: 'Agregar media docena de Humita Tucumana',
+        })
+        .click();
+    await expect(page.getByText('Cantidad: 6')).toHaveCount(2);
+    await page.getByLabel('Nombre').fill(customerName);
+    await page.getByRole('button', { name: 'Crear pedido' }).click();
+    await expect(page).toHaveURL(/\/admin\/orders\/TP-\d+$/);
+
+    const orderId = page.url().split('/').at(-1);
+    expect(orderId).toMatch(/^TP-\d+$/);
+
+    return orderId as string;
+}
+
+async function createDefaultCookedOrder(page: Page, customerName: string) {
+    await page.goto('/admin/orders/create');
+    await expect(
+        page.getByRole('checkbox', { name: 'Entregar crudas' }),
+    ).not.toBeChecked();
+    await page
+        .getByRole('button', { name: 'Agregar una docena de Salteña' })
+        .click();
+    await expect(page.getByText('Cantidad: 12')).toBeVisible();
+    await page.getByLabel('Nombre').fill(customerName);
+    await expect(page.getByText('Resumen del pedido')).toBeVisible();
+    await expect(page.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(
+        page.getByText('Descuento por preparación en crudo'),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: 'Crear pedido' }).click();
+    await expect(page).toHaveURL(/\/admin\/orders\/TP-\d+$/);
+
+    const orderId = page.url().split('/').at(-1);
+    expect(orderId).toMatch(/^TP-\d+$/);
+
+    return orderId as string;
+}
+
+function scenarioCustomerName(testInfo: TestInfo, scenario: string) {
+    return `${scenario} ${testInfo.project.name}`;
+}
+
+function orderCardForId(page: Page, orderId: string) {
+    return page.getByTestId('order-card').filter({
+        has: page.getByRole('button', { name: orderId, exact: true }),
+    });
 }
 
 function summaryValue(page: Page, label: string) {
@@ -123,27 +196,166 @@ test('inicio móvil muestra navegación práctica y variedades en dos columnas',
 
 test('administrador crea un pedido cocinado con desglose explícito', async ({
     page,
+}, testInfo) => {
+    await logIn(page);
+    const customerName = scenarioCustomerName(
+        testInfo,
+        'Cliente cocinado Playwright',
+    );
+
+    const orderId = await createDefaultCookedOrder(page, customerName);
+
+    await expect(page.getByRole('heading', { name: orderId })).toBeVisible();
+    await expect(page.getByText(customerName, { exact: true })).toBeVisible();
+    await expect(page.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
+});
+
+test('grilla y lista mantienen completa la primera fila con scroll de resultados', async ({
+    page,
+}, testInfo) => {
+    if (testInfo.project.name === 'chromium') {
+        await page.setViewportSize({ width: 1659, height: 916 });
+    }
+
+    await logIn(page);
+    const fixturePrefix = scenarioCustomerName(testInfo, 'Cliente de grilla');
+    await createOrder(page, `${fixturePrefix} uno`);
+    await createOrder(page, `${fixturePrefix} dos`);
+    await createOrder(page, `${fixturePrefix} tres`);
+    await createOrder(page, `${fixturePrefix} cuatro`);
+    const orderId = await createCombinedOrder(
+        page,
+        `${fixturePrefix} con variedades`,
+    );
+    await page.goto('/admin/orders');
+
+    const cards = page.getByTestId('order-card');
+    const card = orderCardForId(page, orderId);
+    await expect(card).toBeVisible();
+    await expect(card.getByText('6 × Salteña', { exact: true })).toBeVisible();
+    await expect(
+        card.getByText('6 × Humita Tucumana', { exact: true }),
+    ).toBeVisible();
+    await expect(card.getByText('Variedades', { exact: true })).toBeVisible();
+    await expect(card.locator('img')).toHaveCount(0);
+    await expect(page.getByTestId('orders-card-grid')).toHaveAttribute(
+        'data-view',
+        'grid',
+    );
+    await expect(page.getByTestId('orders-report-scroll')).toHaveCount(0);
+    await expect(
+        card.getByRole('button', { name: /Ver comprobante/ }),
+    ).toBeVisible();
+    await expect(card.getByRole('switch')).toBeVisible();
+
+    const first = await cards.nth(0).boundingBox();
+    const second = await cards.nth(1).boundingBox();
+
+    if (testInfo.project.name === 'mobile-chromium') {
+        expect(Math.abs((first?.x ?? 0) - (second?.x ?? 0))).toBeLessThan(2);
+        expect(second?.y ?? 0).toBeGreaterThan(
+            (first?.y ?? 0) + (first?.height ?? 0),
+        );
+        expect(
+            await page.evaluate(() => document.documentElement.scrollHeight),
+        ).toBeGreaterThan(page.viewportSize()?.height ?? 0);
+    } else {
+        expect(Math.abs((first?.y ?? 0) - (second?.y ?? 0))).toBeLessThan(2);
+        expect(second?.x ?? 0).toBeGreaterThan(first?.x ?? 0);
+
+        const results = page.getByTestId('orders-results-scroll');
+        const resultsBox = await results.boundingBox();
+        await expect(results).toHaveCSS('overflow-y', 'auto');
+        await expect(results).toHaveCSS('overflow-x', 'hidden');
+        expect(
+            await results.evaluate(
+                (element) => element.scrollHeight > element.clientHeight,
+            ),
+        ).toBe(true);
+
+        for (const firstRowCard of [cards.nth(0), cards.nth(1), cards.nth(2)]) {
+            const cardBox = await firstRowCard.boundingBox();
+            expect(
+                (cardBox?.y ?? 0) + (cardBox?.height ?? 0),
+            ).toBeLessThanOrEqual(
+                (resultsBox?.y ?? 0) + (resultsBox?.height ?? 0) + 1,
+            );
+            await expect(
+                firstRowCard.getByRole('button', {
+                    name: 'Ver comprobante',
+                }),
+            ).toBeVisible();
+            await expect(firstRowCard.getByRole('switch')).toBeVisible();
+        }
+
+        expect(
+            await page.evaluate(() => document.documentElement.scrollHeight),
+        ).toBe(page.viewportSize()?.height);
+    }
+
+    await page.screenshot({
+        path:
+            testInfo.project.name === 'mobile-chromium'
+                ? 'storage/app/orders-workspace-mobile-grid.png'
+                : 'storage/app/orders-workspace-desktop-grid.png',
+        fullPage: true,
+    });
+
+    await page.getByLabel('Vista en lista').click();
+    await expect(page).toHaveURL(/view=list/);
+    await expect(page.getByTestId('orders-card-grid')).toHaveAttribute(
+        'data-view',
+        'list',
+    );
+    await expect(card.getByText('6 × Salteña', { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel('Vista en lista')).toHaveAttribute(
+        'data-state',
+        'on',
+    );
+    await page.screenshot({
+        path:
+            testInfo.project.name === 'mobile-chromium'
+                ? 'storage/app/orders-workspace-mobile-list.png'
+                : 'storage/app/orders-workspace-desktop-list.png',
+        fullPage: true,
+    });
+});
+
+test('tabs y filtros avanzados conservan semántica en la URL', async ({
+    page,
 }) => {
     await logIn(page);
-    await page.goto('/admin/orders/create');
+    await page.goto('/admin/orders');
 
-    const cookedButton = page.getByRole('button', { name: 'Cocinado' });
-    await cookedButton.click();
-    await expect(cookedButton).toHaveAttribute('aria-pressed', 'true');
-    await page
-        .getByRole('button', { name: 'Agregar una docena de Salteña' })
-        .click();
-    await expect(page.getByText('Cantidad: 12')).toBeVisible();
-    await page.getByLabel('Nombre').fill('Cliente Playwright');
+    await page.getByRole('button', { name: 'En curso' }).click();
+    await expect(page).toHaveURL(/group=in_progress/);
+    await expect(
+        page.getByRole('button', { name: 'En curso' }),
+    ).toHaveAttribute('aria-current', 'page');
 
-    await expect(page.getByText('Resumen del pedido')).toBeVisible();
-    await expect(page.getByText('Empanadas base')).toBeVisible();
-    await expect(page.getByText('Cocción')).toBeVisible();
-    await page.getByRole('button', { name: 'Crear pedido' }).click();
+    await page.getByRole('button', { name: 'Abrir filtros y orden' }).click();
+    await page.getByLabel('Filtrar por estado exacto').click();
+    await page.getByRole('option', { name: 'Entregado' }).click();
+    await page.getByLabel('Ordenar pedidos por').click();
+    await page.getByRole('option', { name: 'Total' }).click();
+    await page.getByLabel('Dirección del orden').click();
+    await page.getByRole('option', { name: 'Ascendente' }).click();
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
 
-    await expect(page).toHaveURL(/\/admin\/orders\/TP-/);
-    await expect(page.getByRole('heading', { name: /TP-/ })).toBeVisible();
-    await expect(page.getByText('Cocción')).toBeVisible();
+    await expect(page).toHaveURL(/status=delivered/);
+    await expect(page).toHaveURL(/group=delivered/);
+    await expect(page).toHaveURL(/sort=total/);
+    await expect(page).toHaveURL(/direction=asc/);
+    await expect(
+        page.getByRole('button', { name: 'Entregados' }),
+    ).toHaveAttribute('aria-current', 'page');
+
+    await page.getByRole('button', { name: 'Todos', exact: true }).click();
+    await expect(page).not.toHaveURL(/status=/);
+    await expect(page).not.toHaveURL(/group=/);
+    await expect(page).toHaveURL(/sort=total/);
 });
 
 test('detalle compartido prioriza el ticket y copia el resumen estructurado', async ({
@@ -151,16 +363,23 @@ test('detalle compartido prioriza el ticket y copia el resumen estructurado', as
 }, testInfo) => {
     test.skip(
         testInfo.project.name !== 'chromium',
-        'Desktop validates the shared ticket identity; mobile has its own responsive capture.',
+        'Desktop valida la identidad del ticket compartido; mobile tiene su propia captura responsive.',
     );
     await logIn(page);
-    await page.goto('/admin/orders');
-    const orderButton = page.getByRole('button', { name: /TP-/ }).first();
-    const orderId = await orderButton.textContent();
+    const customerName = scenarioCustomerName(
+        testInfo,
+        'Cliente detalle Playwright',
+    );
+    const orderId = await createDefaultCookedOrder(page, customerName);
+    await page.goto(`/admin/orders?search=${orderId}`);
+    const orderButton = orderCardForId(page, orderId).getByRole('button', {
+        name: orderId,
+        exact: true,
+    });
     await orderButton.click();
 
     const ticket = page.getByTestId('order-ticket-dialog');
-    await expect(ticket).toContainText(orderId ?? '');
+    await expect(ticket).toContainText(orderId);
     await captureCopiedOrderDetail(page);
     await ticket.getByRole('button', { name: 'Copiar detalle' }).click();
     await expect(
@@ -168,7 +387,7 @@ test('detalle compartido prioriza el ticket y copia el resumen estructurado', as
     ).toBeVisible();
     const copied = await copiedOrderDetail(page);
     expect(copied).toContain(`🧾 *PEDIDO ${orderId}*`);
-    expect(copied).toContain('👤 *Cliente:* Cliente Playwright');
+    expect(copied).toContain(`👤 *Cliente:* ${customerName}`);
     expect(copied).toContain('🔥 *Condición:* Cocinadas');
     expect(copied).toContain('• 1 × Docena de Salteña');
     expect(copied).toContain('💰 *TOTAL:');
@@ -194,6 +413,19 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
     }
 
     await logIn(page);
+
+    if (testInfo.project.name === 'chromium') {
+        await configureOrderPaymentWallet(
+            page,
+            `Caja pedidos ${testInfo.project.name}`,
+        );
+    }
+
+    const customerName = scenarioCustomerName(
+        testInfo,
+        'Cliente operación Playwright',
+    );
+    const orderId = await createOrder(page, customerName);
     await page.goto('/admin/orders');
     await expect(
         page.getByRole('heading', { name: 'Pedidos', exact: true }),
@@ -219,7 +451,6 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
         const insightsColumn = await page
             .getByLabel('Resumen de pedidos')
             .boundingBox();
-        const report = await page.getByTestId('orders-report').boundingBox();
         const insightsProducts = await page
             .getByTestId('orders-insights-products')
             .boundingBox();
@@ -240,12 +471,8 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
         ).toBeCloseTo(646 / 372, 1);
         await expect(summaryCards).toHaveCount(3);
         expect(
-            (await summaryCards.first().boundingBox())?.width,
-        ).toBeGreaterThanOrEqual(199);
-        expect((await summaryCards.first().boundingBox())?.height).toBe(143);
-        expect(grid?.height).toBe((page.viewportSize()?.height ?? 0) - 48);
-        expect(primaryColumn?.height).toBe(grid?.height);
-        expect(insightsColumn?.height).toBe(grid?.height);
+            (await summaryCards.nth(0).boundingBox())?.height,
+        ).toBeLessThanOrEqual(110);
         expect(
             (insightsProducts?.height ?? 0) / (insightsDelivery?.height ?? 1),
         ).toBeCloseTo(429 / 333, 1);
@@ -254,33 +481,34 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
                 (insightsProducts?.y ?? 0) -
                 (insightsProducts?.height ?? 0),
         ).toBe(24);
-        expect((report?.height ?? 0) > 0).toBe(true);
-        await expect(page.getByTestId('orders-report-scroll')).toHaveCSS(
+        await expect(page.getByTestId('orders-report')).toHaveCount(0);
+        await expect(page.getByTestId('orders-report-scroll')).toHaveCount(0);
+        await expect(page.getByTestId('orders-results-scroll')).toHaveCSS(
             'overflow-y',
             'auto',
         );
-        await expect(page.getByTestId('orders-report-head')).toHaveCSS(
-            'position',
-            'sticky',
-        );
+        await expect(orderCardForId(page, orderId)).toBeVisible();
         expect(
             await page.evaluate(() => document.documentElement.scrollHeight),
         ).toBe(page.viewportSize()?.height);
 
         await page.screenshot({
-            path: 'storage/app/orders-redesign.png',
+            path: 'storage/app/orders-workspace-operational.png',
             fullPage: true,
         });
     }
 
-    const orderButton = page.getByRole('button', { name: /TP-/ }).first();
-    const orderId = await orderButton.textContent();
+    await page.goto(`/admin/orders?search=${orderId}`);
+    const orderButton = orderCardForId(page, orderId).getByRole('button', {
+        name: orderId,
+        exact: true,
+    });
     await orderButton.click();
 
     const ticket = page.getByTestId('order-ticket-dialog');
     await expect(ticket).toBeVisible();
-    await expect(ticket).toContainText(orderId ?? '');
-    await expect(ticket.getByText('Cliente Playwright')).toBeVisible();
+    await expect(ticket).toContainText(orderId);
+    await expect(ticket.getByText(customerName)).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`order=${orderId}`));
 
     if (testInfo.project.name === 'chromium') {
@@ -292,6 +520,13 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
     }
 
     await ticket.getByRole('button', { name: 'Cerrar' }).click();
+
+    if (testInfo.project.name === 'mobile-chromium') {
+        await expect(ticket).toBeHidden();
+
+        return;
+    }
+
     await page.getByLabel(`Estado de ${orderId}`).click();
     await page.getByRole('option', { name: 'Preparado' }).click();
     await expect(page.getByLabel(`Estado de ${orderId}`)).toHaveText(
@@ -301,7 +536,22 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
     await page
         .getByRole('switch', { name: `Marcar como pagado ${orderId}` })
         .click();
+    const paymentDialog = page.getByRole('dialog');
+    await expect(paymentDialog).toContainText('Cobro del pedido');
+    await expect(paymentDialog).toHaveCSS(
+        'background-color',
+        'rgb(31, 29, 43)',
+    );
+    await page.screenshot({
+        path: 'storage/app/orders-payment-dialog.png',
+        fullPage: true,
+        animations: 'disabled',
+    });
     await page.getByLabel(`Medio de pago de ${orderId}`).click();
+    await expect(page.getByRole('listbox')).toHaveCSS(
+        'background-color',
+        'rgb(45, 48, 62)',
+    );
     await page.getByRole('option', { name: 'Efectivo', exact: true }).click();
     await page.getByRole('button', { name: 'Confirmar pago' }).click();
     await expect(
@@ -317,12 +567,10 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
     await expect(page.getByRole('dialog')).toBeHidden();
 
     await page.goto(`/admin/orders/${orderId}`);
-    await expect(
-        page.getByRole('heading', { name: orderId ?? /TP-/ }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: orderId })).toBeVisible();
     await expect(page.getByText('Resumen del pedido')).toBeVisible();
     await expect(page.getByTestId('order-ticket-header')).toContainText(
-        orderId ?? '',
+        orderId,
     );
     await expect(
         page.getByRole('button', { name: 'Copiar detalle' }),
@@ -333,8 +581,8 @@ test('ticket mantiene el resumen usable en viewport móvil', async ({
     page,
 }, testInfo) => {
     await logIn(page);
-    await page.goto('/admin/orders');
-    await page.getByRole('button', { name: /TP-/ }).first().click();
+    await page.goto('/admin/orders?search=TP-009001');
+    await page.getByRole('button', { name: 'TP-009001', exact: true }).click();
 
     const ticket = page.getByTestId('order-ticket-dialog');
     await expect(ticket).toBeVisible();
@@ -362,7 +610,7 @@ test.describe('edición administrativa segura', () => {
     test.beforeEach(async ({ page }, testInfo) => {
         test.skip(
             testInfo.project.name !== 'chromium',
-            'The write journey uses the isolated desktop Playwright database serially.',
+            'El recorrido de escritura usa serialmente la base aislada de Playwright para desktop.',
         );
         await logIn(page);
     });
@@ -396,12 +644,38 @@ test.describe('edición administrativa segura', () => {
 
         await addOneSaltenaAndWaitForPreview(page);
 
+        const rawPreview = page.waitForResponse((response) => {
+            const request = response.request();
+
+            return (
+                request.method() === 'POST' &&
+                new URL(response.url()).pathname ===
+                    '/admin/orders/price-preview' &&
+                response.ok()
+            );
+        });
+        const raw = page.getByRole('checkbox', { name: 'Entregar crudas' });
+        await expect(raw).not.toBeChecked();
+        await raw.click();
+        const rawQuote = (await (await rawPreview).json()) as {
+            data: { raw_discount: number; products_cooked_subtotal: number };
+        };
+        expect(rawQuote.data.raw_discount).toBeGreaterThan(0);
+        expect(rawQuote.data.products_cooked_subtotal).toBeGreaterThan(
+            rawQuote.data.raw_discount,
+        );
+        await expect(
+            page.getByText('Descuento por preparación en crudo'),
+        ).toBeVisible();
+
         const updatedTotal = await summaryValue(
             page,
             'Total actualizado',
         ).textContent();
         expect(updatedTotal).not.toBe(originalTotal);
-        await expect(summaryValue(page, 'Diferencia total')).toContainText('+');
+        await expect(summaryValue(page, 'Diferencia total')).toContainText(
+            /[−-]/,
+        );
 
         const update = page.waitForResponse((response) => {
             const request = response.request();
@@ -423,9 +697,17 @@ test.describe('edición administrativa segura', () => {
                 .getByRole('heading', { name: 'Resumen del pedido' })
                 .locator('..'),
         ).toContainText(updatedTotal ?? '');
+        await expect(page.getByText('Crudas', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Descuento por preparación en crudo'),
+        ).toBeVisible();
+        await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
 
         await page.getByRole('link', { name: 'Editar pedido' }).click();
         await expect(page.getByText('Cantidad: 13')).toBeVisible();
+        await expect(
+            page.getByRole('checkbox', { name: 'Entregar crudas' }),
+        ).toBeChecked();
     });
 
     test('cancelar edición no persiste el draft modificado', async ({
@@ -515,9 +797,9 @@ test.describe('edición administrativa segura', () => {
         await page.getByRole('button', { name: 'Guardar cambios' }).click();
 
         await expect(page).toHaveURL(`/admin/orders/${orderId}`);
-        await expect(
-            page.getByText('Entregado', { exact: true }).first(),
-        ).toBeVisible();
+        await expect(page.getByLabel('Estado del pedido')).toHaveText(
+            'Entregado',
+        );
         await expect(
             page.getByText('Nota corregida en pedido entregado'),
         ).toBeVisible();

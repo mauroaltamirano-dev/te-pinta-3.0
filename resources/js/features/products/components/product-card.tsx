@@ -37,7 +37,7 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
                             aria-hidden="true"
                             className="size-8 text-muted-foreground/55"
                         />
-                        <span className="sr-only">No product image</span>
+                        <span className="sr-only">Producto sin imagen</span>
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex min-h-14 flex-col items-center gap-2">
@@ -46,18 +46,21 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
                     </h3>
                     <div className="flex flex-wrap justify-center gap-1.5">
                         {isVegetarian && (
-                            <Badge variant="secondary">Vegetarian</Badge>
+                            <Badge variant="secondary">Vegetariano</Badge>
                         )}
                         {!product.is_available && (
-                            <Badge variant="destructive">Unavailable</Badge>
+                            <Badge variant="destructive">No disponible</Badge>
                         )}
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="grid gap-2 bg-transparent px-5 pb-5 text-xs">
-                <PriceRow label="Unit" value={product.unit_price} />
-                <PriceRow label="Half dozen" value={product.half_dozen_price} />
-                <PriceRow label="Dozen" value={product.dozen_price} />
+                <PriceRow label="Unidad cocinada" value={product.unit_price} />
+                <PriceRow
+                    label="Media docena cocinada"
+                    value={product.half_dozen_price}
+                />
+                <PriceRow label="Docena cocinada" value={product.dozen_price} />
             </CardContent>
             <CardFooter className="mt-auto h-[3.25rem] bg-admin-action p-0">
                 <Button
@@ -67,7 +70,7 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
                     onClick={() => onEdit(product)}
                 >
                     <Pencil data-icon="inline-start" />
-                    Edit product
+                    Editar producto
                 </Button>
             </CardFooter>
         </Card>

@@ -81,9 +81,7 @@ export function OrderDetailContent({
             { payment_status, payment_method },
             { preserveScroll: true },
         );
-    const hasCookingBreakdown = order.items_base_subtotal !== null;
-    const baseSubtotal = order.items_base_subtotal ?? order.items_subtotal;
-    const cookingSurcharge = order.cooking_surcharge ?? 0;
+    const hasRawPricing = order.items_cooked_subtotal != null;
 
     return (
         <div className="grid gap-4 font-orders">
@@ -258,19 +256,25 @@ export function OrderDetailContent({
                 <div className="grid gap-2.5 text-sm">
                     <div className="flex justify-between gap-4">
                         <span>
-                            {hasCookingBreakdown
-                                ? 'Empanadas base'
+                            {hasRawPricing
+                                ? 'Empanadas cocinadas'
                                 : 'Empanadas'}
                         </span>
                         <span className="tabular-nums">
-                            {formatOrderMoney.format(baseSubtotal)}
+                            {formatOrderMoney.format(
+                                order.items_cooked_subtotal ??
+                                    order.items_subtotal,
+                            )}
                         </span>
                     </div>
-                    {hasCookingBreakdown && order.condition === 'cooked' && (
-                        <div className="flex justify-between gap-4">
-                            <span>Cocción</span>
+                    {(order.raw_discount ?? 0) > 0 && (
+                        <div className="flex justify-between gap-4 text-emerald-400">
+                            <span>Descuento por preparación en crudo</span>
                             <span className="tabular-nums">
-                                +{formatOrderMoney.format(cookingSurcharge)}
+                                −
+                                {formatOrderMoney.format(
+                                    order.raw_discount ?? 0,
+                                )}
                             </span>
                         </div>
                     )}

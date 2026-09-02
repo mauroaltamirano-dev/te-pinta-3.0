@@ -29,7 +29,7 @@ export default function Menu() {
             })
             .then((payload) => setProducts(payload.data))
             .catch(() =>
-                setError('The menu could not be loaded. Please try again.'),
+                setError('No se pudo cargar el menú. Intentá nuevamente.'),
             )
             .finally(() => setLoading(false));
     }, []);
@@ -52,31 +52,31 @@ export default function Menu() {
 
     return (
         <>
-            <Head title="Menu" />
+            <Head title="Menú" />
             <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-12">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-                            Our menu
+                            Nuestro menú
                         </p>
                         <h1 className="mt-1 font-display text-3xl font-bold">
-                            Menu
+                            Menú
                         </h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Add the real quantity you want. Final grouping and
-                            pricing are calculated by Te Pinta.
+                            Agregá la cantidad que quieras. Te Pinta calcula la
+                            combinación y el precio final.
                         </p>
                     </div>
                     <Button asChild>
                         <Link href="/cart">
-                            <ShoppingBag /> View cart{' '}
+                            <ShoppingBag /> Ver carrito{' '}
                             {count > 0 && `(${count})`}
                         </Link>
                     </Button>
                 </header>
                 <div
                     role="group"
-                    aria-label="Menu categories"
+                    aria-label="Categorías del menú"
                     className="flex gap-2 overflow-x-auto"
                 >
                     <Button
@@ -84,7 +84,7 @@ export default function Menu() {
                         size="sm"
                         onClick={() => setCategory('all')}
                     >
-                        All
+                        Todas
                     </Button>
                     {categories.map((item) => (
                         <Button
@@ -105,7 +105,7 @@ export default function Menu() {
                         aria-busy="true"
                         className="py-16 text-center text-muted-foreground"
                     >
-                        Loading menu…
+                        Cargando menú…
                     </p>
                 ) : error ? (
                     <p
@@ -135,7 +135,7 @@ export default function Menu() {
                                             </CardTitle>
                                             {quantity > 0 && (
                                                 <Badge>
-                                                    {quantity} in cart
+                                                    {quantity} en el carrito
                                                 </Badge>
                                             )}
                                         </div>
@@ -144,9 +144,12 @@ export default function Menu() {
                                         </p>
                                     </CardHeader>
                                     <CardContent className="grid gap-4">
+                                        <p className="text-xs font-medium text-muted-foreground">
+                                            Precios cocinados
+                                        </p>
                                         <div className="grid grid-cols-3 gap-2 text-xs">
                                             <span>
-                                                Unit
+                                                Unidad
                                                 <br />
                                                 <strong>
                                                     {money.format(
@@ -155,7 +158,7 @@ export default function Menu() {
                                                 </strong>
                                             </span>
                                             <span>
-                                                Half dozen
+                                                Media docena
                                                 <br />
                                                 <strong>
                                                     {money.format(
@@ -165,7 +168,7 @@ export default function Menu() {
                                                 </strong>
                                             </span>
                                             <span>
-                                                Dozen
+                                                Docena
                                                 <br />
                                                 <strong>
                                                     {money.format(
@@ -177,12 +180,12 @@ export default function Menu() {
                                         <div className="flex flex-wrap gap-2">
                                             <Button
                                                 size="sm"
-                                                aria-label={`Add one ${product.name}`}
+                                                aria-label={`Agregar una unidad de ${product.name}`}
                                                 onClick={() =>
                                                     addProduct(product.slug, 1)
                                                 }
                                             >
-                                                <Plus /> Unit
+                                                <Plus /> Unidad
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -191,7 +194,7 @@ export default function Menu() {
                                                     addProduct(product.slug, 6)
                                                 }
                                             >
-                                                + Half dozen
+                                                + Media docena
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -200,13 +203,13 @@ export default function Menu() {
                                                     addProduct(product.slug, 12)
                                                 }
                                             >
-                                                + Dozen
+                                                + Docena
                                             </Button>
                                             {quantity > 0 && (
                                                 <Button
                                                     size="icon"
                                                     variant="ghost"
-                                                    aria-label={`Remove one ${product.name}`}
+                                                    aria-label={`Quitar una unidad de ${product.name}`}
                                                     onClick={() =>
                                                         setProductQuantity(
                                                             product.slug,

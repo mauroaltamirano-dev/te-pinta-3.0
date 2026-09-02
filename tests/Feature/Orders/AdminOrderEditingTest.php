@@ -4,6 +4,8 @@ namespace Tests\Feature\Orders;
 
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
+use App\Modules\Management\Models\ManagementOrderPayment;
+use App\Modules\Management\Models\Wallet;
 use App\Modules\Orders\Actions\UpdateOrder;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\DeliveryPeriod;
@@ -17,8 +19,8 @@ use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -37,15 +39,16 @@ final class AdminOrderEditingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Wallet::query()->create(['name' => 'Order receipts', 'is_order_payment_default' => true]);
         $this->admin = User::factory()->administrator()->create();
         $this->customer = Customer::query()->create(['name' => 'Original customer', 'phone' => '111', 'address' => 'Private customer address']);
         $category = Category::query()->create(['name' => 'Empanadas', 'slug' => 'empanadas-edit', 'sort_order' => 1, 'is_active' => true]);
         $this->product = Product::query()->create([
             'category_id' => $category->id, 'name' => 'Salteña', 'slug' => 'saltena-edit',
-            'unit_price' => 1600, 'half_dozen_price' => 9000, 'dozen_price' => 16000,
+            'unit_price' => 1800, 'half_dozen_price' => 10000, 'dozen_price' => 18000,
             'is_available' => true, 'sort_order' => 1,
         ]);
-        CookingSurcharge::query()->insert([
+        RawPriceDiscount::query()->insert([
             ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
             ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
             ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
@@ -128,6 +131,9 @@ final class AdminOrderEditingTest extends TestCase
         $this->assertSame('Order-only corrected address', $order->delivery_address_snapshot);
         $this->assertSame('Other private address', $other->fresh()->address);
         $this->assertSame('paid', $order->payment_status->value);
+        $payment = ManagementOrderPayment::query()->sole();
+        $this->assertSame($order->id, $payment->order_id);
+        $this->assertSame(11800, (int) $payment->amount);
         $revision = $order->revisions()->sole();
         $this->assertSame(['fields' => ['customer', 'items', 'condition', 'delivery_type', 'delivery_period', 'delivery_time', 'delivery_address', 'notes', 'payment_status', 'payment_method'], 'economic_change' => true], $revision->changed_fields);
         $this->assertStringNotContainsString('Order-only corrected address', json_encode($revision->changed_fields, JSON_THROW_ON_ERROR));
@@ -188,8 +194,8 @@ final class AdminOrderEditingTest extends TestCase
         $payload['delivery_address'] = 'Order delivery address';
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame([9000, 1000, 1000, 2500, 13500], [
-            (int) $order->items_base_subtotal, (int) $order->cooking_surcharge,
+        $this->assertSame([10000, 0, 1000, 2500, 13500], [
+            (int) $order->items_cooked_subtotal, (int) $order->raw_discount,
             (int) $order->toppings_subtotal, (int) $order->shipping_fee_snapshot, (int) $order->total,
         ]);
 
@@ -199,8 +205,8 @@ final class AdminOrderEditingTest extends TestCase
         $payload['delivery_address'] = null;
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame([9000, 0, 1000, 0, 10000], [
-            (int) $order->items_base_subtotal, (int) $order->cooking_surcharge,
+        $this->assertSame([10000, 1000, 1000, 0, 10000], [
+            (int) $order->items_cooked_subtotal, (int) $order->raw_discount,
             (int) $order->toppings_subtotal, (int) $order->shipping_fee_snapshot, (int) $order->total,
         ]);
     }
@@ -258,7 +264,7 @@ final class AdminOrderEditingTest extends TestCase
         $edited = $this->createOrder(OrderStatus::Waiting);
         $untouched = $this->createOrder(OrderStatus::Waiting);
         $this->product->update(['half_dozen_price' => 12000]);
-        CookingSurcharge::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 3000]);
+        RawPriceDiscount::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 3000]);
 
         $this->actingAs($this->admin)->get(route('admin.orders.show', $edited))->assertOk();
         $this->assertSame(9000, (int) $edited->fresh()->total);
@@ -266,10 +272,10 @@ final class AdminOrderEditingTest extends TestCase
         $payload['condition'] = 'cooked';
         $this->actingAs($this->admin)->put(route('admin.orders.update', $edited), $payload)->assertRedirect();
 
-        $this->assertSame(15000, (int) $edited->fresh()->total);
+        $this->assertSame(12000, (int) $edited->fresh()->total);
         $this->assertSame(9000, (int) $untouched->fresh()->total);
-        $this->assertSame(12000, (int) $edited->fresh()->items_base_subtotal);
-        $this->assertSame(3000, (int) $edited->fresh()->cooking_surcharge);
+        $this->assertSame(12000, (int) $edited->fresh()->items_cooked_subtotal);
+        $this->assertSame(0, (int) $edited->fresh()->raw_discount);
     }
 
     public function test_failed_revision_write_rolls_back_order_items_and_totals(): void

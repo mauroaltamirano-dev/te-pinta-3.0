@@ -6,7 +6,7 @@ use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Enums\PriceTier;
-use App\Modules\Products\Models\CookingSurcharge;
+use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Settings\Actions\UpdateOrderingSettings;
 use App\Modules\Settings\Data\OrderingSettingsData;
 use App\Modules\Settings\Http\Requests\UpdateOrderingSettingsRequest;
@@ -23,8 +23,8 @@ final class OrderingSettingsController
     {
         abort_unless($request->user()?->is_admin === true, 403);
 
-        /** @var Collection<string, int> $surcharges */
-        $surcharges = CookingSurcharge::query()->pluck('amount', 'pricing_mode');
+        /** @var Collection<string, int> $discounts */
+        $discounts = RawPriceDiscount::query()->pluck('amount', 'pricing_mode');
 
         return Inertia::render('admin/settings/general', [
             'orderingSettings' => [
@@ -32,13 +32,13 @@ final class OrderingSettingsController
                 'combined_dozen_cooked_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice),
                 'delivery_fee' => OrderSetting::integer(OrderSettingKey::DeliveryFee),
                 'whatsapp_order_phone' => OrderSetting::string(OrderSettingKey::WhatsappOrderPhone),
-                'cooking_surcharges' => collect(PriceTier::cases())
-                    ->mapWithKeys(function (PriceTier $tier) use ($surcharges): array {
-                        if (! $surcharges->has($tier->value)) {
-                            throw new LogicException("Missing cooking surcharge {$tier->value}.");
+                'raw_price_discounts' => collect(PriceTier::cases())
+                    ->mapWithKeys(function (PriceTier $tier) use ($discounts): array {
+                        if (! $discounts->has($tier->value)) {
+                            throw new LogicException("Falta el descuento de precio crudo {$tier->value}.");
                         }
 
-                        return [$tier->value => (int) $surcharges->get($tier->value)];
+                        return [$tier->value => (int) $discounts->get($tier->value)];
                     })
                     ->all(),
                 'addons' => OrderAddon::query()
@@ -55,6 +55,6 @@ final class OrderingSettingsController
     ): RedirectResponse {
         $updateOrderingSettings->execute(OrderingSettingsData::fromRequest($request));
 
-        return to_route('admin.settings.general.index')->with('success', 'Ordering settings updated.');
+        return to_route('admin.settings.general.index')->with('success', 'Configuración de pedidos actualizada.');
     }
 }

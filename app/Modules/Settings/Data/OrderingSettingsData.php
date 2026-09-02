@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final readonly class OrderingSettingsData
 {
     /**
-     * @param  array{unit: int, half_dozen: int, dozen: int}  $cookingSurcharges
+     * @param  array{unit: int, half_dozen: int, dozen: int}  $rawPriceDiscounts
      * @param  list<array{id: int, name: string, price: int, is_available: bool, sort_order: int}>  $addons
      */
     public function __construct(
@@ -15,13 +15,13 @@ final readonly class OrderingSettingsData
         public int $combinedDozenCookedPrice,
         public int $deliveryFee,
         public string $whatsappOrderPhone,
-        public array $cookingSurcharges,
+        public array $rawPriceDiscounts,
         public array $addons,
     ) {}
 
     public static function fromRequest(FormRequest $request): self
     {
-        $surcharges = $request->safe()->array('cooking_surcharges');
+        $discounts = $request->safe()->array('raw_price_discounts');
         $addons = $request->safe()->array('addons');
 
         return new self(
@@ -29,10 +29,10 @@ final readonly class OrderingSettingsData
             combinedDozenCookedPrice: $request->integer('combined_dozen_cooked_price'),
             deliveryFee: $request->integer('delivery_fee'),
             whatsappOrderPhone: trim($request->string('whatsapp_order_phone')->toString()),
-            cookingSurcharges: [
-                'unit' => (int) $surcharges['unit'],
-                'half_dozen' => (int) $surcharges['half_dozen'],
-                'dozen' => (int) $surcharges['dozen'],
+            rawPriceDiscounts: [
+                'unit' => (int) $discounts['unit'],
+                'half_dozen' => (int) $discounts['half_dozen'],
+                'dozen' => (int) $discounts['dozen'],
             ],
             addons: array_values(array_map(
                 static fn (array $addon): array => [

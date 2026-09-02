@@ -24,9 +24,9 @@ final class PersistOrderQuote
                 'units_count' => $line->unitsCount,
                 'unit_price' => $line->unitPrice,
                 'line_total' => $line->lineTotal,
-                'base_unit_price' => $line->baseUnitPrice,
-                'base_line_total' => $line->baseLineTotal,
-                'cooking_surcharge' => $line->cookingSurcharge,
+                'cooked_unit_price' => $line->cookedUnitPrice,
+                'cooked_line_total' => $line->cookedLineTotal,
+                'raw_discount' => $line->rawDiscount,
                 'regular_price_total' => $line->regularPriceTotal,
                 'savings' => $line->savings,
             ]);
@@ -50,8 +50,10 @@ final class PersistOrderQuote
     public function totals(OrderPriceQuote $quote): array
     {
         return [
-            'items_base_subtotal' => $quote->productsBaseSubtotal,
-            'cooking_surcharge' => $quote->cookingSurcharge,
+            'items_base_subtotal' => null,
+            'cooking_surcharge' => null,
+            'items_cooked_subtotal' => $quote->productsCookedSubtotal,
+            'raw_discount' => $quote->rawDiscount,
             'items_subtotal' => $quote->productsSubtotal,
             'toppings_subtotal' => $quote->addonsSubtotal,
             'shipping_fee_snapshot' => $quote->shippingFee,

@@ -183,11 +183,12 @@ export function ProductFormDialog({
             <DialogContent className="dark admin-shell products-workspace max-h-[92vh] overflow-y-auto sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>
-                        {product ? 'Edit product' : 'Add product'}
+                        {product ? 'Editar producto' : 'Agregar producto'}
                     </DialogTitle>
                     <DialogDescription>
-                        Base prices are stored in pesos. Cooking surcharges are
-                        applied separately by the backend.
+                        Los precios principales corresponden a productos
+                        cocinados y se guardan en pesos. La configuración
+                        general define los descuentos para pedidos crudos.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -198,7 +199,7 @@ export function ProductFormDialog({
                                 {previewUrl && (
                                     <AvatarImage
                                         src={previewUrl}
-                                        alt="Product image preview"
+                                        alt="Vista previa de la imagen del producto"
                                         className="object-cover"
                                     />
                                 )}
@@ -211,7 +212,7 @@ export function ProductFormDialog({
                                 className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent"
                             >
                                 <Upload />
-                                Choose image
+                                Elegir imagen
                             </Label>
                             <Input
                                 ref={imageInputRef}
@@ -245,8 +246,8 @@ export function ProductFormDialog({
                                     }
                                 >
                                     {form.data.remove_image
-                                        ? 'Restore current image'
-                                        : 'Clear image'}
+                                        ? 'Restaurar imagen actual'
+                                        : 'Quitar imagen'}
                                 </Button>
                             )}
                             <FieldError
@@ -258,7 +259,7 @@ export function ProductFormDialog({
                         <div className="grid gap-4 sm:grid-cols-2">
                             <FormField
                                 id="product-name"
-                                label="Name"
+                                label="Nombre"
                                 error={form.errors.name}
                                 className="sm:col-span-2"
                             >
@@ -281,7 +282,7 @@ export function ProductFormDialog({
 
                             <FormField
                                 id="product-description"
-                                label="Short description"
+                                label="Descripción breve"
                                 error={form.errors.description}
                                 className="sm:col-span-2"
                             >
@@ -309,7 +310,7 @@ export function ProductFormDialog({
 
                             <FormField
                                 id="product-category"
-                                label="Category"
+                                label="Categoría"
                                 error={form.errors.category_id}
                             >
                                 <Select
@@ -332,7 +333,7 @@ export function ProductFormDialog({
                                                 : undefined
                                         }
                                     >
-                                        <SelectValue placeholder="Select category" />
+                                        <SelectValue placeholder="Seleccionar categoría" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
@@ -343,7 +344,7 @@ export function ProductFormDialog({
                                                 >
                                                     {category.name}
                                                     {!category.is_active &&
-                                                        ' (inactive)'}
+                                                        ' (inactiva)'}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
@@ -353,7 +354,7 @@ export function ProductFormDialog({
 
                             <FormField
                                 id="product-sort-order"
-                                label="Order within category"
+                                label="Orden dentro de la categoría"
                                 error={form.errors.sort_order}
                             >
                                 <Input
@@ -384,12 +385,12 @@ export function ProductFormDialog({
 
                     <fieldset className="grid gap-3 rounded-lg border border-border/80 p-4">
                         <legend className="px-1 text-sm font-semibold">
-                            Base prices
+                            Precios cocinados
                         </legend>
                         <div className="grid gap-4 sm:grid-cols-3">
                             <PriceField
                                 id="unit-price"
-                                label="Unit"
+                                label="Unidad"
                                 value={form.data.unit_price}
                                 error={form.errors.unit_price}
                                 onChange={(value) =>
@@ -398,7 +399,7 @@ export function ProductFormDialog({
                             />
                             <PriceField
                                 id="half-dozen-price"
-                                label="Half dozen"
+                                label="Media docena"
                                 value={form.data.half_dozen_price}
                                 error={form.errors.half_dozen_price}
                                 onChange={(value) =>
@@ -407,7 +408,7 @@ export function ProductFormDialog({
                             />
                             <PriceField
                                 id="dozen-price"
-                                label="Dozen"
+                                label="Docena"
                                 value={form.data.dozen_price}
                                 error={form.errors.dozen_price}
                                 onChange={(value) =>
@@ -424,7 +425,7 @@ export function ProductFormDialog({
                         }
                     >
                         <legend className="px-1 text-sm font-semibold">
-                            Tags
+                            Etiquetas
                         </legend>
                         <div className="flex flex-wrap gap-4">
                             {tags.map((tag) => (
@@ -472,11 +473,11 @@ export function ProductFormDialog({
                         />
                         <span>
                             <span className="block text-sm font-semibold">
-                                Available for sale
+                                Disponible para la venta
                             </span>
                             <span className="mt-1 block text-xs text-muted-foreground">
-                                Available products appear on the public menu and
-                                can be sold in the POS.
+                                Los productos disponibles aparecen en el menú
+                                público y se pueden vender desde el POS.
                             </span>
                             <FieldError
                                 id="product-availability-error"
@@ -499,14 +500,15 @@ export function ProductFormDialog({
                                 id="delete-product-title"
                                 className="text-sm font-semibold"
                             >
-                                Remove {product.name} from normal use?
+                                ¿Quitar {product.name} del uso habitual?
                             </p>
                             <p
                                 id="delete-product-description"
                                 className="text-xs text-muted-foreground"
                             >
-                                This is a soft delete. Historical orders keep
-                                their product information.
+                                Esta eliminación es reversible. Los pedidos
+                                históricos conservan la información del
+                                producto.
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 <Button
@@ -514,14 +516,14 @@ export function ProductFormDialog({
                                     variant="destructive"
                                     onClick={deleteProduct}
                                 >
-                                    Confirm removal
+                                    Confirmar eliminación
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     onClick={cancelDelete}
                                 >
-                                    Keep product
+                                    Conservar producto
                                 </Button>
                             </div>
                         </div>
@@ -538,7 +540,7 @@ export function ProductFormDialog({
                                     onClick={requestDelete}
                                 >
                                     <Trash2 data-icon="inline-start" />
-                                    Remove product
+                                    Quitar producto
                                 </Button>
                             )}
                         </div>
@@ -548,7 +550,7 @@ export function ProductFormDialog({
                                 variant="outline"
                                 onClick={closeDialog}
                             >
-                                Cancel
+                                Cancelar
                             </Button>
                             <Button type="submit" disabled={form.processing}>
                                 {form.processing && (
@@ -557,7 +559,7 @@ export function ProductFormDialog({
                                         className="animate-spin"
                                     />
                                 )}
-                                {product ? 'Save changes' : 'Create product'}
+                                {product ? 'Guardar cambios' : 'Crear producto'}
                             </Button>
                         </div>
                     </DialogFooter>

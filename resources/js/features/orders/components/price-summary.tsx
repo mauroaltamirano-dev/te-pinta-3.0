@@ -107,23 +107,27 @@ export function PriceSummary({
                 ))}
                 <dl className="grid gap-2 border-t pt-4 text-sm">
                     <div className="flex justify-between">
-                        <dt>Empanadas base</dt>
+                        <dt>
+                            {quote.products_cooked_subtotal !== undefined
+                                ? 'Empanadas cocinadas'
+                                : 'Empanadas'}
+                        </dt>
                         <dd>
                             {formatOrderMoney.format(
-                                quote.products_base_subtotal ??
+                                quote.products_cooked_subtotal ??
                                     quote.products_subtotal ??
                                     quote.empanadas_subtotal ??
                                     0,
                             )}
                         </dd>
                     </div>
-                    {(quote.cooking_surcharge ?? 0) > 0 && (
-                        <div className="flex justify-between">
-                            <dt>Cocción</dt>
+                    {(quote.raw_discount ?? 0) > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                            <dt>Descuento por preparación en crudo</dt>
                             <dd>
-                                +
+                                −
                                 {formatOrderMoney.format(
-                                    quote.cooking_surcharge ?? 0,
+                                    quote.raw_discount ?? 0,
                                 )}
                             </dd>
                         </div>

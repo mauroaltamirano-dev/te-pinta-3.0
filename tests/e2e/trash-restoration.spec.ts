@@ -4,10 +4,12 @@ import type { Page } from '@playwright/test';
 async function logIn(page: Page) {
     await page.goto('/login');
     await page
-        .getByLabel('Email address')
+        .getByLabel('Correo electrónico')
         .fill('playwright-admin@example.test');
     await page.locator('#password').fill('playwright-password');
-    await page.getByRole('button', { name: 'Log in' }).click();
+    await page
+        .getByRole('button', { name: 'Iniciar sesión', exact: true })
+        .click();
     await expect(page).toHaveURL(/\/admin$/);
 }
 
@@ -29,11 +31,11 @@ test.beforeEach(({ page }, testInfo) => {
     void page;
     test.skip(
         testInfo.project.name !== 'chromium',
-        'Trash restoration is covered once at the desktop-priority viewport.',
+        'La restauración desde papelera se cubre una vez en el viewport prioritario de escritorio.',
     );
 });
 
-test('an administrator can restore deleted orders and customers from their trash pages', async ({
+test('un administrador restaura pedidos y clientes desde sus papeleras', async ({
     page,
 }) => {
     test.setTimeout(60_000);
@@ -58,6 +60,10 @@ test('an administrator can restore deleted orders and customers from their trash
     await expect(page.getByRole('heading', { name: orderId })).toBeVisible();
 
     await page.goto('/admin/customers');
+    await page
+        .getByLabel('Buscar clientes por nombre o teléfono')
+        .fill(customerName);
+    await page.getByRole('button', { name: 'Buscar', exact: true }).click();
     const customerLink = page.getByRole('link', {
         name: customerName,
         exact: true,
@@ -65,50 +71,54 @@ test('an administrator can restore deleted orders and customers from their trash
     await customerLink.click();
 
     page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Remove' }).click();
+    await page.getByRole('button', { name: 'Enviar a papelera' }).click();
     await expect(page).toHaveURL(/\/admin\/customers$/);
 
-    await page.getByRole('link', { name: 'Trash' }).click();
+    await page.getByRole('link', { name: 'Papelera' }).click();
     await expect(page).toHaveURL(/\/admin\/customers\/trash$/);
     const restoreCustomer = page.getByRole('button', {
-        name: `Restore ${customerName}`,
+        name: `Restaurar ${customerName}`,
     });
     await expect(restoreCustomer).toBeVisible();
     await restoreCustomer.click();
     await expect(restoreCustomer).toHaveCount(0);
-    await page.getByRole('link', { name: 'Back to customers' }).click();
+    await page.getByRole('link', { name: 'Volver a clientes' }).click();
+    await page
+        .getByLabel('Buscar clientes por nombre o teléfono')
+        .fill(customerName);
+    await page.getByRole('button', { name: 'Buscar', exact: true }).click();
     await expect(
         page.getByRole('link', { name: customerName, exact: true }),
     ).toBeVisible();
 });
 
-test('customer restoration shows an actionable error when the phone belongs to an active customer', async ({
+test('restaurar un cliente muestra un error accionable si el teléfono pertenece a otro activo', async ({
     page,
 }) => {
     await logIn(page);
     await page.goto('/admin/customers');
 
-    await page.getByRole('button', { name: 'Create customer' }).click();
+    await page.getByRole('button', { name: 'Crear cliente' }).click();
     let dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Name').fill('Deleted phone owner');
-    await dialog.getByLabel('Phone').fill('+54 381 555 8801');
-    await dialog.getByRole('button', { name: 'Create customer' }).click();
+    await dialog.getByLabel('Nombre').fill('Deleted phone owner');
+    await dialog.getByLabel('Teléfono').fill('+54 381 555 8801');
+    await dialog.getByRole('button', { name: 'Crear cliente' }).click();
     await expect(dialog).toHaveCount(0);
 
     page.once('dialog', (confirmation) => confirmation.accept());
-    await page.getByRole('button', { name: 'Remove' }).click();
+    await page.getByRole('button', { name: 'Enviar a papelera' }).click();
     await expect(page).toHaveURL(/\/admin\/customers$/);
 
-    await page.getByRole('button', { name: 'Create customer' }).click();
+    await page.getByRole('button', { name: 'Crear cliente' }).click();
     dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Name').fill('Active phone owner');
-    await dialog.getByLabel('Phone').fill('+54 (381) 555-8801');
-    await dialog.getByRole('button', { name: 'Create customer' }).click();
+    await dialog.getByLabel('Nombre').fill('Active phone owner');
+    await dialog.getByLabel('Teléfono').fill('+54 (381) 555-8801');
+    await dialog.getByRole('button', { name: 'Crear cliente' }).click();
     await expect(dialog).toHaveCount(0);
 
     await page.goto('/admin/customers/trash');
     const restore = page.getByRole('button', {
-        name: 'Restore Deleted phone owner',
+        name: 'Restaurar Deleted phone owner',
     });
     await restore.click();
 

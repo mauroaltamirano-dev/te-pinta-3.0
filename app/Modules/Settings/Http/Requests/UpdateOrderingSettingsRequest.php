@@ -21,14 +21,14 @@ final class UpdateOrderingSettingsRequest extends FormRequest
         $moneyRules = ['required', 'integer', 'min:0', 'max:2147483647'];
 
         return [
-            'combined_dozen_raw_price' => $moneyRules,
+            'combined_dozen_raw_price' => [...$moneyRules, 'lt:combined_dozen_cooked_price'],
             'combined_dozen_cooked_price' => $moneyRules,
             'delivery_fee' => $moneyRules,
             'whatsapp_order_phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9 ()-]*$/'],
-            'cooking_surcharges' => ['required', 'array:unit,half_dozen,dozen'],
-            'cooking_surcharges.unit' => $moneyRules,
-            'cooking_surcharges.half_dozen' => $moneyRules,
-            'cooking_surcharges.dozen' => $moneyRules,
+            'raw_price_discounts' => ['required', 'array:unit,half_dozen,dozen'],
+            'raw_price_discounts.unit' => ['required', 'integer', 'min:1', 'max:2147483647'],
+            'raw_price_discounts.half_dozen' => ['required', 'integer', 'min:1', 'max:2147483647'],
+            'raw_price_discounts.dozen' => ['required', 'integer', 'min:1', 'max:2147483647'],
             'addons' => ['required', 'array', 'max:50'],
             'addons.*' => ['required', 'array:id,name,price,is_available,sort_order'],
             'addons.*.id' => [

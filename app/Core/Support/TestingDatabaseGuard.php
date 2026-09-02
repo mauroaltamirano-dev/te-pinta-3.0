@@ -17,7 +17,7 @@ final class TestingDatabaseGuard
         if (! self::isExplicitlyTestDatabase($effectiveDatabase)) {
             throw new RuntimeException(sprintf(
                 'Refusing to run APP_ENV=testing against database [%s]. Use a database name containing a standalone "test" or "testing" segment.',
-                $effectiveDatabase ?: 'not configured',
+                $effectiveDatabase ?: 'sin configurar',
             ));
         }
     }

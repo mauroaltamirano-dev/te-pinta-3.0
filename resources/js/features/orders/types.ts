@@ -6,6 +6,7 @@ export type OrderStatus =
 export type PaymentStatus = 'paid' | 'unpaid' | 'not_required';
 export type PaymentMethod = 'cash' | 'bank_transfer' | 'debit_card';
 export type DiscountType = 'percentage' | 'fixed_amount';
+export type OrdersView = 'grid' | 'list';
 
 export interface PublicProduct {
     slug: string;
@@ -43,6 +44,9 @@ export interface PriceQuoteLine {
     price?: number;
     subtotal?: number;
     lineTotal?: number;
+    cookedUnitPrice?: number;
+    cookedLineTotal?: number;
+    rawDiscount?: number;
     composition?: Array<{
         name?: string;
         product_name?: string;
@@ -70,6 +74,8 @@ export interface PriceQuote {
     }>;
     products_subtotal?: number;
     empanadas_subtotal?: number;
+    products_cooked_subtotal?: number;
+    raw_discount?: number;
     products_base_subtotal?: number;
     cooking_surcharge?: number;
     toppings_subtotal?: number;
@@ -106,6 +112,8 @@ export interface AdminOrder {
     delivery_address: string | null;
     notes: string | null;
     items_subtotal: number;
+    items_cooked_subtotal?: number | null;
+    raw_discount?: number | null;
     items_base_subtotal: number | null;
     cooking_surcharge: number | null;
     toppings_subtotal: number;
@@ -124,6 +132,9 @@ export interface AdminOrder {
         units_count: number;
         unit_price: number;
         subtotal: number;
+        cooked_unit_price?: number | null;
+        cooked_subtotal?: number | null;
+        raw_discount?: number | null;
         base_unit_price?: number | null;
         base_subtotal?: number | null;
         cooking_surcharge?: number | null;

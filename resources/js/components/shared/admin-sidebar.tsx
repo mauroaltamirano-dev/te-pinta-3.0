@@ -1,17 +1,20 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     BarChart3,
-    Boxes,
+    Instagram,
     LayoutDashboard,
     LogOut,
+    Megaphone,
     Menu,
     Settings,
     ShoppingBasket,
     Store,
     Users,
+    WalletCards,
 } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import {
@@ -23,11 +26,21 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
     { label: 'Inicio', href: '/admin', icon: Store },
-    { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    {
+        label: 'Panel operativo',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+    },
     { label: 'Pedidos', href: '/admin/orders', icon: ShoppingBasket },
     { label: 'Clientes', href: '/admin/customers', icon: Users },
     { label: 'Analíticas', href: '/admin/analytics', icon: BarChart3 },
-    { label: 'Gestión', href: '/admin/inventory', icon: Boxes },
+    { label: 'Gestión', href: '/admin/management', icon: WalletCards },
+    { label: 'Marketing', href: '/admin/marketing', icon: Megaphone },
+    {
+        label: 'Instagram',
+        href: '/admin/marketing/instagram',
+        icon: Instagram,
+    },
     { label: 'Configuración', href: '/admin/settings', icon: Settings },
 ] as const;
 
@@ -43,7 +56,9 @@ export function AdminSidebar() {
     const isActive = (href: string) =>
         href === '/admin'
             ? url === href
-            : url === href || url.startsWith(`${href}/`);
+            : href === '/admin/marketing'
+              ? url === href
+              : url === href || url.startsWith(`${href}/`);
 
     const mobileNavigation =
         typeof document !== 'undefined'
@@ -154,19 +169,16 @@ export function AdminSidebar() {
                         <Link
                             href="/admin"
                             aria-label="Te Pinta POS"
-                            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-admin-action text-admin-accent focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none md:mt-6 md:ml-6 md:size-14"
+                            className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-admin-accent ring-1 ring-black/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none md:mt-6 md:ml-6 md:size-14"
                         >
-                            <Store
-                                className="size-8 md:size-10"
-                                strokeWidth={1.6}
-                            />
+                            <BrandLogo alt="" className="size-full" />
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right">Te Pinta POS</TooltipContent>
                 </Tooltip>
 
                 <nav
-                    aria-label="Administration navigation"
+                    aria-label="Navegación de administración"
                     className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:min-h-0 md:w-[5.75rem] md:flex-col md:overflow-visible"
                 >
                     {navigation.map(({ label, href, icon: Icon }) => {
@@ -176,7 +188,7 @@ export function AdminSidebar() {
                             <div
                                 key={href}
                                 data-active={active}
-                                className="admin-nav-slot relative flex size-12 shrink-0 items-center justify-center md:min-h-[4.5rem] md:w-[5.75rem] md:flex-1 md:justify-start md:pl-3"
+                                className="admin-nav-slot relative flex size-12 shrink-0 items-center justify-center md:min-h-14 md:w-[5.75rem] md:flex-1 md:justify-start md:pl-3"
                             >
                                 <Tooltip>
                                     <TooltipTrigger asChild>

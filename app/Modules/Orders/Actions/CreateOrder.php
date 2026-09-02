@@ -5,8 +5,11 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Enums\PaymentStatus;
+use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
+use App\Modules\Orders\Support\OrderBusinessDate;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +22,7 @@ final readonly class CreateOrder
         private ResolveOrderCustomer $customers,
         private PersistOrderQuote $quotes,
         private ResolveOrderPayment $payments,
+        private OrderBusinessDate $businessDate,
     ) {}
 
     public function execute(OrderCheckoutData $data, OrderSource $source, ?int $adminId = null): Order
@@ -33,7 +37,7 @@ final readonly class CreateOrder
         }
 
         try {
-            $order = DB::transaction(function () use ($data, $source, $idempotencyHash, $fingerprint): Order {
+            $order = DB::transaction(function () use ($data, $source, $adminId, $idempotencyHash, $fingerprint): Order {
                 $customer = $this->customers->execute($data, $source);
                 $quote = $this->pricing->quote(
                     $data->items,
@@ -67,6 +71,18 @@ final readonly class CreateOrder
 
                 $this->quotes->execute($order, $quote);
 
+                if ($payment['status'] === PaymentStatus::Paid) {
+                    if ($adminId === null) {
+                        throw new \LogicException('A paid order requires a confirming administrator.');
+                    }
+                    event(new OrderPaymentConfirmed(
+                        orderId: (int) $order->id,
+                        amount: (int) $order->total,
+                        confirmedOn: $this->businessDate->today(),
+                        adminId: $adminId,
+                    ));
+                }
+
                 return $order->refresh()->load(['items.compositions', 'toppings']);
             });
         } catch (QueryException $exception) {
@@ -88,7 +104,7 @@ final readonly class CreateOrder
     private function assertSameFingerprint(Order $order, ?string $fingerprint): void
     {
         if ($order->public_checkout_fingerprint !== $fingerprint) {
-            throw ValidationException::withMessages(['idempotency_key' => 'This idempotency key was already used for a different checkout.']);
+            throw ValidationException::withMessages(['idempotency_key' => 'Esta clave de idempotencia ya fue usada para otro pedido.']);
         }
     }
 }

@@ -19,13 +19,13 @@ final readonly class CalculateOrderPrice
         $total = 0;
         foreach ($items as $item) {
             $mode = PricingMode::from($item['pricing_mode']);
-            $price = $this->prices->priceFor($item['product_id'], $mode->value, $item['is_cooked'] ?? false);
+            $price = $this->prices->priceFor($item['product_id'], $mode->value, $item['is_cooked'] ?? true);
             if ($price === null) {
-                throw ValidationException::withMessages(['items' => 'Every product must be available.']);
+                throw ValidationException::withMessages(['items' => 'Todos los productos deben estar disponibles.']);
             }
             $lineTotal = $price * $item['quantity'];
             $total += $lineTotal;
-            $lines[] = [...$item, 'is_cooked' => $item['is_cooked'] ?? false, 'unit_price' => $price, 'line_total' => $lineTotal];
+            $lines[] = [...$item, 'is_cooked' => $item['is_cooked'] ?? true, 'unit_price' => $price, 'line_total' => $lineTotal];
         }
 
         return ['items' => $lines, 'total' => $total];

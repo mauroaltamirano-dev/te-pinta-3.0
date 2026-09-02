@@ -34,6 +34,6 @@ final class OrderTrashController
     {
         $restore->execute($order, (int) $request->user()->getAuthIdentifier());
 
-        return back()->with('success', 'Order restored.');
+        return back()->with('success', 'Pedido restaurado.');
     }
 }

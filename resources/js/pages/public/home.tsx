@@ -2,27 +2,36 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowRight, Clock3, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FeaturedProductCard } from '@/features/marketing/components/featured-product-card';
+import type { FeaturedProductPublicView } from '@/features/marketing/types';
+import { useCart } from '@/features/orders/cart-context';
 
-export default function Home() {
+export default function Home({
+    featuredProduct = null,
+}: {
+    featuredProduct?: FeaturedProductPublicView | null;
+}) {
+    const { addProduct } = useCart();
+
     return (
         <>
-            <Head title="Home" />
+            <Head title="Inicio" />
             <section className="overflow-hidden border-b">
                 <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:py-24">
                     <div className="flex flex-col items-start gap-6">
                         <p className="text-xs font-bold tracking-[0.22em] text-primary uppercase">
-                            Handmade empanadas
+                            Empanadas artesanales
                         </p>
                         <h1 className="max-w-3xl font-display text-5xl leading-[0.95] font-black tracking-tight sm:text-7xl">
-                            Your next order starts here.
+                            Tu próximo pedido empieza acá.
                         </h1>
                         <p className="max-w-xl text-lg text-muted-foreground">
-                            Browse the menu, build your cart, and send the
-                            complete order through WhatsApp.
+                            Recorré el menú, armá tu carrito y enviá el pedido
+                            completo por WhatsApp.
                         </p>
                         <Button size="lg" asChild>
                             <Link href="/menu">
-                                Place an order{' '}
+                                Hacer un pedido{' '}
                                 <ArrowRight data-icon="inline-end" />
                             </Link>
                         </Button>
@@ -37,25 +46,33 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+            {featuredProduct && (
+                <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+                    <FeaturedProductCard
+                        featured={featuredProduct}
+                        onAddProduct={(slug) => addProduct(slug, 1)}
+                    />
+                </section>
+            )}
             <section className="mx-auto grid max-w-6xl gap-4 px-4 py-14 sm:grid-cols-2 sm:px-6">
                 <Card>
                     <CardHeader>
                         <MessageCircle />
-                        <CardTitle>Simple confirmation</CardTitle>
+                        <CardTitle>Confirmación simple</CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm text-muted-foreground">
-                        No online payment: you review the order and send it
-                        through WhatsApp.
+                        Sin pago en línea: revisás el pedido y lo enviás por
+                        WhatsApp.
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader>
                         <Clock3 />
-                        <CardTitle>Useful information</CardTitle>
+                        <CardTitle>Información útil</CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm text-muted-foreground">
-                        Service hours and contact details will be configured in
-                        the next product stage.
+                        Los horarios de atención y los datos de contacto se
+                        configurarán en una próxima etapa.
                     </CardContent>
                 </Card>
             </section>

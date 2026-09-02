@@ -21,13 +21,13 @@ final readonly class ResolvePublicCheckoutSelections
         $productSlugs = array_column($items, 'product_slug');
         $products = $this->products->productsForSaleBySlugs($productSlugs, $condition === OrderCondition::Cooked);
         if (count($products) !== count($productSlugs)) {
-            throw ValidationException::withMessages(['items' => 'Every product must be available.']);
+            throw ValidationException::withMessages(['items' => 'Todos los productos deben estar disponibles.']);
         }
 
         $addonSlugs = array_column($addons, 'addon_slug');
         $availableAddons = OrderAddon::query()->whereIn('slug', $addonSlugs)->where('is_available', true)->get()->keyBy('slug');
         if ($availableAddons->count() !== count($addonSlugs)) {
-            throw ValidationException::withMessages(['addons' => 'Every addon must be available.']);
+            throw ValidationException::withMessages(['addons' => 'Todos los adicionales deben estar disponibles.']);
         }
 
         return [

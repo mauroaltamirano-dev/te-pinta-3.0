@@ -1,197 +1,125 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, StickyNote, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CustomerFormDialog } from '@/features/customers/components/customer-form-dialog';
+import { CustomerOrderHistory } from '@/features/customers/components/customer-order-history';
+import { CustomerSummary } from '@/features/customers/components/customer-summary';
 import type { Customer } from '@/features/customers/types';
+import { OrderDetailSheet } from '@/features/orders/components/order-detail-sheet';
+import type { AdminOrder } from '@/features/orders/types';
 
-const money = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-});
-const statusLabels: Record<string, string> = {
-    pending_confirmation: 'Pending confirmation',
-    waiting: 'Waiting',
-    prepared: 'Prepared',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-};
+interface CustomerDetailProps {
+    customer: Customer;
+    selectedOrder?: AdminOrder | null;
+    selectedOrderSummary?: string | null;
+}
 
-export default function CustomerDetail({ customer }: { customer: Customer }) {
+export default function CustomerDetail({
+    customer,
+    selectedOrder = null,
+    selectedOrderSummary = null,
+}: CustomerDetailProps) {
     const [editing, setEditing] = useState(false);
     const remove = () => {
         if (
             window.confirm(
-                `Remove ${customer.name}? Historical orders will be preserved.`,
+                `¿Enviar a ${customer.name} a la papelera? Sus pedidos históricos se conservarán.`,
             )
         ) {
             router.delete(`/admin/customers/${customer.id}`);
         }
     };
+    const openOrder = (order: string) =>
+        router.get(
+            `/admin/customers/${customer.id}`,
+            { order },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['selectedOrder', 'selectedOrderSummary'],
+            },
+        );
+    const closeOrder = () =>
+        router.get(
+            `/admin/customers/${customer.id}`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['selectedOrder', 'selectedOrderSummary'],
+            },
+        );
 
     return (
         <>
             <Head title={customer.name} />
-            <section className="grid gap-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+            <section className="grid gap-6 font-orders">
+                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0">
                         <Link
                             href="/admin/customers"
-                            className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-white"
                         >
-                            <ArrowLeft className="size-4" /> Customers
+                            <ArrowLeft className="size-4" /> Clientes
                         </Link>
-                        <h1 className="text-2xl font-bold">{customer.name}</h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Customer profile and historical orders.
+                        <h1 className="truncate text-3xl font-semibold tracking-tight text-white">
+                            {customer.name}
+                        </h1>
+                        <p className="mt-1 text-sm text-admin-text-tertiary">
+                            Ficha operativa, contacto e historial de pedidos.
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            type="button"
+                            onClick={() => setEditing(true)}
+                            className="h-11 rounded-lg px-4"
+                        >
+                            <Pencil /> Editar
+                        </Button>
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => setEditing(true)}
-                        >
-                            <Pencil /> Edit
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
                             onClick={remove}
+                            className="h-11 rounded-lg px-4 text-destructive hover:text-destructive"
                         >
-                            <Trash2 /> Remove
+                            <Trash2 /> Enviar a papelera
                         </Button>
                     </div>
                 </header>
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Order history</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {!customer.orders?.length ? (
-                                <p
-                                    role="status"
-                                    className="py-10 text-center text-sm text-muted-foreground"
-                                >
-                                    This customer has no orders yet.
-                                </p>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="border-b text-muted-foreground">
-                                            <tr>
-                                                <th
-                                                    className="px-3 py-3"
-                                                    scope="col"
-                                                >
-                                                    Order ID
-                                                </th>
-                                                <th
-                                                    className="px-3 py-3"
-                                                    scope="col"
-                                                >
-                                                    Date
-                                                </th>
-                                                <th
-                                                    className="px-3 py-3"
-                                                    scope="col"
-                                                >
-                                                    Status
-                                                </th>
-                                                <th
-                                                    className="px-3 py-3"
-                                                    scope="col"
-                                                >
-                                                    Total
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y">
-                                            {customer.orders.map((order) => (
-                                                <tr key={order.id}>
-                                                    <td className="px-3 py-4 font-medium">
-                                                        <Link
-                                                            href={`/admin/orders/${order.id}`}
-                                                            className="hover:underline"
-                                                        >
-                                                            {order.id}
-                                                        </Link>
-                                                    </td>
-                                                    <td className="px-3 py-4">
-                                                        {order.date}
-                                                    </td>
-                                                    <td className="px-3 py-4">
-                                                        <Badge variant="outline">
-                                                            {statusLabels[
-                                                                order.status
-                                                            ] ?? order.status}
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="px-3 py-4 tabular-nums">
-                                                        {money.format(
-                                                            order.total,
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                    <div className="grid content-start gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Contact</CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid gap-4 text-sm">
-                                <div>
-                                    <p className="text-muted-foreground">
-                                        Phone
-                                    </p>
-                                    <p>{customer.phone ?? 'Not provided'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-muted-foreground">
-                                        Address
-                                    </p>
-                                    <p className="whitespace-pre-wrap">
-                                        {customer.address ?? 'Not provided'}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Private notes</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm whitespace-pre-wrap">
-                                    {customer.notes ?? 'No private notes.'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>
-                                    Effective historical spend
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold tabular-nums">
-                                    {money.format(customer.historical_spend)}
-                                </p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Cancelled orders are excluded.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+
+                <CustomerSummary customer={customer} />
+
+                <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+                    <section className="min-w-0 overflow-hidden rounded-lg bg-admin-surface">
+                        <header className="border-b border-admin-border px-4 py-4 sm:px-5">
+                            <h2 className="text-lg font-semibold text-white">
+                                Historial de pedidos
+                            </h2>
+                            <p className="mt-1 text-sm text-admin-text-tertiary">
+                                Más recientes primero. Abrí un pedido sin salir
+                                de esta ficha.
+                            </p>
+                        </header>
+                        <CustomerOrderHistory
+                            orders={customer.orders ?? []}
+                            onOpenOrder={openOrder}
+                        />
+                    </section>
+
+                    <aside className="self-start rounded-lg bg-admin-surface p-5">
+                        <h2 className="flex items-center gap-2 text-base font-semibold text-white">
+                            <StickyNote className="size-4 text-admin-accent" />{' '}
+                            Notas privadas
+                        </h2>
+                        <p className="mt-4 text-sm leading-6 whitespace-pre-wrap text-admin-text-secondary">
+                            {customer.notes ?? 'Sin notas privadas.'}
+                        </p>
+                        <p className="mt-5 border-t border-admin-border pt-4 text-xs text-admin-text-tertiary">
+                            Solo visibles para administradores.
+                        </p>
+                    </aside>
                 </div>
             </section>
             {editing && (
@@ -201,6 +129,11 @@ export default function CustomerDetail({ customer }: { customer: Customer }) {
                     customer={customer}
                 />
             )}
+            <OrderDetailSheet
+                order={selectedOrder}
+                summary={selectedOrderSummary}
+                onClose={closeOrder}
+            />
         </>
     );
 }

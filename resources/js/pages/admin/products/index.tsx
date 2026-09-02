@@ -48,20 +48,20 @@ export default function Products({
 
     return (
         <>
-            <Head title="Products" />
+            <Head title="Productos" />
             <SettingsLayout>
                 <header className="flex flex-col gap-5 border-b border-admin-border bg-transparent px-5 py-5 sm:px-7">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent uppercase">
-                                Settings
+                                Configuración
                             </p>
                             <h1 className="mt-1 text-xl font-bold tracking-tight">
-                                Products management
+                                Gestión de productos
                             </h1>
                             <p className="mt-1 max-w-2xl text-sm text-admin-text-secondary">
-                                Manage the catalog, base prices, images and sale
-                                availability.
+                                Administrá el catálogo, los precios cocinados,
+                                las imágenes y la disponibilidad de venta.
                             </p>
                         </div>
                         <Button
@@ -70,13 +70,13 @@ export default function Products({
                             onClick={() => setCategoryDialogOpen(true)}
                         >
                             <SlidersHorizontal data-icon="inline-start" />
-                            Manage categories
+                            Gestionar categorías
                         </Button>
                     </div>
 
                     <div
                         role="group"
-                        aria-label="Product categories"
+                        aria-label="Categorías de productos"
                         className="flex gap-1 overflow-x-auto"
                     >
                         {categories.map((category) => {
@@ -100,7 +100,7 @@ export default function Products({
                                     {category.name}
                                     {!category.is_active && (
                                         <span className="ml-1 text-xs opacity-65">
-                                            (inactive)
+                                            (inactiva)
                                         </span>
                                     )}
                                 </button>
@@ -113,17 +113,17 @@ export default function Products({
                     {categories.length === 0 ? (
                         <div className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border p-8 text-center">
                             <h2 className="font-semibold">
-                                Create a category first
+                                Creá primero una categoría
                             </h2>
                             <p className="max-w-sm text-sm text-muted-foreground">
-                                Every product belongs to one category. Add the
-                                first category before creating catalog items.
+                                Cada producto pertenece a una categoría. Creá la
+                                primera antes de cargar productos al catálogo.
                             </p>
                             <Button
                                 type="button"
                                 onClick={() => setCategoryDialogOpen(true)}
                             >
-                                Manage categories
+                                Gestionar categorías
                             </Button>
                         </div>
                     ) : (

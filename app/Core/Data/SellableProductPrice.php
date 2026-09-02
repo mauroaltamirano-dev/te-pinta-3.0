@@ -11,8 +11,8 @@ final readonly class SellableProductPrice
         public int $unitPrice,
         public int $halfDozenPrice,
         public int $dozenPrice,
-        public int $baseUnitPrice,
-        public int $baseHalfDozenPrice,
-        public int $baseDozenPrice,
+        public int $cookedUnitPrice,
+        public int $cookedHalfDozenPrice,
+        public int $cookedDozenPrice,
     ) {}
 }

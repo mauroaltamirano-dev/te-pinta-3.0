@@ -15,7 +15,7 @@ final readonly class WhatsAppOrderLink
     {
         $phone = preg_replace('/\D+/', '', OrderSetting::string(OrderSettingKey::WhatsappOrderPhone));
         if ($phone === '') {
-            throw ValidationException::withMessages(['checkout' => 'WhatsApp ordering is not configured.']);
+            throw ValidationException::withMessages(['checkout' => 'Los pedidos por WhatsApp no están configurados.']);
         }
 
         return 'https://wa.me/'.$phone.'?text='.rawurlencode($this->formatter->format($order));

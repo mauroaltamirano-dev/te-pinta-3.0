@@ -128,6 +128,159 @@ final class CustomerManagementTest extends TestCase
                 ->where('customers.data.0.name', 'Pedro Ruiz'));
     }
 
+    public function test_list_exposes_active_order_count_latest_order_date_and_effective_spend(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = $this->customer(['name' => 'Aggregate Customer']);
+        $this->order($customer, 'TP-000101', 'delivered', 12000, ['delivery_date' => '2026-08-10']);
+        $this->order($customer, 'TP-000102', 'cancelled', 5000, ['delivery_date' => '2026-08-12']);
+        $deletedOrderId = $this->order($customer, 'TP-000103', 'delivered', 9000, ['delivery_date' => '2026-08-14']);
+        DB::table('orders')->where('id', $deletedOrderId)->update(['deleted_at' => now()]);
+
+        $this->actingAs($admin)->get(route('admin.customers.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('customers.data.0.orders_count', 2)
+                ->where('customers.data.0.latest_order_date', '2026-08-12')
+                ->where('customers.data.0.historical_spend', 12000));
+    }
+
+    public function test_administrator_can_sort_customers_by_whitelisted_aggregates_with_stable_ties(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $first = $this->customer(['name' => 'Alpha']);
+        $second = $this->customer(['name' => 'Beta']);
+        $third = $this->customer(['name' => 'Gamma']);
+        $withoutOrders = $this->customer(['name' => 'No orders']);
+        $this->order($first, 'TP-000121', 'delivered', 1000);
+        $this->order($second, 'TP-000122', 'delivered', 500);
+        $this->order($second, 'TP-000123', 'cancelled', 9000);
+        $this->order($third, 'TP-000124', 'delivered', 2000);
+
+        $this->actingAs($admin)->get(route('admin.customers.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'name')
+                ->where('filters.direction', 'asc')
+                ->where('customers.data.0.name', 'Alpha')
+                ->where('customers.data.1.name', 'Beta')
+                ->where('customers.data.2.name', 'Gamma')
+                ->where('customers.data.3.name', 'No orders'));
+
+        $this->actingAs($admin)->get(route('admin.customers.index', [
+            'sort' => 'name',
+            'direction' => 'desc',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('filters.sort', 'name')
+            ->where('filters.direction', 'desc')
+            ->where('customers.data.0.name', 'No orders')
+            ->where('customers.data.1.name', 'Gamma')
+            ->where('customers.data.2.name', 'Beta')
+            ->where('customers.data.3.name', 'Alpha'));
+
+        $this->actingAs($admin)->get(route('admin.customers.index', [
+            'sort' => 'orders_count',
+            'direction' => 'desc',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('customers.data.0.name', 'Beta')
+            ->where('customers.data.1.name', 'Alpha')
+            ->where('customers.data.2.name', 'Gamma')
+            ->where('customers.data.3.name', 'No orders'));
+
+        $this->actingAs($admin)->get(route('admin.customers.index', [
+            'sort' => 'historical_spend',
+            'direction' => 'desc',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('customers.data.0.name', 'Gamma')
+            ->where('customers.data.1.name', 'Alpha')
+            ->where('customers.data.2.name', 'Beta')
+            ->where('customers.data.3.name', 'No orders'));
+
+        $this->actingAs($admin)->get(route('admin.customers.index', [
+            'sort' => 'historical_spend',
+            'direction' => 'asc',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('customers.data.0.id', $withoutOrders->id)
+            ->where('customers.data.1.name', 'Beta')
+            ->where('customers.data.2.name', 'Alpha')
+            ->where('customers.data.3.name', 'Gamma'));
+    }
+
+    public function test_customer_sort_rejects_untrusted_columns_and_directions(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = $this->customer(['name' => 'Safe customer']);
+
+        $this->actingAs($admin)->from(route('admin.customers.index'))->get(route('admin.customers.index', [
+            'sort' => 'name desc; drop table customers',
+            'direction' => 'sideways',
+        ]))->assertRedirect(route('admin.customers.index'))
+            ->assertSessionHasErrors(['sort', 'direction']);
+
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_historical_spend_sort_distinguishes_null_zero_and_equal_positive_totals(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $withoutOrders = $this->customer(['name' => 'Without orders']);
+        $zeroTotal = $this->customer(['name' => 'Zero total']);
+        $firstEqualSpend = $this->customer(['name' => 'First equal spend']);
+        $secondEqualSpend = $this->customer(['name' => 'Second equal spend']);
+        $this->order($zeroTotal, 'TP-000131', 'delivered', 0);
+        $this->order($firstEqualSpend, 'TP-000132', 'delivered', 1500);
+        $this->order($secondEqualSpend, 'TP-000133', 'delivered', 1500);
+
+        $this->actingAs($admin)->get(route('admin.customers.index', [
+            'sort' => 'historical_spend',
+            'direction' => 'asc',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('customers.data.0.id', $withoutOrders->id)
+            ->where('customers.data.0.historical_spend', 0)
+            ->where('customers.data.1.id', $zeroTotal->id)
+            ->where('customers.data.1.historical_spend', 0)
+            ->where('customers.data.2.id', $firstEqualSpend->id)
+            ->where('customers.data.3.id', $secondEqualSpend->id));
+
+        $this->actingAs($admin)->get(route('admin.customers.index', [
+            'sort' => 'historical_spend',
+            'direction' => 'desc',
+        ]))->assertInertia(fn (Assert $page) => $page
+            ->where('customers.data.0.id', $firstEqualSpend->id)
+            ->where('customers.data.1.id', $secondEqualSpend->id)
+            ->where('customers.data.2.id', $zeroTotal->id)
+            ->where('customers.data.2.historical_spend', 0)
+            ->where('customers.data.3.id', $withoutOrders->id)
+            ->where('customers.data.3.historical_spend', 0));
+    }
+
+    public function test_list_read_model_query_count_does_not_grow_per_customer(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $firstCustomer = $this->customer(['name' => 'Customer 1']);
+        $this->order($firstCustomer, 'TP-000111', 'delivered', 12000);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($admin)->get(route('admin.customers.index'))->assertOk();
+        $singleCustomerQueryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        foreach (range(2, 5) as $number) {
+            $customer = $this->customer(['name' => "Customer {$number}"]);
+            $this->order($customer, sprintf('TP-%06d', 110 + $number), 'delivered', 12000);
+        }
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($admin)->get(route('admin.customers.index'))->assertOk();
+        $multipleCustomersQueryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertSame($singleCustomerQueryCount, $multipleCustomersQueryCount);
+    }
+
     public function test_detail_exposes_private_notes_only_to_admin_and_lists_active_order_history(): void
     {
         $admin = User::factory()->administrator()->create();
@@ -142,12 +295,47 @@ final class CustomerManagementTest extends TestCase
                 ->component('admin/customers/show')
                 ->where('customer.notes', 'Internal allergy note')
                 ->where('customer.historical_spend', 12000)
+                ->where('customer.orders_count', 2)
+                ->where('customer.latest_order_date', '2026-08-12')
                 ->has('customer.orders', 2)
                 ->where('customer.orders.0.id', 'TP-000002')
+                ->where('customer.orders.0.delivery_type', 'pickup')
+                ->where('customer.orders.0.payment_status', 'unpaid')
+                ->where('customer.orders.0.payment_method', null)
                 ->where('customer.orders.1.id', 'TP-000001'));
 
         auth()->logout();
         $this->get(route('admin.customers.show', $customer))->assertRedirect(route('login'));
+    }
+
+    public function test_detail_hydrates_only_a_selected_active_order_owned_by_the_customer(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $customer = $this->customer(['name' => 'Drawer Customer']);
+        $otherCustomer = $this->customer(['name' => 'Other Customer']);
+        $this->order($customer, 'TP-000201', 'waiting', 12000);
+        $this->order($otherCustomer, 'TP-000202', 'waiting', 9000);
+        $deletedOrderId = $this->order($customer, 'TP-000203', 'waiting', 7000);
+        DB::table('orders')->where('id', $deletedOrderId)->update(['deleted_at' => now()]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.customers.show', [$customer, 'order' => 'TP-000201']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('selectedOrder.id', 'TP-000201')
+                ->where('selectedOrder.customer.id', $customer->id)
+                ->has('selectedOrder.items', 0)
+                ->has('selectedOrder.toppings', 0)
+                ->where('selectedOrderSummary', fn (string $summary): bool => str_contains($summary, 'TP-000201')));
+
+        $this->actingAs($admin)
+            ->get(route('admin.customers.show', [$customer, 'order' => 'TP-000202']))
+            ->assertNotFound();
+        $this->actingAs($admin)
+            ->get(route('admin.customers.show', [$customer, 'order' => 'TP-000203']))
+            ->assertNotFound();
+        $this->actingAs($admin)
+            ->get(route('admin.customers.show', [$customer, 'order' => 'invalid']))
+            ->assertSessionHasErrors('order');
     }
 
     /** @param array<string, mixed> $attributes */
@@ -162,9 +350,10 @@ final class CustomerManagementTest extends TestCase
         ], $attributes));
     }
 
-    private function order(Customer $customer, string $publicId, string $status, int $total): int
+    /** @param array<string, mixed> $attributes */
+    private function order(Customer $customer, string $publicId, string $status, int $total, array $attributes = []): int
     {
-        return (int) DB::table('orders')->insertGetId([
+        return (int) DB::table('orders')->insertGetId(array_merge([
             'public_id' => $publicId,
             'customer_id' => $customer->id,
             'source' => 'admin',
@@ -186,6 +375,6 @@ final class CustomerManagementTest extends TestCase
             'total' => $total,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ], $attributes));
     }
 }

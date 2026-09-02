@@ -2,6 +2,8 @@
 
 namespace App\Modules\Products\Http\Requests;
 
+use App\Modules\Products\Enums\PriceTier;
+use App\Modules\Products\Rules\CookedPriceSupportsRawDiscount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,9 +25,9 @@ final class UpdateProductRequest extends FormRequest
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
             'tags' => ['sometimes', 'array', 'max:50'],
             'tags.*' => ['required', 'integer', 'distinct', 'exists:tags,id'],
-            'unit_price' => ['required', 'integer', 'min:0', 'max:2147483647'],
-            'half_dozen_price' => ['required', 'integer', 'min:0', 'max:2147483647'],
-            'dozen_price' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            'unit_price' => ['required', 'integer', 'min:0', 'max:2147483647', new CookedPriceSupportsRawDiscount(PriceTier::Unit)],
+            'half_dozen_price' => ['required', 'integer', 'min:0', 'max:2147483647', new CookedPriceSupportsRawDiscount(PriceTier::HalfDozen)],
+            'dozen_price' => ['required', 'integer', 'min:0', 'max:2147483647', new CookedPriceSupportsRawDiscount(PriceTier::Dozen)],
             'is_available' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:2147483647'],
         ];

@@ -58,17 +58,17 @@ export function CustomerFormDialog({
             <DialogContent className="dark admin-shell sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
-                        {customer ? 'Edit customer' : 'Create customer'}
+                        {customer ? 'Editar cliente' : 'Crear cliente'}
                     </DialogTitle>
                     <DialogDescription>
-                        Only the name is required. Private notes never appear in
-                        public checkout or WhatsApp messages.
+                        Solo el nombre es obligatorio. Las notas privadas nunca
+                        aparecen en el proceso de compra público ni en WhatsApp.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="grid gap-4">
                     <CustomerField
                         id="customer-name"
-                        label="Name"
+                        label="Nombre"
                         value={form.data.name}
                         error={form.errors.name}
                         required
@@ -77,7 +77,7 @@ export function CustomerFormDialog({
                     />
                     <CustomerField
                         id="customer-phone"
-                        label="Phone"
+                        label="Teléfono"
                         value={form.data.phone}
                         error={form.errors.phone}
                         inputMode="tel"
@@ -85,7 +85,7 @@ export function CustomerFormDialog({
                     />
                     <TextField
                         id="customer-address"
-                        label="Address"
+                        label="Dirección"
                         value={form.data.address}
                         error={form.errors.address}
                         rows={3}
@@ -93,11 +93,11 @@ export function CustomerFormDialog({
                     />
                     <TextField
                         id="customer-notes"
-                        label="Private notes"
+                        label="Notas privadas"
                         value={form.data.notes}
                         error={form.errors.notes}
                         rows={4}
-                        help="Visible only to administrators."
+                        help="Visible únicamente para administradores."
                         onChange={(value) => form.setData('notes', value)}
                     />
                     <DialogFooter>
@@ -106,13 +106,13 @@ export function CustomerFormDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Cancel
+                            Cancelar
                         </Button>
                         <Button type="submit" disabled={form.processing}>
                             {form.processing && (
                                 <LoaderCircle className="animate-spin" />
                             )}
-                            {customer ? 'Save changes' : 'Create customer'}
+                            {customer ? 'Guardar cambios' : 'Crear cliente'}
                         </Button>
                     </DialogFooter>
                 </form>

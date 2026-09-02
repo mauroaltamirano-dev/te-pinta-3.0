@@ -4,13 +4,13 @@ FROM ${SAIL_IMAGE} AS build
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock package.json package-lock.json ./
+COPY composer.json composer.lock package.json pnpm-lock.yaml ./
 RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-scripts \
-    && npm ci --no-audit --no-fund
+    && pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
 
-RUN mkdir -p bootstrap/cache storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
+RUN mkdir -p bootstrap/cache storage/app/public storage/app/private/instagram storage/app/private/management storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
     && composer dump-autoload --no-dev --no-interaction --optimize \
     && npm run build \
     && test ! -e public/hot \
@@ -28,7 +28,7 @@ RUN rm -rf public/storage \
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
-    SUPERVISOR_PHP_COMMAND="/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80"
+    SUPERVISOR_PHP_COMMAND="/bin/bash -lc 'umask 0007; exec /usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80'"
 
 EXPOSE 80
 

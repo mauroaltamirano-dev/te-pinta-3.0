@@ -12,14 +12,19 @@ fi
 
 compose=(docker compose --env-file "$deployment/.env" --file "$deployment/compose.yaml")
 "${compose[@]}" build app
-image="$("${compose[@]}" config --images | head -n 1)"
+image="$("${compose[@]}" config --images | sort --unique)"
 
-docker run --rm --env-file "$deployment/.env" --entrypoint /bin/bash "$image" -lc '
+"${compose[@]}" run --rm --no-deps --entrypoint /bin/bash app -lc '
     set -euo pipefail
     test ! -e public/hot
     test -f public/build/manifest.json
     test -f public/manifest.webmanifest
+    test -d app/Modules/Instagram
+    test -f database/migrations/2026_08_23_210000_create_instagram_story_automation_tables.php
     php artisan about --only=environment
+    php artisan route:list --path=api/automation/instagram | grep -q "automation/instagram/stories/pending"
+    php artisan route:list --path=media/instagram | grep -q "media/instagram"
+    php artisan schedule:list | grep -q "instagram:generate-publications"
 '
 
 printf 'Prepared %s without starting or replacing any service.\n' "$image"

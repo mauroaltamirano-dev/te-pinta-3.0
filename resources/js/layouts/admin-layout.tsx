@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 export default function AdminLayout({ children }: PropsWithChildren) {
     const { component } = usePage();
     const isQuickOrderHome = component === 'admin/home';
+    const usesDashboardComposition = component === 'admin/dashboard';
     const usesOrdersDashboardComposition = component === 'admin/orders/index';
     const usesSettingsWorkspace =
         component === 'admin/products/index' ||
@@ -18,21 +19,27 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     'min-w-0 md:col-start-2 md:row-start-1',
                     usesSettingsWorkspace &&
                         'lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden',
+                    usesOrdersDashboardComposition &&
+                        'xl:flex xl:h-screen xl:min-h-0 xl:flex-col xl:overflow-hidden',
                 )}
             >
-                {!usesOrdersDashboardComposition && !isQuickOrderHome && (
-                    <header className="shrink-0 border-b border-border bg-transparent px-5 py-4 sm:px-6">
-                        <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
-                            Administración
-                        </p>
-                    </header>
-                )}
+                {!usesDashboardComposition &&
+                    !usesOrdersDashboardComposition &&
+                    !isQuickOrderHome && (
+                        <header className="shrink-0 border-b border-border bg-transparent px-5 py-4 sm:px-6">
+                            <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+                                Administración
+                            </p>
+                        </header>
+                    )}
                 <main
                     className={cn(
                         isQuickOrderHome ? 'p-0' : 'p-5 sm:p-6',
                         isQuickOrderHome && 'lg:h-screen lg:overflow-hidden',
                         usesSettingsWorkspace &&
                             'lg:min-h-0 lg:flex-1 lg:overflow-hidden',
+                        usesOrdersDashboardComposition &&
+                            'xl:min-h-0 xl:flex-1 xl:overflow-hidden',
                     )}
                 >
                     {children}

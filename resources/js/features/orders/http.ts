@@ -26,7 +26,7 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
         throw new Error(
             firstError ??
                 payload.message ??
-                'The request could not be completed.',
+                'No se pudo completar la solicitud.',
         );
     }
 

@@ -1,0 +1,46 @@
+services:
+    n8n:
+        image: ${N8N_IMAGE:-docker.n8n.io/n8nio/n8n:2.32.7}
+        restart: unless-stopped
+        init: true
+        env_file:
+            - .env
+        ports:
+            - 127.0.0.1:${N8N_PORT:-5678}:5678
+        environment:
+            N8N_PORT: 5678
+            N8N_HOST: ${N8N_HOST:-localhost}
+            N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+            N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678}
+            N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in ops/n8n/.env}
+            N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+            N8N_RUNNERS_ENABLED: 'true'
+            N8N_DIAGNOSTICS_ENABLED: 'false'
+            N8N_PERSONALIZATION_ENABLED: 'false'
+            N8N_TEMPLATES_ENABLED: 'false'
+            N8N_BLOCK_ENV_ACCESS_IN_NODE: 'false'
+            EXECUTIONS_DATA_PRUNE: 'true'
+            EXECUTIONS_DATA_MAX_AGE: ${EXECUTIONS_DATA_MAX_AGE:-336}
+            GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Argentina/Cordoba}
+            TZ: ${GENERIC_TIMEZONE:-America/Argentina/Cordoba}
+            POS_BASE_URL: ${POS_BASE_URL:?Set POS_BASE_URL in ops/n8n/.env}
+            META_GRAPH_BASE_URL: ${META_GRAPH_BASE_URL:-https://graph.facebook.com}
+            META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:?Set META_GRAPH_API_VERSION in ops/n8n/.env}
+            META_INSTAGRAM_USER_ID: ${META_INSTAGRAM_USER_ID:?Set META_INSTAGRAM_USER_ID in ops/n8n/.env}
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        volumes:
+            - n8n-data:/home/node/.n8n
+        security_opt:
+            - no-new-privileges:true
+        networks:
+            - default
+            - pos
+
+networks:
+    pos:
+        external: true
+        name: ${POS_DOCKER_NETWORK:-tepinta30_sail}
+
+volumes:
+    n8n-data:

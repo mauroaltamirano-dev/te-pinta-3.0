@@ -10,8 +10,8 @@ use App\Modules\Products\Http\Requests\StoreProductRequest;
 use App\Modules\Products\Http\Requests\UpdateProductRequest;
 use App\Modules\Products\Http\Resources\AdminProductResource;
 use App\Modules\Products\Models\Category;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +43,7 @@ final class ProductManagementController
                 ->map(fn (Product $product): array => (new AdminProductResource($product))->resolve($request))
                 ->all(),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name', 'slug']),
-            'cookingSurcharges' => CookingSurcharge::query()->pluck('amount', 'pricing_mode'),
+            'rawPriceDiscounts' => RawPriceDiscount::query()->pluck('amount', 'pricing_mode'),
         ]);
     }
 
@@ -51,14 +51,14 @@ final class ProductManagementController
     {
         $createProduct->execute(ProductData::fromRequest($request), $request->file('image'));
 
-        return to_route('admin.products.index')->with('success', 'Product created.');
+        return to_route('admin.products.index')->with('success', 'Producto creado.');
     }
 
     public function update(UpdateProductRequest $request, Product $product, UpdateProduct $updateProduct): RedirectResponse
     {
         $updateProduct->execute($product, ProductData::fromRequest($request), $request->file('image'));
 
-        return to_route('admin.products.index')->with('success', 'Product updated.');
+        return to_route('admin.products.index')->with('success', 'Producto actualizado.');
     }
 
     public function destroy(Product $product, DeleteProduct $deleteProduct): RedirectResponse
@@ -66,6 +66,6 @@ final class ProductManagementController
         Gate::authorize('delete', $product);
         $deleteProduct->execute($product);
 
-        return to_route('admin.products.index')->with('success', 'Product removed.');
+        return to_route('admin.products.index')->with('success', 'Producto eliminado.');
     }
 }

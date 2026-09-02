@@ -20,7 +20,7 @@ final class CreateProduct
         $imagePath = $image?->store('products', 'public');
 
         if ($image && ! $imagePath) {
-            throw new RuntimeException('The product image could not be stored.');
+            throw new RuntimeException('No se pudo guardar la imagen del producto.');
         }
 
         try {

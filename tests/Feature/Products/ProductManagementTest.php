@@ -3,8 +3,10 @@
 namespace Tests\Feature\Products;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Models\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -179,6 +181,22 @@ final class ProductManagementTest extends TestCase
 
         $this->assertNull($product->refresh()->image_path);
         Storage::disk('public')->assertMissing($replacementPath);
+    }
+
+    public function test_cooked_product_prices_cannot_be_lower_than_the_raw_discounts(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+        RawPriceDiscount::query()->create([
+            'pricing_mode' => PriceTier::Unit,
+            'amount' => 200,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.products.store'), $this->validPayload($category, ['unit_price' => 199]))
+            ->assertSessionHasErrors('unit_price');
+
+        $this->assertDatabaseCount('products', 0);
     }
 
     public function test_unavailable_product_remains_visible_in_administration(): void

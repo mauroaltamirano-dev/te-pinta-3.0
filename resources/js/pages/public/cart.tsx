@@ -3,6 +3,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,7 +31,7 @@ export default function Cart() {
     const cart = useCart();
     const [catalog, setCatalog] = useState<PublicProduct[]>([]);
     const [availableAddons, setAvailableAddons] = useState<OrderAddon[]>([]);
-    const [condition, setCondition] = useState<OrderCondition>('raw');
+    const [condition, setCondition] = useState<OrderCondition>('cooked');
     const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
     const [deliveryPeriod, setDeliveryPeriod] =
         useState<DeliveryPeriod>('night');
@@ -124,7 +125,7 @@ export default function Cart() {
             setError(
                 reason instanceof Error
                     ? reason.message
-                    : 'The order could not be created.',
+                    : 'No se pudo crear el pedido.',
             );
         } finally {
             setSubmitting(false);
@@ -133,28 +134,28 @@ export default function Cart() {
 
     return (
         <>
-            <Head title="Cart" />
+            <Head title="Carrito" />
             <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-12">
                 <header>
                     <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-                        Checkout
+                        Finalizar compra
                     </p>
                     <h1 className="mt-1 font-display text-3xl font-bold">
-                        Cart
+                        Carrito
                     </h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Cart is saved before WhatsApp opens. Payment remains
-                        pending.
+                        El pedido se guarda antes de abrir WhatsApp. El pago
+                        queda pendiente.
                     </p>
                 </header>
                 {!cart.items.length ? (
                     <Card>
                         <CardContent className="py-16 text-center">
                             <p className="text-muted-foreground">
-                                Your cart is empty.
+                                Tu carrito está vacío.
                             </p>
                             <Button asChild className="mt-4">
-                                <Link href="/menu">Browse menu</Link>
+                                <Link href="/menu">Ver menú</Link>
                             </Button>
                         </CardContent>
                     </Card>
@@ -166,7 +167,7 @@ export default function Cart() {
                         <div className="grid gap-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Products</CardTitle>
+                                    <CardTitle>Productos</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
                                     {cart.items.map((item) => {
@@ -187,8 +188,9 @@ export default function Cart() {
                                                             item.product_slug}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        Backend chooses units,
-                                                        half dozens, or dozens.
+                                                        Te Pinta calcula la
+                                                        combinación más
+                                                        conveniente.
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-1">
@@ -196,7 +198,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        aria-label={`Remove one ${product?.name ?? item.product_slug}`}
+                                                        aria-label={`Quitar una unidad de ${product?.name ?? item.product_slug}`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
                                                                 item.product_slug,
@@ -208,7 +210,7 @@ export default function Cart() {
                                                         <Minus />
                                                     </Button>
                                                     <output
-                                                        aria-label="Quantity"
+                                                        aria-label="Cantidad"
                                                         className="w-8 text-center tabular-nums"
                                                     >
                                                         {item.quantity}
@@ -217,7 +219,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        aria-label={`Add one ${product?.name ?? item.product_slug}`}
+                                                        aria-label={`Agregar una unidad de ${product?.name ?? item.product_slug}`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
                                                                 item.product_slug,
@@ -232,7 +234,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="ghost"
-                                                        aria-label={`Remove ${product?.name ?? item.product_slug} from cart`}
+                                                        aria-label={`Quitar ${product?.name ?? item.product_slug} del carrito`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
                                                                 item.product_slug,
@@ -248,47 +250,34 @@ export default function Cart() {
                                     })}
                                     <fieldset className="grid gap-2">
                                         <legend className="text-sm font-medium">
-                                            Condition
+                                            Preparación
                                         </legend>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                type="button"
-                                                variant={
-                                                    condition === 'raw'
-                                                        ? 'default'
-                                                        : 'outline'
+                                        <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                                            <Checkbox
+                                                checked={condition === 'raw'}
+                                                onCheckedChange={(checked) =>
+                                                    setCondition(
+                                                        checked === true
+                                                            ? 'raw'
+                                                            : 'cooked',
+                                                    )
                                                 }
-                                                aria-pressed={
-                                                    condition === 'raw'
-                                                }
-                                                onClick={() =>
-                                                    setCondition('raw')
-                                                }
-                                            >
-                                                Raw
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant={
-                                                    condition === 'cooked'
-                                                        ? 'default'
-                                                        : 'outline'
-                                                }
-                                                aria-pressed={
-                                                    condition === 'cooked'
-                                                }
-                                                onClick={() =>
-                                                    setCondition('cooked')
-                                                }
-                                            >
-                                                Cooked
-                                            </Button>
-                                        </div>
+                                            />
+                                            <span>
+                                                <span className="block text-sm font-medium">
+                                                    Pedir crudas
+                                                </span>
+                                                <span className="mt-1 block text-xs text-muted-foreground">
+                                                    Sin seleccionar, las
+                                                    preparamos cocinadas.
+                                                </span>
+                                            </span>
+                                        </label>
                                     </fieldset>
                                     {availableAddons.length > 0 && (
                                         <fieldset className="grid gap-3">
                                             <legend className="text-sm font-medium">
-                                                Toppings
+                                                Adicionales
                                             </legend>
                                             {availableAddons.map((addon) => {
                                                 const quantity =
@@ -311,7 +300,7 @@ export default function Cart() {
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="outline"
-                                                                aria-label={`Remove one ${addon.name}`}
+                                                                aria-label={`Quitar un adicional ${addon.name}`}
                                                                 onClick={() =>
                                                                     cart.setAddonQuantity(
                                                                         addon.slug,
@@ -329,7 +318,7 @@ export default function Cart() {
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="outline"
-                                                                aria-label={`Add one ${addon.name}`}
+                                                                aria-label={`Agregar un adicional ${addon.name}`}
                                                                 onClick={() =>
                                                                     cart.setAddonQuantity(
                                                                         addon.slug,
@@ -350,19 +339,19 @@ export default function Cart() {
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Your details</CardTitle>
+                                    <CardTitle>Tus datos</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
                                     <Field
                                         id="checkout-name"
-                                        label="Name"
+                                        label="Nombre"
                                         value={name}
                                         onChange={setName}
                                         required
                                     />
                                     <Field
                                         id="checkout-phone"
-                                        label="Phone"
+                                        label="Teléfono"
                                         value={phone}
                                         onChange={setPhone}
                                         required
@@ -372,7 +361,7 @@ export default function Cart() {
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Delivery</CardTitle>
+                                    <CardTitle>Entrega</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
                                     <div className="flex gap-2">
@@ -390,7 +379,7 @@ export default function Cart() {
                                                 setDeliveryType('pickup')
                                             }
                                         >
-                                            Pickup
+                                            Retiro
                                         </Button>
                                         <Button
                                             type="button"
@@ -406,13 +395,13 @@ export default function Cart() {
                                                 setDeliveryType('delivery')
                                             }
                                         >
-                                            Delivery
+                                            Envío
                                         </Button>
                                     </div>
                                     {deliveryType === 'delivery' && (
                                         <Field
                                             id="checkout-address"
-                                            label="Delivery address"
+                                            label="Dirección de entrega"
                                             value={address}
                                             onChange={setAddress}
                                             required
@@ -421,7 +410,7 @@ export default function Cart() {
                                     <Field
                                         id="delivery-date"
                                         type="date"
-                                        label="Delivery date"
+                                        label="Fecha de entrega"
                                         value={deliveryDate}
                                         onChange={setDeliveryDate}
                                         required
@@ -429,7 +418,7 @@ export default function Cart() {
                                     />
                                     <div className="grid gap-2">
                                         <Label htmlFor="delivery-period">
-                                            Period
+                                            Franja
                                         </Label>
                                         <Select
                                             value={deliveryPeriod}
@@ -444,13 +433,13 @@ export default function Cart() {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="midday">
-                                                    Midday
+                                                    Mediodía
                                                 </SelectItem>
                                                 <SelectItem value="afternoon">
-                                                    Afternoon
+                                                    Tarde
                                                 </SelectItem>
                                                 <SelectItem value="night">
-                                                    Night
+                                                    Noche
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -458,13 +447,13 @@ export default function Cart() {
                                     <Field
                                         id="delivery-time"
                                         type="time"
-                                        label="Optional time"
+                                        label="Hora opcional"
                                         value={deliveryTime}
                                         onChange={setDeliveryTime}
                                     />
                                     <div className="grid gap-2">
                                         <Label htmlFor="order-notes">
-                                            Order notes
+                                            Notas del pedido
                                         </Label>
                                         <Textarea
                                             id="order-notes"
@@ -499,8 +488,8 @@ export default function Cart() {
                                 }
                             >
                                 {submitting
-                                    ? 'Creating order…'
-                                    : 'Confirm and open WhatsApp'}
+                                    ? 'Creando pedido…'
+                                    : 'Confirmar y abrir WhatsApp'}
                             </Button>
                         </aside>
                     </form>

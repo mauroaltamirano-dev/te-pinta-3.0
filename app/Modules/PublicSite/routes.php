@@ -4,9 +4,10 @@ use App\Modules\Orders\Http\Controllers\PublicCheckoutOptionsController;
 use App\Modules\Orders\Http\Controllers\PublicOrderController;
 use App\Modules\Orders\Http\Controllers\PublicOrderPricingController;
 use App\Modules\Products\Http\Controllers\PublicProductCatalogController;
+use App\Modules\PublicSite\Http\Controllers\PublicHomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'public/home')->name('home');
+Route::get('/', PublicHomeController::class)->name('home');
 Route::inertia('/menu', 'public/menu')->name('menu');
 Route::inertia('/cart', 'public/cart')->name('cart');
 

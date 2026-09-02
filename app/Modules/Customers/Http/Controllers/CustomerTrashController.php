@@ -35,6 +35,6 @@ final class CustomerTrashController
     {
         $restore->execute($customer, (int) $request->user()->getAuthIdentifier());
 
-        return back()->with('success', 'Customer restored.');
+        return back()->with('success', 'Cliente restaurado.');
     }
 }

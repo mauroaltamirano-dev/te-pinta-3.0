@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 const destinations = [
     { label: 'Inicio', path: '/admin', expectedPath: '/admin' },
     {
-        label: 'Dashboard',
+        label: 'Panel operativo',
         path: '/admin/dashboard',
         expectedPath: '/admin/dashboard',
     },
@@ -20,8 +20,18 @@ const destinations = [
     },
     {
         label: 'Gestión',
-        path: '/admin/inventory',
-        expectedPath: '/admin/inventory',
+        path: '/admin/management',
+        expectedPath: '/admin/management',
+    },
+    {
+        label: 'Marketing',
+        path: '/admin/marketing',
+        expectedPath: '/admin/marketing',
+    },
+    {
+        label: 'Instagram',
+        path: '/admin/marketing/instagram',
+        expectedPath: '/admin/marketing/instagram',
     },
     {
         label: 'Configuración',
@@ -35,18 +45,26 @@ const destinations = [
     },
 ] as const;
 
-test('global admin navigation exposes its destinations and active section', async ({
+test('navegación administrativa global expone destinos y sección activa', async ({
     page,
 }) => {
     await page.goto('/login');
     await page
-        .getByLabel('Email address')
+        .getByLabel('Correo electrónico')
         .fill('playwright-admin@example.test');
     await page.locator('#password').fill('playwright-password');
-    await page.getByRole('button', { name: 'Log in' }).click();
+    await page
+        .getByRole('button', { name: 'Iniciar sesión', exact: true })
+        .click();
     await expect(page).toHaveURL(/\/admin$/);
 
     const mobile = (page.viewportSize()?.width ?? 0) < 768;
+
+    if (!mobile) {
+        await expect(
+            page.getByRole('link', { name: 'Te Pinta POS' }).locator('img'),
+        ).toHaveAttribute('src', '/icons/te-pinta-logo.svg');
+    }
 
     for (const destination of destinations) {
         await page.goto(destination.path);
@@ -87,7 +105,7 @@ test('global admin navigation exposes its destinations and active section', asyn
         }
 
         const navigation = page.getByRole('navigation', {
-            name: 'Administration navigation',
+            name: 'Navegación de administración',
         });
 
         await expect(

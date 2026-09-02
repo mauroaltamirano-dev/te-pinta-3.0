@@ -6,8 +6,8 @@ use App\Core\Contracts\ProductPriceProvider;
 use App\Core\Data\SellableProductPrice;
 use App\Modules\Products\Actions\CalculateProductPrice;
 use App\Modules\Products\Enums\PriceTier;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Database\Eloquent\Collection;
 use LogicException;
 
@@ -77,28 +77,37 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
      */
     private function pricesForProducts($products, bool $isCooked): array
     {
-        $surcharges = $isCooked
-            ? CookingSurcharge::query()->pluck('amount', 'pricing_mode')->map(fn ($amount): int => (int) $amount)->all()
-            : [];
+        $discounts = RawPriceDiscount::query()
+            ->pluck('amount', 'pricing_mode')
+            ->map(fn ($amount): int => (int) $amount)
+            ->all();
 
-        if ($isCooked) {
-            foreach (PriceTier::cases() as $tier) {
-                if (! array_key_exists($tier->value, $surcharges)) {
-                    throw new LogicException("Missing cooking surcharge for {$tier->value}.");
-                }
+        foreach (PriceTier::cases() as $tier) {
+            if (! array_key_exists($tier->value, $discounts)) {
+                throw new LogicException("Falta el descuento de precio crudo para {$tier->value}.");
             }
         }
 
-        return $products->map(fn (Product $product): SellableProductPrice => new SellableProductPrice(
-            id: $product->id,
-            slug: $product->slug,
-            name: $product->name,
-            unitPrice: $product->unit_price + ($surcharges[PriceTier::Unit->value] ?? 0),
-            halfDozenPrice: $product->half_dozen_price + ($surcharges[PriceTier::HalfDozen->value] ?? 0),
-            dozenPrice: $product->dozen_price + ($surcharges[PriceTier::Dozen->value] ?? 0),
-            baseUnitPrice: $product->unit_price,
-            baseHalfDozenPrice: $product->half_dozen_price,
-            baseDozenPrice: $product->dozen_price,
-        ))->values()->all();
+        return $products->map(function (Product $product) use ($discounts, $isCooked): SellableProductPrice {
+            $rawUnitPrice = $product->unit_price - $discounts[PriceTier::Unit->value];
+            $rawHalfDozenPrice = $product->half_dozen_price - $discounts[PriceTier::HalfDozen->value];
+            $rawDozenPrice = $product->dozen_price - $discounts[PriceTier::Dozen->value];
+
+            if (min($rawUnitPrice, $rawHalfDozenPrice, $rawDozenPrice) < 0) {
+                throw new LogicException('Un descuento de precio crudo supera el precio cocinado de un producto.');
+            }
+
+            return new SellableProductPrice(
+                id: $product->id,
+                slug: $product->slug,
+                name: $product->name,
+                unitPrice: $isCooked ? $product->unit_price : $rawUnitPrice,
+                halfDozenPrice: $isCooked ? $product->half_dozen_price : $rawHalfDozenPrice,
+                dozenPrice: $isCooked ? $product->dozen_price : $rawDozenPrice,
+                cookedUnitPrice: $product->unit_price,
+                cookedHalfDozenPrice: $product->half_dozen_price,
+                cookedDozenPrice: $product->dozen_price,
+            );
+        })->values()->all();
     }
 }

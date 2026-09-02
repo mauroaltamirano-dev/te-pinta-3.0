@@ -6,14 +6,18 @@ use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Enums\PriceTier;
-use App\Modules\Products\Models\CookingSurcharge;
+use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Settings\Data\OrderingSettingsData;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class UpdateOrderingSettings
 {
     public function execute(OrderingSettingsData $data): void
     {
+        $this->validateRawPrices($data);
+
         DB::transaction(function () use ($data): void {
             $this->updateIntegerSetting(OrderSettingKey::CombinedDozenRawPrice, $data->combinedDozenRawPrice);
             $this->updateIntegerSetting(OrderSettingKey::CombinedDozenCookedPrice, $data->combinedDozenCookedPrice);
@@ -25,9 +29,9 @@ final class UpdateOrderingSettings
             );
 
             foreach (PriceTier::cases() as $tier) {
-                CookingSurcharge::query()->updateOrCreate(
+                RawPriceDiscount::query()->updateOrCreate(
                     ['pricing_mode' => $tier->value],
-                    ['amount' => $data->cookingSurcharges[$tier->value]],
+                    ['amount' => $data->rawPriceDiscounts[$tier->value]],
                 );
             }
 
@@ -45,6 +49,31 @@ final class UpdateOrderingSettings
                     ]);
             }
         });
+    }
+
+    private function validateRawPrices(OrderingSettingsData $data): void
+    {
+        if ($data->combinedDozenRawPrice >= $data->combinedDozenCookedPrice) {
+            throw ValidationException::withMessages([
+                'combined_dozen_raw_price' => 'El precio crudo debe ser menor que el precio cocinado.',
+            ]);
+        }
+
+        $columns = [
+            PriceTier::Unit->value => 'unit_price',
+            PriceTier::HalfDozen->value => 'half_dozen_price',
+            PriceTier::Dozen->value => 'dozen_price',
+        ];
+
+        foreach ($columns as $mode => $column) {
+            $minimumCookedPrice = Product::query()->min($column);
+
+            if ($minimumCookedPrice !== null && $data->rawPriceDiscounts[$mode] > (int) $minimumCookedPrice) {
+                throw ValidationException::withMessages([
+                    "raw_price_discounts.{$mode}" => 'El descuento crudo no puede superar el menor precio cocinado.',
+                ]);
+            }
+        }
     }
 
     private function updateIntegerSetting(OrderSettingKey $key, int $value): void

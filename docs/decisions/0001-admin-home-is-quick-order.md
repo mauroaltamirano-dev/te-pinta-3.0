@@ -1,27 +1,27 @@
-# 0001: Admin Home is quick order
+# 0001: El Inicio administrativo es el pedido rápido
 
-Status: accepted
-Date: 2026-08-13
+Estado: aceptado
+Fecha: 2026-08-13
 
-## Context
+## Contexto
 
-The administrative root currently points to a placeholder dashboard. The primary daily task is creating an order quickly, while metrics are already available in Orders and are less valuable as the initial destination.
+La raíz administrativa actualmente apunta a un Dashboard provisional. La principal tarea cotidiana es crear un pedido con rapidez, mientras que las métricas ya están disponibles en Orders y son menos valiosas como destino inicial.
 
-## Decision
+## Decisión
 
-`/admin` will become a product-first quick-order POS. It will use the existing sidebar, a product-card catalog, a current-order column, and a second-stage right panel for customer and fulfillment data. Dashboard analytics will become a secondary section.
+`/admin` se convertirá en un POS de pedidos rápidos centrado en productos. Usará el sidebar existente, un catálogo de cards de productos, una columna para el pedido actual y un panel derecho de segunda etapa para los datos del cliente y el cumplimiento. Los analytics del Dashboard pasarán a ser una sección secundaria.
 
-The feature will reuse the existing Orders pricing, preview, validation, creation, and snapshot boundaries. The payment UI in the visual template will not be implemented.
+La feature reutilizará los límites existentes de precios, vista previa, validación, creación y snapshots de Orders. No se implementará la UI de pagos de la plantilla visual.
 
-## Consequences
+## Consecuencias
 
-- Administrators reach the highest-frequency task immediately.
-- The current admin create form must be decomposed into reusable draft/form content rather than duplicated.
-- `/admin/orders/create` remains available as a full-page fallback and direct link.
-- The new Home is a substantial UI/navigation slice and must be implemented after the Orders worktree is consolidated.
+- Los administradores acceden de inmediato a la tarea más frecuente.
+- El formulario administrativo actual de creación debe descomponerse en contenido reutilizable de borrador y formulario, en lugar de duplicarse.
+- `/admin/orders/create` continúa disponible como alternativa de página completa y enlace directo.
+- El nuevo Inicio es un slice importante de UI y navegación, y debe implementarse después de consolidar el worktree de Orders.
 
-## Alternatives considered
+## Alternativas consideradas
 
-- **Dashboard as Home:** rejected because it optimizes observation over the primary operational task.
-- **Persist an order on every product click:** rejected because incomplete drafts must not become business records.
-- **Copy the Figma payment popup:** rejected because Te Pinta does not process online payments and already has a complete customer/fulfillment workflow.
+- **Dashboard como Inicio:** rechazado porque prioriza la observación por sobre la principal tarea operativa.
+- **Persistir un pedido con cada clic en un producto:** rechazado porque los borradores incompletos no deben convertirse en registros de negocio.
+- **Copiar el popup de pagos de Figma:** rechazado porque Te Pinta no procesa pagos en línea y ya tiene un flujo completo de cliente y cumplimiento.

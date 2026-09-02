@@ -7,8 +7,10 @@ use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
+use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
+use App\Modules\Orders\Support\OrderBusinessDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +24,7 @@ final readonly class UpdateOrder
         private PersistOrderQuote $quotes,
         private BuildAdminOrderFormOptions $formOptions,
         private ResolveOrderPayment $payments,
+        private OrderBusinessDate $businessDate,
     ) {}
 
     public function execute(
@@ -42,6 +45,7 @@ final readonly class UpdateOrder
             }
 
             $locked->load(['items.compositions', 'toppings']);
+            $wasPaid = $locked->payment_status === PaymentStatus::Paid;
             $oldItems = $this->formOptions->itemQuantities($locked);
             $oldAddons = $this->formOptions->addonQuantities($locked);
             $newItems = $this->canonicalSelections($data->items, 'product_id');
@@ -52,6 +56,11 @@ final readonly class UpdateOrder
                 || $locked->delivery_type !== $data->deliveryType
                 || $locked->discount_type !== $data->discountType
                 || $locked->discount_value !== $data->discountValue;
+            if ($wasPaid && $economicChange) {
+                throw ValidationException::withMessages([
+                    'payment_status' => 'Un pago confirmado no permite modificar el importe; revertí el movimiento financiero antes de corregirlo.',
+                ]);
+            }
             $beforeTotal = (int) $locked->total;
             $quote = $economicChange
                 ? $this->pricing->quote(
@@ -112,6 +121,15 @@ final readonly class UpdateOrder
                 'reason' => $closedEditReason,
                 'created_at' => now(),
             ]);
+
+            if (! $wasPaid && $locked->payment_status === PaymentStatus::Paid) {
+                event(new OrderPaymentConfirmed(
+                    orderId: (int) $locked->id,
+                    amount: (int) $locked->total,
+                    confirmedOn: $this->businessDate->today(),
+                    adminId: $adminId,
+                ));
+            }
 
             return $locked->refresh()->load(['items.compositions', 'toppings']);
         });

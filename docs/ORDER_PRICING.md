@@ -1,84 +1,86 @@
-# Order pricing
+# Precios de pedidos
 
-`app/Modules/Orders/Pricing/OrderPricingEngine.php` is the only authoritative commercial grouping and total calculator. POS, public checkout, and economic administrative edits call it; React only renders backend previews.
+`app/Modules/Orders/Pricing/OrderPricingEngine.php` es el único calculador autoritativo de agrupación comercial y totales. El POS, el checkout público y las ediciones administrativas económicas lo invocan; React sólo representa previews del backend.
 
-## Inputs and price sources
+## Entradas y fuentes de precios
 
-The engine receives final quantities per product, one order-wide condition (`raw` or `cooked`), topping quantities, delivery type, and optional administrative discount type/value. It does not receive trusted prices or a client-calculated discount amount.
+El motor recibe las cantidades finales por producto, una condición global del pedido (`cooked` o `raw`), cantidades de adicionales, tipo de entrega y el tipo/valor opcional de descuento administrativo. No recibe precios confiables ni un importe de descuento calculado por el cliente.
 
-| Value                       | Source                                               |
-| --------------------------- | ---------------------------------------------------- |
-| Unit/half-dozen/dozen price | `ProductPriceProvider` from Products                 |
-| Cooked additions            | `cooking_surcharges` (`unit`, `half_dozen`, `dozen`) |
-| Combined dozen              | `order_settings` fixed raw/cooked prices             |
-| Topping                     | available `order_addons.price`                       |
-| Shipping                    | `delivery_fee` for delivery; zero for pickup         |
-| Discount                    | Backend enum/value applied by `OrderPricingEngine`   |
+| Valor                                          | Fuente                                                   |
+| ---------------------------------------------- | -------------------------------------------------------- |
+| Precio por unidad/media docena/docena cocinada | `ProductPriceProvider` desde Products                    |
+| Descuento para preparación cruda               | `raw_price_discounts` (`unit`, `half_dozen`, `dozen`)    |
+| Docena combinada                               | Precios fijos cocinado/crudo de `order_settings`         |
+| Adicional                                      | `order_addons.price` disponible                          |
+| Envío                                          | `delivery_fee` para delivery; cero para pickup           |
+| Descuento administrativo                       | Enum/valor del backend aplicado por `OrderPricingEngine` |
 
-Initial combined prices are 16000 raw and 17500 cooked. Cooked combined-dozen price is independent; do not derive it from the standard dozen surcharge.
+Cocinadas es la condición predeterminada y los precios almacenados en Products son los precios base/principales. Crudas es la alternativa de menor precio: `DatabaseProductPriceProvider` resta el descuento positivo persistido del tier correspondiente. No se modela como un recargo negativo.
 
-Every quote also carries an explicit cooking breakdown. For each commercial line, the backend snapshots the raw equivalent and calculates `cooking_surcharge = applied cooked price - raw equivalent`. Unit, half-dozen, and dozen lines compare the matching product tier. A combined dozen compares its independent settings, so the initial 16000 raw / 17500 cooked pair produces a 1500 cooking surcharge, not the standard dozen surcharge of 2000. This breakdown only explains the existing applied price; it never changes the charged total.
+La docena combinada mantiene precios independientes en `combined_dozen_cooked_price` y `combined_dozen_raw_price`; no se deriva uno del otro ni de los descuentos por preparación. Sus valores iniciales siguen siendo 17500 cocinada y 16000 cruda. En cambio, el ejemplo de Salteña es específico del producto: 18000 cocinada y 16000 cruda por docena.
 
-## Deterministic grouping
+Cada cotización nueva también incluye un desglose explícito de preparación. Por línea, el backend conserva `cooked_unit_price`, `cooked_line_total` y `raw_discount`, además de los valores aplicados. En el pedido conserva `products_cooked_subtotal` y `raw_discount`. Para un pedido cocinado, `raw_discount` es cero; para uno crudo, es la diferencia positiva restada al precio cocinado.
 
-The algorithm is rule-driven, not a generic cheapest-price optimizer:
+## Agrupación determinista
 
-1. Sort requested products by internal product ID.
-2. Consume every complete same-product dozen at that product's dozen price.
-3. While at least 12 remaining units span more than one product, consume a combined dozen in product-ID order.
-4. For each remainder, consume same-product half-dozens.
-5. Price final remainders as units.
+El algoritmo sigue reglas; no es un optimizador genérico del menor precio:
 
-Product-ID order is a tie-breaker for equivalent large mixed compositions. It makes snapshots repeatable; it is not a merchandising preference.
+1. Ordena los productos solicitados por ID interno.
+2. Consume cada docena completa del mismo producto a su precio de docena.
+3. Mientras queden al menos 12 unidades de más de un producto, consume una docena combinada en orden de ID.
+4. Para cada remanente, consume medias docenas del mismo producto.
+5. Cotiza los remanentes finales como unidades.
 
-## Normative examples
+El orden por ID del producto desempata composiciones mixtas grandes equivalentes. Hace repetibles los snapshots; no expresa una preferencia comercial.
 
-| Requested quantities | Commercial lines           |
-| -------------------- | -------------------------- |
-| 5 A                  | 5 units A                  |
-| 6 A                  | 1 half-dozen A             |
-| 7 A                  | 1 half-dozen A + 1 unit A  |
-| 12 A                 | 1 dozen A                  |
-| 18 A                 | 1 dozen A + 1 half-dozen A |
-| 3 A + 3 B            | 3 units A + 3 units B      |
-| 6 A + 3 B + 3 C      | 1 combined dozen           |
-| 6 A + 6 B            | 1 combined dozen           |
-| 24 varied            | 2 combined dozens          |
+## Ejemplos normativos
 
-There is no mixed half-dozen. Same-product dozens run first, but mixed dozens run before half-dozens; this is why 6 A + 3 B + 3 C closes one combined dozen instead of consuming A as a half-dozen.
+| Cantidades solicitadas | Líneas comerciales            |
+| ---------------------- | ----------------------------- |
+| 5 A                    | 5 unidades A                  |
+| 6 A                    | 1 media docena A              |
+| 7 A                    | 1 media docena A + 1 unidad A |
+| 12 A                   | 1 docena A                    |
+| 18 A                   | 1 docena A + 1 media docena A |
+| 3 A + 3 B              | 3 unidades A + 3 unidades B   |
+| 6 A + 3 B + 3 C        | 1 docena combinada            |
+| 6 A + 6 B              | 1 docena combinada            |
+| 24 variadas            | 2 docenas combinadas          |
 
-## Raw and cooked
+No existe la media docena mixta. Primero se forman docenas del mismo producto y luego docenas mixtas antes de las medias docenas; por eso 6 A + 3 B + 3 C cierra una docena combinada en lugar de consumir A como media docena.
 
-Product prices stored in Products are raw. `DatabaseProductPriceProvider` adds the matching persisted cooking surcharge for cooked quotes:
+## Cocinadas y crudas
 
-- unit price + unit surcharge;
-- half-dozen price + half-dozen surcharge;
-- dozen price + dozen surcharge.
+Los precios de Products son cocinados. Para cotizaciones crudas, `DatabaseProductPriceProvider` resta el `raw_price_discount` persistido correspondiente:
 
-Condition belongs to the entire order. Item-level raw/cooked combinations are not supported.
+- precio unitario cocinado - descuento unitario crudo;
+- precio de media docena cocinada - descuento crudo de media docena;
+- precio de docena cocinada - descuento crudo de docena.
 
-## Combined-dozen savings
+Los descuentos crudos son enteros positivos y no pueden superar el precio cocinado correspondiente. La condición pertenece al pedido completo; no se admiten combinaciones crudas/cocinadas por ítem.
 
-For each combined dozen, the engine prices the same composition using normal product grouping and compares it with the configured fixed combined price:
+## Ahorro de docena combinada
+
+Para cada docena combinada, el motor cotiza la misma composición con la agrupación normal de productos y la compara con el precio fijo configurado para la condición:
 
 ```text
 savings = max(0, normal composition price - combined price)
 ```
 
-Only a positive result is displayed/persisted as savings. A combined price above the normal calculation never creates a misleading negative “discount”; the charged combined price still remains the configured fixed price.
+Sólo se muestra y persiste como ahorro un resultado positivo. Un precio combinado superior al cálculo normal nunca genera un “descuento” negativo engañoso; el precio cobrado sigue siendo el fijo configurado.
 
-## Toppings and delivery
+## Adicionales y entrega
 
-Toppings are not Products. Each available addon is priced as `quantity × current addon price`; quantity is bounded to 1–100 and duplicate addon rows are rejected.
+Los adicionales no son Products. Cada addon disponible se cotiza como `quantity × current addon price`; la cantidad se limita a 1–100 y se rechazan filas duplicadas.
 
-- `pickup`: shipping is always zero.
-- `delivery`: uses current `delivery_fee` and requires a non-blank delivery address during creation.
+- `pickup`: el envío siempre es cero.
+- `delivery`: usa el `delivery_fee` actual y requiere una dirección no vacía al crear.
 
-The initial delivery fee is the safe placeholder `0`. Configure the real value in `/admin/settings/general` before taking delivery orders.
+El costo de entrega inicial es el valor seguro `0`. Configurá el valor real en `/admin/settings/general` antes de tomar pedidos con envío.
 
-## Administrative discounts
+## Descuentos administrativos
 
-Discounts are available only to authenticated administrative create/edit/Quick Order flows. The supported types are `percentage` (whole percentage from 0–100) and `fixed_amount` (whole pesos). Type and value must be supplied together.
+Los descuentos sólo están disponibles en los flujos administrativos autenticados de creación, edición y Quick Order. Los tipos admitidos son `percentage` (porcentaje entero de 0–100) y `fixed_amount` (pesos enteros). El tipo y el valor deben enviarse juntos.
 
 ```text
 discountable subtotal = items subtotal + toppings subtotal
@@ -86,52 +88,52 @@ discount amount       = min(calculated amount, discountable subtotal)
 total                 = discountable subtotal - discount amount + shipping
 ```
 
-`items subtotal` already contains the applied raw/cooked price, so cooking participates in the discount. Shipping never does. Percentage results round half-up to a whole peso; a fixed discount cannot consume shipping or make the commercial subtotal negative. Public preview/checkout prohibits all discount fields.
+`items subtotal` ya contiene el precio aplicado para la condición global, por lo que el descuento crudo participa en el subtotal descontable. El envío nunca participa. Los porcentajes redondean half-up a pesos enteros; un descuento fijo no puede consumir el envío ni volver negativo el subtotal comercial. El preview y checkout públicos prohíben todos los campos de descuento administrativo.
 
-## Persisted history
+## Historial persistido y compatibilidad
 
-Order creation persists the quote, not a reference to a future calculation:
+Crear un pedido persiste la cotización, no una referencia a un cálculo futuro:
 
-- normal lines: sold product name, mode, block quantity, unit count, applied price, subtotal;
-- every new line: raw-equivalent unit/base subtotal and cooking-surcharge snapshots alongside the applied values;
-- combined lines: fixed price, raw-equivalent fixed price, cooking surcharge, regular comparison total, savings, and product-name/quantity composition;
-- toppings: sold name, quantity, applied unit price, subtotal;
-- order: customer/contact snapshots, delivery address, shipping fee, subtotals, savings, discount type/value/applied amount, payment method, and total.
+- líneas normales: nombre vendido, modo, cantidad de bloques, unidades, precio aplicado y subtotal;
+- líneas nuevas: precio/subtotal cocinado y descuento crudo junto a los valores aplicados;
+- líneas combinadas: precio fijo aplicado, equivalente cocinado, descuento crudo, total normal de comparación, ahorro y composición de nombre/cantidad;
+- adicionales: nombre vendido, cantidad, precio unitario aplicado y subtotal;
+- pedido: snapshots del cliente/contacto/dirección, envío, subtotales, ahorro, descuento administrativo, pago y total.
 
-New orders also persist aggregate base-product and cooking-surcharge values. The invariants are `items subtotal = base-product subtotal + cooking surcharge` and `total = items + toppings + shipping - discount`. Pre-existing orders keep additive cooking columns null because reconstructing their raw equivalent from current products or settings would rewrite history. Their summaries therefore omit the cooking line rather than inventing a value.
+Para pedidos nuevos, la invariante es `items_subtotal = products_cooked_subtotal - raw_discount`. Los campos históricos anteriores `items_base_subtotal`, `cooking_surcharge`, `base_unit_price`, `base_line_total` y `order_items.cooking_surcharge` se conservan para leer pedidos existentes, pero quedan null en pedidos nuevos. Del mismo modo, los campos nuevos quedan null en pedidos históricos: no se reconstruyen con precios o configuración actuales.
 
-Opening an order never reruns pricing. Current catalog, customer, topping, or setting changes must not affect existing snapshots.
+Abrir un pedido nunca vuelve a ejecutar pricing. Los cambios actuales de catálogo, clientes, adicionales o Settings no afectan snapshots existentes.
 
-## Administrative editing and repricing
+## Edición administrativa y nueva cotización
 
-The edit page starts from two structured backend values:
+La página de edición parte de dos valores estructurados del backend:
 
-- a draft rebuilt from persisted item/composition/topping records as real product and addon quantities;
-- `original_quote`, built only from the order's current snapshots for the **Before** summary.
+- un draft reconstruido desde los registros persistidos de ítems, composiciones y adicionales como cantidades reales;
+- `original_quote`, construido sólo desde los snapshots actuales del pedido para el resumen anterior.
 
-The shared draft hook calls the existing `/admin/orders/price-preview` whenever products, quantities, condition, toppings, delivery type, or discount change. It compares that current backend quote with the persisted total; React does not calculate a replacement price. Payment method is not economic and does not invalidate the preview.
+El hook compartido del draft invoca `/admin/orders/price-preview` cuando cambian productos, cantidades, condición, adicionales, tipo de entrega o descuento. Compara esa cotización del backend con el total persistido; React no calcula un precio reemplazante. El método de pago no es económico y no invalida el preview.
 
-`UpdateOrder` independently classifies those same fields as economic. If any changed, it runs the complete order through `OrderPricingEngine` with configuration and sellability valid at confirmation time. `PersistOrderQuote` then replaces item, composition, topping, aggregate pricing, shipping, and savings snapshots for that order in the same transaction. Other historical orders are never recalculated.
+`UpdateOrder` clasifica esos mismos campos como económicos. Si alguno cambió, procesa el pedido completo mediante `OrderPricingEngine` con la configuración y vendibilidad vigentes al confirmar. `PersistOrderQuote` reemplaza los snapshots de ítems, composiciones, adicionales, precios agregados, envío y ahorro en la misma transacción. Ningún otro pedido histórico se recalcula.
 
-Customer, address, date/period/time, notes, payment, and operational-state-only corrections do not trigger quote replacement. They still pass backend validation and optimistic-concurrency checks; the persisted quote remains unchanged.
+Las correcciones sólo de cliente, dirección, fecha/período/hora, notas, pago o estado operativo no reemplazan la cotización. Aun así pasan validación del backend y control de concurrencia optimista; el snapshot persistido permanece intacto.
 
-### Unavailable historical selections
+### Selecciones históricas no disponibles
 
-An unavailable, inactive-category, or soft-deleted product/addon already present in an order remains visible with its historical quantity. It may survive a non-economic correction only while the complete economic selection is unchanged. It cannot be incremented or newly selected. Before any economic edit can be confirmed, unavailable historical selections must be removed or replaced, because current-rule repricing cannot authoritatively price an unsellable selection.
+Un producto/addon no disponible, de categoría inactiva o eliminado lógicamente que ya exista en un pedido permanece visible con su cantidad histórica. Puede sobrevivir una corrección no económica sólo mientras toda la selección económica quede intacta. No puede incrementarse ni agregarse de nuevo. Antes de confirmar una edición económica se deben quitar o reemplazar las selecciones históricas no disponibles, porque las reglas actuales no pueden cotizarlas autoritativamente.
 
-## Limits and rejection
+## Límites y rechazos
 
-- At least one product is required.
-- Each product may appear once with quantity 1–120.
-- Requests contain at most 50 product entries.
-- Each topping may appear once with quantity 1–100; at most 20 entries.
-- Missing, unavailable, or soft-deleted selections fail current pricing. Edit hydration may display an unchanged historical selection under the explicit policy above.
-- Public selection uses slugs; admin selection uses validated internal IDs.
+- Se requiere al menos un producto.
+- Cada producto puede aparecer una vez con cantidad 1–120.
+- Cada request contiene como máximo 50 productos.
+- Cada adicional puede aparecer una vez con cantidad 1–100; máximo 20 filas.
+- Las selecciones inexistentes, no disponibles o eliminadas lógicamente fallan al cotizar. La hidratación de edición puede mostrar una selección histórica intacta bajo la política explícita anterior.
+- La selección pública usa slugs; la administrativa usa IDs internos validados.
 
-## Change checklist
+## Checklist de cambios
 
-1. Change grouping only in `OrderPricingEngine`.
-2. Keep Products price access behind `ProductPriceProvider`.
-3. Update the matrix in `tests/Feature/Orders/OrderPricingEngineTest.php`.
-4. Update snapshot/constraint tests if persistence shape changes.
-5. Update this document and `PROJECT_MAP.md` for any moved responsibility.
+1. Cambiá la agrupación sólo en `OrderPricingEngine`.
+2. Mantené el acceso a precios de Products detrás de `ProductPriceProvider`.
+3. Actualizá la matriz de `tests/Feature/Orders/OrderPricingEngineTest.php`.
+4. Actualizá las pruebas de snapshots/restricciones si cambia la persistencia.
+5. Actualizá este documento y `PROJECT_MAP.md` si se mueve una responsabilidad.

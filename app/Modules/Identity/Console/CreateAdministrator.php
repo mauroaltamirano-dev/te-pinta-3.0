@@ -11,13 +11,13 @@ final class CreateAdministrator extends Command
 {
     protected $signature = 'admin:create {email?}';
 
-    protected $description = 'Create an administrator without exposing public registration';
+    protected $description = 'Crear un administrador sin habilitar el registro público';
 
     public function handle(): int
     {
         $email = (string) ($this->argument('email') ?: $this->ask('Email'));
-        $name = (string) $this->ask('Name');
-        $password = (string) $this->secret('Password');
+        $name = (string) $this->ask('Nombre');
+        $password = (string) $this->secret('Contraseña');
 
         validator(
             compact('email', 'name', 'password'),
@@ -30,7 +30,7 @@ final class CreateAdministrator extends Command
             'password' => Hash::make($password),
         ])->forceFill(['is_admin' => true, 'email_verified_at' => now()])->save();
 
-        $this->info('Administrator created.');
+        $this->info('Administrador creado.');
 
         return self::SUCCESS;
     }

@@ -19,7 +19,7 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
             <section className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
                 <div className="flex flex-col gap-2">
                     <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-                        Foundation stage
+                        Etapa inicial
                     </p>
                     <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
                         {title}
@@ -27,13 +27,14 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
                 </div>
                 <Card>
                     <CardHeader>
-                        <CardTitle>{title} module</CardTitle>
+                        <CardTitle>Módulo de {title}</CardTitle>
                         <CardDescription>{description}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground">
-                            The navigation boundary is ready. Business behavior
-                            will be added only when its rules are specified.
+                            La navegación está lista. El comportamiento del
+                            negocio se agregará cuando sus reglas estén
+                            definidas.
                         </p>
                     </CardContent>
                 </Card>

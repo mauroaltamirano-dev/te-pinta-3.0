@@ -12,8 +12,8 @@ use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
-use App\Modules\Products\Models\CookingSurcharge;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -31,7 +31,7 @@ final class OrderPricingEngineTest extends TestCase
         $this->category = Category::query()->create([
             'name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true,
         ]);
-        CookingSurcharge::query()->insert([
+        RawPriceDiscount::query()->insert([
             ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
             ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
             ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
@@ -105,7 +105,7 @@ final class OrderPricingEngineTest extends TestCase
         $this->assertSame([$b->id, $c->id], array_column($quote->lines[1]->composition, 'product_id'));
     }
 
-    public function test_cooked_prices_use_product_surcharges_and_fixed_combined_price(): void
+    public function test_cooked_prices_are_primary_and_combined_uses_its_fixed_price(): void
     {
         [$a, $b] = [$this->product('A'), $this->product('B')];
 
@@ -120,7 +120,7 @@ final class OrderPricingEngineTest extends TestCase
         $this->assertSame(17500, $combined->total);
     }
 
-    public function test_cooking_breakdown_uses_each_commercial_tier_without_changing_totals(): void
+    public function test_cooked_quotes_have_no_raw_discount(): void
     {
         [$a, $b] = [$this->product('A'), $this->product('B')];
 
@@ -129,40 +129,40 @@ final class OrderPricingEngineTest extends TestCase
         $dozen = $this->engine()->quote($this->items([$a, 12]), OrderCondition::Cooked);
         $combined = $this->engine()->quote($this->items([$a, 6], [$b, 6]), OrderCondition::Cooked);
 
-        $this->assertSame([1600, 200, 1800], [
-            $unit->lines[0]->baseLineTotal,
-            $unit->lines[0]->cookingSurcharge,
+        $this->assertSame([1800, 0, 1800], [
+            $unit->lines[0]->cookedLineTotal,
+            $unit->lines[0]->rawDiscount,
             $unit->total,
         ]);
-        $this->assertSame([9000, 1000, 10000], [
-            $half->lines[0]->baseLineTotal,
-            $half->lines[0]->cookingSurcharge,
+        $this->assertSame([10000, 0, 10000], [
+            $half->lines[0]->cookedLineTotal,
+            $half->lines[0]->rawDiscount,
             $half->total,
         ]);
-        $this->assertSame([16000, 2000, 18000], [
-            $dozen->lines[0]->baseLineTotal,
-            $dozen->lines[0]->cookingSurcharge,
+        $this->assertSame([18000, 0, 18000], [
+            $dozen->lines[0]->cookedLineTotal,
+            $dozen->lines[0]->rawDiscount,
             $dozen->total,
         ]);
-        $this->assertSame([16000, 1500, 17500], [
-            $combined->lines[0]->baseLineTotal,
-            $combined->lines[0]->cookingSurcharge,
+        $this->assertSame([17500, 0, 17500], [
+            $combined->lines[0]->cookedLineTotal,
+            $combined->lines[0]->rawDiscount,
             $combined->total,
         ]);
-        $this->assertSame(16000, $combined->productsBaseSubtotal);
-        $this->assertSame(1500, $combined->cookingSurcharge);
+        $this->assertSame(17500, $combined->productsCookedSubtotal);
+        $this->assertSame(0, $combined->rawDiscount);
         $this->assertSame(17500, $combined->productsSubtotal);
     }
 
-    public function test_raw_quotes_snapshot_the_applied_price_as_base_with_zero_cooking(): void
+    public function test_raw_quotes_snapshot_cooked_base_and_positive_discount(): void
     {
         $product = $this->product('A');
         $quote = $this->engine()->quote($this->items([$product, 18]), OrderCondition::Raw);
 
-        $this->assertSame(25000, $quote->productsBaseSubtotal);
-        $this->assertSame(0, $quote->cookingSurcharge);
+        $this->assertSame(28000, $quote->productsCookedSubtotal);
+        $this->assertSame(3000, $quote->rawDiscount);
         $this->assertSame(25000, $quote->productsSubtotal);
-        $this->assertSame([0, 0], array_column($quote->toArray()['lines'], 'cookingSurcharge'));
+        $this->assertSame([2000, 1000], array_column($quote->toArray()['lines'], 'rawDiscount'));
     }
 
     public function test_positive_combined_savings_are_reported_but_never_negative(): void
@@ -219,7 +219,7 @@ final class OrderPricingEngineTest extends TestCase
     public function test_percentage_discount_rounds_half_up_to_integer_ars(): void
     {
         $product = $this->product('Rounding');
-        $product->update(['unit_price' => 1005]);
+        $product->update(['unit_price' => 1205]);
 
         $quote = $this->engine()->quote(
             $this->items([$product, 1]),
@@ -361,7 +361,7 @@ final class OrderPricingEngineTest extends TestCase
     {
         return Product::query()->create([
             'category_id' => $this->category->id, 'name' => $name, 'slug' => strtolower($name).'-'.uniqid(),
-            'unit_price' => 1600, 'half_dozen_price' => 9000, 'dozen_price' => 16000,
+            'unit_price' => 1800, 'half_dozen_price' => 10000, 'dozen_price' => 18000,
             'is_available' => true, 'sort_order' => 1,
         ]);
     }

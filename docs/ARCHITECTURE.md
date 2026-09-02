@@ -1,8 +1,8 @@
-# Architecture
+# Arquitectura
 
-Te Pinta 3.0 is a modular Laravel monolith with an Inertia/React frontend. PostgreSQL owns transactional integrity; Laravel owns authorization, validation, pricing, and state changes; React composes the workflow and displays backend results.
+Te Pinta 3.0 es un monolito modular en Laravel con un frontend Inertia/React. PostgreSQL garantiza la integridad transaccional; Laravel controla la autorización, la validación, los precios y los cambios de estado; React compone el flujo de trabajo y muestra los resultados del backend.
 
-## Request paths
+## Flujos de solicitudes
 
 ```text
 Administrative browser
@@ -18,11 +18,17 @@ Public checkout
   -> shared pricing engine
   -> atomic customer match/create + order snapshots
   -> backend summary + WhatsApp link
+
+Confirmed administrative payment
+  -> Orders persists the operational transition to paid
+  -> synchronous OrderPaymentConfirmed application event
+  -> Management records one idempotent ManagementOrderPayment
+  -> FinancialTransaction(order_payment) + one positive LedgerEntry
 ```
 
-The public order is committed before the WhatsApp URL is generated. Opening WhatsApp is a client-side handoff, not proof that the customer sent the message.
+El pedido público se confirma antes de generar la URL de WhatsApp. Abrir WhatsApp es una transferencia al cliente y no demuestra que este haya enviado el mensaje.
 
-## Backend boundaries
+## Límites del backend
 
 ```text
 app/
@@ -31,16 +37,19 @@ app/
   Modules/    business capabilities and their delivery/application code
 ```
 
-- `Products` owns catalog availability, raw base prices, and configurable cooking surcharges.
-- `Orders` owns commercial grouping, final totals, snapshots, lifecycle, toppings, delivery, summaries, and checkout idempotency.
-- `Customers` owns profiles, phone normalization, administrative search, and customer history.
-- `Settings` provides the administrative write boundary for ordering settings, cooking surcharges, and existing toppings.
-- `PublicSite` owns public page routes; its checkout endpoints delegate to `Orders`.
-- `Core\Contracts\ProductPriceProvider` is the narrow Products-to-Orders seam. Orders must not reproduce catalog pricing queries.
+- `Products` es responsable de la disponibilidad del catálogo, los precios base de productos cocinados y los descuentos configurables para productos crudos, que son la alternativa de menor precio.
+- `Orders` es responsable de la agrupación comercial, los totales finales, los snapshots, el ciclo de vida, los toppings, la entrega, los resúmenes, la idempotencia del checkout y de anunciar una transición confirmada a `paid` sin escribir el ledger.
+- `Customers` es responsable de los perfiles, la normalización de teléfonos, la búsqueda administrativa y el historial de clientes.
+- `Settings` proporciona el límite administrativo de escritura para la configuración de pedidos, los descuentos de productos crudos y los toppings existentes.
+- `PublicSite` es responsable de las rutas de páginas públicas; sus endpoints de checkout delegan en `Orders`.
+- `Marketing` es responsable del historial, la programación y la elegibilidad pública de Featured Product, de su modelo de vista seguro para uso público y del resumen compacto del Dashboard.
+- `Instagram` es responsable de los assets de Story, las programaciones, el estado de la cola de publicaciones, el límite de automatización con n8n y la entrega temporal de medios. n8n coordina las llamadas a Meta, pero nunca lee PostgreSQL.
+- `Management` es responsable de billeteras, hechos financieros, entries inmutables, saldos derivados y reversiones. Consume la confirmación de pago de Orders mediante un contrato de aplicación acotado y conserva su propio origen financiero idempotente; no administra el ciclo de vida del pedido ni stock.
+- `Core\Contracts\ProductPriceProvider` es la interfaz acotada entre Products y Orders. Orders no debe reproducir consultas de precios del catálogo.
 
-Controllers coordinate HTTP. Form Requests authorize/validate. Actions execute use cases. Models persist relationships. Do not introduce generic repositories, base services, or placeholder folders.
+Los Controllers coordinan HTTP. Los Form Requests autorizan y validan. Las Actions ejecutan casos de uso. Los Models persisten relaciones. No introduzca repositories genéricos, services base ni carpetas sin una función concreta.
 
-## Frontend boundaries
+## Límites del frontend
 
 ```text
 resources/js/
@@ -52,29 +61,35 @@ resources/js/
   lib/                 focused infrastructure helpers
 ```
 
-Frontend price previews call Laravel. They are informative only: order creation reruns the same backend engine and persists its result.
+Las vistas previas de precios del frontend llaman a Laravel. Son únicamente informativas: la creación del pedido vuelve a ejecutar el mismo motor del backend y persiste su resultado.
 
-## Dependency direction
+## Dirección de las dependencias
 
-1. HTTP delivery calls application actions or focused services.
-2. Orders consumes Products through `ProductPriceProvider`.
-3. Core never depends on a business module.
-4. A module never calls another module's controller or request class.
-5. Pages may compose feature/shared UI; shared UI must not import feature code.
+1. La capa de entrega HTTP llama a Actions de aplicación o a services específicos.
+2. Orders consume Products mediante `ProductPriceProvider`.
+3. Orders emite `OrderPaymentConfirmed`; el listener síncrono de Management invoca su propia Action dentro de la misma transacción, sin que Orders conozca modelos, tablas ni servicios internos de Gestión.
+4. Core nunca depende de un módulo de negocio.
+5. Un módulo nunca llama al Controller ni a la clase Request de otro módulo.
+6. Las Pages pueden componer UI de features o shared; la UI shared no debe importar código de features.
+7. PublicSite y Dashboard consumen modelos de lectura de Marketing; no reproducen las reglas de ventanas temporales de Marketing ni de elegibilidad de Products.
 
-## Durable decisions
+## Decisiones duraderas
 
-| Decision                          | Consequence                                                                                            |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Modular monolith                  | Customers, Products, Orders, Settings, and PublicSite keep ownership without distributed transactions. |
-| PostgreSQL sequence for Order IDs | `TP-000001` allocation is concurrency-safe; rollbacks may leave harmless gaps.                         |
-| One backend pricing engine        | Admin and public checkout cannot diverge on grouping or totals.                                        |
-| Immutable order snapshots         | Catalog, address, topping, and setting changes never rewrite history.                                  |
-| Active-phone partial uniqueness   | Matching is deterministic among active customers while a soft-deleted phone may be reused.             |
-| Public slugs, internal IDs        | Public checkout selects catalog entries without exposing database IDs.                                 |
-| Hash + fingerprint idempotency    | Exact retries return the same order; key reuse with another payload is rejected.                       |
-| Soft deletion                     | Customers/orders remain recoverable and historical foreign keys remain intact.                         |
+| Decisión                                | Consecuencia                                                                                                                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monolito modular                        | Customers, Products, Orders, Settings y PublicSite conservan su responsabilidad sin transacciones distribuidas.                                                                             |
+| Secuencia PostgreSQL para IDs de Order  | La asignación de `TP-000001` es segura ante concurrencia; los rollbacks pueden dejar huecos inofensivos.                                                                                    |
+| Un único motor de precios en el backend | El checkout administrativo y el público no pueden divergir en agrupaciones ni totales.                                                                                                      |
+| Snapshots de pedidos inmutables         | Los cambios en el catálogo, las direcciones, los toppings y la configuración nunca modifican ni recalculan el historial.                                                                    |
+| Unicidad parcial del teléfono activo    | La coincidencia es determinista entre clientes activos, mientras que puede reutilizarse el teléfono de un cliente eliminado mediante soft delete.                                           |
+| Slugs públicos, IDs internos            | El checkout público selecciona entradas del catálogo sin exponer IDs de la base de datos.                                                                                                   |
+| Idempotencia con hash + fingerprint     | Los reintentos exactos devuelven el mismo pedido; se rechaza reutilizar una clave con otro payload.                                                                                         |
+| Soft deletion                           | Customers y Orders se pueden recuperar y las claves foráneas históricas permanecen intactas.                                                                                                |
+| Marketing e Instagram son pares         | Marketing define la presentación comercial; Instagram controla la publicación en el canal. Una integración futura requiere un contrato explícito entre módulos.                             |
+| Cola de Instagram controlada por el POS | Laravel controla las programaciones y el estado atómico de publicación; n8n reclama un elemento mediante una API protegida por bearer y contiene todas las solicitudes específicas de Meta. |
+| Ledger inmutable de Management          | El saldo se deriva de entries firmadas; las correcciones crean reversiones o ajustes nuevos y nunca mutan historia financiera.                                                              |
+| Pago de Order como origen financiero    | `paid` sigue siendo estado operativo mutable; `ManagementOrderPayment` es el hecho financiero durable, único por pedido y creado síncronamente en la transición confirmada.                 |
 
-## Still out of scope
+## Aún fuera de alcance
 
-Payment methods/gateways, WhatsApp automation, promotions beyond combined-dozen savings, inventory, purchases, stock, analytics, and additional combo types are not implemented.
+No están implementados los gateways de pago, la automatización de WhatsApp, las promociones, cupones o combos de Marketing, el inventario/stock, la distribución automática de cobros de Orders, la reversión automática al cancelar o desmarcar un pago, la reconciliación histórica, Analytics ni otros tipos de combos de pedidos. Featured Product es únicamente de presentación y no modifica precios.

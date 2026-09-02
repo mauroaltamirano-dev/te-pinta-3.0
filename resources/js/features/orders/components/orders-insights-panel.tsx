@@ -170,14 +170,18 @@ export function OrdersInsightsPanel({
             color: deliveryColors[item.type],
         }),
     );
-    const conditionDistribution: DistributionItem[] = conditions.map(
-        (item) => ({
+    const conditionDistribution: DistributionItem[] = [...conditions]
+        .sort(
+            (left, right) =>
+                Number(left.condition === 'raw') -
+                Number(right.condition === 'raw'),
+        )
+        .map((item) => ({
             key: item.condition,
             label: orderConditionLabels[item.condition],
             count: item.orders_count,
             color: conditionColors[item.condition],
-        }),
-    );
+        }));
 
     return (
         <aside

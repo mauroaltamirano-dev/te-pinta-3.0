@@ -1,8 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    formatCustomerCount,
+    formatCustomerDate,
+} from '@/features/customers/presentation';
 
 interface DeletedCustomer {
     id: number;
@@ -13,6 +16,8 @@ interface DeletedCustomer {
 
 interface DeletedCustomersPage {
     data: DeletedCustomer[];
+    current_page: number;
+    last_page: number;
     prev_page_url: string | null;
     next_page_url: string | null;
     total: number;
@@ -41,83 +46,102 @@ export default function CustomerTrash({
 
     return (
         <>
-            <Head title="Customer trash" />
-            <section className="mx-auto grid max-w-4xl gap-6">
+            <Head title="Papelera de clientes" />
+            <section className="mx-auto grid max-w-5xl gap-6 font-orders">
                 <header>
                     <Link
                         href="/admin/customers"
-                        className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                        className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-white"
                     >
-                        <ArrowLeft className="size-4" /> Back to customers
+                        <ArrowLeft className="size-4" /> Volver a clientes
                     </Link>
-                    <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent uppercase">
-                        Deleted records
+                    <p className="text-sm font-medium text-admin-accent">
+                        Registros eliminados
                     </p>
-                    <h1 className="mt-1 text-2xl font-bold">Customer trash</h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Restoring a customer preserves every linked order and
-                        its historical snapshots.
+                    <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                        Papelera de clientes
+                    </h1>
+                    <p className="mt-1 text-sm text-admin-text-tertiary">
+                        Restaurar un cliente conserva sus pedidos y todos sus
+                        datos históricos.
                     </p>
                 </header>
 
                 {restoreError && (
                     <p
                         role="alert"
-                        className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                        className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
                     >
                         {restoreError}
                     </p>
                 )}
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            {customers.total} deleted customers
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {customers.data.length === 0 ? (
-                            <p
-                                role="status"
-                                className="py-12 text-center text-sm text-muted-foreground"
-                            >
-                                Customer trash is empty.
-                            </p>
-                        ) : (
-                            <div className="overflow-x-auto">
+                <div className="overflow-hidden rounded-lg bg-admin-surface">
+                    <div className="border-b border-admin-border px-4 py-4 sm:px-5">
+                        <h2 className="font-semibold text-white">
+                            {customers.total}{' '}
+                            {customers.total === 1
+                                ? 'cliente eliminado'
+                                : 'clientes eliminados'}
+                        </h2>
+                    </div>
+
+                    {customers.data.length === 0 ? (
+                        <p
+                            role="status"
+                            className="px-5 py-14 text-center text-sm text-admin-text-tertiary"
+                        >
+                            La papelera está vacía.
+                        </p>
+                    ) : (
+                        <>
+                            <div className="hidden overflow-x-auto md:block">
                                 <table className="w-full text-left text-sm">
-                                    <thead className="border-b text-muted-foreground">
+                                    <thead className="border-b border-admin-border text-admin-text-tertiary">
                                         <tr>
                                             <th
+                                                className="px-4 py-3 font-medium"
                                                 scope="col"
-                                                className="px-3 py-3 font-medium"
                                             >
-                                                Name
+                                                Nombre
                                             </th>
                                             <th
+                                                className="px-4 py-3 font-medium"
                                                 scope="col"
-                                                className="px-3 py-3 font-medium"
                                             >
-                                                Linked orders
+                                                Eliminado
                                             </th>
                                             <th
+                                                className="px-4 py-3 font-medium"
                                                 scope="col"
-                                                className="px-3 py-3 font-medium"
                                             >
-                                                Action
+                                                Pedidos asociados
+                                            </th>
+                                            <th
+                                                className="px-4 py-3 text-right font-medium"
+                                                scope="col"
+                                            >
+                                                Acción
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y">
+                                    <tbody className="divide-y divide-admin-border">
                                         {customers.data.map((customer) => (
                                             <tr key={customer.id}>
-                                                <td className="px-3 py-4 font-medium">
+                                                <td className="px-4 py-4 font-medium text-white">
                                                     {customer.name}
                                                 </td>
-                                                <td className="px-3 py-4 tabular-nums">
-                                                    {customer.orders_count}
+                                                <td className="px-4 py-4 text-admin-text-secondary tabular-nums">
+                                                    {formatCustomerDate(
+                                                        customer.deleted_at,
+                                                    )}
                                                 </td>
-                                                <td className="px-3 py-4">
+                                                <td className="px-4 py-4 text-admin-text-secondary">
+                                                    {formatCustomerCount(
+                                                        customer.orders_count,
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
                                                     <Button
                                                         type="button"
                                                         size="sm"
@@ -125,9 +149,9 @@ export default function CustomerTrash({
                                                         onClick={() =>
                                                             restore(customer)
                                                         }
+                                                        aria-label={`Restaurar ${customer.name}`}
                                                     >
-                                                        <RotateCcw /> Restore{' '}
-                                                        {customer.name}
+                                                        <RotateCcw /> Restaurar
                                                     </Button>
                                                 </td>
                                             </tr>
@@ -135,47 +159,95 @@ export default function CustomerTrash({
                                     </tbody>
                                 </table>
                             </div>
-                        )}
-                        <nav
-                            aria-label="Customer trash pages"
-                            className="mt-4 flex items-center justify-between border-t pt-4"
-                        >
-                            <p className="text-xs text-muted-foreground">
-                                {customers.total} customers
-                            </p>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={!customers.prev_page_url}
-                                    asChild={Boolean(customers.prev_page_url)}
-                                >
-                                    {customers.prev_page_url ? (
-                                        <Link href={customers.prev_page_url}>
-                                            Previous
-                                        </Link>
-                                    ) : (
-                                        <span>Previous</span>
-                                    )}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={!customers.next_page_url}
-                                    asChild={Boolean(customers.next_page_url)}
-                                >
-                                    {customers.next_page_url ? (
-                                        <Link href={customers.next_page_url}>
-                                            Next
-                                        </Link>
-                                    ) : (
-                                        <span>Next</span>
-                                    )}
-                                </Button>
+
+                            <div className="divide-y divide-admin-border md:hidden">
+                                {customers.data.map((customer) => (
+                                    <article
+                                        key={customer.id}
+                                        className="px-4 py-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <h2 className="truncate font-semibold text-white">
+                                                    {customer.name}
+                                                </h2>
+                                                <p className="mt-1 text-xs text-admin-text-tertiary">
+                                                    Eliminado el{' '}
+                                                    {formatCustomerDate(
+                                                        customer.deleted_at,
+                                                    )}
+                                                </p>
+                                                <p className="mt-2 text-sm text-admin-text-secondary">
+                                                    {formatCustomerCount(
+                                                        customer.orders_count,
+                                                    )}{' '}
+                                                    asociados
+                                                </p>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    restore(customer)
+                                                }
+                                                aria-label={`Restaurar ${customer.name}`}
+                                            >
+                                                <RotateCcw />
+                                            </Button>
+                                        </div>
+                                    </article>
+                                ))}
                             </div>
-                        </nav>
-                    </CardContent>
-                </Card>
+                        </>
+                    )}
+
+                    <nav
+                        aria-label="Paginación de la papelera de clientes"
+                        className="flex items-center justify-between border-t border-admin-border px-4 py-4 sm:px-5"
+                    >
+                        <p className="text-sm text-admin-text-tertiary">
+                            Página {customers.current_page} de{' '}
+                            {customers.last_page}
+                        </p>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                disabled={!customers.prev_page_url}
+                                asChild={Boolean(customers.prev_page_url)}
+                                aria-label="Página anterior"
+                            >
+                                {customers.prev_page_url ? (
+                                    <Link href={customers.prev_page_url}>
+                                        <ChevronLeft />
+                                    </Link>
+                                ) : (
+                                    <span>
+                                        <ChevronLeft />
+                                    </span>
+                                )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                disabled={!customers.next_page_url}
+                                asChild={Boolean(customers.next_page_url)}
+                                aria-label="Página siguiente"
+                            >
+                                {customers.next_page_url ? (
+                                    <Link href={customers.next_page_url}>
+                                        <ChevronRight />
+                                    </Link>
+                                ) : (
+                                    <span>
+                                        <ChevronRight />
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
+                    </nav>
+                </div>
             </section>
         </>
     );

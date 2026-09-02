@@ -10,19 +10,19 @@
     "theme_color": "#1f1d2b",
     "icons": [
         {
-            "src": "/icons/te-pinta-192.png",
+            "src": "/icons/te-pinta-logo-192.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "/icons/te-pinta-512.png",
+            "src": "/icons/te-pinta-logo-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "/icons/te-pinta-maskable-512.png",
+            "src": "/icons/te-pinta-logo-maskable-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
@@ -36,7 +36,7 @@
             "url": "/admin/orders/create",
             "icons": [
                 {
-                    "src": "/icons/te-pinta-192.png",
+                    "src": "/icons/te-pinta-logo-192.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
