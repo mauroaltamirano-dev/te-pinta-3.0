@@ -142,6 +142,9 @@ export default function Cart() {
                         return;
                     }
 
+                    setQuoteFailure((current) =>
+                        current?.key === quoteKey ? null : current,
+                    );
                     setQuoteResult({ key: quoteKey, data });
                 })
                 .catch((reason: Error) => {

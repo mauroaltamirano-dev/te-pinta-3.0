@@ -132,6 +132,55 @@ test('un preview fallido retira el total anterior y bloquea la confirmación has
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
+test('un preview exitoso al volver a una selección elimina el error anterior de esa selección', async ({
+    page,
+}) => {
+    await addSaltenaDozenAndOpenCart(page);
+    await expect(page.getByTestId('order-total')).toBeVisible();
+
+    let failFirstRawPreview = true;
+    await page.route('**/checkout/price-preview', async (route) => {
+        const body = route.request().postDataJSON() as { condition: string };
+
+        if (body.condition === 'raw' && failFirstRawPreview) {
+            failFirstRawPreview = false;
+            await route.fulfill({
+                status: 503,
+                json: { message: 'Cotización no disponible' },
+            });
+
+            return;
+        }
+
+        await route.continue();
+    });
+
+    const raw = page.getByRole('checkbox', { name: 'Pedir crudas' });
+    await raw.click();
+    await expect(page.getByRole('alert')).toContainText(
+        'Cotización no disponible',
+    );
+    await expect(page.getByTestId('order-total')).toHaveCount(0);
+
+    const cookedAgain = page.waitForResponse((response) =>
+        response.url().endsWith('/checkout/price-preview'),
+    );
+    await raw.click();
+    expect((await cookedAgain).ok()).toBe(true);
+    await expect(page.getByTestId('order-total')).toBeVisible();
+
+    const rawAgain = page.waitForResponse((response) =>
+        response.url().endsWith('/checkout/price-preview'),
+    );
+    await raw.click();
+    expect((await rawAgain).ok()).toBe(true);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByTestId('order-total')).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: 'Confirmar y abrir WhatsApp' }),
+    ).toBeEnabled();
+});
+
 test('producto guardado que ya no está en el catálogo se identifica y se puede quitar', async ({
     page,
 }) => {
