@@ -96,3 +96,113 @@ test('checkout público persiste el pedido antes de abrir WhatsApp', async ({
     expect(createdOrder?.summary).toContain(createdOrder?.order_id);
     await expect(page).toHaveURL(/wa\.me/);
 });
+
+test('un preview fallido retira el total anterior y bloquea la confirmación hasta reintentar', async ({
+    page,
+}) => {
+    await addSaltenaDozenAndOpenCart(page);
+    await expect(page.getByTestId('order-total')).toBeVisible();
+
+    let failNextPreview = true;
+    await page.route('**/checkout/price-preview', async (route) => {
+        if (failNextPreview) {
+            failNextPreview = false;
+            await route.fulfill({
+                status: 503,
+                json: { message: 'Cotización no disponible' },
+            });
+
+            return;
+        }
+
+        await route.continue();
+    });
+
+    await page.getByRole('checkbox', { name: 'Pedir crudas' }).click();
+    await expect(page.getByRole('alert')).toContainText(
+        'Cotización no disponible',
+    );
+    await expect(page.getByTestId('order-total')).toHaveCount(0);
+    await expect(
+        page.getByRole('button', { name: 'Confirmar y abrir WhatsApp' }),
+    ).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Reintentar precio' }).click();
+    await expect(page.getByTestId('order-total')).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('producto guardado que ya no está en el catálogo se identifica y se puede quitar', async ({
+    page,
+}) => {
+    await page.goto('/menu');
+    const product = page
+        .getByText('Salteña', { exact: true })
+        .locator('xpath=ancestor::*[.//button[normalize-space()="Unidad"]][1]');
+    await product.getByRole('button', { name: '+ Docena' }).click();
+    await page.route('**/menu/catalog', async (route) => {
+        await route.fulfill({ json: { data: [] } });
+    });
+    await page.getByRole('link', { name: /Ver carrito/ }).click();
+
+    await expect(page.getByText('Ya no disponible')).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('Quitalos del carrito');
+    await expect(
+        page.getByRole('button', { name: 'Confirmar y abrir WhatsApp' }),
+    ).toBeDisabled();
+    await page.getByRole('button', { name: /^Quitar .* del carrito$/ }).click();
+    await expect(page.getByText('Todavía no elegiste nada.')).toBeVisible();
+});
+
+test('si fallan las opciones iniciales, permite reintentar sin confirmar a ciegas', async ({
+    page,
+}) => {
+    await page.goto('/menu');
+    const product = page
+        .getByText('Salteña', { exact: true })
+        .locator('xpath=ancestor::*[.//button[normalize-space()="Unidad"]][1]');
+    await product.getByRole('button', { name: '+ Docena' }).click();
+
+    let failNextLoad = true;
+    await page.route('**/checkout/options', async (route) => {
+        if (failNextLoad) {
+            failNextLoad = false;
+            await route.fulfill({
+                status: 503,
+                json: { message: 'Unavailable' },
+            });
+
+            return;
+        }
+
+        await route.continue();
+    });
+    await page.getByRole('link', { name: /Ver carrito/ }).click();
+    await expect(page.getByRole('alert')).toContainText(
+        'No pudimos cargar el menú y las opciones',
+    );
+    await expect(
+        page.getByRole('button', { name: 'Confirmar y abrir WhatsApp' }),
+    ).toBeDisabled();
+    await page.getByRole('button', { name: 'Reintentar carga' }).click();
+    await expect(page.getByLabel('Fecha de entrega')).not.toBeEmpty();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('el carrito a 320px mantiene controles y finalización sin desbordar', async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await addSaltenaDozenAndOpenCart(page);
+    await expect(
+        page.getByRole('heading', { name: 'Tu carrito.' }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: 'Confirmar y abrir WhatsApp' }),
+    ).toBeVisible();
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
+});

@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Minus, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,31 +42,75 @@ export default function Cart() {
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
     const [notes, setNotes] = useState('');
-    const [quote, setQuote] = useState<PriceQuote | null>(null);
-    const [loadingQuote, setLoadingQuote] = useState(false);
+    const [quoteResult, setQuoteResult] = useState<{
+        key: string;
+        data: PriceQuote;
+    } | null>(null);
+    const [loadingOptions, setLoadingOptions] = useState(true);
+    const [optionsError, setOptionsError] = useState('');
+    const [reloadOptions, setReloadOptions] = useState(0);
+    const [quoteFailure, setQuoteFailure] = useState<{
+        key: string;
+        message: string;
+    } | null>(null);
+    const [quoteRetry, setQuoteRetry] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     useEffect(() => {
+        let active = true;
         Promise.all([
             fetch('/menu/catalog', {
                 headers: { Accept: 'application/json' },
-            }).then((response) => response.json()) as Promise<{
+            }).then((response) => {
+                if (!response.ok) {
+                    throw new Error('catalog');
+                }
+
+                return response.json();
+            }) as Promise<{
                 data: PublicProduct[];
             }>,
             fetch('/checkout/options', {
                 headers: { Accept: 'application/json' },
-            }).then((response) => response.json()) as Promise<{
+            }).then((response) => {
+                if (!response.ok) {
+                    throw new Error('options');
+                }
+
+                return response.json();
+            }) as Promise<{
                 data: { addons: OrderAddon[]; today: string };
             }>,
-        ]).then(([catalogPayload, optionsPayload]) => {
-            setCatalog(catalogPayload.data);
-            setAvailableAddons(optionsPayload.data.addons);
-            setBusinessToday(optionsPayload.data.today);
-            setDeliveryDate(
-                (currentDate) => currentDate || optionsPayload.data.today,
-            );
-        });
-    }, []);
+        ])
+            .then(([catalogPayload, optionsPayload]) => {
+                if (!active) {
+                    return;
+                }
+
+                setCatalog(catalogPayload.data);
+                setAvailableAddons(optionsPayload.data.addons);
+                setBusinessToday(optionsPayload.data.today);
+                setDeliveryDate(
+                    (currentDate) => currentDate || optionsPayload.data.today,
+                );
+            })
+            .catch(() => {
+                if (active) {
+                    setOptionsError(
+                        'No pudimos cargar el menú y las opciones de entrega. Intentá nuevamente.',
+                    );
+                }
+            })
+            .finally(() => {
+                if (active) {
+                    setLoadingOptions(false);
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [reloadOptions]);
     const requestBody = useMemo(
         () => ({
             items: cart.items,
@@ -76,29 +120,80 @@ export default function Cart() {
         }),
         [cart.items, cart.addons, condition, deliveryType],
     );
+    const quoteKey = `${JSON.stringify(requestBody)}:${quoteRetry}`;
+    const quote = quoteResult?.key === quoteKey ? quoteResult.data : null;
+    const quoteError =
+        quoteFailure?.key === quoteKey ? quoteFailure.message : '';
+    const loadingQuote = cart.items.length > 0 && !quote && !quoteError;
     useEffect(() => {
+        let active = true;
+
         if (!cart.items.length) {
             return;
         }
 
         const timer = window.setTimeout(() => {
-            setLoadingQuote(true);
             postJson<{ data: PriceQuote }>(
                 '/checkout/price-preview',
                 requestBody,
             )
                 .then(({ data }) => {
-                    setQuote(data);
-                    setError('');
+                    if (!active) {
+                        return;
+                    }
+
+                    setQuoteResult({ key: quoteKey, data });
                 })
-                .catch((reason: Error) => setError(reason.message))
-                .finally(() => setLoadingQuote(false));
+                .catch((reason: Error) => {
+                    if (active) {
+                        setQuoteFailure({
+                            key: quoteKey,
+                            message: reason.message,
+                        });
+                    }
+                });
         }, 250);
 
-        return () => window.clearTimeout(timer);
-    }, [cart.items.length, requestBody]);
+        return () => {
+            active = false;
+            window.clearTimeout(timer);
+        };
+    }, [cart.items.length, requestBody, quoteKey]);
+    const missingProducts =
+        !loadingOptions && !optionsError
+            ? cart.items.filter(
+                  (item) =>
+                      !catalog.some(
+                          (entry) => entry.slug === item.product_slug,
+                      ),
+              )
+            : [];
+    const missingAddons =
+        !loadingOptions && !optionsError
+            ? cart.addons.filter(
+                  (item) =>
+                      !availableAddons.some(
+                          (entry) => entry.slug === item.addon_slug,
+                      ),
+              )
+            : [];
+    const canSubmit =
+        !submitting &&
+        !loadingOptions &&
+        !optionsError &&
+        !loadingQuote &&
+        !quoteError &&
+        missingProducts.length === 0 &&
+        missingAddons.length === 0 &&
+        Boolean(quote) &&
+        Boolean(businessToday);
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        if (!canSubmit) {
+            return;
+        }
+
         setSubmitting(true);
         setError('');
 
@@ -125,7 +220,7 @@ export default function Cart() {
             setError(
                 reason instanceof Error
                     ? reason.message
-                    : 'No se pudo crear el pedido.',
+                    : 'No se pudo completar la solicitud. Verificá el pedido antes de volver a intentarlo.',
             );
         } finally {
             setSubmitting(false);
@@ -135,41 +230,104 @@ export default function Cart() {
     return (
         <>
             <Head title="Carrito" />
-            <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-12">
-                <header>
-                    <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-                        Finalizar compra
+            <section className="mx-auto max-w-7xl px-4 pt-8 pb-32 sm:px-8 sm:pt-12 sm:pb-20 lg:px-12">
+                <header className="mb-8 border-b border-border pb-8 sm:mb-10 sm:pb-10">
+                    <Link
+                        href="/menu"
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-public-earth-ink underline-offset-4 hover:underline"
+                    >
+                        <ArrowLeft className="size-4" aria-hidden="true" />{' '}
+                        Volver al menú
+                    </Link>
+                    <p className="mt-5 text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
+                        Tu pedido · Paso final
                     </p>
-                    <h1 className="mt-1 font-display text-3xl font-bold">
-                        Carrito
+                    <h1 className="mt-3 font-display text-5xl leading-none font-black tracking-tight sm:text-6xl">
+                        Tu carrito<span className="text-primary">.</span>
                     </h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        El pedido se guarda antes de abrir WhatsApp. El pago
-                        queda pendiente.
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                        Revisá lo que elegiste, completá tus datos y abrí
+                        WhatsApp para enviar el mensaje. El pedido queda
+                        pendiente de confirmación.
                     </p>
                 </header>
                 {!cart.items.length ? (
-                    <Card>
-                        <CardContent className="py-16 text-center">
-                            <p className="text-muted-foreground">
-                                Tu carrito está vacío.
-                            </p>
-                            <Button asChild className="mt-4">
-                                <Link href="/menu">Ver menú</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <div className="mx-auto max-w-xl rounded-[2rem] border border-border bg-card px-6 py-16 text-center sm:px-10">
+                        <h2 className="font-display text-3xl font-bold">
+                            Todavía no elegiste nada.
+                        </h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            El menú te espera con nuestras empanadas. Sumá las
+                            que quieras y volvé por acá.
+                        </p>
+                        <Button
+                            asChild
+                            className="mt-6 min-h-11 rounded-full px-6"
+                        >
+                            <Link href="/menu">
+                                Explorar el menú{' '}
+                                <ArrowRight aria-hidden="true" />
+                            </Link>
+                        </Button>
+                    </div>
                 ) : (
                     <form
+                        id="public-checkout"
                         onSubmit={submit}
-                        className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]"
+                        className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:items-start lg:gap-10"
                     >
-                        <div className="grid gap-6">
-                            <Card>
+                        <div className="grid min-w-0 gap-6">
+                            <Card className="min-w-0 overflow-hidden rounded-[1.75rem] border-border bg-card shadow-none">
                                 <CardHeader>
-                                    <CardTitle>Productos</CardTitle>
+                                    <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
+                                        01 · Revisá tu elección
+                                    </p>
+                                    <CardTitle className="font-display text-2xl">
+                                        Productos
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
+                                    {loadingOptions && (
+                                        <p
+                                            role="status"
+                                            className="text-sm text-muted-foreground"
+                                        >
+                                            Cargando productos y opciones…
+                                        </p>
+                                    )}
+                                    {optionsError && (
+                                        <div
+                                            role="alert"
+                                            className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive"
+                                        >
+                                            <p>{optionsError}</p>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="mt-3 min-h-11"
+                                                onClick={() => {
+                                                    setLoadingOptions(true);
+                                                    setOptionsError('');
+                                                    setReloadOptions(
+                                                        (value) => value + 1,
+                                                    );
+                                                }}
+                                            >
+                                                Reintentar carga
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {(missingProducts.length > 0 ||
+                                        missingAddons.length > 0) && (
+                                        <p
+                                            role="alert"
+                                            className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive"
+                                        >
+                                            Hay productos o adicionales que ya
+                                            no están disponibles. Quitalos del
+                                            carrito para continuar.
+                                        </p>
+                                    )}
                                     {cart.items.map((item) => {
                                         const product = catalog.find(
                                             (entry) =>
@@ -180,24 +338,27 @@ export default function Cart() {
                                         return (
                                             <div
                                                 key={item.product_slug}
-                                                className="flex items-center justify-between gap-3 border-b pb-4"
+                                                className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-border pb-4 last:border-b-0"
                                             >
-                                                <div>
-                                                    <p className="font-medium">
+                                                <div className="min-w-0 flex-1 basis-36">
+                                                    <p className="font-semibold break-words">
                                                         {product?.name ??
                                                             item.product_slug}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Te Pinta calcula la
-                                                        combinación más
-                                                        conveniente.
-                                                    </p>
+                                                    {!loadingOptions &&
+                                                        !optionsError &&
+                                                        !product && (
+                                                            <p className="mt-1 text-xs font-medium text-destructive">
+                                                                Ya no disponible
+                                                            </p>
+                                                        )}
                                                 </div>
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex shrink-0 items-center gap-1">
                                                     <Button
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
+                                                        className="size-11"
                                                         aria-label={`Quitar una unidad de ${product?.name ?? item.product_slug}`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
@@ -210,8 +371,8 @@ export default function Cart() {
                                                         <Minus />
                                                     </Button>
                                                     <output
-                                                        aria-label="Cantidad"
-                                                        className="w-8 text-center tabular-nums"
+                                                        aria-label={`Cantidad de ${product?.name ?? item.product_slug}`}
+                                                        className="w-7 text-center text-sm font-bold tabular-nums"
                                                     >
                                                         {item.quantity}
                                                     </output>
@@ -219,6 +380,12 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
+                                                        className="size-11"
+                                                        disabled={
+                                                            !product &&
+                                                            !loadingOptions &&
+                                                            !optionsError
+                                                        }
                                                         aria-label={`Agregar una unidad de ${product?.name ?? item.product_slug}`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
@@ -234,6 +401,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="ghost"
+                                                        className="size-11 text-muted-foreground hover:text-destructive"
                                                         aria-label={`Quitar ${product?.name ?? item.product_slug} del carrito`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
@@ -248,11 +416,11 @@ export default function Cart() {
                                             </div>
                                         );
                                     })}
-                                    <fieldset className="grid gap-2">
+                                    <fieldset className="grid gap-2 border-t border-border pt-4">
                                         <legend className="text-sm font-medium">
                                             Preparación
                                         </legend>
-                                        <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                                        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4">
                                             <Checkbox
                                                 checked={condition === 'raw'}
                                                 onCheckedChange={(checked) =>
@@ -335,11 +503,40 @@ export default function Cart() {
                                             })}
                                         </fieldset>
                                     )}
+                                    {missingAddons.map((addon) => (
+                                        <div
+                                            key={addon.addon_slug}
+                                            className="flex min-w-0 items-center justify-between gap-3 border-t border-border pt-3 text-sm"
+                                        >
+                                            <span className="min-w-0 break-words text-destructive">
+                                                {addon.addon_slug} · Ya no
+                                                disponible
+                                            </span>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="min-h-11 shrink-0"
+                                                onClick={() =>
+                                                    cart.setAddonQuantity(
+                                                        addon.addon_slug,
+                                                        0,
+                                                    )
+                                                }
+                                            >
+                                                Quitar
+                                            </Button>
+                                        </div>
+                                    ))}
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="rounded-[1.75rem] border-border bg-card shadow-none">
                                 <CardHeader>
-                                    <CardTitle>Tus datos</CardTitle>
+                                    <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
+                                        02 · Para contactarte
+                                    </p>
+                                    <CardTitle className="font-display text-2xl">
+                                        Tus datos
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
                                     <Field
@@ -348,6 +545,7 @@ export default function Cart() {
                                         value={name}
                                         onChange={setName}
                                         required
+                                        autoComplete="name"
                                     />
                                     <Field
                                         id="checkout-phone"
@@ -356,15 +554,26 @@ export default function Cart() {
                                         onChange={setPhone}
                                         required
                                         inputMode="tel"
+                                        type="tel"
+                                        autoComplete="tel"
                                     />
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="rounded-[1.75rem] border-border bg-card shadow-none">
                                 <CardHeader>
-                                    <CardTitle>Entrega</CardTitle>
+                                    <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
+                                        03 · Cómo lo recibís
+                                    </p>
+                                    <CardTitle className="font-display text-2xl">
+                                        Entrega
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4">
-                                    <div className="flex gap-2">
+                                    <div
+                                        role="group"
+                                        aria-label="Tipo de entrega"
+                                        className="flex flex-wrap gap-2"
+                                    >
                                         <Button
                                             type="button"
                                             variant={
@@ -375,6 +584,7 @@ export default function Cart() {
                                             aria-pressed={
                                                 deliveryType === 'pickup'
                                             }
+                                            className="min-h-11 rounded-full px-6"
                                             onClick={() =>
                                                 setDeliveryType('pickup')
                                             }
@@ -391,6 +601,7 @@ export default function Cart() {
                                             aria-pressed={
                                                 deliveryType === 'delivery'
                                             }
+                                            className="min-h-11 rounded-full px-6"
                                             onClick={() =>
                                                 setDeliveryType('delivery')
                                             }
@@ -405,6 +616,7 @@ export default function Cart() {
                                             value={address}
                                             onChange={setAddress}
                                             required
+                                            autoComplete="street-address"
                                         />
                                     )}
                                     <Field
@@ -467,11 +679,38 @@ export default function Cart() {
                                 </CardContent>
                             </Card>
                         </div>
-                        <aside className="grid content-start gap-4">
+                        <aside
+                            className="grid min-w-0 content-start gap-4 lg:sticky lg:top-6"
+                            aria-label="Resumen y finalización"
+                        >
+                            <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
+                                04 · Revisá el total
+                            </p>
                             <PriceSummary
                                 quote={quote}
                                 loading={loadingQuote}
                             />
+                            {quoteError && (
+                                <div
+                                    role="alert"
+                                    className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive"
+                                >
+                                    <p>
+                                        No pudimos actualizar el precio:{' '}
+                                        {quoteError}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="mt-3 min-h-11"
+                                        onClick={() =>
+                                            setQuoteRetry((value) => value + 1)
+                                        }
+                                    >
+                                        Reintentar precio
+                                    </Button>
+                                </div>
+                            )}
                             {error && (
                                 <p
                                     role="alert"
@@ -483,16 +722,38 @@ export default function Cart() {
                             <Button
                                 type="submit"
                                 size="lg"
-                                disabled={
-                                    submitting || loadingQuote || !businessToday
-                                }
+                                disabled={!canSubmit}
+                                className="hidden min-h-12 rounded-full sm:inline-flex"
                             >
                                 {submitting
                                     ? 'Creando pedido…'
                                     : 'Confirmar y abrir WhatsApp'}
                             </Button>
+                            <p className="text-xs leading-5 text-muted-foreground">
+                                Al continuar, guardamos el pedido y abrimos
+                                WhatsApp con un mensaje preparado. Tenés que
+                                enviarlo vos; no queda confirmado
+                                automáticamente.
+                            </p>
                         </aside>
                     </form>
+                )}
+                {cart.items.length > 0 && (
+                    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
+                        <div className="mx-auto max-w-7xl">
+                            <Button
+                                form="public-checkout"
+                                type="submit"
+                                size="lg"
+                                disabled={!canSubmit}
+                                className="min-h-12 w-full rounded-full"
+                            >
+                                {submitting
+                                    ? 'Creando pedido…'
+                                    : 'Confirmar y abrir WhatsApp'}
+                            </Button>
+                        </div>
+                    </div>
                 )}
             </section>
         </>
@@ -513,6 +774,7 @@ function Field({
     required?: boolean;
     inputMode?: 'tel';
     min?: string;
+    autoComplete?: string;
 }) {
     return (
         <div className="grid gap-2">
