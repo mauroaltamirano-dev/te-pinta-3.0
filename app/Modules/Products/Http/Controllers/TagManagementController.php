@@ -5,6 +5,7 @@ namespace App\Modules\Products\Http\Controllers;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\Tag;
 use App\Modules\Products\Support\UniqueSlug;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -22,10 +23,14 @@ final class TagManagementController
             'slug' => ['nullable', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', Rule::unique('tags', 'slug')],
         ]);
 
-        Tag::query()->create([
-            'name' => $data['name'],
-            'slug' => $data['slug'] ?? $uniqueSlug->for('tags', $data['name']),
-        ]);
+        try {
+            Tag::query()->create([
+                'name' => $data['name'],
+                'slug' => $data['slug'] ?? $uniqueSlug->for('tags', $data['name']),
+            ]);
+        } catch (UniqueConstraintViolationException $exception) {
+            $this->rethrowUnlessSlugConflict($exception);
+        }
 
         return to_route('admin.products.index')->with('success', 'Etiqueta creada.');
     }
@@ -39,7 +44,11 @@ final class TagManagementController
             'slug' => ['required', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', Rule::unique('tags', 'slug')->ignore($tag->id)],
         ]);
 
-        $tag->update($data);
+        try {
+            $tag->update($data);
+        } catch (UniqueConstraintViolationException $exception) {
+            $this->rethrowUnlessSlugConflict($exception);
+        }
 
         return to_route('admin.products.index')->with('success', 'Etiqueta actualizada.');
     }
@@ -55,5 +64,16 @@ final class TagManagementController
         $tag->delete();
 
         return to_route('admin.products.index')->with('success', 'Etiqueta eliminada.');
+    }
+
+    private function rethrowUnlessSlugConflict(UniqueConstraintViolationException $exception): never
+    {
+        if ($exception->index !== 'tags_slug_unique' && ! in_array('slug', $exception->columns, true)) {
+            throw $exception;
+        }
+
+        throw ValidationException::withMessages([
+            'slug' => 'Este identificador ya pertenece a otra etiqueta. Elegí uno diferente e intentá nuevamente.',
+        ]);
     }
 }

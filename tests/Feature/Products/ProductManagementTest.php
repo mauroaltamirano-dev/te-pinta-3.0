@@ -10,6 +10,7 @@ use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Models\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -191,6 +192,52 @@ final class ProductManagementTest extends TestCase
         $this->actingAs(User::factory()->create())->post(route('admin.product-tags.store'), $payload)->assertForbidden();
         $this->put(route('admin.product-tags.update', $tag), $payload)->assertForbidden();
         $this->delete(route('admin.product-tags.destroy', $tag))->assertForbidden();
+    }
+
+    public function test_tag_slug_conflicts_are_reported_on_create_and_update(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $existing = Tag::query()->create(['name' => 'Picante', 'slug' => 'picante']);
+        $another = Tag::query()->create(['name' => 'Suave', 'slug' => 'suave']);
+
+        $this->actingAs($admin)->post(route('admin.product-tags.store'), [
+            'name' => 'Picante duplicada',
+            'slug' => $existing->slug,
+        ])->assertSessionHasErrors('slug');
+
+        $this->actingAs($admin)->put(route('admin.product-tags.update', $another), [
+            'name' => 'Suave',
+            'slug' => $existing->slug,
+        ])->assertSessionHasErrors('slug');
+
+        $this->assertSame('suave', $another->fresh()->slug);
+        $this->assertSame(2, Tag::query()->count());
+    }
+
+    public function test_database_tag_slug_conflict_after_validation_is_translated_to_a_field_error(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        DB::unprepared(<<<'SQL'
+            CREATE FUNCTION test_tag_slug_conflict() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN
+                RAISE EXCEPTION 'duplicate key value violates unique constraint "tags_slug_unique"' USING ERRCODE = '23505';
+            END;
+            $$;
+            CREATE TRIGGER test_tag_slug_conflict BEFORE INSERT OR UPDATE ON tags
+            FOR EACH ROW EXECUTE FUNCTION test_tag_slug_conflict();
+            SQL);
+
+        try {
+            DB::statement('SAVEPOINT tag_slug_conflict');
+            $response = $this->actingAs($admin)->post(route('admin.product-tags.store'), [
+                'name' => 'Nueva',
+                'slug' => '',
+            ]);
+            DB::statement('ROLLBACK TO SAVEPOINT tag_slug_conflict');
+            $response->assertSessionHasErrors('slug');
+        } finally {
+            DB::unprepared('DROP TRIGGER test_tag_slug_conflict ON tags; DROP FUNCTION test_tag_slug_conflict();');
+        }
     }
 
     public function test_public_editorial_metadata_is_saved_and_can_be_cleared(): void

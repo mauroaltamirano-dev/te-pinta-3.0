@@ -1,7 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import { LoaderCircle, Tags, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { adminSaveFeedback } from '@/components/shared/admin-save-feedback';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -71,10 +71,8 @@ function TagRow({ tag }: { tag: ProductTag }) {
         event.preventDefault();
         form.put(`/admin/settings/tags/${tag.id}`, {
             preserveScroll: true,
-            ...adminSaveFeedback(
-                'Etiqueta actualizada.',
-                'No se pudo actualizar la etiqueta.',
-            ),
+            onSuccess: () => toast.success('Etiqueta actualizada.'),
+            onError: () => toast.error('No se pudo actualizar la etiqueta.'),
         });
     };
 
@@ -135,10 +133,12 @@ function TagRow({ tag }: { tag: ProductTag }) {
                     if (window.confirm(`¿Eliminar la etiqueta ${tag.name}?`)) {
                         router.delete(`/admin/settings/tags/${tag.id}`, {
                             preserveScroll: true,
-                            ...adminSaveFeedback(
-                                'Etiqueta eliminada.',
-                                'No se pudo eliminar la etiqueta. Quitála de los productos antes de reintentar.',
-                            ),
+                            onSuccess: () =>
+                                toast.success('Etiqueta eliminada.'),
+                            onError: () =>
+                                toast.error(
+                                    'No se pudo eliminar la etiqueta. Quitála de los productos antes de reintentar.',
+                                ),
                         });
                     }
                 }}
@@ -154,17 +154,13 @@ function CreateTagForm() {
     const form = useForm({ name: '', slug: '' });
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const feedback = adminSaveFeedback(
-            'Etiqueta creada.',
-            'No se pudo crear la etiqueta.',
-        );
         form.post('/admin/settings/tags', {
             preserveScroll: true,
-            ...feedback,
             onSuccess: () => {
-                feedback.onSuccess();
+                toast.success('Etiqueta creada.');
                 form.reset();
             },
+            onError: () => toast.error('No se pudo crear la etiqueta.'),
         });
     };
 
