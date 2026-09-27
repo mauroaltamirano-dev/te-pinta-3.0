@@ -214,7 +214,12 @@ export default function Menu() {
                                                 {product.category.name}
                                             </p>
                                             <h2 className="mt-2 font-display text-3xl leading-none font-bold tracking-tight">
-                                                {product.name}
+                                                <Link
+                                                    href={`/menu/${encodeURIComponent(product.slug)}`}
+                                                    className="underline-offset-4 hover:underline focus-visible:underline"
+                                                >
+                                                    {product.name}
+                                                </Link>
                                             </h2>
                                             {product.tags.length > 0 && (
                                                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -305,6 +310,17 @@ export default function Menu() {
                                                     </div>
                                                 )}
                                                 <div className="mt-5 grid grid-cols-2 gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="link"
+                                                        className="col-span-2 min-h-11 justify-start px-0 text-public-earth-ink"
+                                                    >
+                                                        <Link
+                                                            href={`/menu/${encodeURIComponent(product.slug)}`}
+                                                        >
+                                                            Ver detalles
+                                                        </Link>
+                                                    </Button>
                                                     <Button
                                                         type="button"
                                                         size="lg"

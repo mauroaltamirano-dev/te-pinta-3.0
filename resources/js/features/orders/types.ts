@@ -12,6 +12,8 @@ export interface PublicProduct {
     slug: string;
     name: string;
     description: string | null;
+    long_description: string | null;
+    public_ingredients: string | null;
     image_url: string | null;
     category: { slug: string; name: string };
     tags: Array<{ slug: string; name: string }>;

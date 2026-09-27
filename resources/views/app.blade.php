@@ -3,6 +3,18 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        @if (isset($publicSeo))
+            <title data-public-seo>{{ $publicSeo['title'] }}</title>
+            <meta data-public-seo name="description" content="{{ $publicSeo['description'] }}">
+            <link data-public-seo rel="canonical" href="{{ $publicSeo['url'] }}">
+            <meta data-public-seo property="og:type" content="website">
+            <meta data-public-seo property="og:title" content="{{ $publicSeo['title'] }}">
+            <meta data-public-seo property="og:description" content="{{ $publicSeo['description'] }}">
+            <meta data-public-seo property="og:url" content="{{ $publicSeo['url'] }}">
+            @if ($publicSeo['image'])
+                <meta data-public-seo property="og:image" content="{{ $publicSeo['image'] }}">
+            @endif
+        @endif
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>
@@ -44,7 +56,9 @@
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            @unless (isset($publicSeo))
+                <title>{{ config('app.name', 'Laravel') }}</title>
+            @endunless
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
