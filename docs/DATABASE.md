@@ -202,6 +202,8 @@ Los timestamps de la aplicación y la persistencia en PostgreSQL permanecen en U
 
 Products conserva `unit_price`, `half_dozen_price` y `dozen_price` como precios base de productos cocinados. `raw_price_discounts` almacena los tres descuentos configurables y positivos que se restan únicamente para la alternativa cruda.
 
+`products.description` es la descripción breve. `long_description` y `public_ingredients` son texto editorial opcional para la ficha pública, administrado en Products; no se derivan de recetas, consumo ni stock de Inventory. Los campos nuevos son nullable para conservar los productos existentes sin migración de contenido.
+
 ## Flujo de migraciones
 
 ```bash

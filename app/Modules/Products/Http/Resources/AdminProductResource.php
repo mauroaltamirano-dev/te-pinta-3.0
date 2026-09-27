@@ -19,6 +19,8 @@ final class AdminProductResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'long_description' => $this->long_description,
+            'public_ingredients' => $this->public_ingredients,
             'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
             'sort_order' => $this->sort_order,
             'unit_price' => $this->unit_price,

@@ -17,6 +17,8 @@ final class PublicProductResource extends JsonResource
             'slug' => $this->slug,
             'name' => $this->name,
             'description' => $this->description,
+            'long_description' => $this->long_description,
+            'public_ingredients' => $this->public_ingredients,
             'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
             'category' => [
                 'slug' => $this->category->slug,

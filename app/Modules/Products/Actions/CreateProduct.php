@@ -30,6 +30,8 @@ final class CreateProduct
                     'name' => $data->name,
                     'slug' => $this->uniqueSlug->for('products', $data->name),
                     'description' => $data->description,
+                    'long_description' => $data->longDescription,
+                    'public_ingredients' => $data->publicIngredients,
                     'image_path' => $imagePath ?: null,
                     'sort_order' => $data->sortOrder,
                     'unit_price' => $data->unitPrice,

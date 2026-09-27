@@ -19,6 +19,10 @@ final class PublicProductCatalogTest extends TestCase
         $vegetarian = Tag::query()->create(['name' => 'Vegetariana', 'slug' => 'vegetariana']);
 
         $available = $this->createProduct($activeCategory, 'Caprese', 'caprese', true, 1);
+        $available->update([
+            'long_description' => 'Freshly prepared each day.',
+            'public_ingredients' => 'Tomato, basil, mozzarella.',
+        ]);
         $available->tags()->attach($vegetarian);
         $this->createProduct($activeCategory, 'Unavailable', 'unavailable', false, 2);
         $deleted = $this->createProduct($activeCategory, 'Deleted', 'deleted', true, 3);
@@ -32,6 +36,8 @@ final class PublicProductCatalogTest extends TestCase
             ->assertJsonPath('data.0.category.slug', 'clasicas')
             ->assertJsonPath('data.0.tags.0.slug', 'vegetariana')
             ->assertJsonPath('data.0.prices.unit', 1600)
+            ->assertJsonPath('data.0.long_description', 'Freshly prepared each day.')
+            ->assertJsonPath('data.0.public_ingredients', 'Tomato, basil, mozzarella.')
             ->assertJsonCount(1, 'data')
             ->assertJsonCount(1, 'categories')
             ->assertJsonMissing(['name' => 'Unavailable'])

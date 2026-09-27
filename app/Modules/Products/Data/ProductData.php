@@ -10,6 +10,8 @@ final readonly class ProductData
     public function __construct(
         public string $name,
         public ?string $description,
+        public ?string $longDescription,
+        public ?string $publicIngredients,
         public int $categoryId,
         public array $tagIds,
         public int $unitPrice,
@@ -24,10 +26,14 @@ final readonly class ProductData
     {
         $validated = $request->safe();
         $description = $validated['description'] ?? null;
+        $longDescription = $validated['long_description'] ?? null;
+        $publicIngredients = $validated['public_ingredients'] ?? null;
 
         return new self(
             name: $validated->string('name')->toString(),
             description: is_string($description) && $description !== '' ? $description : null,
+            longDescription: is_string($longDescription) && $longDescription !== '' ? $longDescription : null,
+            publicIngredients: is_string($publicIngredients) && $publicIngredients !== '' ? $publicIngredients : null,
             categoryId: $validated->integer('category_id'),
             tagIds: $validated->collect('tags')->map(fn (mixed $id): int => (int) $id)->all(),
             unitPrice: $validated->integer('unit_price'),

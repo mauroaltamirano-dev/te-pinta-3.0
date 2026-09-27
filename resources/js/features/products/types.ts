@@ -16,6 +16,8 @@ export interface Product {
     id: number;
     name: string;
     description: string | null;
+    long_description: string | null;
+    public_ingredients: string | null;
     image_url: string | null;
     category_id: number;
     tags: ProductTag[];

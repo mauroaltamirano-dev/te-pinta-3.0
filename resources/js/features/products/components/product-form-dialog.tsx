@@ -30,6 +30,8 @@ import type { Product, ProductCategory, ProductTag } from '../types';
 interface ProductFormData {
     name: string;
     description: string;
+    long_description: string;
+    public_ingredients: string;
     category_id: string;
     tags: number[];
     unit_price: string;
@@ -61,6 +63,8 @@ export function ProductFormDialog({
     const form = useForm<ProductFormData>({
         name: product?.name ?? '',
         description: product?.description ?? '',
+        long_description: product?.long_description ?? '',
+        public_ingredients: product?.public_ingredients ?? '',
         category_id:
             product?.category_id.toString() ??
             defaultCategoryId?.toString() ??
@@ -304,6 +308,62 @@ export function ProductFormDialog({
                                             : undefined
                                     }
                                     maxLength={500}
+                                    rows={3}
+                                />
+                            </FormField>
+
+                            <FormField
+                                id="product-long-description"
+                                label="Descripción completa para la web"
+                                error={form.errors.long_description}
+                                className="sm:col-span-2"
+                            >
+                                <Textarea
+                                    id="product-long-description"
+                                    value={form.data.long_description}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'long_description',
+                                            event.target.value,
+                                        )
+                                    }
+                                    aria-invalid={Boolean(
+                                        form.errors.long_description,
+                                    )}
+                                    aria-describedby={
+                                        form.errors.long_description
+                                            ? 'product-long-description-error'
+                                            : undefined
+                                    }
+                                    maxLength={5000}
+                                    rows={4}
+                                />
+                            </FormField>
+
+                            <FormField
+                                id="product-public-ingredients"
+                                label="Ingredientes visibles en la web"
+                                error={form.errors.public_ingredients}
+                                className="sm:col-span-2"
+                            >
+                                <Textarea
+                                    id="product-public-ingredients"
+                                    value={form.data.public_ingredients}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'public_ingredients',
+                                            event.target.value,
+                                        )
+                                    }
+                                    aria-invalid={Boolean(
+                                        form.errors.public_ingredients,
+                                    )}
+                                    aria-describedby={
+                                        form.errors.public_ingredients
+                                            ? 'product-public-ingredients-error'
+                                            : undefined
+                                    }
+                                    maxLength={2000}
                                     rows={3}
                                 />
                             </FormField>

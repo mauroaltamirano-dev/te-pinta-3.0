@@ -108,6 +108,50 @@ final class ProductManagementTest extends TestCase
         $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 
+    public function test_public_editorial_metadata_is_saved_and_can_be_cleared(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+
+        $this->actingAs($admin)->post(route('admin.products.store'), $this->validPayload($category, [
+            'description' => 'Short menu copy',
+            'long_description' => 'A longer story for the product page.',
+            'public_ingredients' => 'Tomato, basil, mozzarella.',
+        ]))->assertRedirect(route('admin.products.index'));
+
+        $product = Product::query()->sole();
+        $this->assertSame('Short menu copy', $product->description);
+        $this->assertSame('A longer story for the product page.', $product->long_description);
+        $this->assertSame('Tomato, basil, mozzarella.', $product->public_ingredients);
+
+        $this->actingAs($admin)->get(route('admin.products.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/products/index')
+                ->where('products.0.long_description', 'A longer story for the product page.')
+                ->where('products.0.public_ingredients', 'Tomato, basil, mozzarella.'));
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), $this->validPayload($category, [
+            'long_description' => '',
+            'public_ingredients' => '',
+        ]))->assertRedirect(route('admin.products.index'));
+
+        $this->assertNull($product->fresh()->long_description);
+        $this->assertNull($product->fresh()->public_ingredients);
+    }
+
+    public function test_public_editorial_metadata_length_is_validated_on_the_server(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+
+        $this->actingAs($admin)->post(route('admin.products.store'), $this->validPayload($category, [
+            'long_description' => str_repeat('a', 5001),
+            'public_ingredients' => str_repeat('b', 2001),
+        ]))->assertSessionHasErrors(['long_description', 'public_ingredients']);
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
     public function test_product_input_is_validated_on_the_server(): void
     {
         $admin = User::factory()->administrator()->create();

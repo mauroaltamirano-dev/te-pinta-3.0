@@ -34,6 +34,8 @@ final class UpdateProduct
                     'name' => $data->name,
                     'slug' => $this->uniqueSlug->for('products', $data->name, $product->id),
                     'description' => $data->description,
+                    'long_description' => $data->longDescription,
+                    'public_ingredients' => $data->publicIngredients,
                     'image_path' => $newImagePath ?: ($removeImage ? null : $product->image_path),
                     'sort_order' => $data->sortOrder,
                     'unit_price' => $data->unitPrice,
