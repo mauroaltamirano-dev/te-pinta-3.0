@@ -9,6 +9,7 @@ final readonly class ProductData
     /** @param array<int, int> $tagIds */
     public function __construct(
         public string $name,
+        public ?string $slug,
         public ?string $description,
         public ?string $longDescription,
         public ?string $publicIngredients,
@@ -31,6 +32,7 @@ final readonly class ProductData
 
         return new self(
             name: $validated->string('name')->toString(),
+            slug: $validated['slug'] ?? null,
             description: is_string($description) && $description !== '' ? $description : null,
             longDescription: is_string($longDescription) && $longDescription !== '' ? $longDescription : null,
             publicIngredients: is_string($publicIngredients) && $publicIngredients !== '' ? $publicIngredients : null,

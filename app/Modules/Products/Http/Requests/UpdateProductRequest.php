@@ -19,6 +19,7 @@ final class UpdateProductRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:160'],
+            'slug' => ['sometimes', 'required', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', Rule::unique('products', 'slug')->ignore($this->route('product'))],
             'description' => ['nullable', 'string', 'max:500'],
             'long_description' => ['nullable', 'string', 'max:5000'],
             'public_ingredients' => ['nullable', 'string', 'max:2000'],

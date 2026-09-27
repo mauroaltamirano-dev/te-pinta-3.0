@@ -29,6 +29,7 @@ import type { Product, ProductCategory, ProductTag } from '../types';
 
 interface ProductFormData {
     name: string;
+    slug: string;
     description: string;
     long_description: string;
     public_ingredients: string;
@@ -62,6 +63,7 @@ export function ProductFormDialog({
 }: ProductFormDialogProps) {
     const form = useForm<ProductFormData>({
         name: product?.name ?? '',
+        slug: product?.slug ?? '',
         description: product?.description ?? '',
         long_description: product?.long_description ?? '',
         public_ingredients: product?.public_ingredients ?? '',
@@ -282,6 +284,33 @@ export function ProductFormDialog({
                                     required
                                     autoFocus
                                 />
+                            </FormField>
+
+                            <FormField
+                                id="product-slug"
+                                label="URL pública"
+                                error={form.errors.slug}
+                                className="sm:col-span-2"
+                            >
+                                <Input
+                                    id="product-slug"
+                                    value={form.data.slug}
+                                    onChange={(event) =>
+                                        form.setData('slug', event.target.value)
+                                    }
+                                    placeholder="Se genera desde el nombre al crear"
+                                    maxLength={255}
+                                    aria-invalid={Boolean(form.errors.slug)}
+                                    aria-describedby={
+                                        form.errors.slug
+                                            ? 'product-slug-error'
+                                            : undefined
+                                    }
+                                />
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Usá minúsculas, números y guiones. Cambiarla
+                                    rompe los enlaces públicos anteriores.
+                                </p>
                             </FormField>
 
                             <FormField

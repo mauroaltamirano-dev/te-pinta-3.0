@@ -28,7 +28,7 @@ final class CreateProduct
                 $product = Product::query()->create([
                     'category_id' => $data->categoryId,
                     'name' => $data->name,
-                    'slug' => $this->uniqueSlug->for('products', $data->name),
+                    'slug' => $data->slug ?? $this->uniqueSlug->for('products', $data->name),
                     'description' => $data->description,
                     'long_description' => $data->longDescription,
                     'public_ingredients' => $data->publicIngredients,

@@ -108,6 +108,91 @@ final class ProductManagementTest extends TestCase
         $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 
+    public function test_product_slug_is_stable_on_rename_and_explicitly_editable(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+
+        $this->actingAs($admin)->post(route('admin.products.store'), $this->validPayload($category, [
+            'name' => 'Salteña',
+        ]))->assertRedirect(route('admin.products.index'));
+
+        $product = Product::query()->sole();
+        $this->assertSame('saltena', $product->slug);
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), $this->validPayload($category, [
+            'name' => 'Salteña especial',
+        ]))->assertRedirect(route('admin.products.index'));
+        $this->assertSame('saltena', $product->fresh()->slug);
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), $this->validPayload($category, [
+            'name' => 'Salteña especial',
+            'slug' => 'saltena-especial',
+        ]))->assertRedirect(route('admin.products.index'));
+        $this->assertSame('saltena-especial', $product->fresh()->slug);
+    }
+
+    public function test_product_slug_rejects_invalid_or_used_values_including_soft_deleted_products(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+        $existing = $this->createProduct($category);
+        $existing->delete();
+
+        foreach (['criolla-salada', 'Not Valid'] as $slug) {
+            $this->actingAs($admin)->post(route('admin.products.store'), $this->validPayload($category, [
+                'slug' => $slug,
+            ]))->assertSessionHasErrors('slug');
+        }
+
+        $this->assertSame(1, Product::query()->withTrashed()->count());
+    }
+
+    public function test_administrator_can_manage_tag_vocabulary_and_existing_product_association(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+        $product = $this->createProduct($category);
+
+        $this->actingAs($admin)->post(route('admin.product-tags.store'), [
+            'name' => 'Más elegida',
+            'slug' => '',
+        ])->assertRedirect(route('admin.products.index'));
+
+        $tag = Tag::query()->sole();
+        $this->assertSame('mas-elegida', $tag->slug);
+
+        $this->actingAs($admin)->put(route('admin.product-tags.update', $tag), [
+            'name' => 'Favorita',
+            'slug' => 'favorita',
+        ])->assertRedirect(route('admin.products.index'));
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), $this->validPayload($category, [
+            'tags' => [$tag->id],
+        ]))->assertRedirect(route('admin.products.index'));
+
+        $this->assertSame('favorita', $product->fresh()->tags->sole()->slug);
+        $this->actingAs($admin)->delete(route('admin.product-tags.destroy', $tag))
+            ->assertSessionHasErrors('tag');
+        $this->assertDatabaseHas('tags', ['id' => $tag->id]);
+
+        $product->tags()->detach($tag);
+        $this->actingAs($admin)->delete(route('admin.product-tags.destroy', $tag))
+            ->assertRedirect(route('admin.products.index'));
+        $this->assertDatabaseMissing('tags', ['id' => $tag->id]);
+    }
+
+    public function test_non_administrators_cannot_manage_tags(): void
+    {
+        $tag = Tag::query()->create(['name' => 'Clásica', 'slug' => 'clasica']);
+        $payload = ['name' => 'Nueva', 'slug' => 'nueva'];
+
+        $this->post(route('admin.product-tags.store'), $payload)->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())->post(route('admin.product-tags.store'), $payload)->assertForbidden();
+        $this->put(route('admin.product-tags.update', $tag), $payload)->assertForbidden();
+        $this->delete(route('admin.product-tags.destroy', $tag))->assertForbidden();
+    }
+
     public function test_public_editorial_metadata_is_saved_and_can_be_cleared(): void
     {
         $admin = User::factory()->administrator()->create();

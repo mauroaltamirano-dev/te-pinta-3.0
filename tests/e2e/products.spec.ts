@@ -58,6 +58,30 @@ test('configuración abre la gestión de productos con el catálogo inicial', as
     await expect(saltena).toContainText(/18[.\s]000/);
 });
 
+test('administración permite crear, editar y eliminar etiquetas públicas', async ({
+    page,
+}) => {
+    await logInAsAdministrator(page);
+    await page.goto('/admin/settings/products');
+
+    await page.getByRole('button', { name: 'Gestionar etiquetas' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Gestionar etiquetas' });
+    await dialog.getByLabel('Nueva etiqueta').fill('Etiqueta de prueba');
+    await dialog.getByRole('button', { name: 'Agregar' }).click();
+
+    const row = dialog.locator('form:has(input[value="etiqueta-de-prueba"])');
+    await expect(row.getByLabel('Nombre')).toHaveValue('Etiqueta de prueba');
+    await row.getByLabel('Nombre').fill('Etiqueta editada');
+    await row.getByRole('button', { name: 'Guardar' }).click();
+    await expect(row.getByLabel('Nombre')).toHaveValue('Etiqueta editada');
+
+    page.once('dialog', (confirmation) => confirmation.accept());
+    await row
+        .getByRole('button', { name: 'Eliminar etiqueta Etiqueta editada' })
+        .click();
+    await expect(row).toHaveCount(0);
+});
+
 test('configuración presenta precios cocinados y descuentos crudos positivos', async ({
     page,
 }) => {

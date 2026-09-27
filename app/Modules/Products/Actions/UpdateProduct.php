@@ -4,7 +4,6 @@ namespace App\Modules\Products\Actions;
 
 use App\Modules\Products\Data\ProductData;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Support\UniqueSlug;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,8 +13,6 @@ use Throwable;
 
 final class UpdateProduct
 {
-    public function __construct(private readonly UniqueSlug $uniqueSlug) {}
-
     public function execute(Product $product, ProductData $data, ?UploadedFile $image): Product
     {
         $oldImagePath = $product->image_path;
@@ -32,7 +29,7 @@ final class UpdateProduct
                 $product->update([
                     'category_id' => $data->categoryId,
                     'name' => $data->name,
-                    'slug' => $this->uniqueSlug->for('products', $data->name, $product->id),
+                    'slug' => $data->slug ?? $product->slug,
                     'description' => $data->description,
                     'long_description' => $data->longDescription,
                     'public_ingredients' => $data->publicIngredients,

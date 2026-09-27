@@ -15,6 +15,14 @@ final class ProductCatalogSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function (): void {
+            // Bootstrap only: an administered or soft-deleted catalog must never
+            // receive starter varieties again after a rename or slug edit.
+            $hasCatalog = Product::query()->withTrashed()->exists();
+
+            if ($hasCatalog) {
+                return;
+            }
+
             $categories = collect([
                 ['name' => 'Clásicas', 'slug' => 'clasicas', 'sort_order' => 10],
                 ['name' => 'Especiales', 'slug' => 'especiales', 'sort_order' => 20],

@@ -204,6 +204,8 @@ Products conserva `unit_price`, `half_dozen_price` y `dozen_price` como precios 
 
 `products.description` es la descripción breve. `long_description` y `public_ingredients` son texto editorial opcional para la ficha pública, administrado en Products; no se derivan de recetas, consumo ni stock de Inventory. Los campos nuevos son nullable para conservar los productos existentes sin migración de contenido.
 
+`products.slug` es una URL pública única incluso frente a productos con borrado lógico. Al crear puede omitirse y se genera desde el nombre; una edición del nombre no cambia la URL. Administración puede cambiar el slug explícitamente, con la advertencia de que los enlaces anteriores dejan de resolver. Las etiquetas son filas administrables de `tags`, asociadas por `product_tag`; una etiqueta asociada no se elimina hasta quitarla de sus productos. `ProductCatalogSeeder` sólo carga variedades iniciales cuando no existe ningún Product, incluido el catálogo con borrado lógico: nunca repuebla un catálogo ya administrado después de cambios de nombre o slug.
+
 ## Flujo de migraciones
 
 ```bash

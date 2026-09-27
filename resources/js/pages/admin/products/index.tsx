@@ -1,11 +1,12 @@
 import { Head } from '@inertiajs/react';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Tags } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AddProductCard } from '@/features/products/components/add-product-card';
 import { CategoryManagerDialog } from '@/features/products/components/category-manager-dialog';
 import { ProductCard } from '@/features/products/components/product-card';
 import { ProductFormDialog } from '@/features/products/components/product-form-dialog';
+import { TagManagerDialog } from '@/features/products/components/tag-manager-dialog';
 import type { Product, ProductsPageProps } from '@/features/products/types';
 import SettingsLayout from '@/layouts/settings-layout';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ export default function Products({
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [productDialogOpen, setProductDialogOpen] = useState(false);
     const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+    const [tagDialogOpen, setTagDialogOpen] = useState(false);
 
     const activeCategoryId = categories.some(
         (category) => category.id === selectedCategoryId,
@@ -64,14 +66,25 @@ export default function Products({
                                 las imágenes y la disponibilidad de venta.
                             </p>
                         </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setCategoryDialogOpen(true)}
-                        >
-                            <SlidersHorizontal data-icon="inline-start" />
-                            Gestionar categorías
-                        </Button>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setTagDialogOpen(true)}
+                                className="w-full sm:w-auto"
+                            >
+                                <Tags data-icon="inline-start" /> Gestionar
+                                etiquetas
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setCategoryDialogOpen(true)}
+                            >
+                                <SlidersHorizontal data-icon="inline-start" />
+                                Gestionar categorías
+                            </Button>
+                        </div>
                     </div>
 
                     <div
@@ -155,6 +168,11 @@ export default function Products({
                 open={categoryDialogOpen}
                 onOpenChange={setCategoryDialogOpen}
                 categories={categories}
+            />
+            <TagManagerDialog
+                open={tagDialogOpen}
+                onOpenChange={setTagDialogOpen}
+                tags={tags}
             />
         </>
     );

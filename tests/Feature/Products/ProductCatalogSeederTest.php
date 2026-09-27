@@ -112,6 +112,33 @@ final class ProductCatalogSeederTest extends TestCase
         Storage::disk('public')->assertExists('products/admin-image.jpg');
     }
 
+    public function test_renaming_a_starter_product_does_not_recreate_it_on_reseed(): void
+    {
+        $this->seed(ProductCatalogSeeder::class);
+
+        Product::query()->where('slug', 'saltena')->sole()->update([
+            'name' => 'Salteña de la casa',
+            'slug' => 'saltena-de-la-casa',
+        ]);
+
+        $this->seed(ProductCatalogSeeder::class);
+
+        $this->assertSame(9, Product::query()->withTrashed()->count());
+        $this->assertDatabaseMissing('products', ['slug' => 'saltena']);
+        $this->assertDatabaseHas('products', ['slug' => 'saltena-de-la-casa']);
+    }
+
+    public function test_soft_deleted_catalog_is_not_bootstrapped_again(): void
+    {
+        $this->seed(ProductCatalogSeeder::class);
+        Product::query()->delete();
+
+        $this->seed(ProductCatalogSeeder::class);
+
+        $this->assertSame(9, Product::query()->withTrashed()->count());
+        $this->assertSame(0, Product::query()->count());
+    }
+
     private function discount(PriceTier $tier): int
     {
         return RawPriceDiscount::query()->where('pricing_mode', $tier)->sole()->amount;

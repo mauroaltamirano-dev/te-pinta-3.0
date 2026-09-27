@@ -24,6 +24,7 @@ final class StoreProductRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'slug' => $this->input('slug') ?: null,
             'description' => $this->input('description') ?: null,
             'long_description' => $this->input('long_description') ?: null,
             'public_ingredients' => $this->input('public_ingredients') ?: null,
@@ -36,6 +37,7 @@ final class StoreProductRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:160'],
+            'slug' => ['nullable', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', Rule::unique('products', 'slug')],
             'description' => ['nullable', 'string', 'max:500'],
             'long_description' => ['nullable', 'string', 'max:5000'],
             'public_ingredients' => ['nullable', 'string', 'max:2000'],
