@@ -70,13 +70,20 @@ function PublicShell({ children }: PropsWithChildren) {
                             aria-current={
                                 pathname === '/cart' ? 'page' : undefined
                             }
+                            aria-label={
+                                count > 0
+                                    ? `Carrito, ${count} productos`
+                                    : 'Carrito'
+                            }
                             className="inline-flex min-h-11 items-center gap-2 rounded-full border border-foreground bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-primary hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-white sm:px-5"
                         >
                             <ShoppingBag
                                 className="size-4"
                                 aria-hidden="true"
                             />
-                            <span>Carrito</span>
+                            <span className="hidden min-[360px]:inline">
+                                Carrito
+                            </span>
                             {count > 0 && (
                                 <span
                                     className="grid min-w-5 place-items-center rounded-full bg-background px-1 text-xs font-bold text-foreground tabular-nums"
