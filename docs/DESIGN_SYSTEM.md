@@ -27,6 +27,12 @@ Nunca se copian nombres de plantillas, productos de ejemplo ni contenido fictici
 - Tratar el comportamiento responsive como una recomposición, no como una reducción proporcional.
 - Las páginas públicas parten del ancho móvil; administración/POS parte de flujos para tablet o escritorio y debe seguir siendo usable en anchos razonablemente menores.
 
+### Identidad pública
+
+La paleta pública vive en `resources/css/app.css`: `public-ink` (`#333333`) para texto, `public-canvas` (`#e3e3e3`) para el fondo y `public-earth` (`#b85c3f`) para acciones y énfasis. Los roles semánticos (`background`, `foreground`, `primary`, `card`, `muted`, `border` y `ring`) se aplican mediante `.public-theme`, no mediante una segunda hoja de estilos ni modificando `admin-*`. `public-earth-ink` oscurece el acento sólo para texto pequeño sobre superficies claras, donde el color original no alcanza el contraste necesario.
+
+`PublicLayout` aplica el tema a la navegación, el contenido y el pie de página. Su cabecera usa un wordmark tipográfico con los tokens públicos: no reutiliza el monograma de acento administrativo. `FeaturedProductCard` también aplica el tema localmente porque el mismo componente se reutiliza en la vista previa de Marketing dentro de administración. Home conserva una sola acción principal hacia `/menu`, muestra la recomendación sólo cuando el backend la entrega y reutiliza la imagen del Product o un reemplazo visual sin asset externo. La tarjeta sigue usando `Button`, `formatPesos` y el `CartProvider` existentes; ni el layout ni Home calculan precios o crean pedidos.
+
 ## Reutilización de componentes
 
 Antes de añadir un componente:
@@ -175,7 +181,7 @@ Marketing e Instagram son destinos hermanos independientes. `/admin/marketing` d
 
 El destino visible **Gestión** enlaza a `/admin/management`. La URL anterior `/admin/inventory` no se conserva como alias porque sólo era un placeholder sin comportamiento; Inventory queda reservado para un futuro dominio de stock.
 
-`resources/js/components/brand-logo.tsx` centraliza `public/icons/te-pinta-logo.svg`, el monograma vectorial canónico y autosuficiente utilizado por el panel administrativo de escritorio, el layout simple de autenticación, la cabecera pública y el favicon. El SVG conserva los trazados originales blancos, incorpora el fondo `admin-accent` y un margen vectorial uniforme; no contiene raster, scripts ni referencias externas. Los wrappers administrativos y de autenticación mantienen `bg-admin-accent`, coherente con el fondo del propio icono. Apple touch y la instalación PWA conservan los derivados PNG versionados de `public/icons/te-pinta-logo-*.png`, incluidos los tamaños y la variante maskable que requieren esas plataformas.
+`resources/js/components/brand-logo.tsx` centraliza `public/icons/te-pinta-logo.svg`, el monograma vectorial canónico y autosuficiente utilizado por el panel administrativo de escritorio, el layout simple de autenticación y el favicon. El SVG conserva los trazados originales blancos, incorpora el fondo `admin-accent` y un margen vectorial uniforme; no contiene raster, scripts ni referencias externas. Los wrappers administrativos y de autenticación mantienen `bg-admin-accent`, coherente con el fondo del propio icono. Apple touch y la instalación PWA conservan los derivados PNG versionados de `public/icons/te-pinta-logo-*.png`, incluidos los tamaños y la variante maskable que requieren esas plataformas.
 
 En anchos de escritorio y tablet, el panel sigue el nodo Figma `177:735`: 104 px de ancho con la superficie `#1F1D2B`, un bloque de marca redondeado de 56 px, seis posiciones de navegación de 102 px, wrappers de iconos de trazo fino de 24 px y un control de cierre de sesión alineado abajo. Los controles de escritorio comienzan en x=24. El control activo usa `#EA7C69`, un radio de 8 px, la sombra coral especificada y un tratamiento empotrado `#252836` en el borde derecho. En teléfonos, la navegación se convierte en una barra inferior consciente del área segura, con Inicio, Pedidos, Clientes y Más; los destinos secundarios y el cierre de sesión se encuentran en la hoja inferior Más.
 

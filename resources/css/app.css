@@ -102,6 +102,14 @@
     --color-ticket-muted: #796e66;
     --color-ticket-rule: #d9cbbd;
     --shadow-admin-nav-active: 0 8px 12px rgb(234 124 105 / 32%);
+    --color-public-ink: #333333;
+    --color-public-canvas: #e3e3e3;
+    --color-public-earth: #b85c3f;
+    --color-public-earth-ink: color-mix(
+        in srgb,
+        var(--color-public-earth) 70%,
+        var(--color-public-ink)
+    );
 }
 
 :root {
@@ -138,6 +146,57 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.87 0 0);
+}
+
+.public-theme {
+    --background: var(--color-public-canvas);
+    --foreground: var(--color-public-ink);
+    --card: color-mix(in srgb, var(--color-public-canvas) 40%, white);
+    --card-foreground: var(--color-public-ink);
+    --popover: var(--card);
+    --popover-foreground: var(--color-public-ink);
+    --primary: var(--color-public-earth);
+    --primary-foreground: #ffffff;
+    --secondary: color-mix(
+        in srgb,
+        var(--color-public-earth) 13%,
+        var(--color-public-canvas)
+    );
+    --secondary-foreground: var(--color-public-ink);
+    --muted: color-mix(in srgb, var(--color-public-canvas) 78%, white);
+    --muted-foreground: color-mix(
+        in srgb,
+        var(--color-public-ink) 78%,
+        var(--color-public-canvas)
+    );
+    --accent: var(--secondary);
+    --accent-foreground: var(--color-public-ink);
+    --border: color-mix(
+        in srgb,
+        var(--color-public-ink) 23%,
+        var(--color-public-canvas)
+    );
+    --input: var(--border);
+    --ring: var(--color-public-earth);
+
+    /* Tailwind v4's theme color properties need local values in nested themes. */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
 }
 
 .admin-shell,
