@@ -57,8 +57,15 @@ export default function Menu() {
             <section
                 className={`mx-auto max-w-7xl px-4 pt-8 text-public-ink sm:px-8 sm:pt-10 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-18' : 'pb-14 sm:pb-18'}`}
             >
-                <header className="-mx-4 -mt-8 flex flex-col gap-6 bg-public-canvas px-4 pt-8 pb-8 text-white sm:-mx-8 sm:-mt-10 sm:flex-row sm:items-end sm:justify-between sm:px-8 sm:pt-10 sm:pb-10 lg:-mx-12 lg:px-12">
-                    <div>
+                <header className="relative isolate -mx-4 -mt-8 flex flex-col gap-6 overflow-hidden bg-public-canvas px-4 pt-8 pb-8 text-white sm:-mx-8 sm:-mt-10 sm:flex-row sm:items-end sm:justify-between sm:px-8 sm:pt-10 sm:pb-10 lg:-mx-12 lg:px-12">
+                    <img
+                        data-testid="menu-hero-artwork"
+                        src="/images/brand/bg-empanada.png"
+                        alt=""
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-0 right-0 z-0 h-full w-[72%] max-w-none object-contain object-right opacity-[0.08] select-none sm:w-1/2 sm:opacity-10 lg:w-[42%]"
+                    />
+                    <div className="relative z-10">
                         <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
                             Te Pinta · Para pedir
                         </p>
@@ -75,7 +82,7 @@ export default function Menu() {
                         asChild
                         size="lg"
                         data-testid="menu-hero-cart-cta"
-                        className="hidden min-h-11 rounded-full bg-public-earth px-6 text-public-ink transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+                        className="relative z-10 hidden min-h-11 rounded-full bg-public-earth px-6 text-public-ink transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
                     >
                         <Link href="/cart">
                             <ShoppingBag aria-hidden="true" /> Ver carrito

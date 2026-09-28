@@ -23,6 +23,15 @@ function contrastRatio(foreground: string, background: string) {
 
 async function addSaltenaDozenAndOpenCart(page: Page) {
     await page.goto('/menu');
+    const heroArtwork = page.getByTestId('menu-hero-artwork');
+    await expect(heroArtwork).toHaveAttribute(
+        'src',
+        '/images/brand/bg-empanada.png',
+    );
+    await expect(heroArtwork).toHaveAttribute('alt', '');
+    await expect(heroArtwork).toHaveAttribute('aria-hidden', 'true');
+    await expect(heroArtwork).toHaveCSS('pointer-events', 'none');
+    await expect(heroArtwork).toHaveCSS('user-select', 'none');
     const product = page
         .getByText('Salteña', { exact: true })
         .locator('xpath=ancestor::*[.//button[normalize-space()="Unidad"]][1]');
