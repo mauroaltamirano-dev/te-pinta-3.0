@@ -27,7 +27,7 @@ async function addSaltenaDozenAndOpenCart(page: Page) {
         .getByText('Salteña', { exact: true })
         .locator('xpath=ancestor::*[.//button[normalize-space()="Unidad"]][1]');
     await product.getByRole('button', { name: '+ Docena' }).click();
-    await page.getByRole('link', { name: /Ver carrito/ }).click();
+    await page.getByTestId('menu-hero-cart-cta').click();
 }
 
 test('checkout público hidrata la fecha mínima desde options.today', async ({
@@ -243,7 +243,7 @@ test('producto guardado que ya no está en el catálogo se identifica y se puede
     await page.route('**/menu/catalog', async (route) => {
         await route.fulfill({ json: { data: [] } });
     });
-    await page.getByRole('link', { name: /Ver carrito/ }).click();
+    await page.getByTestId('menu-hero-cart-cta').click();
 
     await expect(page.getByText('Ya no disponible')).toBeVisible();
     await expect(page.getByRole('alert')).toContainText('Quitalos del carrito');
@@ -277,7 +277,7 @@ test('si fallan las opciones iniciales, permite reintentar sin confirmar a ciega
 
         await route.continue();
     });
-    await page.getByRole('link', { name: /Ver carrito/ }).click();
+    await page.getByTestId('menu-hero-cart-cta').click();
     await expect(page.getByRole('alert')).toContainText(
         'No pudimos cargar el menú y las opciones',
     );

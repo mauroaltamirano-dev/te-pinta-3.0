@@ -28,9 +28,23 @@ test('public home presents the brand and leads directly to the menu', async ({
     await expect(
         page.getByRole('heading', { name: /Te pinta una empanada/i }),
     ).toBeVisible();
-    await expect(
-        page.getByRole('link', { name: /Hacer pedido/i }),
-    ).toHaveAttribute('href', '/menu');
+    const orderCta = page.getByRole('link', { name: /Hacer pedido/i });
+    await expect(orderCta).toHaveAttribute('href', '/menu');
+    const orderCtaColors = await orderCta.evaluate((link) => {
+        const styles = getComputedStyle(link);
+
+        return {
+            foreground: styles.color,
+            background: styles.backgroundColor,
+        };
+    });
+    expect(orderCtaColors).toEqual({
+        foreground: 'rgb(255, 255, 255)',
+        background: 'rgb(184, 79, 63)',
+    });
+    expect(
+        contrastRatio(orderCtaColors.foreground, orderCtaColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
     await expect(
         page.getByRole('navigation', { name: 'Navegación pública' }),
     ).toBeVisible();

@@ -72,7 +72,7 @@ export default function Home({
                         <Button
                             asChild
                             size="lg"
-                            className="mt-8 min-h-13 rounded-full bg-public-ink px-7 text-base font-semibold text-white shadow-lg shadow-black/25 hover:bg-public-ink/90"
+                            className="mt-8 min-h-13 rounded-full bg-public-canvas px-7 text-base font-semibold text-white shadow-lg shadow-black/25 transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                             <Link href="/menu">
                                 Hacer pedido

@@ -55,7 +55,7 @@ function PublicShell({ children }: PropsWithChildren) {
                                 aria-current={
                                     pathname === item.href ? 'page' : undefined
                                 }
-                                className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-public-ink aria-[current=page]:text-white sm:inline-flex"
+                                className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-[current=page]:bg-public-earth aria-[current=page]:text-public-ink sm:inline-flex"
                             >
                                 {item.label}
                             </Link>
@@ -65,7 +65,7 @@ function PublicShell({ children }: PropsWithChildren) {
                             aria-current={
                                 pathname === '/menu' ? 'page' : undefined
                             }
-                            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-public-ink aria-[current=page]:text-white sm:hidden"
+                            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-[current=page]:bg-public-earth aria-[current=page]:text-public-ink sm:hidden"
                         >
                             Menú
                         </Link>
@@ -79,15 +79,12 @@ function PublicShell({ children }: PropsWithChildren) {
                                     ? `Carrito, ${count} productos`
                                     : 'Carrito'
                             }
-                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-public-ink px-4 text-sm font-semibold text-white transition-colors hover:bg-public-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5"
+                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/75 px-3 text-sm font-semibold text-white transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-4"
                         >
                             <ShoppingBag
                                 className="size-4"
                                 aria-hidden="true"
                             />
-                            <span className="hidden min-[360px]:inline">
-                                Carrito
-                            </span>
                             {count > 0 && (
                                 <span
                                     className="grid min-w-5 place-items-center rounded-full bg-public-earth px-1 text-xs font-bold text-public-ink tabular-nums"
@@ -100,7 +97,10 @@ function PublicShell({ children }: PropsWithChildren) {
                     </div>
                 </nav>
             </header>
-            <main id="main-content" className="flex-1">
+            <main
+                id="main-content"
+                className={`flex-1 ${pathname === '/menu' ? 'bg-public-earth' : ''}`}
+            >
                 {children}
             </main>
             <footer className="bg-public-ink text-white">

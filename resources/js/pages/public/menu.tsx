@@ -55,9 +55,9 @@ export default function Menu() {
         <>
             <Head title="Menú" />
             <section
-                className={`mx-auto max-w-7xl px-4 pt-10 sm:px-8 sm:pt-14 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-18' : 'pb-14 sm:pb-18'}`}
+                className={`mx-auto max-w-7xl px-4 pt-8 text-public-ink sm:px-8 sm:pt-10 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-18' : 'pb-14 sm:pb-18'}`}
             >
-                <header className="flex flex-col gap-6 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-10">
+                <header className="-mx-4 -mt-8 flex flex-col gap-6 bg-public-canvas px-4 pt-8 pb-8 text-white sm:-mx-8 sm:-mt-10 sm:flex-row sm:items-end sm:justify-between sm:px-8 sm:pt-10 sm:pb-10 lg:-mx-12 lg:px-12">
                     <div>
                         <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
                             Te Pinta · Para pedir
@@ -74,7 +74,8 @@ export default function Menu() {
                     <Button
                         asChild
                         size="lg"
-                        className="hidden min-h-11 rounded-full bg-public-ink px-6 text-white hover:bg-public-ink/90 sm:inline-flex"
+                        data-testid="menu-hero-cart-cta"
+                        className="hidden min-h-11 rounded-full bg-public-earth px-6 text-public-ink transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
                     >
                         <Link href="/cart">
                             <ShoppingBag aria-hidden="true" /> Ver carrito
@@ -84,7 +85,7 @@ export default function Menu() {
                 </header>
 
                 {!loading && !error && products.length > 0 && (
-                    <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/95 px-4 py-4 backdrop-blur-sm sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+                    <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-public-earth/95 px-4 py-4 backdrop-blur-sm sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
                         <div
                             role="group"
                             aria-label="Categorías del menú"
@@ -97,7 +98,7 @@ export default function Menu() {
                                     category === 'all' ? 'default' : 'outline'
                                 }
                                 aria-pressed={category === 'all'}
-                                className="min-h-11 shrink-0 rounded-full px-5 shadow-none aria-[pressed=true]:bg-public-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-ink/90"
+                                className="min-h-11 shrink-0 rounded-full px-5 shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:bg-public-earth-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink/90"
                                 onClick={() => setCategory('all')}
                             >
                                 Todas
@@ -113,7 +114,7 @@ export default function Menu() {
                                             : 'outline'
                                     }
                                     aria-pressed={category === item.slug}
-                                    className="min-h-11 shrink-0 rounded-full px-5 shadow-none aria-[pressed=true]:bg-public-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-ink/90"
+                                    className="min-h-11 shrink-0 rounded-full px-5 shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:bg-public-earth-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink/90"
                                     onClick={() => setCategory(item.slug)}
                                 >
                                     {item.name}
@@ -127,7 +128,7 @@ export default function Menu() {
                     <p
                         role="status"
                         aria-busy="true"
-                        className="py-24 text-center text-white"
+                        className="py-24 text-center text-muted-foreground"
                     >
                         Cargando menú…
                     </p>
@@ -143,14 +144,14 @@ export default function Menu() {
                         <h2 className="font-display text-3xl font-bold">
                             Por ahora no hay productos disponibles.
                         </h2>
-                        <p className="mt-3 text-white">
+                        <p className="mt-3 text-muted-foreground">
                             Volvé a revisar el menú más tarde.
                         </p>
                     </div>
                 ) : (
                     <div className="pt-7 sm:pt-10">
                         <p
-                            className="mb-5 text-sm font-medium text-white"
+                            className="mb-5 text-sm font-medium text-public-ink"
                             aria-live="polite"
                         >
                             {category === 'all'
@@ -175,7 +176,7 @@ export default function Menu() {
                                     <article
                                         key={product.slug}
                                         data-testid="public-product-card"
-                                        className="flex min-w-0 flex-col overflow-hidden rounded-[1.75rem] border border-border bg-card text-card-foreground"
+                                        className="public-menu-card flex min-w-0 flex-col overflow-hidden rounded-[1.75rem] border border-border bg-card text-card-foreground shadow-sm"
                                     >
                                         <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
                                             {product.image_url ? (
@@ -314,7 +315,7 @@ export default function Menu() {
                                                     <Button
                                                         asChild
                                                         variant="link"
-                                                        className="col-span-2 min-h-11 justify-start px-0 text-public-earth-ink"
+                                                        className="col-span-2 min-h-11 justify-start px-0 text-white underline-offset-4 transition-colors hover:text-white/75 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                                                     >
                                                         <Link
                                                             href={`/menu/${encodeURIComponent(product.slug)}`}
@@ -325,7 +326,7 @@ export default function Menu() {
                                                     <Button
                                                         type="button"
                                                         size="lg"
-                                                        className="col-span-2 min-h-11 rounded-full"
+                                                        className="col-span-2 min-h-11 rounded-full bg-public-earth-ink text-white transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                                                         aria-label={`Agregar una unidad de ${product.name}`}
                                                         onClick={() =>
                                                             addProduct(
@@ -341,7 +342,7 @@ export default function Menu() {
                                                         type="button"
                                                         size="lg"
                                                         variant="outline"
-                                                        className="min-h-11 rounded-full bg-public-earth px-2 text-public-ink hover:bg-white"
+                                                        className="min-h-11 rounded-full border-white/70 bg-public-earth px-2 text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                                                         onClick={() =>
                                                             addProduct(
                                                                 product.slug,
@@ -355,7 +356,7 @@ export default function Menu() {
                                                         type="button"
                                                         size="lg"
                                                         variant="outline"
-                                                        className="min-h-11 rounded-full bg-public-earth px-2 text-public-ink hover:bg-white"
+                                                        className="min-h-11 rounded-full border-white/70 bg-public-earth px-2 text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                                                         onClick={() =>
                                                             addProduct(
                                                                 product.slug,
@@ -380,7 +381,7 @@ export default function Menu() {
                     <Button
                         asChild
                         size="lg"
-                        className="min-h-12 w-full rounded-full bg-public-ink text-base text-white hover:bg-public-ink/90"
+                        className="min-h-12 w-full rounded-full bg-public-earth-ink text-base text-white transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                         <Link href="/cart" data-testid="mobile-cart-cta">
                             <ShoppingBag aria-hidden="true" /> Ver carrito (
