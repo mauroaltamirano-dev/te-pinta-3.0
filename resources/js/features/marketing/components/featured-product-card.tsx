@@ -75,7 +75,7 @@ export function FeaturedProductCard({
                         <Button
                             type="button"
                             size="lg"
-                            className="min-h-11 rounded-full px-6"
+                            className="min-h-11 rounded-full px-6 disabled:bg-public-ink/60 disabled:text-white disabled:opacity-100"
                             disabled={!onAddProduct}
                             aria-label={`Agregar una unidad de ${featured.product.name} al carrito`}
                             onClick={() =>

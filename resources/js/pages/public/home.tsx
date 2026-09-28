@@ -61,8 +61,9 @@ export default function Home({
                             Empanadas Te Pinta
                         </p>
                         <h1 className="mt-6 font-serif text-[clamp(3.4rem,7vw,7rem)] leading-[0.93] font-bold tracking-[-0.055em] text-balance">
-                            Se te pinta{' '}
-                            <span className="text-primary">una</span> empanada.
+                            Te pinta{' '}
+                            <span className="text-public-earth">una</span>{' '}
+                            empanada.
                         </h1>
                         <p className="mt-7 max-w-md text-base leading-7 text-white/90 sm:text-lg">
                             Elegí tus favoritas, armá el carrito y terminá tu
@@ -71,7 +72,7 @@ export default function Home({
                         <Button
                             asChild
                             size="lg"
-                            className="mt-8 min-h-13 rounded-full px-7 text-base font-semibold shadow-lg shadow-black/25"
+                            className="mt-8 min-h-13 rounded-full bg-public-ink px-7 text-base font-semibold text-white shadow-lg shadow-black/25 hover:bg-public-ink/90"
                         >
                             <Link href="/menu">
                                 Hacer pedido
@@ -85,7 +86,10 @@ export default function Home({
                 </div>
             </section>
 
-            <section className="bg-card/70" aria-labelledby="home-menu-title">
+            <section
+                className="bg-public-earth text-public-ink"
+                aria-labelledby="home-menu-title"
+            >
                 <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:gap-12 lg:px-12">
                     <div className="lg:pt-3">
                         <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
@@ -139,10 +143,10 @@ export default function Home({
                 </div>
             </section>
 
-            <section aria-labelledby="steps-title">
+            <section className="text-white" aria-labelledby="steps-title">
                 <div className="mx-auto grid max-w-7xl gap-9 px-4 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:gap-12 lg:px-12">
                     <div>
-                        <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
+                        <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
                             Cómo pedir
                         </p>
                         <h2
@@ -159,7 +163,7 @@ export default function Home({
                             return (
                                 <li
                                     key={step.number}
-                                    className="rounded-2xl bg-card p-5 shadow-sm sm:p-6"
+                                    className="rounded-2xl bg-card p-5 text-card-foreground shadow-sm sm:p-6"
                                 >
                                     <span className="flex size-12 items-center justify-center rounded-full bg-secondary text-public-earth-ink">
                                         <Icon
@@ -183,7 +187,7 @@ export default function Home({
                 </div>
             </section>
 
-            <section className="bg-primary text-white">
+            <section className="bg-public-ink text-white">
                 <div className="mx-auto flex max-w-7xl flex-col gap-7 px-4 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-12">
                     <div>
                         <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-85">
@@ -196,7 +200,7 @@ export default function Home({
                     <Button
                         asChild
                         size="lg"
-                        className="min-h-13 w-fit shrink-0 rounded-full bg-white px-7 text-base font-semibold text-public-earth-ink shadow-none hover:bg-background"
+                        className="min-h-13 w-fit shrink-0 rounded-full bg-public-earth px-7 text-base font-semibold text-public-ink shadow-none hover:bg-white"
                     >
                         <Link href="/menu">
                             Ir al menú

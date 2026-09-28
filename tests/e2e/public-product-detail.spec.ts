@@ -1,5 +1,25 @@
 import { expect, test } from '@playwright/test';
 
+function contrastRatio(foreground: string, background: string) {
+    const luminance = (color: string) => {
+        const channels = color.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+        const [red, green, blue] = channels.map((channel) => {
+            const value = channel / 255;
+
+            return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+        });
+
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const [light, dark] = [luminance(foreground), luminance(background)].sort(
+        (first, second) => second - first,
+    );
+
+    return (light + 0.05) / (dark + 0.05);
+}
+
 test('product detail is shareable and adds a selected quantity without blocking menu quick-add', async ({
     page,
 }) => {
@@ -20,6 +40,37 @@ test('product detail is shareable and adds a selected quantity without blocking 
         'href',
         page.url(),
     );
+    const shellColors = await page
+        .locator('.public-shell')
+        .evaluate((shell) => {
+            const styles = getComputedStyle(shell);
+
+            return {
+                foreground: styles.color,
+                background: styles.backgroundColor,
+            };
+        });
+    expect(
+        contrastRatio(shellColors.foreground, shellColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
+    const categoryColors = await page
+        .getByRole('heading', { level: 1 })
+        .locator('xpath=preceding-sibling::p[1]')
+        .evaluate((category) => {
+            const styles = getComputedStyle(category);
+            const shell = category.closest('.public-shell');
+
+            return {
+                foreground: styles.color,
+                background: shell
+                    ? getComputedStyle(shell).backgroundColor
+                    : '',
+            };
+        });
+    expect(categoryColors.foreground).toBe('rgb(255, 255, 255)');
+    expect(
+        contrastRatio(categoryColors.foreground, categoryColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
 
     if ((page.viewportSize()?.width ?? 0) < 640) {
         await page.setViewportSize({ width: 320, height: 700 });

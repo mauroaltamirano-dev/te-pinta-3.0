@@ -237,25 +237,25 @@ export default function Cart() {
                 <header className="mb-8 border-b border-border pb-8 sm:mb-10 sm:pb-10">
                     <Link
                         href="/menu"
-                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-public-earth-ink underline-offset-4 hover:underline"
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline"
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" />{' '}
                         Volver al menú
                     </Link>
-                    <p className="mt-5 text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
+                    <p className="mt-5 text-xs font-bold tracking-[0.2em] text-white uppercase">
                         Tu pedido · Paso final
                     </p>
                     <h1 className="mt-3 font-display text-5xl leading-none font-black tracking-tight sm:text-6xl">
-                        Tu carrito<span className="text-primary">.</span>
+                        Tu carrito<span className="text-public-earth">.</span>
                     </h1>
-                    <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-white sm:text-base">
                         Revisá lo que elegiste, completá tus datos y abrí
                         WhatsApp para enviar el mensaje. El pedido queda
                         pendiente de confirmación.
                     </p>
                 </header>
                 {!cart.items.length ? (
-                    <div className="mx-auto max-w-xl rounded-[2rem] border border-border bg-card px-6 py-16 text-center sm:px-10">
+                    <div className="mx-auto max-w-xl rounded-[2rem] border border-border bg-card px-6 py-16 text-center text-card-foreground sm:px-10">
                         <h2 className="font-display text-3xl font-bold">
                             Todavía no elegiste nada.
                         </h2>
@@ -301,13 +301,13 @@ export default function Cart() {
                                     {optionsError && (
                                         <div
                                             role="alert"
-                                            className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive"
+                                            className="rounded-xl border border-destructive/30 bg-card p-4 text-sm text-destructive"
                                         >
                                             <p>{optionsError}</p>
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                className="mt-3 min-h-11"
+                                                className="mt-3 min-h-11 bg-public-earth text-public-ink hover:bg-white"
                                                 onClick={() => {
                                                     setLoadingOptions(true);
                                                     setOptionsError('');
@@ -361,7 +361,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        className="size-11"
+                                                        className="size-11 bg-public-earth text-public-ink hover:bg-white"
                                                         aria-label={`Quitar una unidad de ${product?.name ?? item.product_slug}`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
@@ -383,7 +383,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        className="size-11"
+                                                        className="size-11 bg-public-earth text-public-ink hover:bg-white"
                                                         disabled={
                                                             !product &&
                                                             !loadingOptions &&
@@ -471,6 +471,7 @@ export default function Cart() {
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="outline"
+                                                                className="size-11 bg-public-earth text-public-ink hover:bg-white"
                                                                 aria-label={`Quitar un adicional ${addon.name}`}
                                                                 onClick={() =>
                                                                     cart.setAddonQuantity(
@@ -489,6 +490,7 @@ export default function Cart() {
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="outline"
+                                                                className="size-11 bg-public-earth text-public-ink hover:bg-white"
                                                                 aria-label={`Agregar un adicional ${addon.name}`}
                                                                 onClick={() =>
                                                                     cart.setAddonQuantity(
@@ -518,7 +520,7 @@ export default function Cart() {
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                className="min-h-11 shrink-0"
+                                                className="min-h-11 shrink-0 bg-public-earth text-public-ink hover:bg-white"
                                                 onClick={() =>
                                                     cart.setAddonQuantity(
                                                         addon.addon_slug,
@@ -587,7 +589,7 @@ export default function Cart() {
                                             aria-pressed={
                                                 deliveryType === 'pickup'
                                             }
-                                            className="min-h-11 rounded-full px-6"
+                                            className="min-h-11 rounded-full bg-public-earth px-6 text-public-ink hover:bg-white aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-canvas/90"
                                             onClick={() =>
                                                 setDeliveryType('pickup')
                                             }
@@ -604,7 +606,7 @@ export default function Cart() {
                                             aria-pressed={
                                                 deliveryType === 'delivery'
                                             }
-                                            className="min-h-11 rounded-full px-6"
+                                            className="min-h-11 rounded-full bg-public-earth px-6 text-public-ink hover:bg-white aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-canvas/90"
                                             onClick={() =>
                                                 setDeliveryType('delivery')
                                             }
@@ -686,7 +688,7 @@ export default function Cart() {
                             className="grid min-w-0 content-start gap-4 lg:sticky lg:top-6"
                             aria-label="Resumen y finalización"
                         >
-                            <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
+                            <p className="text-xs font-bold tracking-[0.16em] text-white uppercase">
                                 04 · Revisá el total
                             </p>
                             <PriceSummary
@@ -696,7 +698,7 @@ export default function Cart() {
                             {quoteError && (
                                 <div
                                     role="alert"
-                                    className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive"
+                                    className="rounded-xl border border-destructive/30 bg-card p-4 text-sm text-destructive"
                                 >
                                     <p>
                                         No pudimos actualizar el precio:{' '}
@@ -705,7 +707,7 @@ export default function Cart() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="mt-3 min-h-11"
+                                        className="mt-3 min-h-11 bg-public-earth text-public-ink hover:bg-white"
                                         onClick={() =>
                                             setQuoteRetry((value) => value + 1)
                                         }
@@ -717,7 +719,7 @@ export default function Cart() {
                             {error && (
                                 <p
                                     role="alert"
-                                    className="text-sm text-destructive"
+                                    className="rounded-xl bg-card p-4 text-sm text-destructive"
                                 >
                                     {error}
                                 </p>
@@ -726,13 +728,13 @@ export default function Cart() {
                                 type="submit"
                                 size="lg"
                                 disabled={!canSubmit}
-                                className="hidden min-h-12 rounded-full sm:inline-flex"
+                                className="hidden min-h-12 rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70 sm:inline-flex"
                             >
                                 {submitting
                                     ? 'Creando pedido…'
                                     : 'Confirmar y abrir WhatsApp'}
                             </Button>
-                            <p className="text-xs leading-5 text-muted-foreground">
+                            <p className="text-xs leading-5 text-white">
                                 Al continuar, guardamos el pedido y abrimos
                                 WhatsApp con un mensaje preparado. Tenés que
                                 enviarlo vos; no queda confirmado
@@ -742,14 +744,14 @@ export default function Cart() {
                     </form>
                 )}
                 {cart.items.length > 0 && (
-                    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
+                    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/35 bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
                         <div className="mx-auto max-w-7xl">
                             <Button
                                 form="public-checkout"
                                 type="submit"
                                 size="lg"
                                 disabled={!canSubmit}
-                                className="min-h-12 w-full rounded-full"
+                                className="min-h-12 w-full rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70"
                             >
                                 {submitting
                                     ? 'Creando pedido…'

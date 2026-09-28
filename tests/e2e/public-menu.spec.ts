@@ -1,5 +1,25 @@
 import { expect, test } from '@playwright/test';
 
+function contrastRatio(foreground: string, background: string) {
+    const luminance = (color: string) => {
+        const channels = color.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+        const [red, green, blue] = channels.map((channel) => {
+            const value = channel / 255;
+
+            return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+        });
+
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const [light, dark] = [luminance(foreground), luminance(background)].sort(
+        (first, second) => second - first,
+    );
+
+    return (light + 0.05) / (dark + 0.05);
+}
+
 test('menu filters categories and keeps quick-add cart quantities accurate', async ({
     page,
 }) => {
@@ -7,6 +27,38 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
 
     const cards = page.getByTestId('public-product-card');
     await expect(cards.first()).toBeVisible();
+    const cardColors = await cards.first().evaluate((card) => {
+        const styles = getComputedStyle(card);
+
+        return { foreground: styles.color, background: styles.backgroundColor };
+    });
+    expect(cardColors).toEqual({
+        foreground: 'rgb(27, 27, 27)',
+        background: 'rgb(241, 241, 241)',
+    });
+    expect(
+        contrastRatio(cardColors.foreground, cardColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
+    const eyebrowColors = await page
+        .getByText('Te Pinta · Para pedir')
+        .evaluate((eyebrow) => {
+            const styles = getComputedStyle(eyebrow);
+            const shell = eyebrow.closest('.public-shell');
+
+            return {
+                foreground: styles.color,
+                background: shell
+                    ? getComputedStyle(shell).backgroundColor
+                    : '',
+            };
+        });
+    expect(eyebrowColors).toEqual({
+        foreground: 'rgb(255, 255, 255)',
+        background: 'rgb(184, 79, 63)',
+    });
+    expect(
+        contrastRatio(eyebrowColors.foreground, eyebrowColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
     const allCount = await cards.count();
     const categories = page
         .getByRole('group', { name: 'Categorías del menú' })

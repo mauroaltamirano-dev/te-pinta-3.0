@@ -77,7 +77,7 @@ export default function ProductDetail({
                 >
                     <Link
                         href="/menu"
-                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-public-earth-ink underline-offset-4 hover:underline"
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline"
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" />{' '}
                         Volver al menú
@@ -85,7 +85,7 @@ export default function ProductDetail({
                     <Button
                         type="button"
                         variant="outline"
-                        className="min-h-11 rounded-full"
+                        className="min-h-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90"
                         onClick={share}
                     >
                         <Share2 aria-hidden="true" /> Compartir
@@ -120,19 +120,19 @@ export default function ProductDetail({
                         )}
                     </div>
                     <div className="min-w-0 lg:pt-4">
-                        <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
+                        <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
                             {product.category.name}
                         </p>
                         <h1 className="mt-3 font-display text-5xl leading-none font-black tracking-tight sm:text-6xl">
                             {product.name}
-                            <span className="text-primary">.</span>
+                            <span className="text-public-earth">.</span>
                         </h1>
                         {product.tags.length > 0 && (
                             <div className="mt-5 flex flex-wrap gap-2">
                                 {product.tags.map((tag) => (
                                     <span
                                         key={tag.slug}
-                                        className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold"
+                                        className="rounded-full border border-white/35 px-3 py-1.5 text-xs font-semibold"
                                     >
                                         {tag.name}
                                     </span>
@@ -145,40 +145,36 @@ export default function ProductDetail({
                             </p>
                         )}
                         {product.long_description && (
-                            <p className="mt-4 text-sm leading-7 whitespace-pre-line text-muted-foreground">
+                            <p className="mt-4 text-sm leading-7 whitespace-pre-line text-white">
                                 {product.long_description}
                             </p>
                         )}
                         {product.public_ingredients && (
-                            <section className="mt-7 border-t border-border pt-6">
+                            <section className="mt-7 border-t border-white/35 pt-6">
                                 <h2 className="font-display text-xl font-bold">
                                     Ingredientes
                                 </h2>
-                                <p className="mt-2 text-sm leading-6 whitespace-pre-line text-muted-foreground">
+                                <p className="mt-2 text-sm leading-6 whitespace-pre-line text-white">
                                     {product.public_ingredients}
                                 </p>
                             </section>
                         )}
                         <section
-                            className="mt-7 border-t border-border pt-6"
+                            className="mt-7 border-t border-white/35 pt-6"
                             aria-label="Precios cocinados"
                         >
-                            <h2 className="text-xs font-bold tracking-[0.16em] text-muted-foreground uppercase">
+                            <h2 className="text-xs font-bold tracking-[0.16em] text-white uppercase">
                                 Precios cocinados
                             </h2>
                             <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
                                 <div>
-                                    <dt className="text-muted-foreground">
-                                        Unidad
-                                    </dt>
+                                    <dt className="text-white">Unidad</dt>
                                     <dd className="mt-1 font-bold tabular-nums">
                                         {money.format(product.prices.unit)}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-muted-foreground">
-                                        Media docena
-                                    </dt>
+                                    <dt className="text-white">Media docena</dt>
                                     <dd className="mt-1 font-bold tabular-nums">
                                         {money.format(
                                             product.prices.half_dozen,
@@ -186,22 +182,20 @@ export default function ProductDetail({
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-muted-foreground">
-                                        Docena
-                                    </dt>
+                                    <dt className="text-white">Docena</dt>
                                     <dd className="mt-1 font-bold tabular-nums">
                                         {money.format(product.prices.dozen)}
                                     </dd>
                                 </div>
                             </dl>
-                            <p className="mt-3 text-xs text-muted-foreground">
+                            <p className="mt-3 text-xs text-white">
                                 El total se calcula y confirma al revisar el
                                 carrito.
                             </p>
                         </section>
                         {product.is_available ? (
                             <section
-                                className="mt-7 border-t border-border pt-6"
+                                className="mt-7 border-t border-white/35 pt-6"
                                 aria-label="Agregar al carrito"
                             >
                                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -213,7 +207,7 @@ export default function ProductDetail({
                                             type="button"
                                             variant="outline"
                                             size="icon"
-                                            className="size-11 rounded-full"
+                                            className="size-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70"
                                             aria-label="Disminuir cantidad"
                                             disabled={quantity <= 1}
                                             onClick={() =>
@@ -234,7 +228,7 @@ export default function ProductDetail({
                                             type="button"
                                             variant="outline"
                                             size="icon"
-                                            className="size-11 rounded-full"
+                                            className="size-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70"
                                             aria-label="Aumentar cantidad"
                                             onClick={() =>
                                                 setQuantity(
@@ -249,7 +243,7 @@ export default function ProductDetail({
                                 <Button
                                     type="button"
                                     size="lg"
-                                    className="mt-5 hidden min-h-12 w-full rounded-full sm:flex"
+                                    className="mt-5 hidden min-h-12 w-full rounded-full bg-public-ink text-white hover:bg-public-ink/90 sm:flex"
                                     onClick={() =>
                                         addProduct(product.slug, quantity)
                                     }
@@ -258,7 +252,7 @@ export default function ProductDetail({
                                     {quantity} al carrito
                                 </Button>
                                 {inCart > 0 && (
-                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary p-3">
+                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary p-3 text-secondary-foreground">
                                         <span className="text-sm font-semibold">
                                             <Check
                                                 className="mr-1 inline size-4"
@@ -269,7 +263,7 @@ export default function ProductDetail({
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="min-h-11 rounded-full"
+                                            className="min-h-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90"
                                             onClick={() =>
                                                 setProductQuantity(
                                                     product.slug,
@@ -285,7 +279,7 @@ export default function ProductDetail({
                         ) : (
                             <p
                                 role="status"
-                                className="mt-7 rounded-xl bg-secondary p-4 font-semibold"
+                                className="mt-7 rounded-xl bg-secondary p-4 font-semibold text-secondary-foreground"
                             >
                                 Por ahora no está disponible para pedir.
                             </p>
@@ -293,7 +287,7 @@ export default function ProductDetail({
                         <Button
                             asChild
                             variant="outline"
-                            className="mt-5 min-h-11 w-full rounded-full"
+                            className="mt-5 min-h-11 w-full rounded-full bg-public-earth text-public-ink hover:bg-white"
                         >
                             <Link href="/cart">Ver carrito</Link>
                         </Button>
@@ -301,11 +295,11 @@ export default function ProductDetail({
                 </div>
             </article>
             {product.is_available && (
-                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgb(51_51_51_/_0.08)] backdrop-blur-sm sm:hidden">
+                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/35 bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgb(27_27_27_/_0.24)] backdrop-blur-sm sm:hidden">
                     <Button
                         type="button"
                         size="lg"
-                        className="min-h-12 w-full rounded-full"
+                        className="min-h-12 w-full rounded-full bg-public-ink text-white hover:bg-public-ink/90"
                         onClick={() => addProduct(product.slug, quantity)}
                     >
                         <ShoppingBag aria-hidden="true" /> Agregar {quantity} al

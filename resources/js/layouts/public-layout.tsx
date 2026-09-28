@@ -40,11 +40,11 @@ function PublicShell({ children }: PropsWithChildren) {
                         aria-label="Te Pinta, inicio"
                     >
                         <img
-                            src="/images/brand/logo-09-26-black.png"
+                            src="/images/brand/logo-completo-blanco.png"
                             alt=""
-                            width="58"
-                            height="58"
-                            className="size-12 rounded-full object-cover sm:size-15"
+                            width="120"
+                            height="80"
+                            className="h-12 w-auto max-w-32 object-contain sm:h-15 sm:max-w-40"
                         />
                     </Link>
                     <div className="flex items-center gap-1 sm:gap-3">
@@ -55,7 +55,7 @@ function PublicShell({ children }: PropsWithChildren) {
                                 aria-current={
                                     pathname === item.href ? 'page' : undefined
                                 }
-                                className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:text-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:text-public-earth-ink sm:inline-flex"
+                                className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-public-ink aria-[current=page]:text-white sm:inline-flex"
                             >
                                 {item.label}
                             </Link>
@@ -65,7 +65,7 @@ function PublicShell({ children }: PropsWithChildren) {
                             aria-current={
                                 pathname === '/menu' ? 'page' : undefined
                             }
-                            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold transition-colors hover:text-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:text-public-earth-ink sm:hidden"
+                            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-public-ink aria-[current=page]:text-white sm:hidden"
                         >
                             Menú
                         </Link>
@@ -79,7 +79,7 @@ function PublicShell({ children }: PropsWithChildren) {
                                     ? `Carrito, ${count} productos`
                                     : 'Carrito'
                             }
-                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-public-ink px-4 text-sm font-semibold text-white transition-colors hover:bg-public-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5"
                         >
                             <ShoppingBag
                                 className="size-4"
@@ -90,7 +90,7 @@ function PublicShell({ children }: PropsWithChildren) {
                             </span>
                             {count > 0 && (
                                 <span
-                                    className="grid min-w-5 place-items-center rounded-full bg-background px-1 text-xs font-bold text-foreground tabular-nums"
+                                    className="grid min-w-5 place-items-center rounded-full bg-public-earth px-1 text-xs font-bold text-public-ink tabular-nums"
                                     aria-label={`${count} productos`}
                                 >
                                     {count}
@@ -103,7 +103,7 @@ function PublicShell({ children }: PropsWithChildren) {
             <main id="main-content" className="flex-1">
                 {children}
             </main>
-            <footer className="bg-foreground text-background">
+            <footer className="bg-public-ink text-white">
                 <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-[1fr_auto] sm:items-end sm:px-8 lg:px-12">
                     <div className="flex items-center gap-4">
                         <img
@@ -118,7 +118,7 @@ function PublicShell({ children }: PropsWithChildren) {
                             <p className="font-serif text-2xl font-bold">
                                 Te Pinta
                             </p>
-                            <p className="mt-1 max-w-sm text-sm text-background/75">
+                            <p className="mt-1 max-w-sm text-sm text-white/75">
                                 Elegí tus empanadas y armá tu pedido desde el
                                 menú.
                             </p>
@@ -127,7 +127,7 @@ function PublicShell({ children }: PropsWithChildren) {
                     <div className="flex flex-wrap items-center gap-5 text-sm font-semibold">
                         <Link
                             href="/menu"
-                            className="inline-flex min-h-11 items-center gap-1 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            className="inline-flex min-h-11 items-center gap-1 hover:text-public-earth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-earth"
                         >
                             Ver menú{' '}
                             <ArrowUpRight
@@ -137,7 +137,7 @@ function PublicShell({ children }: PropsWithChildren) {
                         </Link>
                         <Link
                             href="/cart"
-                            className="inline-flex min-h-11 items-center gap-1 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            className="inline-flex min-h-11 items-center gap-1 hover:text-public-earth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-earth"
                         >
                             Mi carrito{' '}
                             <ArrowUpRight

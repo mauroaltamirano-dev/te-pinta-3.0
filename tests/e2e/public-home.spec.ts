@@ -1,12 +1,32 @@
 import { expect, test } from '@playwright/test';
 
+function contrastRatio(foreground: string, background: string) {
+    const luminance = (color: string) => {
+        const channels = color.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+        const [red, green, blue] = channels.map((channel) => {
+            const value = channel / 255;
+
+            return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+        });
+
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const [light, dark] = [luminance(foreground), luminance(background)].sort(
+        (first, second) => second - first,
+    );
+
+    return (light + 0.05) / (dark + 0.05);
+}
+
 test('public home presents the brand and leads directly to the menu', async ({
     page,
 }) => {
     await page.goto('/');
 
     await expect(
-        page.getByRole('heading', { name: /Se te pinta una empanada/i }),
+        page.getByRole('heading', { name: /Te pinta una empanada/i }),
     ).toBeVisible();
     await expect(
         page.getByRole('link', { name: /Hacer pedido/i }),
@@ -24,7 +44,7 @@ test('public home presents the brand and leads directly to the menu', async ({
         .toBeGreaterThan(0);
     await expect(
         page.getByRole('link', { name: 'Te Pinta, inicio' }).locator('img'),
-    ).toHaveAttribute('src', '/images/brand/logo-09-26-black.png');
+    ).toHaveAttribute('src', '/images/brand/logo-completo-blanco.png');
     const footerLogo = page.locator('footer img');
     await expect(footerLogo).toHaveAttribute(
         'src',
@@ -47,19 +67,75 @@ test('public home presents the brand and leads directly to the menu', async ({
 
     const palette = await page.locator('.public-shell').evaluate((element) => {
         const styles = getComputedStyle(element);
-        const button = element.querySelector('main a[href="/menu"]');
 
         return {
-            ink: styles.color,
+            foreground: styles.color,
             canvas: styles.backgroundColor,
-            earth: button ? getComputedStyle(button).backgroundColor : null,
         };
     });
     expect(palette).toEqual({
-        ink: 'rgb(51, 51, 51)',
-        canvas: 'rgb(227, 227, 227)',
-        earth: 'rgb(184, 92, 63)',
+        foreground: 'rgb(255, 255, 255)',
+        canvas: 'rgb(184, 79, 63)',
     });
+    expect(
+        contrastRatio(palette.foreground, palette.canvas),
+    ).toBeGreaterThanOrEqual(4.5);
+
+    if ((page.viewportSize()?.width ?? 0) >= 640) {
+        const activeNavigation = page.getByRole('link', {
+            name: 'Inicio',
+            exact: true,
+        });
+        const activeNavigationColors = await activeNavigation.evaluate(
+            (link) => {
+                const styles = getComputedStyle(link);
+
+                return {
+                    foreground: styles.color,
+                    background: styles.backgroundColor,
+                };
+            },
+        );
+        expect(activeNavigationColors).toEqual({
+            foreground: 'rgb(255, 255, 255)',
+            background: 'rgb(27, 27, 27)',
+        });
+        expect(
+            contrastRatio(
+                activeNavigationColors.foreground,
+                activeNavigationColors.background,
+            ),
+        ).toBeGreaterThanOrEqual(4.5);
+    } else {
+        const mobileMenu = page.getByRole('link', {
+            name: 'Menú',
+            exact: true,
+        });
+        const mobileMenuColors = await mobileMenu.evaluate((link) => {
+            const shell = link.closest('.public-shell');
+
+            return {
+                foreground: getComputedStyle(link).color,
+                background: shell
+                    ? getComputedStyle(shell).backgroundColor
+                    : '',
+            };
+        });
+        expect(mobileMenuColors).toEqual({
+            foreground: 'rgb(255, 255, 255)',
+            background: 'rgb(184, 79, 63)',
+        });
+        expect(
+            contrastRatio(
+                mobileMenuColors.foreground,
+                mobileMenuColors.background,
+            ),
+        ).toBeGreaterThanOrEqual(4.5);
+    }
+
+    await expect(
+        page.locator('section[aria-labelledby="home-menu-title"]'),
+    ).toHaveCSS('background-color', 'rgb(241, 241, 241)');
 
     if (page.viewportSize()?.width && page.viewportSize()!.width < 640) {
         await page.setViewportSize({ width: 320, height: 700 });

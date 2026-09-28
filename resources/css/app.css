@@ -102,14 +102,11 @@
     --color-ticket-muted: #796e66;
     --color-ticket-rule: #d9cbbd;
     --shadow-admin-nav-active: 0 8px 12px rgb(234 124 105 / 32%);
-    --color-public-ink: #333333;
-    --color-public-canvas: #e3e3e3;
-    --color-public-earth: #b85c3f;
-    --color-public-earth-ink: color-mix(
-        in srgb,
-        var(--color-public-earth) 70%,
-        var(--color-public-ink)
-    );
+    --color-public-ink: #1b1b1b;
+    --color-public-canvas: #b84f3f;
+    --color-public-earth: #f1f1f1;
+    /* Small red text on the light public cards needs more contrast than canvas. */
+    --color-public-earth-ink: #7d291f;
 }
 
 :root {
@@ -150,34 +147,32 @@
 
 .public-theme {
     --background: var(--color-public-canvas);
-    --foreground: var(--color-public-ink);
-    --card: color-mix(in srgb, var(--color-public-canvas) 40%, white);
+    --foreground: #ffffff;
+    --card: var(--color-public-earth);
     --card-foreground: var(--color-public-ink);
     --popover: var(--card);
     --popover-foreground: var(--color-public-ink);
-    --primary: var(--color-public-earth);
+    --primary: var(--color-public-canvas);
     --primary-foreground: #ffffff;
     --secondary: color-mix(
         in srgb,
-        var(--color-public-earth) 13%,
-        var(--color-public-canvas)
+        var(--color-public-canvas) 14%,
+        var(--color-public-earth)
     );
     --secondary-foreground: var(--color-public-ink);
-    --muted: color-mix(in srgb, var(--color-public-canvas) 78%, white);
-    --muted-foreground: color-mix(
-        in srgb,
-        var(--color-public-ink) 78%,
-        var(--color-public-canvas)
-    );
+    --muted: var(--secondary);
+    --muted-foreground: #60423c;
     --accent: var(--secondary);
     --accent-foreground: var(--color-public-ink);
     --border: color-mix(
         in srgb,
-        var(--color-public-ink) 23%,
-        var(--color-public-canvas)
+        var(--color-public-ink) 20%,
+        var(--color-public-earth)
     );
     --input: var(--border);
-    --ring: var(--color-public-earth);
+    --ring: var(--color-public-ink);
+    --destructive: #9e3025;
+    --destructive-foreground: #ffffff;
 
     /* Tailwind v4's theme color properties need local values in nested themes. */
     --color-background: var(--background);
@@ -197,6 +192,8 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
 }
 
 .admin-shell,
