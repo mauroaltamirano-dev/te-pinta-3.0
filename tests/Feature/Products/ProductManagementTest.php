@@ -109,6 +109,19 @@ final class ProductManagementTest extends TestCase
         $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 
+    public function test_product_creation_preserves_an_explicit_zero_slug(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+
+        $this->actingAs($admin)->post(route('admin.products.store'), $this->validPayload($category, [
+            'name' => 'Salteña',
+            'slug' => '0',
+        ]))->assertRedirect(route('admin.products.index'));
+
+        $this->assertSame('0', Product::query()->sole()->slug);
+    }
+
     public function test_product_slug_is_stable_on_rename_and_explicitly_editable(): void
     {
         $admin = User::factory()->administrator()->create();

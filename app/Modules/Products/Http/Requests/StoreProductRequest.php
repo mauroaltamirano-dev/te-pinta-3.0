@@ -23,8 +23,10 @@ final class StoreProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $slug = $this->input('slug');
+
         $this->merge([
-            'slug' => $this->input('slug') ?: null,
+            'slug' => $slug === '' ? null : $slug,
             'description' => $this->input('description') ?: null,
             'long_description' => $this->input('long_description') ?: null,
             'public_ingredients' => $this->input('public_ingredients') ?: null,
