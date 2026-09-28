@@ -1,14 +1,30 @@
 import { Head, Link } from '@inertiajs/react';
-import {
-    ArrowDownRight,
-    ArrowRight,
-    ArrowUpRight,
-    ShoppingBag,
-} from 'lucide-react';
+import { ArrowRight, MessageCircle, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FeaturedProductCard } from '@/features/marketing/components/featured-product-card';
 import type { FeaturedProductPublicView } from '@/features/marketing/types';
 import { useCart } from '@/features/orders/cart-context';
+
+const orderSteps = [
+    {
+        number: '01',
+        title: 'Elegí',
+        detail: 'Recorré el menú y encontrá tus favoritas.',
+        icon: ShoppingBag,
+    },
+    {
+        number: '02',
+        title: 'Armá',
+        detail: 'Sumalas al carrito en la cantidad que quieras.',
+        icon: ArrowRight,
+    },
+    {
+        number: '03',
+        title: 'Enviá',
+        detail: 'Revisá tu pedido y finalizalo por WhatsApp.',
+        icon: MessageCircle,
+    },
+];
 
 export default function Home({
     featuredProduct = null,
@@ -19,190 +35,172 @@ export default function Home({
 
     return (
         <>
-            <Head title="Empanadas para compartir" />
-            <section className="overflow-hidden border-b border-border/70">
-                <div className="mx-auto grid max-w-7xl gap-10 px-4 pt-12 pb-14 sm:px-8 sm:pt-16 lg:min-h-165 lg:grid-cols-[1.06fr_0.94fr] lg:items-center lg:gap-16 lg:px-12 lg:py-18">
-                    <div className="relative z-1 flex flex-col items-start">
-                        <p className="inline-flex items-center gap-3 text-xs font-bold tracking-[0.24em] text-public-earth-ink uppercase">
+            <Head title="Empanadas para compartir">
+                <link rel="preload" as="image" href="/images/brand/hero.png" />
+            </Head>
+
+            <section className="relative isolate flex min-h-150 items-center overflow-hidden bg-public-ink text-white sm:min-h-165 lg:min-h-175">
+                <img
+                    data-testid="public-hero-image"
+                    src="/images/brand/hero.png"
+                    alt=""
+                    fetchPriority="high"
+                    className="absolute inset-0 -z-20 size-full object-cover object-[66%_center] sm:object-center"
+                />
+                <div
+                    className="absolute inset-0 -z-10 bg-linear-to-b from-black/85 via-black/60 to-black/15 sm:bg-linear-to-r sm:from-black/85 sm:via-black/60 sm:to-transparent"
+                    aria-hidden="true"
+                />
+                <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-8 lg:px-12">
+                    <div className="max-w-2xl">
+                        <p className="flex items-center gap-3 text-xs font-bold tracking-[0.2em] text-white/90 uppercase">
                             <span
-                                className="h-px w-8 bg-primary"
+                                className="h-px w-8 bg-public-earth"
                                 aria-hidden="true"
                             />
-                            Te Pinta · Empanadas
+                            Empanadas Te Pinta
                         </p>
-                        <h1 className="mt-8 max-w-3xl font-display text-[clamp(3.7rem,8vw,8rem)] leading-[0.9] font-black tracking-[-0.055em] text-balance">
+                        <h1 className="mt-6 font-serif text-[clamp(3.4rem,7vw,7rem)] leading-[0.93] font-bold tracking-[-0.055em] text-balance">
                             Se te pinta{' '}
                             <span className="text-primary">una</span> empanada.
                         </h1>
-                        <p className="mt-8 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">
+                        <p className="mt-7 max-w-md text-base leading-7 text-white/90 sm:text-lg">
                             Elegí tus favoritas, armá el carrito y terminá tu
-                            pedido por WhatsApp. Así de simple.
+                            pedido por WhatsApp.
                         </p>
                         <Button
                             asChild
                             size="lg"
-                            className="mt-9 min-h-13 rounded-full px-7 text-base font-semibold shadow-none"
+                            className="mt-8 min-h-13 rounded-full px-7 text-base font-semibold shadow-lg shadow-black/25"
                         >
                             <Link href="/menu">
-                                Hacer pedido{' '}
-                                <ArrowUpRight
+                                Hacer pedido
+                                <ArrowRight
                                     className="size-5"
                                     aria-hidden="true"
                                 />
                             </Link>
                         </Button>
-                        <p className="mt-5 text-sm text-muted-foreground">
-                            Explorá el menú antes de decidir.
-                        </p>
-                    </div>
-                    <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-                        <div className="relative aspect-[5/4] overflow-hidden rounded-[2rem] bg-primary sm:aspect-square sm:rounded-[2.5rem]">
-                            {featuredProduct?.product.image_url ? (
-                                <img
-                                    src={featuredProduct.product.image_url}
-                                    alt={featuredProduct.product.name}
-                                    className="size-full object-cover"
-                                />
-                            ) : (
-                                <div
-                                    className="relative grid size-full place-items-center overflow-hidden text-white"
-                                    aria-hidden="true"
-                                >
-                                    <span className="absolute -top-[18%] -right-[20%] size-[70%] rounded-full border border-white/25" />
-                                    <span className="absolute -bottom-[24%] -left-[24%] size-[75%] rounded-full border border-white/25" />
-                                    <span className="font-display text-[clamp(7rem,22vw,15rem)] leading-none font-black tracking-[-0.12em] opacity-95">
-                                        TP
-                                        <span className="text-foreground">
-                                            .
-                                        </span>
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="absolute right-4 bottom-4 left-4 flex items-center justify-between gap-3 rounded-2xl bg-background/95 px-5 py-4 shadow-lg backdrop-blur-sm sm:right-6 sm:bottom-6 sm:left-6 sm:px-6">
-                            <div>
-                                <p className="text-[0.65rem] font-bold tracking-[0.18em] text-public-earth-ink uppercase">
-                                    Tu pedido empieza acá
-                                </p>
-                                <p className="mt-1 font-display text-lg font-bold sm:text-xl">
-                                    Elegí lo que se te pinta.
-                                </p>
-                            </div>
-                            <ArrowDownRight
-                                className="size-7 shrink-0 text-primary"
-                                aria-hidden="true"
-                            />
-                        </div>
                     </div>
                 </div>
             </section>
 
-            <section
-                className="border-b border-border/70"
-                aria-labelledby="steps-title"
-            >
-                <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] sm:items-start sm:px-8 lg:gap-20 lg:px-12 lg:py-18">
+            <section className="bg-card/70" aria-labelledby="home-menu-title">
+                <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:gap-12 lg:px-12">
+                    <div className="lg:pt-3">
+                        <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
+                            Nuestro menú
+                        </p>
+                        <h2
+                            id="home-menu-title"
+                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl"
+                        >
+                            Algo rico para cada antojo.
+                        </h2>
+                        <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground">
+                            Conocé las variedades disponibles y elegí cómo
+                            querés armar tu pedido.
+                        </p>
+                        <Link
+                            href="/menu"
+                            className="mt-5 inline-flex min-h-11 items-center gap-2 font-semibold text-public-earth-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        >
+                            Ver menú completo
+                            <ArrowRight className="size-4" aria-hidden="true" />
+                        </Link>
+                    </div>
+                    {featuredProduct ? (
+                        <FeaturedProductCard
+                            featured={featuredProduct}
+                            onAddProduct={(slug) => addProduct(slug, 1)}
+                            className="shadow-xl shadow-public-ink/8"
+                        />
+                    ) : (
+                        <Link
+                            href="/menu"
+                            className="group relative flex min-h-60 items-end overflow-hidden rounded-[2rem] bg-public-ink p-7 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:min-h-80 sm:p-10"
+                        >
+                            <img
+                                src="/images/brand/hero.png"
+                                alt=""
+                                loading="lazy"
+                                className="absolute inset-0 size-full object-cover object-right opacity-65 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
+                            />
+                            <span className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
+                            <span className="relative flex w-full items-end justify-between gap-4 font-serif text-3xl font-bold sm:text-4xl">
+                                Explorá nuestras variedades.
+                                <ArrowRight
+                                    className="size-7 shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </span>
+                        </Link>
+                    )}
+                </div>
+            </section>
+
+            <section aria-labelledby="steps-title">
+                <div className="mx-auto grid max-w-7xl gap-9 px-4 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:gap-12 lg:px-12">
                     <div>
                         <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
                             Cómo pedir
                         </p>
                         <h2
                             id="steps-title"
-                            className="mt-3 max-w-xs font-display text-4xl leading-none font-black tracking-tight sm:text-5xl"
+                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl"
                         >
                             Un pedido, tres pasos.
                         </h2>
                     </div>
-                    <ol className="grid gap-5 sm:grid-cols-3 sm:gap-4">
-                        {[
-                            {
-                                number: '01',
-                                title: 'Elegí',
-                                detail: 'Recorré el menú y encontrá tus favoritas.',
-                            },
-                            {
-                                number: '02',
-                                title: 'Armá',
-                                detail: 'Sumalas al carrito en la cantidad que quieras.',
-                            },
-                            {
-                                number: '03',
-                                title: 'Enviá',
-                                detail: 'Revisá tu pedido y finalizalo por WhatsApp.',
-                            },
-                        ].map((step) => (
-                            <li
-                                key={step.number}
-                                className="border-t border-foreground pt-4"
-                            >
-                                <span className="text-xs font-bold tracking-widest text-public-earth-ink">
-                                    {step.number}
-                                </span>
-                                <h3 className="mt-5 font-display text-2xl font-bold">
-                                    {step.title}
-                                </h3>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                    {step.detail}
-                                </p>
-                            </li>
-                        ))}
+                    <ol className="grid gap-4 sm:grid-cols-3">
+                        {orderSteps.map((step) => {
+                            const Icon = step.icon;
+
+                            return (
+                                <li
+                                    key={step.number}
+                                    className="rounded-2xl bg-card p-5 shadow-sm sm:p-6"
+                                >
+                                    <span className="flex size-12 items-center justify-center rounded-full bg-secondary text-public-earth-ink">
+                                        <Icon
+                                            className="size-6"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                    <span className="mt-6 block text-xs font-bold tracking-widest text-public-earth-ink">
+                                        {step.number}
+                                    </span>
+                                    <h3 className="mt-2 font-serif text-2xl font-bold">
+                                        {step.title}
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                        {step.detail}
+                                    </p>
+                                </li>
+                            );
+                        })}
                     </ol>
                 </div>
             </section>
 
-            {featuredProduct && (
-                <section
-                    className="mx-auto max-w-7xl px-4 py-14 sm:px-8 sm:py-20 lg:px-12"
-                    aria-labelledby="featured-title"
-                >
-                    <div className="mb-7 flex flex-wrap items-end justify-between gap-4 sm:mb-9">
-                        <div>
-                            <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
-                                Del menú
-                            </p>
-                            <h2
-                                id="featured-title"
-                                className="mt-2 font-display text-4xl font-black tracking-tight sm:text-5xl"
-                            >
-                                Nuestra recomendación.
-                            </h2>
-                        </div>
-                        <Link
-                            href="/menu"
-                            className="inline-flex min-h-11 items-center gap-2 font-semibold text-public-earth-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                        >
-                            Ver todo el menú{' '}
-                            <ArrowRight className="size-4" aria-hidden="true" />
-                        </Link>
-                    </div>
-                    <FeaturedProductCard
-                        featured={featuredProduct}
-                        onAddProduct={(slug) => addProduct(slug, 1)}
-                    />
-                </section>
-            )}
-
-            <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-8 sm:pb-20 lg:px-12">
-                <div className="grid gap-8 rounded-[2rem] bg-primary px-6 py-10 text-white sm:px-10 sm:py-14 lg:grid-cols-[1fr_auto] lg:items-end lg:px-14">
+            <section className="bg-primary text-white">
+                <div className="mx-auto flex max-w-7xl flex-col gap-7 px-4 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-12">
                     <div>
                         <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-85">
                             ¿Ya elegiste?
                         </p>
-                        <h2 className="mt-3 max-w-2xl font-display text-4xl leading-none font-black tracking-tight text-balance sm:text-6xl">
+                        <h2 className="mt-2 max-w-2xl font-serif text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
                             Lo rico está a un pedido de distancia.
                         </h2>
                     </div>
                     <Button
                         asChild
                         size="lg"
-                        className="min-h-13 w-fit rounded-full bg-white px-7 text-base font-semibold text-primary shadow-none hover:bg-background"
+                        className="min-h-13 w-fit shrink-0 rounded-full bg-white px-7 text-base font-semibold text-public-earth-ink shadow-none hover:bg-background"
                     >
                         <Link href="/menu">
-                            <ShoppingBag
-                                className="size-5"
-                                aria-hidden="true"
-                            />{' '}
                             Ir al menú
+                            <ArrowRight className="size-5" aria-hidden="true" />
                         </Link>
                     </Button>
                 </div>

@@ -29,19 +29,23 @@ function PublicShell({ children }: PropsWithChildren) {
             >
                 Ir al contenido
             </a>
-            <header className="relative z-10 border-b border-border/70 bg-background">
+            <header className="relative z-10 bg-background">
                 <nav
                     className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-3 px-4 sm:px-8 lg:min-h-22 lg:px-12"
                     aria-label="Navegación pública"
                 >
                     <Link
                         href="/"
-                        className="shrink-0 rounded-md font-display text-2xl font-black tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-3xl"
+                        className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         aria-label="Te Pinta, inicio"
                     >
-                        <span>
-                            Te Pinta<span className="text-primary">.</span>
-                        </span>
+                        <img
+                            src="/images/brand/logo-09-26-black.png"
+                            alt=""
+                            width="58"
+                            height="58"
+                            className="size-12 rounded-full object-cover sm:size-15"
+                        />
                     </Link>
                     <div className="flex items-center gap-1 sm:gap-3">
                         {navigation.map((item) => (
@@ -75,7 +79,7 @@ function PublicShell({ children }: PropsWithChildren) {
                                     ? `Carrito, ${count} productos`
                                     : 'Carrito'
                             }
-                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-foreground bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-primary hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-white sm:px-5"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5"
                         >
                             <ShoppingBag
                                 className="size-4"
@@ -99,15 +103,26 @@ function PublicShell({ children }: PropsWithChildren) {
             <main id="main-content" className="flex-1">
                 {children}
             </main>
-            <footer className="border-t border-border bg-foreground text-background">
+            <footer className="bg-foreground text-background">
                 <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-[1fr_auto] sm:items-end sm:px-8 lg:px-12">
-                    <div>
-                        <p className="font-display text-3xl font-black tracking-tight">
-                            Te Pinta<span className="text-primary">.</span>
-                        </p>
-                        <p className="mt-2 max-w-sm text-sm text-background/75">
-                            Elegí tus empanadas y armá tu pedido desde el menú.
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <img
+                            src="/images/brand/logo-blanco.png"
+                            alt=""
+                            width="64"
+                            height="64"
+                            loading="lazy"
+                            className="size-14 shrink-0 object-contain"
+                        />
+                        <div>
+                            <p className="font-serif text-2xl font-bold">
+                                Te Pinta
+                            </p>
+                            <p className="mt-1 max-w-sm text-sm text-background/75">
+                                Elegí tus empanadas y armá tu pedido desde el
+                                menú.
+                            </p>
+                        </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-5 text-sm font-semibold">
                         <Link
