@@ -128,6 +128,8 @@ creation are authorized by this deployment task.
 
 ## Progress and verification
 
+- **CFT-2 local work-unit commit** `0b2195f4f1b6fde0f43d98ece017213998c262a0` (`docs(deploy): record scoped public tunnel activation`), 2 paths, 335 authored lines. Gateway and public-app harnesses, both Compose validators and diff check passed. Native committed-only assessment from reviewed boundary `0fbf525` returned PASSIVE (`non_executable_only`), review_due=false; no review ceremony required. This documentation commit records operational state; live Cloudflare tunnel/DNS are external state, not Git changes.
+
 - **CFT-2 published and verified** (2026-09-29). Fresh isolated browser login
   succeeded using only the new HOME and pinned, checksum-verified cloudflared
   2026.9.3. Created named tunnel `tepinta-public-storefront` with UUID
