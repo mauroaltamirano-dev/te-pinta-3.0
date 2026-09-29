@@ -27,6 +27,25 @@ expect_reaches_origin() {
     }
 }
 
+expect_large_header_response() {
+    local large_header before after status
+
+    large_header="$(head -c 5120 /dev/zero | tr '\0' x)"
+    before="$(request_count)"
+    status="$(curl --path-as-is --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 5 \
+        "$gateway/menu?large_header=$large_header")"
+    after="$(request_count)"
+
+    [[ "$status" == '200' ]] || {
+        printf 'Expected a 5KB upstream response header to return HTTP 200, got %s.\n' "$status" >&2
+        exit 1
+    }
+    [[ "$before" != "$after" ]] || {
+        printf 'A successful large-header request did not reach the mock origin.\n' >&2
+        exit 1
+    }
+}
+
 expect_blocked() {
     local method="$1"
     local path="$2"
@@ -88,6 +107,7 @@ expect_reaches_origin GET '/icons/te-pinta-logo.svg'
 expect_reaches_origin GET '/icons/te-pinta-logo-192.png'
 expect_reaches_origin GET '/storage/products/product.png'
 expect_reaches_origin GET '/menu?campaign=%2Fspring'
+expect_large_header_response
 
 for blocked in \
     'GET /admin' 'GET /ADMIN' 'GET /admin/' 'GET /api/automation/instagram/pending' \
