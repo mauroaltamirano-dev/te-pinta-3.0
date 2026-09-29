@@ -3,9 +3,9 @@
 namespace App\Modules\Products\Http\Resources;
 
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Support\PublicProductImageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /** @mixin Product */
 final class PublicProductResource extends JsonResource
@@ -19,7 +19,7 @@ final class PublicProductResource extends JsonResource
             'description' => $this->description,
             'long_description' => $this->long_description,
             'public_ingredients' => $this->public_ingredients,
-            'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
+            'image_url' => PublicProductImageUrl::fromPath($this->image_path),
             'category' => [
                 'slug' => $this->category->slug,
                 'name' => $this->category->name,

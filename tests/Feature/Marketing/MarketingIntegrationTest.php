@@ -8,7 +8,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -86,7 +85,7 @@ final class MarketingIntegrationTest extends TestCase
                         'slug' => $product->slug,
                         'name' => 'Salteña',
                         'description' => 'Carne cortada a cuchillo.',
-                        'image_url' => Storage::disk('public')->url('products/saltena.jpg'),
+                        'image_url' => '/storage/products/saltena.jpg',
                         'prices' => [
                             'unit' => 1600,
                             'half_dozen' => 9000,

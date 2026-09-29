@@ -4,7 +4,7 @@ namespace App\Modules\Marketing\Queries;
 
 use App\Modules\Marketing\Models\FeaturedProduct;
 use App\Modules\Products\Models\Product;
-use Illuminate\Support\Facades\Storage;
+use App\Modules\Products\Support\PublicProductImageUrl;
 
 final class BuildFeaturedProductPublicView
 {
@@ -28,9 +28,7 @@ final class BuildFeaturedProductPublicView
             'slug' => $product->slug,
             'name' => $product->name,
             'description' => $product->description,
-            'image_url' => $product->image_path === null
-                ? null
-                : Storage::disk('public')->url($product->image_path),
+            'image_url' => PublicProductImageUrl::fromPath($product->image_path),
             'prices' => [
                 'unit' => (int) $product->unit_price,
                 'half_dozen' => (int) $product->half_dozen_price,
