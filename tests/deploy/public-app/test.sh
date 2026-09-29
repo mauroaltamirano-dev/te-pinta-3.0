@@ -83,4 +83,15 @@ fi
 PUBLIC_APP_ENV_FILE="$root/tests/deploy/public-app/fixture.env" \
     docker compose -f "$root/deploy/cloudflare/public-app/compose.yaml" config --quiet
 
+compose_config="$(PUBLIC_APP_ENV_FILE="$root/tests/deploy/public-app/fixture.env" \
+    docker compose -f "$root/deploy/cloudflare/public-app/compose.yaml" config --format json)"
+
+if ! php -r '
+    $config = json_decode(stream_get_contents(STDIN), true, flags: JSON_THROW_ON_ERROR);
+    exit(($config["services"]["public-app"]["restart"] ?? null) === "unless-stopped" ? 0 : 1);
+' <<<"$compose_config"; then
+    printf 'The public app must use restart: unless-stopped.\n' >&2
+    exit 1
+fi
+
 printf 'Public app overlay checks passed.\n'

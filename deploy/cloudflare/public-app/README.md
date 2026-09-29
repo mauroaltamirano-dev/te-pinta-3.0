@@ -33,7 +33,19 @@ docker compose -f deploy/cloudflare/public-app/compose.yaml stop public-app
 docker compose -f deploy/cloudflare/public-app/compose.yaml down
 ```
 
-Rollback stops or removes only `public-app` and its dedicated log volume. It never
-changes the private `tailscale-app-1` runtime. Gateway and tunnel activation are
-separate approved steps; do not expose this service directly or start them from
-this directory.
+## Safe rollback
+
+Never repoint the public gateway or hostname to private `127.0.0.1:8082`. If the
+public service must be withdrawn, first disable the public connector/tunnel and
+confirm that it is down. Then stop the gateway, then stop the public app:
+
+```bash
+docker compose -f deploy/cloudflare/compose.yaml stop gateway
+docker compose -f deploy/cloudflare/public-app/compose.yaml stop public-app
+```
+
+The temporary public-domain outage is intentional: it prevents a public fallback
+to the private Tailscale application. This rollback never changes
+`tailscale-app-1`; it affects only the public connector, gateway, and public app.
+Tunnel operations remain separately authorized and are not performed by these
+commands.

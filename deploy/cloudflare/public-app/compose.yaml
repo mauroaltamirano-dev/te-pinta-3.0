@@ -8,6 +8,7 @@ services:
                 FEATURED_VIEW_SHA256: 0d34ea4ed8e9499bed525cc6c4d8b5842a03058a620ee3b76accb74cc233d46e
                 HELPER_SHA256: 7d048d7505ea16676351e859c2386f13d39b4bab738583df8f67f129e090e9b5
         image: tepinta3-public-app:local
+        restart: unless-stopped
         env_file:
             - ${PUBLIC_APP_ENV_FILE:-../../tailscale/.env}
         ports:
