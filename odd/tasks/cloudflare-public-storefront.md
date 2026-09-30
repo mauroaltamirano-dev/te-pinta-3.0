@@ -16,8 +16,8 @@ creation are authorized by this deployment task.
 
 ## Design constraints
 
-- Use the documented production-like loopback runtime (`127.0.0.1:8082`), not the
-  mutable Sail/Vite development server on port 8000.
+- Use the separately derived public application on loopback (`127.0.0.1:8084`),
+  not the private Tailscale runtime on `8082` or mutable Sail/Vite port 8000.
 - Put a default-deny public boundary in front of that runtime. Only public routes
   and their required assets may reach the origin. Administrative, authentication,
   debug, source, private-media and internal API paths must remain inaccessible,
@@ -72,6 +72,19 @@ creation are authorized by this deployment task.
   database. Confirm the private panel is unchanged without inspecting or reusing
   an unauthorized Tailscale session. Document any manual authenticated check that
   still requires the user. Update deployment/security docs with actual results.
+
+- [ ] **CFT-8 — Refresh the public image to a verified recent release** (scope pending).
+  The running public image is based on a 2026-08-30 operational image plus only
+  the image-URL overlay, so September storefront changes are not live. Select an
+  immutable clean source cut containing completed public behavior only; exclude
+  the 179-path dirty checkout and unfinished derived-pricing/quick-order work
+  unless the user explicitly includes them after completion. Verify database
+  migration compatibility, build/test the separate image, then cut over without
+  exposing admin or redirecting to private8082. Keep the current image available
+  for rollback. Do not rebuild the mutable checkout or run a live migration by
+  default. Clarify the release cut before implementation.
+  Checks: clean source manifest, affected/full quality checks, schema compatibility,
+  staged loopback and HTTPS smoke, rollback proof, native assessment when due.
 
 - [x] **CFT-4 — Same-origin public product images** (delegated; two non-trivial serializers plus tests trigger).
   User explicitly authorized fixing image links. Return safe request-relative
@@ -139,9 +152,9 @@ creation are authorized by this deployment task.
   and restart-on-failure; tunnel info showed a registered connector. Apex DNS
   CNAME route was added without overwrite; authoritative and public resolvers
   returned Cloudflare edge addresses. Stop/start lifecycle was observed and live
-  HTTPS recovered to 200 after a brief edge convergence 502. `Linger=no`, so
-  after a machine reboot the user service may not start until user login; this
-  uptime limitation remains to resolve if unattended pre-login service is needed.
+  HTTPS recovered to 200 after a brief edge convergence 502. On 2026-09-30,
+  user lingering was enabled (`Linger=yes` read back), so the enabled connector
+  user service starts before desktop login after reboot. No reboot was performed.
   Credentials/config are outside the repository. No private Tailscale routing
   or unrelated DNS/tunnels were changed. Local router/system DNS still gave an
   empty/negative answer at immediate test time; edge checks used public DNS
@@ -295,8 +308,8 @@ creation are authorized by this deployment task.
 ## Next step
 
 CFT-2 is published at `https://tepinta.com.ar` through the scoped, active tunnel.
-Continue CFT-3: verify order persistence against test storage without creating a
-fake live order, and obtain any needed user-side confirmation that the private
-Tailscale admin still shows genuine customer orders. Resolve unattended startup
-only if pre-login availability after reboot is required; current user service is
-enabled but `Linger=no`. Keep the public gateway pointed only to loopback8084.
+CFT-3 has isolated same-order test proof; still confirm a genuine customer order
+in the private admin without creating a fake live order. Clarify the CFT-8
+release cut before replacing the older public image. Observe unattended startup
+at a future reboot; current user service is enabled with `Linger=yes`. Keep the
+public gateway pointed only to loopback8084.
