@@ -39,6 +39,14 @@ async function addSaltenaDozenAndOpenCart(page: Page) {
     await page.getByTestId('menu-hero-cart-cta').click();
 }
 
+test('menu artwork is served as a PNG', async ({ request }) => {
+    const response = await request.get('/images/brand/bg-empanada.png');
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('image/png');
+    expect((await response.body()).length).toBeGreaterThan(0);
+});
+
 test('checkout público hidrata la fecha mínima desde options.today', async ({
     page,
 }) => {
