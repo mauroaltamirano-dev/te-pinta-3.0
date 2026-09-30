@@ -1,11 +1,12 @@
 # Public application release
 
 The public Compose service runs the locally built, tested full storefront release
-`tepinta3-public-app:release-de09382` (ImageID
-`sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`).
-Its source is commit `de09382654918831bc61e99a209d7714c57dd0cf`, not the mutable
-working tree. The previous checksum-gated image overlay and its Dockerfile remain
-for historical verification; **do not run `docker compose build` from this
+`tepinta3-public-app:release-3cceb12` (ImageID
+`sha256:37648c04428295c4fc7fe1be07e70832123fe0687c196748a7ae9efb48fe9069`).
+Its source is isolated PM-3 commit `3cceb12` on clean base
+`de09382654918831bc61e99a209d7714c57dd0cf`, not the mutable working
+tree. The previous checksum-gated image overlay and its Dockerfile remain for
+historical verification; **do not run `docker compose build` from this
 checkout** to prepare a new release. Compose has no `build` directive and will
 never pull an image from a registry.
 
@@ -16,8 +17,8 @@ using `deploy/tailscale/Dockerfile` and the verified local Sail base ImageID.
 Before starting, verify that the expected image is present:
 
 ```bash
-docker image inspect tepinta3-public-app:release-de09382 --format '{{.Id}}'
-# Expected: sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250
+docker image inspect tepinta3-public-app:release-3cceb12 --format '{{.Id}}'
+# Expected: sha256:37648c04428295c4fc7fe1be07e70832123fe0687c196748a7ae9efb48fe9069
 docker compose -f deploy/cloudflare/public-app/compose.yaml config --quiet
 docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build --pull never public-app
 docker compose -f deploy/cloudflare/public-app/compose.yaml ps public-app
@@ -35,14 +36,16 @@ not involved.
 ## Roll back the application image
 
 The prior public ImageID is
-`sha256:372050c8d42d0ab5aa97a8de2abe3fe7928ecdb613e4c8bea816f19949a476fa`.
-Retain and tag it locally before cutover. To restore that image later, override
+`sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`
+(tagged locally as `tepinta3-public-app:rollback-before-ui-20260930`).
+Retain that tag while this release is active. To restore that image later, override
 only the public app image; do not change the gateway or point it at private
 `8082`:
 
 ```bash
-docker image tag sha256:372050c8d42d0ab5aa97a8de2abe3fe7928ecdb613e4c8bea816f19949a476fa tepinta3-public-app:rollback-372050c8
-PUBLIC_APP_IMAGE=tepinta3-public-app:rollback-372050c8 \
+docker image inspect tepinta3-public-app:rollback-before-ui-20260930 --format '{{.Id}}'
+# Expected: sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250
+PUBLIC_APP_IMAGE=tepinta3-public-app:rollback-before-ui-20260930 \
   docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build --pull never public-app
 ```
 

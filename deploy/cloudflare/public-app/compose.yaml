@@ -1,6 +1,6 @@
 services:
     public-app:
-        image: ${PUBLIC_APP_IMAGE:-tepinta3-public-app:release-de09382}
+        image: ${PUBLIC_APP_IMAGE:-tepinta3-public-app:release-3cceb12}
         pull_policy: never
         restart: unless-stopped
         env_file:
