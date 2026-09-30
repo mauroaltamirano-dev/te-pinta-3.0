@@ -258,7 +258,7 @@
     --card: var(--color-public-canvas);
     --card-foreground: #ffffff;
     --muted: color-mix(in srgb, white 16%, var(--color-public-canvas));
-    --muted-foreground: rgb(255 255 255 / 84%);
+    --muted-foreground: #ffffff;
     --border: color-mix(in srgb, white 30%, var(--color-public-canvas));
 
     --color-card: var(--card);

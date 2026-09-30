@@ -55,23 +55,24 @@ export default function Menu() {
         <>
             <Head title="Menú" />
             <section
-                className={`mx-auto max-w-7xl px-4 pt-8 text-public-ink sm:px-8 sm:pt-10 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-18' : 'pb-14 sm:pb-18'}`}
+                data-testid="menu-hero"
+                aria-labelledby="menu-title"
+                className="relative isolate overflow-hidden bg-public-canvas text-white"
             >
-                <header className="relative isolate -mx-4 -mt-8 flex flex-col gap-6 overflow-hidden bg-public-canvas px-4 pt-8 pb-8 text-white sm:-mx-8 sm:-mt-10 sm:flex-row sm:items-end sm:justify-between sm:px-8 sm:pt-10 sm:pb-10 lg:-mx-12 lg:px-12">
-                    <img
-                        data-testid="menu-hero-artwork"
-                        src="/images/brand/bg-empanada.png"
-                        alt=""
-                        aria-hidden="true"
-                        className="pointer-events-none absolute top-0 right-0 z-0 h-full w-[72%] max-w-none object-contain object-right opacity-[0.08] select-none sm:w-1/2 sm:opacity-10 lg:w-[42%]"
-                    />
-                    <div className="relative z-10">
-                        <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
-                            Te Pinta · Para pedir
-                        </p>
-                        <h1 className="mt-4 font-display text-5xl leading-none font-black tracking-tight sm:text-6xl lg:text-7xl">
-                            Nuestro menú
-                            <span className="text-public-earth">.</span>
+                <img
+                    data-testid="menu-hero-artwork"
+                    src="/images/brand/bg-empanada.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-40 right-[-8rem] z-0 h-[20rem] w-[20rem] max-w-none object-contain opacity-[0.32] select-none sm:top-[-3rem] sm:right-[-14rem] sm:h-[24rem] sm:w-[24rem] lg:top-[-9rem] lg:right-[-10rem] lg:h-[36rem] lg:w-[36rem] lg:opacity-50"
+                />
+                <header className="relative z-10 mx-auto flex min-h-[17rem] max-w-7xl flex-col justify-center gap-5 px-4 py-7 sm:min-h-[16rem] sm:flex-row sm:items-end sm:justify-between sm:px-8 sm:py-7 lg:min-h-[15rem] lg:px-12">
+                    <div className="max-w-3xl sm:max-w-[28rem] lg:max-w-none">
+                        <h1
+                            id="menu-title"
+                            className="font-serif text-5xl leading-[0.95] font-bold tracking-tight sm:text-6xl lg:text-7xl lg:whitespace-nowrap xl:text-8xl"
+                        >
+                            Nuestro menú.
                         </h1>
                         <p className="mt-4 max-w-xl text-sm leading-6 text-white sm:text-base">
                             Elegí tus empanadas y sumá la cantidad que quieras.
@@ -82,7 +83,7 @@ export default function Menu() {
                         asChild
                         size="lg"
                         data-testid="menu-hero-cart-cta"
-                        className="relative z-10 hidden min-h-11 rounded-full bg-public-earth px-6 text-public-ink transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+                        className="relative z-10 min-h-12 w-full shrink-0 rounded-full bg-public-earth px-6 text-base text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-fit"
                     >
                         <Link href="/cart">
                             <ShoppingBag aria-hidden="true" /> Ver carrito
@@ -90,9 +91,12 @@ export default function Menu() {
                         </Link>
                     </Button>
                 </header>
-
+            </section>
+            <section
+                className={`mx-auto max-w-7xl px-4 text-public-ink sm:px-8 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-18' : 'pb-14 sm:pb-18'}`}
+            >
                 {!loading && !error && products.length > 0 && (
-                    <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-public-earth/95 px-4 py-4 backdrop-blur-sm sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+                    <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-public-earth/95 px-4 py-3 backdrop-blur-sm sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
                         <div
                             role="group"
                             aria-label="Categorías del menú"
@@ -101,11 +105,9 @@ export default function Menu() {
                             <Button
                                 type="button"
                                 size="sm"
-                                variant={
-                                    category === 'all' ? 'default' : 'outline'
-                                }
+                                variant="outline"
                                 aria-pressed={category === 'all'}
-                                className="min-h-11 shrink-0 rounded-full px-5 shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:bg-public-earth-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink/90"
+                                className="min-h-11 shrink-0 rounded-full border-public-ink/20 bg-white px-5 text-public-ink shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:border-public-canvas aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink"
                                 onClick={() => setCategory('all')}
                             >
                                 Todas
@@ -115,13 +117,9 @@ export default function Menu() {
                                     key={item.slug}
                                     type="button"
                                     size="sm"
-                                    variant={
-                                        category === item.slug
-                                            ? 'default'
-                                            : 'outline'
-                                    }
+                                    variant="outline"
                                     aria-pressed={category === item.slug}
-                                    className="min-h-11 shrink-0 rounded-full px-5 shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:bg-public-earth-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink/90"
+                                    className="min-h-11 shrink-0 rounded-full border-public-ink/20 bg-white px-5 text-public-ink shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:border-public-canvas aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink"
                                     onClick={() => setCategory(item.slug)}
                                 >
                                     {item.name}
@@ -156,9 +154,9 @@ export default function Menu() {
                         </p>
                     </div>
                 ) : (
-                    <div className="pt-7 sm:pt-10">
+                    <div className="pt-3 sm:pt-4">
                         <p
-                            className="mb-5 text-sm font-medium text-public-ink"
+                            className="mb-4 text-sm font-medium text-public-ink"
                             aria-live="polite"
                         >
                             {category === 'all'
@@ -166,7 +164,7 @@ export default function Menu() {
                                 : categories.find(
                                       (item) => item.slug === category,
                                   )?.name}
-                            <span className="ml-2 text-white">
+                            <span className="ml-2 text-public-earth-ink">
                                 · {visible.length}{' '}
                                 {visible.length === 1 ? 'opción' : 'opciones'}
                             </span>
@@ -183,9 +181,9 @@ export default function Menu() {
                                     <article
                                         key={product.slug}
                                         data-testid="public-product-card"
-                                        className="public-menu-card flex min-w-0 flex-col overflow-hidden rounded-[1.75rem] border border-border bg-card text-card-foreground shadow-sm"
+                                        className="public-menu-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm"
                                     >
-                                        <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+                                        <div className="relative aspect-[8/5] overflow-hidden bg-secondary">
                                             {product.image_url ? (
                                                 <img
                                                     src={product.image_url}
@@ -211,7 +209,7 @@ export default function Menu() {
                                             )}
                                             {quantity > 0 && (
                                                 <span
-                                                    className="absolute top-4 right-4 rounded-full bg-public-ink px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
+                                                    className="absolute top-4 right-4 rounded-full bg-public-earth px-3 py-1.5 text-xs font-semibold text-public-ink shadow-sm"
                                                     aria-live="polite"
                                                 >
                                                     {quantity} en el carrito
@@ -219,10 +217,10 @@ export default function Menu() {
                                             )}
                                         </div>
                                         <div className="flex flex-1 flex-col p-5 sm:p-6">
-                                            <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
+                                            <p className="text-xs font-bold tracking-[0.16em] text-white uppercase">
                                                 {product.category.name}
                                             </p>
-                                            <h2 className="mt-2 font-display text-3xl leading-none font-bold tracking-tight">
+                                            <h2 className="mt-2 font-serif text-3xl leading-none font-bold tracking-tight">
                                                 <Link
                                                     href={`/menu/${encodeURIComponent(product.slug)}`}
                                                     className="underline-offset-4 hover:underline focus-visible:underline"
@@ -292,7 +290,7 @@ export default function Menu() {
                                                     </dl>
                                                 </div>
                                                 {quantity > 0 && (
-                                                    <div className="mt-5 flex items-center justify-between gap-3 rounded-xl bg-secondary px-3 py-2">
+                                                    <div className="mt-5 flex items-center justify-between gap-3 rounded-xl bg-public-earth px-3 py-2 text-public-ink">
                                                         <span
                                                             className="text-sm font-semibold"
                                                             aria-live="polite"
@@ -304,7 +302,7 @@ export default function Menu() {
                                                             type="button"
                                                             size="icon"
                                                             variant="outline"
-                                                            className="size-11 shrink-0 rounded-full bg-public-earth text-public-ink hover:bg-white"
+                                                            className="size-11 shrink-0 rounded-full bg-white text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-earth-ink"
                                                             aria-label={`Quitar una unidad de ${product.name}`}
                                                             onClick={() =>
                                                                 setProductQuantity(
@@ -322,7 +320,7 @@ export default function Menu() {
                                                     <Button
                                                         asChild
                                                         variant="link"
-                                                        className="col-span-2 min-h-11 justify-start px-0 text-white underline-offset-4 transition-colors hover:text-white/75 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                                        className="col-span-2 min-h-11 justify-start px-0 text-white underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                                                     >
                                                         <Link
                                                             href={`/menu/${encodeURIComponent(product.slug)}`}
@@ -333,7 +331,7 @@ export default function Menu() {
                                                     <Button
                                                         type="button"
                                                         size="lg"
-                                                        className="col-span-2 min-h-11 rounded-full bg-public-earth-ink text-white transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                                        className="col-span-2 min-h-11 rounded-full bg-public-earth text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                                                         aria-label={`Agregar una unidad de ${product.name}`}
                                                         onClick={() =>
                                                             addProduct(

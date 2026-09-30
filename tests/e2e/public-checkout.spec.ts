@@ -56,6 +56,167 @@ test('menu artwork is served as a PNG', async ({ request }) => {
     expect((await response.body()).length).toBeGreaterThan(0);
 });
 
+test('menu mantiene jerarquía editorial, contraste y recomposición responsive', async ({
+    page,
+}) => {
+    await page.goto('/menu');
+    await expect(page.getByTestId('public-product-card').first()).toBeVisible();
+
+    const hero = page.getByTestId('menu-hero');
+    const artwork = page.getByTestId('menu-hero-artwork');
+    await expect(hero.getByRole('heading', { level: 1 })).toHaveClass(
+        /font-serif/,
+    );
+    await expect(artwork).toHaveAttribute(
+        'src',
+        '/images/brand/bg-empanada.png',
+    );
+    await expect(artwork).toHaveAttribute('alt', '');
+    await expect(artwork).toHaveAttribute('aria-hidden', 'true');
+    await expect(artwork).toHaveCSS('pointer-events', 'none');
+    await expect(artwork).toHaveCSS('user-select', 'none');
+    await expect(artwork).toHaveJSProperty('complete', true);
+    expect(
+        await artwork.evaluate((image: HTMLImageElement) => image.naturalWidth),
+    ).toBeGreaterThan(0);
+
+    for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        const bounds = await hero.boundingBox();
+        expect(bounds?.x).toBe(0);
+        expect(bounds?.width).toBe(width);
+        const artworkMetrics = await artwork.evaluate((image) => {
+            const artworkBounds = image.getBoundingClientRect();
+            const heroBounds = image
+                .closest('[data-testid="menu-hero"]')!
+                .getBoundingClientRect();
+
+            return {
+                opacity: Number(getComputedStyle(image).opacity),
+                visibleHeight:
+                    Math.min(artworkBounds.bottom, heroBounds.bottom) -
+                    Math.max(artworkBounds.top, heroBounds.top),
+            };
+        });
+        expect(artworkMetrics.opacity).toBeGreaterThanOrEqual(0.3);
+        expect(artworkMetrics.opacity).toBeLessThanOrEqual(0.51);
+        expect(artworkMetrics.visibleHeight).toBeGreaterThan(0);
+        expect(
+            await page.evaluate(
+                () =>
+                    document.documentElement.scrollWidth -
+                    document.documentElement.clientWidth,
+            ),
+        ).toBeLessThanOrEqual(1);
+    }
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const desktopHeroBounds = await hero.boundingBox();
+    expect(desktopHeroBounds?.height).toBeLessThanOrEqual(250);
+    const card = page.getByTestId('public-product-card').first();
+    await expect(card.locator('h2')).toHaveClass(/font-serif/);
+    const cardImageBounds = await card.locator('img').boundingBox();
+    expect(cardImageBounds).not.toBeNull();
+    expect(cardImageBounds!.width / cardImageBounds!.height).toBeCloseTo(
+        1.6,
+        1,
+    );
+    const cardBackground = await card.evaluate(
+        (element) => getComputedStyle(element).backgroundColor,
+    );
+    const cardCopyColors = await card
+        .locator('p, dt, dd, h2 a')
+        .evaluateAll((elements) =>
+            elements.map((element) => getComputedStyle(element).color),
+        );
+    expect(cardCopyColors.length).toBeGreaterThan(0);
+
+    for (const color of cardCopyColors) {
+        expect(contrastRatio(color, cardBackground)).toBeGreaterThanOrEqual(
+            4.5,
+        );
+    }
+
+    const description = card.locator('.line-clamp-2');
+
+    if ((await description.count()) > 0) {
+        const descriptionColor = await description.evaluate(
+            (element) => getComputedStyle(element).color,
+        );
+        expect(
+            contrastRatio(descriptionColor, cardBackground),
+        ).toBeGreaterThanOrEqual(4.5);
+    }
+
+    const categoryFilters = page.getByRole('group', {
+        name: 'Categorías del menú',
+    });
+    const activeFilter = categoryFilters.getByRole('button', {
+        name: 'Todas',
+        exact: true,
+    });
+    const inactiveFilter = categoryFilters.getByRole('button').nth(1);
+    await expect(activeFilter).toHaveCSS(
+        'background-color',
+        'rgb(184, 79, 63)',
+    );
+    await expect(activeFilter).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(inactiveFilter).toHaveCSS(
+        'background-color',
+        'rgb(255, 255, 255)',
+    );
+    await expect(inactiveFilter).toHaveCSS('color', 'rgb(27, 27, 27)');
+    await inactiveFilter.hover();
+    await expect(inactiveFilter).toHaveCSS(
+        'background-color',
+        'rgb(125, 41, 31)',
+    );
+    await expect(inactiveFilter).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await page.keyboard.press('Tab');
+    await inactiveFilter.focus();
+    await expect(inactiveFilter).toHaveCSS('outline-width', '2px');
+    await activeFilter.hover();
+    await expect(activeFilter).toHaveCSS(
+        'background-color',
+        'rgb(125, 41, 31)',
+    );
+
+    const unitCta = card.getByRole('button', {
+        name: /Agregar una unidad de/,
+    });
+    await expect(unitCta).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+    await expect(unitCta).toHaveCSS('color', 'rgb(27, 27, 27)');
+    await unitCta.hover();
+    await expect(unitCta).toHaveCSS('background-color', 'rgb(125, 41, 31)');
+    await expect(unitCta).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await page.keyboard.press('Tab');
+    await unitCta.focus();
+    await expect(unitCta).toHaveCSS('outline-width', '2px');
+    await unitCta.click();
+    const quantityBadge = card.getByText('1 en el carrito');
+    await expect(quantityBadge).toBeVisible();
+    const quantityColors = await quantityBadge.evaluate((element) => {
+        const styles = getComputedStyle(element);
+
+        return { foreground: styles.color, background: styles.backgroundColor };
+    });
+    expect(quantityColors).toEqual({
+        foreground: 'rgb(27, 27, 27)',
+        background: 'rgb(241, 241, 241)',
+    });
+
+    const heroCart = page.getByTestId('menu-hero-cart-cta');
+    await expect(heroCart).toBeVisible();
+    await expect(heroCart).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+    await expect(heroCart).toHaveCSS('color', 'rgb(27, 27, 27)');
+    await heroCart.hover();
+    await expect(heroCart).toHaveCSS('background-color', 'rgb(125, 41, 31)');
+    await expect(heroCart).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await page.keyboard.press('Tab');
+    await heroCart.focus();
+    await expect(heroCart).toHaveCSS('outline-width', '2px');
+});
+
 test('checkout público hidrata la fecha mínima desde options.today', async ({
     page,
 }) => {
