@@ -41,7 +41,7 @@ creation are authorized by this deployment task.
 | TDD | Strict for new local routing/security behavior; RED before implementation |
 | Test runner | `bash tests/deploy/public-gateway/test.sh`; disposable Docker/mock origin, no real DB |
 | RDD | On by default; respect candidate assessment and separate consent |
-| Delivery | Local work-unit commits only; no push/PR; retain the user's current chained work-unit preference |
+| Delivery | Local work-unit commits only; no push/PR; user selected `feature-branch-chain` for the current public UI release |
 | Current base | `feat/public-site-identity`, `60c6e5c1fc6b4139d6d10d1f3a2b49129e83d369` |
 | Shared changes | Existing dirty/staged work must not be overwritten, included in commits or normalized incidentally |
 | Forecast | Approximately 355–450 source lines initially; actual CFT-1 is368 authored lines. Keep local chained slices; task-document additions belong to a later unit. |
@@ -72,6 +72,17 @@ creation are authorized by this deployment task.
   database. Confirm the private panel is unchanged without inspecting or reusing
   an unauthorized Tailscale session. Document any manual authenticated check that
   still requires the user. Update deployment/security docs with actual results.
+
+- [x] **CFT-9 — Pin and document the revised public UI release** (delegated direct).
+  Record the isolated PM-3 source commit and verified live public image as the
+  Compose default; update the local rollback image and operational instructions.
+  Keep gateway8083, private8082 and tunnel service unchanged. Checks: default
+  and rollback Compose config, scoped docs formatting, `git diff --check`,
+  exact scoped commit, and native committed-only RDD assessment. Route:
+  delegated direct because the Compose, README and tracker updates are three
+  non-trivial files. Delivery: `feature-branch-chain`, no push or PR; this
+  documentation/pin commit is one local work-unit slice. Do not mark CFT-3
+  complete without authenticated private-order confirmation.
 
 - [x] **CFT-8A — Complete the immutable public source cut** (delegated direct).
   User confirmed publishing only completed/verified public-site changes now;
@@ -152,6 +163,33 @@ creation are authorized by this deployment task.
   Forecast30–90 authored lines; cached local chain, no push/PR.
 
 ## Progress and verification
+
+- **CFT-9 public UI pin verified** (2026-09-30): User selected
+  `feature-branch-chain`; this is a local work-unit slice, without push or PR.
+  Commit `d466f1f8327924da614f8fa4ee575125e8498ae5` pins Compose and
+  operational README to `tepinta3-public-app:release-3cceb12` (ImageID
+  `sha256:37648c04428295c4fc7fe1be07e70832123fe0687c196748a7ae9efb48fe9069`).
+  Source is isolated PM-3 commit `3cceb12b48e1b6bc9969b0d119399ee68a24e92e`
+  on clean base `de09382`; the prior image is retained as
+  `tepinta3-public-app:rollback-before-ui-20260930` (ImageID
+  `sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`).
+  Image build used frozen Composer/pnpm dependencies and passed Vite build;
+  candidate pre-cutover HTTP `/`, `/menu`, `/cart`, artwork and manifest returned
+  200. Gateway regression passed. After cutover, local gateway and public HTTPS
+  `/`, `/menu`, `/cart` and artwork returned 200; public `/admin`, `/login`,
+  `/up` and `/api` returned 404. Live Chromium at 1440px, 390px and 320px
+  showed a full-width hero, loaded artwork, 10 cards, zero horizontal overflow
+  and no JavaScript errors. Tunnel remained active; gateway8083 and private8082
+  were unchanged. No order was submitted. Focused checkout E2E remains blocked
+  by unresolved `pgsql`, so CFT-3 is not complete. Both default and rollback
+  Compose configs and scoped README Prettier passed; tracker-wide Prettier fails
+  on its pre-existing table/list formatting and was not rewritten wholesale.
+  `git diff --check` passed. Native committed-only assessment from reviewed
+  boundary `a1c815f` returned MEDIUM, 1248 authored lines across the accumulated
+  slice, `slice_budget_reached`; review is due and requires candidate consent.
+  No native review or approval is claimed. The original unrelated staged patch
+  was preserved byte-for-byte (its diff against prior HEAD `c7d1bb5` retained
+  SHA-256 `7f2d5791bf74fbafff58632b54e3431be6903c9fca96db7fbf0d1e0fc25927d8`).
 
 - **CFT-8C published and smoke-verified** (2026-09-30): Deployment configuration/work-unit commit `04ccc97e8529d58d79cca0e7f0f5ebe1a08594a3` pins `tepinta3-public-app:release-de09382` and prevents Compose rebuilding or pulling mutable checkout content. Default and rollback override Compose rendering, public-app harness, gateway allowlist harness, Prettier and diffcheck passed. Native committed-only assessment from `a1c815f`: MEDIUM,227 authored lines, `under_budget`, no review due. Tagged prior ImageID as `tepinta3-public-app:rollback-372050c8`, then recreated only `public-app-public-app-1` on loopback8084. New running ImageID is `sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`, restart `unless-stopped`; gateway8083 and private8082 were not reconfigured. Live HTTPS `/`, `/menu`, `/cart`, catalog, options, menu artwork, built CSS/JS/fonts and sampled product PNG returned200; `/admin`, `/login`, `/up`, `/api` returned404. A real-browser mobile cart added a Fatay dozen, loaded artwork, received successful raw-price preview with no JS errors and **zero order submissions**; a CSRF-authenticated empty preview returned expected422. Connector active/enabled, `Linger=yes`; private `/up` and `/login` remained200, unauthenticated `/admin` redirected302. No reboot, real customer order, or authenticated Tailnet admin proof was performed; CFT-3 remains pending. Rollback image and command are documented in `deploy/cloudflare/public-app/README.md`.
 
@@ -329,6 +367,8 @@ creation are authorized by this deployment task.
 
 CFT-2 is published at `https://tepinta.com.ar` through the scoped, active tunnel.
 CFT-3 has isolated same-order test proof; still confirm a genuine customer order
-in the private admin without creating a fake live order. The CFT-8 clean public
-release is live. Observe unattended startup at a future reboot; the user service
-is enabled with `Linger=yes`. Keep the public gateway pointed only to loopback8084.
+in the private admin without creating a fake live order. The CFT-9 PM-3 public
+UI release is live; native review is due and needs separate candidate consent.
+The isolated checkout E2E remains blocked by pgsql. Observe unattended startup
+at a future reboot; the user service is enabled with `Linger=yes`. Keep the public
+gateway pointed only to loopback8084.
