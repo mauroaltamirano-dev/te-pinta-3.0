@@ -15,9 +15,11 @@ import type { AdminFeaturedProduct } from '../types';
 export function DisableFeaturedProductDialog({
     featured,
     onOpenChange,
+    onDisabled,
 }: {
     featured: AdminFeaturedProduct | null;
     onOpenChange: (open: boolean) => void;
+    onDisabled?: () => void;
 }) {
     const [processing, setProcessing] = useState(false);
 
@@ -32,7 +34,10 @@ export function DisableFeaturedProductDialog({
             {},
             {
                 preserveScroll: true,
-                onSuccess: () => onOpenChange(false),
+                onSuccess: () => {
+                    onOpenChange(false);
+                    onDisabled?.();
+                },
                 onFinish: () => setProcessing(false),
             },
         );

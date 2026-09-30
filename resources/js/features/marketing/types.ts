@@ -64,6 +64,15 @@ export interface MarketingPageProps {
     business_timezone: string;
 }
 
+export interface ProductFeaturedSchedule {
+    current: AdminFeaturedProduct | null;
+    upcoming: AdminFeaturedProduct[];
+    history: AdminFeaturedProduct[];
+    selectable_product: SelectableFeaturedProduct | null;
+    form_defaults: FeaturedProductFormDefaults;
+    business_timezone: string;
+}
+
 export type MarketingDashboardSummary = {
     state: 'active' | 'active_hidden' | 'upcoming' | 'none';
     business_timezone: string;

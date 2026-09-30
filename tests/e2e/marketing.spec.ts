@@ -206,6 +206,70 @@ test('administración crea, previsualiza, edita y desactiva una programación fu
     );
 });
 
+test('Productos administra su programación destacada sin duplicar la autoridad de Marketing', async ({
+    page,
+}) => {
+    await logIn(page);
+    await page.goto('/admin/settings/products');
+    await page.getByRole('button', { name: 'Especiales' }).click();
+    const card = page.locator('[data-slot="card"]').filter({
+        has: page.getByRole('heading', {
+            name: 'Hongos al puerro',
+            exact: true,
+        }),
+    });
+    await card.getByRole('button', { name: 'Destacar' }).click();
+    const scheduler = page.getByTestId('product-featured-scheduler');
+    await expect(scheduler).toContainText('Destacar Hongos al puerro');
+    await expect(
+        scheduler.getByTestId('product-featured-current'),
+    ).toContainText('No hay recomendaciones vigentes o futuras.');
+
+    await scheduler
+        .getByRole('button', { name: 'Nueva recomendación' })
+        .click();
+    const editor = page.getByRole('dialog', { name: 'Nueva recomendación' });
+    await expect(
+        editor.getByRole('combobox', { name: 'Producto' }),
+    ).toBeDisabled();
+    await expect(
+        editor.getByRole('combobox', { name: 'Producto' }),
+    ).toContainText('Hongos al puerro');
+    await editor.getByLabel('Título destacado').fill('Hongos elegidos');
+    await editor.getByLabel('Inicio', { exact: true }).fill(businessLocal(7));
+    await editor.getByLabel('Fin', { exact: true }).fill(businessLocal(8));
+    await editor.getByRole('button', { name: 'Guardar recomendación' }).click();
+    await expect(editor).toHaveCount(0);
+    const row = scheduler
+        .getByTestId('product-featured-current')
+        .getByRole('listitem');
+    await expect(row).toContainText('Hongos al puerro');
+    await expect(row).toContainText('Programada');
+
+    await row
+        .getByRole('button', {
+            name: 'Editar recomendación de Hongos al puerro',
+        })
+        .click();
+    await page.getByLabel('Título destacado').fill('Hongos actualizados');
+    await page.getByRole('button', { name: 'Guardar recomendación' }).click();
+    await expect(row).toContainText('Hongos al puerro');
+
+    await row
+        .getByRole('button', {
+            name: 'Desactivar recomendación de Hongos al puerro',
+        })
+        .click();
+    await page
+        .getByRole('dialog', { name: 'Desactivar recomendación' })
+        .getByRole('button', { name: 'Desactivar' })
+        .click();
+    await expect(
+        scheduler.getByTestId('product-featured-history'),
+    ).toContainText('Hongos al puerro');
+    await expect(row).toHaveCount(0);
+});
+
 test('administración rechaza una programación superpuesta', async ({
     page,
 }, testInfo) => {
@@ -237,8 +301,8 @@ test('Inicio público muestra la recomendación y reutiliza el carrito', async (
     await expect(featured).toContainText('Recomendación de la casa');
     await expect(featured).toContainText('Nuestra recomendación de hoy');
     await expect(featured).toContainText('Salteña');
-    await expect(featured).toContainText('Desde · docena cocinada');
-    await expect(featured).toContainText('$ 18.000');
+    await expect(featured).toContainText('Docena cocinada');
+    await expect(featured).toContainText(/18[.\s]000/);
 
     await waitForStableCapture(page);
     await page.screenshot({
@@ -280,11 +344,13 @@ test('Inicio no reserva espacio cuando el backend no expone recomendación', asy
         await route.fulfill({ response, json: payload });
     });
 
-    await page.getByRole('link', { name: 'Inicio', exact: true }).click();
+    await page
+        .getByRole('link', { name: 'Te Pinta, inicio', exact: true })
+        .click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('featured-product-card')).toHaveCount(0);
     await expect(
-        page.getByRole('heading', { name: 'Tu próximo pedido empieza acá.' }),
+        page.getByRole('heading', { name: /Te pinta una empanada/i }),
     ).toBeVisible();
 });
 

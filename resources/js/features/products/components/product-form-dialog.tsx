@@ -186,8 +186,8 @@ export function ProductFormDialog({
                 nextOpen ? onOpenChange(true) : closeDialog()
             }
         >
-            <DialogContent className="dark admin-shell products-workspace max-h-[92vh] overflow-y-auto sm:max-w-3xl">
-                <DialogHeader>
+            <DialogContent className="dark admin-shell products-workspace top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[92vh] flex-col gap-0 overflow-hidden sm:top-1/2 sm:h-auto sm:max-w-3xl">
+                <DialogHeader className="relative z-10 shrink-0">
                     <DialogTitle>
                         {product ? 'Editar producto' : 'Agregar producto'}
                     </DialogTitle>
@@ -198,7 +198,11 @@ export function ProductFormDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={submit} className="flex flex-col gap-6">
+                <form
+                    id="product-form"
+                    onSubmit={submit}
+                    className="mt-4 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pe-1"
+                >
                     <div className="grid gap-6 md:grid-cols-[9rem_1fr]">
                         <div className="flex flex-col items-center gap-3">
                             <Avatar className="size-28 border-4 border-muted bg-muted">
@@ -617,42 +621,46 @@ export function ProductFormDialog({
                             </div>
                         </div>
                     )}
-
-                    <DialogFooter className="items-center sm:justify-between">
-                        <div>
-                            {product && !confirmingDelete && (
-                                <Button
-                                    ref={removeButtonRef}
-                                    type="button"
-                                    variant="ghost"
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={requestDelete}
-                                >
-                                    <Trash2 data-icon="inline-start" />
-                                    Quitar producto
-                                </Button>
-                            )}
-                        </div>
-                        <div className="flex flex-col-reverse gap-2 sm:flex-row">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={closeDialog}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={form.processing}>
-                                {form.processing && (
-                                    <LoaderCircle
-                                        data-icon="inline-start"
-                                        className="animate-spin"
-                                    />
-                                )}
-                                {product ? 'Guardar cambios' : 'Crear producto'}
-                            </Button>
-                        </div>
-                    </DialogFooter>
                 </form>
+
+                <DialogFooter className="relative z-10 shrink-0 items-center bg-admin-surface pt-4 sm:justify-between">
+                    <div>
+                        {product && !confirmingDelete && (
+                            <Button
+                                ref={removeButtonRef}
+                                type="button"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={requestDelete}
+                            >
+                                <Trash2 data-icon="inline-start" />
+                                Quitar producto
+                            </Button>
+                        )}
+                    </div>
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeDialog}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            form="product-form"
+                            disabled={form.processing}
+                        >
+                            {form.processing && (
+                                <LoaderCircle
+                                    data-icon="inline-start"
+                                    className="animate-spin"
+                                />
+                            )}
+                            {product ? 'Guardar cambios' : 'Crear producto'}
+                        </Button>
+                    </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

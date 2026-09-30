@@ -8,7 +8,7 @@ Marketing v1 es responsable de una decisión de presentación comercial: qué Pr
 | --- | --- |
 | Recomendación | Una ventana habilitada de Featured Product puede estar vigente en un instante determinado. |
 | Programación | Se conservan los registros pasados, actuales y futuros. El inicio es obligatorio; el final puede quedar abierto. |
-| Administración | `/admin/marketing` crea, edita, previsualiza y deshabilita recomendaciones. No existe una acción habitual de eliminación física. |
+| Administración | `/admin/marketing` crea, edita, previsualiza y deshabilita recomendaciones. `/admin/settings/products` integra la programación del Product seleccionado mediante los mismos comandos de Marketing. No existe una acción habitual de eliminación física. |
 | Inicio público | Muestra la recomendación sólo mientras su Product continúe disponible para la venta pública. |
 | Dashboard | Muestra un resumen compacto de Marketing con el estado actual, próximo, no disponible o vacío. |
 
@@ -19,6 +19,8 @@ Esta versión no incluye descuentos, promociones, combos, cupones, campañas, pr
 `Marketing` es responsable de la programación de Featured Product, el título y el texto breve opcionales, las reglas temporales y su modelo de vista seguro para el público. `Products` sigue siendo responsable del nombre, la descripción, la imagen, la categoría, la disponibilidad y los precios públicos actuales del producto.
 
 La relación no captura snapshots de los campos del catálogo. Por lo tanto, una recomendación histórica permanece vinculada a su Product, mientras que cada previsualización o presentación pública actual refleja deliberadamente los datos públicos actuales del Product.
+
+La vista de Products consulta `GET /admin/marketing/products/{product}/featured`, una lectura autorizada propiedad de Marketing que devuelve sólo la programación de ese Product, su elegibilidad para nuevas recomendaciones y el horario comercial. La creación, edición y desactivación siguen usando las acciones existentes de Marketing, incluida la exclusión temporal global; Products no almacena otro indicador de destacado. Un Product no disponible conserva su historial, pero no puede iniciar una nueva recomendación.
 
 Marketing e Instagram son dominios hermanos:
 

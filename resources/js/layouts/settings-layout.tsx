@@ -22,8 +22,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { url } = usePage();
 
     return (
-        <section className="settings-workspace bg-transparent lg:h-full lg:min-h-0">
-            <div className="grid min-h-[calc(100vh-10rem)] gap-6 lg:h-full lg:min-h-0 lg:grid-cols-[17rem_1fr]">
+        <section className="settings-workspace min-w-0 bg-transparent lg:h-full lg:min-h-0">
+            <div className="grid min-h-[calc(100vh-10rem)] min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:h-full lg:min-h-0 lg:grid-cols-[17rem_1fr]">
                 <aside
                     data-settings-panel="navigation"
                     className="rounded-[0.5rem] bg-admin-surface lg:min-h-0 lg:overflow-y-auto"

@@ -4,6 +4,7 @@ namespace Tests\Feature\Marketing;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Marketing\Models\FeaturedProduct;
+use App\Modules\Products\Models\Tag;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -67,6 +68,81 @@ final class MarketingIntegrationTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->has('upcoming', 1)
                 ->where('upcoming.0.product.name', 'Caprese'));
+    }
+
+    public function test_product_scheduler_is_authorized_scoped_and_preserves_history(): void
+    {
+        $product = $this->product();
+        $other = $this->product(null, ['name' => 'Caprese']);
+        $this->featured($product);
+        $this->featured($product, [
+            'starts_at' => '2026-08-24 14:00:00+00',
+            'ends_at' => '2026-08-24 20:00:00+00',
+        ]);
+        $this->featured($product, [
+            'starts_at' => '2026-08-22 14:00:00+00',
+            'ends_at' => '2026-08-22 20:00:00+00',
+            'is_enabled' => false,
+        ]);
+        $this->featured($other, [
+            'starts_at' => '2026-08-25 14:00:00+00',
+            'ends_at' => '2026-08-25 20:00:00+00',
+        ]);
+
+        $route = route('admin.marketing.products.featured', $product);
+        $this->get($route)->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())->get($route)->assertForbidden();
+        $this->actingAs(User::factory()->administrator()->create())
+            ->get($route)
+            ->assertOk()
+            ->assertJsonPath('current.product.id', $product->id)
+            ->assertJsonPath('upcoming.0.product.id', $product->id)
+            ->assertJsonPath('history.0.status', 'inactive')
+            ->assertJsonPath('selectable_product.id', $product->id)
+            ->assertJsonPath('business_timezone', 'America/Argentina/Buenos_Aires')
+            ->assertJsonCount(1, 'upcoming')
+            ->assertJsonCount(1, 'history')
+            ->assertDontSee('Caprese');
+
+        $product->update(['is_available' => false]);
+        $this->get($route)->assertOk()
+            ->assertJsonPath('selectable_product', null)
+            ->assertJsonPath('current.is_publicly_visible', false)
+            ->assertJsonCount(1, 'history');
+        $this->get('/admin/marketing/products/999999/featured')->assertNotFound();
+    }
+
+    public function test_product_editorial_changes_flow_to_home_catalog_and_detail_without_a_parallel_catalog(): void
+    {
+        $product = $this->product();
+        $this->featured($product);
+        $tag = Tag::query()->create(['name' => 'Especial', 'slug' => 'especial']);
+        $product->tags()->attach($tag);
+        $product->update([
+            'name' => 'Salteña de la casa',
+            'description' => 'Carne y especias.',
+            'long_description' => 'Preparada diariamente.',
+            'public_ingredients' => 'Carne, cebolla, papa.',
+            'image_path' => 'products/nueva-saltena.png',
+        ]);
+
+        $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
+            ->where('featuredProduct.product.name', 'Salteña de la casa')
+            ->where('featuredProduct.product.description', 'Carne y especias.')
+            ->where('featuredProduct.product.image_url', '/storage/products/nueva-saltena.png')
+            ->where('featuredProduct.product.prices.unit', 1600));
+        $this->get(route('public.products.index'))->assertOk()
+            ->assertJsonPath('data.0.name', 'Salteña de la casa')
+            ->assertJsonPath('data.0.description', 'Carne y especias.')
+            ->assertJsonPath('data.0.public_ingredients', 'Carne, cebolla, papa.')
+            ->assertJsonPath('data.0.tags.0.slug', 'especial')
+            ->assertJsonPath('data.0.prices.unit', 1600);
+        $this->get(route('public.products.show', ['slug' => $product->slug]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('product.long_description', 'Preparada diariamente.')
+                ->where('product.public_ingredients', 'Carne, cebolla, papa.')
+                ->where('product.tags.0.slug', 'especial')
+                ->where('product.prices.unit', 1600));
     }
 
     public function test_public_home_only_receives_current_sellable_featured_product(): void

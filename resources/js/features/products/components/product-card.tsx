@@ -1,4 +1,4 @@
-import { ImageIcon, Pencil } from 'lucide-react';
+import { ImageIcon, Megaphone, Pencil } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,10 @@ import { formatPesos } from '../utils';
 interface ProductCardProps {
     product: Product;
     onEdit: (product: Product) => void;
+    onFeature: (product: Product) => void;
 }
 
-export function ProductCard({ product, onEdit }: ProductCardProps) {
+export function ProductCard({ product, onEdit, onFeature }: ProductCardProps) {
     const isVegetarian = product.tags.some(
         (tag) => tag.slug === 'vegetariana' || tag.slug === 'vegetarian',
     );
@@ -62,7 +63,7 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
                 />
                 <PriceRow label="Docena cocinada" value={product.dozen_price} />
             </CardContent>
-            <CardFooter className="mt-auto h-[3.25rem] bg-admin-action p-0">
+            <CardFooter className="mt-auto grid h-auto auto-cols-fr grid-flow-col bg-admin-action p-0">
                 <Button
                     type="button"
                     variant="ghost"
@@ -71,6 +72,15 @@ export function ProductCard({ product, onEdit }: ProductCardProps) {
                 >
                     <Pencil data-icon="inline-start" />
                     Editar producto
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-[3.25rem] rounded-none text-admin-accent"
+                    onClick={() => onFeature(product)}
+                >
+                    <Megaphone className="size-4" aria-hidden="true" />
+                    Destacar
                 </Button>
             </CardFooter>
         </Card>

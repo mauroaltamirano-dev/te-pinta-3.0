@@ -46,6 +46,8 @@ export function MarketingEditorDialog({
     defaults,
     timezone,
     onOpenChange,
+    lockedProductId,
+    onSaved,
 }: {
     open: boolean;
     featured: AdminFeaturedProduct | null;
@@ -53,6 +55,8 @@ export function MarketingEditorDialog({
     defaults: FeaturedProductFormDefaults;
     timezone: string;
     onOpenChange: (open: boolean) => void;
+    lockedProductId?: number;
+    onSaved?: () => void;
 }) {
     const productOptions = useMemo(() => {
         if (
@@ -71,7 +75,7 @@ export function MarketingEditorDialog({
         ];
     }, [featured, products]);
     const form = useForm<FeaturedProductFormData>({
-        product_id: featured?.product.id.toString() ?? '',
+        product_id: (lockedProductId ?? featured?.product.id)?.toString() ?? '',
         headline: featured?.headline ?? '',
         short_copy: featured?.short_copy ?? '',
         starts_at: featured?.starts_at_local ?? defaults.starts_at,
@@ -93,7 +97,10 @@ export function MarketingEditorDialog({
 
         const options = {
             preserveScroll: true,
-            onSuccess: () => onOpenChange(false),
+            onSuccess: () => {
+                onOpenChange(false);
+                onSaved?.();
+            },
         };
 
         if (featured) {
@@ -110,8 +117,8 @@ export function MarketingEditorDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100vh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-5xl">
-                <DialogHeader>
+            <DialogContent className="admin-shell dark top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden border-admin-border bg-admin-surface sm:top-1/2 sm:h-auto sm:max-w-5xl">
+                <DialogHeader className="relative z-10 shrink-0">
                     <DialogTitle>
                         {featured
                             ? 'Editar recomendación'
@@ -123,7 +130,11 @@ export function MarketingEditorDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={submit} className="grid gap-6">
+                <form
+                    id="marketing-editor-form"
+                    onSubmit={submit}
+                    className="mt-4 min-h-0 flex-1 overflow-y-auto pe-1"
+                >
                     <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]">
                         <div className="grid content-start gap-4">
                             <Field
@@ -133,6 +144,7 @@ export function MarketingEditorDialog({
                             >
                                 <Select
                                     value={form.data.product_id}
+                                    disabled={lockedProductId !== undefined}
                                     onValueChange={(value) =>
                                         form.setData('product_id', value)
                                     }
@@ -323,26 +335,30 @@ export function MarketingEditorDialog({
                             )}
                         </section>
                     </div>
-
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button type="submit" disabled={form.processing}>
-                            {form.processing && (
-                                <LoaderCircle
-                                    className="animate-spin"
-                                    aria-hidden="true"
-                                />
-                            )}
-                            Guardar recomendación
-                        </Button>
-                    </DialogFooter>
                 </form>
+
+                <DialogFooter className="relative z-10 shrink-0 bg-admin-surface pt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="marketing-editor-form"
+                        disabled={form.processing}
+                    >
+                        {form.processing && (
+                            <LoaderCircle
+                                className="animate-spin"
+                                aria-hidden="true"
+                            />
+                        )}
+                        Guardar recomendación
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

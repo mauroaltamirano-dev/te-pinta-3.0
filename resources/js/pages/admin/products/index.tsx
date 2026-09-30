@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { SlidersHorizontal, Tags } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ProductFeaturedScheduler } from '@/features/marketing/components/product-featured-scheduler';
 import { AddProductCard } from '@/features/products/components/add-product-card';
 import { CategoryManagerDialog } from '@/features/products/components/category-manager-dialog';
 import { ProductCard } from '@/features/products/components/product-card';
@@ -23,6 +24,9 @@ export default function Products({
     const [productDialogOpen, setProductDialogOpen] = useState(false);
     const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
     const [tagDialogOpen, setTagDialogOpen] = useState(false);
+    const [featuredProduct, setFeaturedProduct] = useState<Product | null>(
+        null,
+    );
 
     const activeCategoryId = categories.some(
         (category) => category.id === selectedCategoryId,
@@ -123,6 +127,18 @@ export default function Products({
                 </header>
 
                 <div className="bg-transparent p-5 sm:p-7">
+                    {featuredProduct && (
+                        <ProductFeaturedScheduler
+                            key={featuredProduct.id}
+                            product={
+                                products.find(
+                                    (product) =>
+                                        product.id === featuredProduct.id,
+                                ) ?? featuredProduct
+                            }
+                            onClose={() => setFeaturedProduct(null)}
+                        />
+                    )}
                     {categories.length === 0 ? (
                         <div className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border p-8 text-center">
                             <h2 className="font-semibold">
@@ -147,6 +163,7 @@ export default function Products({
                                     key={product.id}
                                     product={product}
                                     onEdit={openEditDialog}
+                                    onFeature={setFeaturedProduct}
                                 />
                             ))}
                         </div>

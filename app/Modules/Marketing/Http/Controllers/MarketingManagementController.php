@@ -15,6 +15,8 @@ use App\Modules\Marketing\Queries\BuildFeaturedProductPublicView;
 use App\Modules\Marketing\Queries\FeaturedProductResolver;
 use App\Modules\Marketing\Queries\SelectableFeaturedProducts;
 use App\Modules\Marketing\Support\MarketingClock;
+use App\Modules\Products\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -59,6 +61,40 @@ final readonly class MarketingManagementController
                     'id' => $product->id,
                     'product' => $this->publicView->product($product),
                 ])->all(),
+            'form_defaults' => [
+                'starts_at' => $this->clock->formatLocal($now),
+                'ends_at' => null,
+                'is_enabled' => true,
+            ],
+            'business_timezone' => $this->clock->timezone(),
+        ]);
+    }
+
+    public function forProduct(Request $request, Product $product): JsonResponse
+    {
+        Gate::authorize('viewAny', FeaturedProduct::class);
+
+        $now = $this->clock->now();
+        $records = $this->resolver->withAdministrativeProduct()
+            ->where('product_id', $product->id)
+            ->orderBy('starts_at')
+            ->orderBy('id')
+            ->get();
+        $current = $records->first(fn (FeaturedProduct $item): bool => $item->statusAt($now) === FeaturedProductStatus::Active);
+        $upcoming = $records->filter(fn (FeaturedProduct $item): bool => $item->statusAt($now) === FeaturedProductStatus::Scheduled);
+        $history = $records
+            ->reject(fn (FeaturedProduct $item): bool => in_array($item->statusAt($now), [FeaturedProductStatus::Active, FeaturedProductStatus::Scheduled], true))
+            ->sortByDesc(fn (FeaturedProduct $item): int => $item->starts_at->getTimestamp());
+        $selectable = $this->selectableProducts->query()->whereKey($product->id)->exists();
+
+        return response()->json([
+            'current' => $current === null ? null : $this->resource($current, $request),
+            'upcoming' => $this->resources($upcoming, $request),
+            'history' => $this->resources($history, $request),
+            'selectable_product' => $selectable ? [
+                'id' => $product->id,
+                'product' => $this->publicView->product($product),
+            ] : null,
             'form_defaults' => [
                 'starts_at' => $this->clock->formatLocal($now),
                 'ends_at' => null,
