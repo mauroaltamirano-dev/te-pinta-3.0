@@ -87,6 +87,10 @@ test('product detail is shareable and adds a selected quantity without blocking 
     await expect(page.getByLabel('Cantidad a agregar')).toHaveText('2');
     await page.getByRole('button', { name: 'Agregar 2 al carrito' }).click();
     await expect(page.getByText('2 en tu carrito')).toBeVisible();
+    await expect(page.getByTestId('public-cart-fab')).toHaveAttribute(
+        'aria-label',
+        'Carrito, 2 productos',
+    );
 
     await page.getByRole('link', { name: 'Volver al menú' }).click();
     await expect(
@@ -106,4 +110,8 @@ test('product detail is shareable and adds a selected quantity without blocking 
             .first()
             .getByText('En tu carrito: 3'),
     ).toBeVisible();
+    await expect(page.getByTestId('public-cart-fab')).toHaveAttribute(
+        'aria-label',
+        'Carrito, 3 productos',
+    );
 });

@@ -24,6 +24,7 @@ test('public home presents the brand and leads directly to the menu', async ({
     page,
 }) => {
     await page.goto('/');
+    await expect(page.getByTestId('public-cart-fab')).toHaveCount(0);
 
     await expect(
         page.getByRole('heading', { name: /Te pinta una empanada/i }),
@@ -164,4 +165,15 @@ test('public home presents the brand and leads directly to the menu', async ({
 
     await page.getByRole('link', { name: /Hacer pedido/i }).click();
     await expect(page).toHaveURL(/\/menu$/);
+    await page
+        .getByTestId('public-product-card')
+        .first()
+        .getByRole('button', { name: /Agregar una unidad de/ })
+        .click();
+    await page.getByRole('link', { name: 'Te Pinta, inicio' }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByTestId('public-cart-fab')).toHaveAttribute(
+        'aria-label',
+        'Carrito, 1 producto',
+    );
 });

@@ -24,6 +24,13 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
     page,
 }) => {
     await page.goto('/menu');
+    await expect(page.getByTestId('public-cart-fab')).toHaveCount(0);
+    await expect(page.getByTestId('mobile-cart-cta')).toHaveCount(0);
+    await expect(
+        page
+            .getByRole('navigation', { name: 'Navegación pública' })
+            .getByRole('link', { name: /Carrito/ }),
+    ).toHaveCount(0);
 
     const cards = page.getByTestId('public-product-card');
     await expect(cards.first()).toBeVisible();
@@ -39,25 +46,16 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
     expect(
         contrastRatio(cardColors.foreground, cardColors.background),
     ).toBeGreaterThanOrEqual(4.5);
-    const eyebrowColors = await page
-        .getByText('Te Pinta · Para pedir')
-        .evaluate((eyebrow) => {
-            const styles = getComputedStyle(eyebrow);
-            const shell = eyebrow.closest('.public-shell');
-
-            return {
-                foreground: styles.color,
-                background: shell
-                    ? getComputedStyle(shell).backgroundColor
-                    : '',
-            };
-        });
-    expect(eyebrowColors).toEqual({
+    const heroColors = await page.getByTestId('menu-hero').evaluate((hero) => ({
+        foreground: getComputedStyle(hero).color,
+        background: getComputedStyle(hero).backgroundColor,
+    }));
+    expect(heroColors).toEqual({
         foreground: 'rgb(255, 255, 255)',
         background: 'rgb(184, 79, 63)',
     });
     expect(
-        contrastRatio(eyebrowColors.foreground, eyebrowColors.background),
+        contrastRatio(heroColors.foreground, heroColors.background),
     ).toBeGreaterThanOrEqual(4.5);
     const allCount = await cards.count();
     const categories = page
@@ -90,18 +88,16 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
     await expect(product.getByText('En tu carrito: 19')).toBeVisible();
     await product.getByRole('button', { name: /Quitar una unidad de/ }).click();
     await expect(product.getByText('En tu carrito: 18')).toBeVisible();
-    await expect(
-        page.getByRole('link', { name: /Carrito/ }).first(),
-    ).toContainText('18');
+    const floatingCart = page.getByTestId('public-cart-fab');
+    await expect(floatingCart).toHaveAttribute(
+        'aria-label',
+        'Carrito, 18 productos',
+    );
+    await expect(floatingCart).toContainText('18');
 
     if ((page.viewportSize()?.width ?? 0) < 640) {
         await page.setViewportSize({ width: 320, height: 700 });
-        await expect(
-            page.getByRole('link', { name: 'Carrito, 18 productos' }),
-        ).toBeVisible();
-        const cartCta = page.getByTestId('mobile-cart-cta');
-        await expect(cartCta).toBeVisible();
-        await expect(cartCta).toContainText('18');
+        await expect(floatingCart).toBeVisible();
         const halfDozenButton = product.getByRole('button', {
             name: '+ Media docena',
         });
@@ -117,10 +113,64 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
                     document.documentElement.clientWidth,
             ),
         ).toBeLessThanOrEqual(1);
-        await cartCta.click();
-    } else {
-        await page.getByRole('link', { name: /Ver carrito/ }).click();
     }
 
+    await floatingCart.click();
     await expect(page).toHaveURL(/\/cart$/);
+    await expect(floatingCart).toHaveCount(0);
+});
+
+test('menu category divider spans the viewport and cart action remains reachable', async ({
+    page,
+}) => {
+    await page.goto('/menu');
+    const strip = page.getByTestId('menu-category-strip');
+    await expect(strip).toBeVisible();
+
+    for (const width of [1683, 390, 320]) {
+        await page.setViewportSize({ width, height: 720 });
+        const bounds = await strip.boundingBox();
+        expect(bounds?.x).toBe(0);
+        expect(bounds?.width).toBe(width);
+        await expect(strip).toHaveCSS('border-bottom-width', '1px');
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth - window.innerWidth,
+            ),
+        ).toBeLessThanOrEqual(1);
+    }
+
+    await page
+        .getByTestId('public-product-card')
+        .first()
+        .getByRole('button', { name: /Agregar una unidad de/ })
+        .click();
+    const floatingCart = page.getByTestId('public-cart-fab');
+
+    for (const width of [1683, 390, 320]) {
+        await page.setViewportSize({ width, height: 720 });
+        const bounds = await floatingCart.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(bounds!.width).toBeGreaterThanOrEqual(44);
+        expect(bounds!.height).toBeGreaterThanOrEqual(44);
+        expect(bounds!.x).toBeGreaterThanOrEqual(0);
+        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(720);
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth - window.innerWidth,
+            ),
+        ).toBeLessThanOrEqual(1);
+    }
+
+    await expect(floatingCart).toHaveAttribute(
+        'aria-label',
+        'Carrito, 1 producto',
+    );
+    await page.keyboard.press('Tab');
+    await floatingCart.focus();
+    await expect(floatingCart).toHaveCSS('outline-width', '2px');
+    await floatingCart.click();
+    await expect(page).toHaveURL(/\/cart$/);
+    await expect(floatingCart).toHaveCount(0);
 });

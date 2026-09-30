@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowRight, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/orders/cart-context';
@@ -92,11 +92,12 @@ export default function Menu() {
                     </Button>
                 </header>
             </section>
-            <section
-                className={`mx-auto max-w-7xl px-4 text-public-ink sm:px-8 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-18' : 'pb-14 sm:pb-18'}`}
-            >
-                {!loading && !error && products.length > 0 && (
-                    <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-public-earth/95 px-4 py-3 backdrop-blur-sm sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12">
+            {!loading && !error && products.length > 0 && (
+                <div
+                    data-testid="menu-category-strip"
+                    className="sticky top-0 z-20 w-full border-b border-border bg-public-earth/95 backdrop-blur-sm"
+                >
+                    <div className="mx-auto max-w-7xl px-4 py-3 sm:px-8 lg:px-12">
                         <div
                             role="group"
                             aria-label="Categorías del menú"
@@ -127,8 +128,11 @@ export default function Menu() {
                             ))}
                         </div>
                     </div>
-                )}
-
+                </div>
+            )}
+            <section
+                className={`mx-auto max-w-7xl px-4 text-public-ink sm:px-8 lg:px-12 ${count > 0 ? 'pb-32 sm:pb-24' : 'pb-14 sm:pb-18'}`}
+            >
                 {loading ? (
                     <p
                         role="status"
@@ -183,7 +187,10 @@ export default function Menu() {
                                         data-testid="public-product-card"
                                         className="public-menu-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm"
                                     >
-                                        <div className="relative aspect-[8/5] overflow-hidden bg-secondary">
+                                        <div
+                                            data-testid="public-product-media"
+                                            className="relative aspect-[8/5] overflow-hidden bg-secondary"
+                                        >
                                             {product.image_url ? (
                                                 <img
                                                     src={product.image_url}
@@ -381,24 +388,6 @@ export default function Menu() {
                     </div>
                 )}
             </section>
-            {count > 0 && (
-                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/35 bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgb(27_27_27_/_0.24)] backdrop-blur-sm sm:hidden">
-                    <Button
-                        asChild
-                        size="lg"
-                        className="min-h-12 w-full rounded-full bg-public-earth-ink text-base text-white transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                    >
-                        <Link href="/cart" data-testid="mobile-cart-cta">
-                            <ShoppingBag aria-hidden="true" /> Ver carrito (
-                            {count})
-                            <ArrowRight
-                                className="ml-auto"
-                                aria-hidden="true"
-                            />
-                        </Link>
-                    </Button>
-                </div>
-            )}
         </>
     );
 }

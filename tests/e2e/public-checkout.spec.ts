@@ -22,12 +22,14 @@ function contrastRatio(foreground: string, background: string) {
 }
 
 async function openCartFromMenu(page: Page) {
-    const cartCta = page
-        .getByRole('link', { name: /^Ver carrito/ })
-        .filter({ visible: true })
-        .first();
+    const cartCta = page.getByTestId('public-cart-fab');
+    await expect(cartCta).toHaveAttribute(
+        'aria-label',
+        'Carrito, 12 productos',
+    );
     await expect(cartCta).toContainText('12');
     await cartCta.click();
+    await expect(cartCta).toHaveCount(0);
 }
 
 async function addSaltenaDozenAndOpenCart(page: Page) {
@@ -111,13 +113,18 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
     }
 
     await page.setViewportSize({ width: 1440, height: 900 });
+    const supportsHover = await page.evaluate(
+        () => matchMedia('(hover: hover)').matches,
+    );
     const desktopHeroBounds = await hero.boundingBox();
     expect(desktopHeroBounds?.height).toBeLessThanOrEqual(250);
     const card = page.getByTestId('public-product-card').first();
     await expect(card.locator('h2')).toHaveClass(/font-serif/);
-    const cardImageBounds = await card.locator('img').boundingBox();
-    expect(cardImageBounds).not.toBeNull();
-    expect(cardImageBounds!.width / cardImageBounds!.height).toBeCloseTo(
+    const cardMediaBounds = await card
+        .getByTestId('public-product-media')
+        .boundingBox();
+    expect(cardMediaBounds).not.toBeNull();
+    expect(cardMediaBounds!.width / cardMediaBounds!.height).toBeCloseTo(
         1.6,
         1,
     );
@@ -166,29 +173,40 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
         'rgb(255, 255, 255)',
     );
     await expect(inactiveFilter).toHaveCSS('color', 'rgb(27, 27, 27)');
-    await inactiveFilter.hover();
-    await expect(inactiveFilter).toHaveCSS(
-        'background-color',
-        'rgb(125, 41, 31)',
-    );
-    await expect(inactiveFilter).toHaveCSS('color', 'rgb(255, 255, 255)');
+
+    if (supportsHover) {
+        await inactiveFilter.hover();
+        await expect(inactiveFilter).toHaveCSS(
+            'background-color',
+            'rgb(125, 41, 31)',
+        );
+        await expect(inactiveFilter).toHaveCSS('color', 'rgb(255, 255, 255)');
+    }
+
     await page.keyboard.press('Tab');
     await inactiveFilter.focus();
     await expect(inactiveFilter).toHaveCSS('outline-width', '2px');
-    await activeFilter.hover();
-    await expect(activeFilter).toHaveCSS(
-        'background-color',
-        'rgb(125, 41, 31)',
-    );
+
+    if (supportsHover) {
+        await activeFilter.hover();
+        await expect(activeFilter).toHaveCSS(
+            'background-color',
+            'rgb(125, 41, 31)',
+        );
+    }
 
     const unitCta = card.getByRole('button', {
         name: /Agregar una unidad de/,
     });
     await expect(unitCta).toHaveCSS('background-color', 'rgb(241, 241, 241)');
     await expect(unitCta).toHaveCSS('color', 'rgb(27, 27, 27)');
-    await unitCta.hover();
-    await expect(unitCta).toHaveCSS('background-color', 'rgb(125, 41, 31)');
-    await expect(unitCta).toHaveCSS('color', 'rgb(255, 255, 255)');
+
+    if (supportsHover) {
+        await unitCta.hover();
+        await expect(unitCta).toHaveCSS('background-color', 'rgb(125, 41, 31)');
+        await expect(unitCta).toHaveCSS('color', 'rgb(255, 255, 255)');
+    }
+
     await page.keyboard.press('Tab');
     await unitCta.focus();
     await expect(unitCta).toHaveCSS('outline-width', '2px');
@@ -209,9 +227,16 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
     await expect(heroCart).toBeVisible();
     await expect(heroCart).toHaveCSS('background-color', 'rgb(241, 241, 241)');
     await expect(heroCart).toHaveCSS('color', 'rgb(27, 27, 27)');
-    await heroCart.hover();
-    await expect(heroCart).toHaveCSS('background-color', 'rgb(125, 41, 31)');
-    await expect(heroCart).toHaveCSS('color', 'rgb(255, 255, 255)');
+
+    if (supportsHover) {
+        await heroCart.hover();
+        await expect(heroCart).toHaveCSS(
+            'background-color',
+            'rgb(125, 41, 31)',
+        );
+        await expect(heroCart).toHaveCSS('color', 'rgb(255, 255, 255)');
+    }
+
     await page.keyboard.press('Tab');
     await heroCart.focus();
     await expect(heroCart).toHaveCSS('outline-width', '2px');

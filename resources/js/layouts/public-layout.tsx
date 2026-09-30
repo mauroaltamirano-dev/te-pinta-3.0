@@ -20,6 +20,7 @@ function PublicShell({ children }: PropsWithChildren) {
     const { url } = usePage();
     const { count } = useCart();
     const pathname = url.split('?')[0];
+    const showFloatingCart = count > 0 && pathname !== '/cart';
 
     return (
         <div className="public-theme public-shell flex min-h-screen flex-col bg-background font-sans text-foreground">
@@ -69,31 +70,6 @@ function PublicShell({ children }: PropsWithChildren) {
                         >
                             Menú
                         </Link>
-                        <Link
-                            href="/cart"
-                            aria-current={
-                                pathname === '/cart' ? 'page' : undefined
-                            }
-                            aria-label={
-                                count > 0
-                                    ? `Carrito, ${count} productos`
-                                    : 'Carrito'
-                            }
-                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/75 px-3 text-sm font-semibold text-white transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-4"
-                        >
-                            <ShoppingBag
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                            {count > 0 && (
-                                <span
-                                    className="grid min-w-5 place-items-center rounded-full bg-public-earth px-1 text-xs font-bold text-public-ink tabular-nums"
-                                    aria-label={`${count} productos`}
-                                >
-                                    {count}
-                                </span>
-                            )}
-                        </Link>
                     </div>
                 </nav>
             </header>
@@ -103,8 +79,26 @@ function PublicShell({ children }: PropsWithChildren) {
             >
                 {children}
             </main>
+            {showFloatingCart && (
+                <Link
+                    href="/cart"
+                    data-testid="public-cart-fab"
+                    aria-label={`Carrito, ${count} ${count === 1 ? 'producto' : 'productos'}`}
+                    className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 inline-flex size-14 items-center justify-center rounded-full bg-public-earth-ink text-white shadow-lg transition-colors hover:bg-public-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink sm:right-6 sm:bottom-6"
+                >
+                    <ShoppingBag className="size-6" aria-hidden="true" />
+                    <span
+                        aria-hidden="true"
+                        className="absolute -top-2 -right-2 grid h-6 min-w-6 place-items-center rounded-full bg-public-earth px-1 text-xs font-bold text-public-ink tabular-nums shadow-sm"
+                    >
+                        {count}
+                    </span>
+                </Link>
+            )}
             <footer className="bg-public-ink text-white">
-                <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-[1fr_auto] sm:items-end sm:px-8 lg:px-12">
+                <div
+                    className={`mx-auto grid max-w-7xl gap-8 px-4 pt-10 sm:grid-cols-[1fr_auto] sm:items-end sm:px-8 lg:px-12 ${showFloatingCart ? 'pb-28' : 'pb-10'}`}
+                >
                     <div className="flex items-center gap-4">
                         <img
                             src="/images/brand/logo-blanco.png"
