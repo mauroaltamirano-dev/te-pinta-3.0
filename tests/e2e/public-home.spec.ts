@@ -111,8 +111,8 @@ test('public home presents the brand and leads directly to the menu', async ({
             },
         );
         expect(activeNavigationColors).toEqual({
-            foreground: 'rgb(255, 255, 255)',
-            background: 'rgb(27, 27, 27)',
+            foreground: 'rgb(27, 27, 27)',
+            background: 'rgb(241, 241, 241)',
         });
         expect(
             contrastRatio(

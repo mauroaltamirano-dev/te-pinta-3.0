@@ -21,6 +21,15 @@ function contrastRatio(foreground: string, background: string) {
     return (light + 0.05) / (dark + 0.05);
 }
 
+async function openCartFromMenu(page: Page) {
+    const cartCta = page
+        .getByRole('link', { name: /^Ver carrito/ })
+        .filter({ visible: true })
+        .first();
+    await expect(cartCta).toContainText('12');
+    await cartCta.click();
+}
+
 async function addSaltenaDozenAndOpenCart(page: Page) {
     await page.goto('/menu');
     const heroArtwork = page.getByTestId('menu-hero-artwork');
@@ -36,7 +45,7 @@ async function addSaltenaDozenAndOpenCart(page: Page) {
         .getByText('Salteña', { exact: true })
         .locator('xpath=ancestor::*[.//button[normalize-space()="Unidad"]][1]');
     await product.getByRole('button', { name: '+ Docena' }).click();
-    await page.getByTestId('menu-hero-cart-cta').click();
+    await openCartFromMenu(page);
 }
 
 test('menu artwork is served as a PNG', async ({ request }) => {
@@ -260,7 +269,7 @@ test('producto guardado que ya no está en el catálogo se identifica y se puede
     await page.route('**/menu/catalog', async (route) => {
         await route.fulfill({ json: { data: [] } });
     });
-    await page.getByTestId('menu-hero-cart-cta').click();
+    await openCartFromMenu(page);
 
     await expect(page.getByText('Ya no disponible')).toBeVisible();
     await expect(page.getByRole('alert')).toContainText('Quitalos del carrito');
@@ -294,7 +303,7 @@ test('si fallan las opciones iniciales, permite reintentar sin confirmar a ciega
 
         await route.continue();
     });
-    await page.getByTestId('menu-hero-cart-cta').click();
+    await openCartFromMenu(page);
     await expect(page.getByRole('alert')).toContainText(
         'No pudimos cargar el menú y las opciones',
     );
