@@ -73,6 +73,27 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertCount(1, $order->items);
     }
 
+    public function test_public_checkout_order_is_visible_to_an_administrator(): void
+    {
+        $publicOrderId = $this->postJson(route('public.orders.store'), $this->payload())
+            ->assertCreated()
+            ->json('data.order_id');
+        $admin = User::factory()->administrator()->create();
+
+        $this->actingAs($admin)->get(route('admin.orders.index', ['order' => $publicOrderId]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/orders/index')
+                ->where('orders.data.0.id', $publicOrderId)
+                ->where('selectedOrder.id', $publicOrderId)
+                ->where('selectedOrder.status', 'pending_confirmation'));
+        $this->actingAs($admin)->get(route('admin.orders.show', $publicOrderId))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/orders/show')
+                ->where('order.id', $publicOrderId));
+    }
+
     public function test_public_checkout_uses_the_orders_business_date_while_admin_can_register_past_orders(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-08-14 00:30:00 UTC'));

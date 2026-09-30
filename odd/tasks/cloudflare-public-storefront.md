@@ -146,11 +146,21 @@ creation are authorized by this deployment task.
   or unrelated DNS/tunnels were changed. Local router/system DNS still gave an
   empty/negative answer at immediate test time; edge checks used public DNS
   address with the correct HTTPS SNI/Host (`curl --resolve`).
-- **CFT-3 partial live HTTPS proof**: Root, menu, cart, catalog and checkout
-  options returned 200; catalog product PNG returned 200. `/admin`, `/login`,
+- **CFT-3 partial live HTTPS proof**: Direct public DNS and valid HTTPS now
+  resolve without override. Root, menu, cart, catalog, checkout options,
+  sampled CSS/JS/font assets, and product PNG returned 200. `/admin`, `/login`,
   `/up`, `/api`, private media and encoded traversal returned 404. TLS verified
-  and checkout cookies were Secure. No live order submitted; test-storage
-  order-persistence and manual private admin confirmation remain pending.
+  and checkout cookies were Secure. A fresh cart session sent a CSRF-authenticated
+  invalid price preview and received expected 422; no live order was submitted.
+  Local private loopback8082 still served `/up` and `/login` (200) and redirected
+  unauthenticated `/admin` to login (302); no Tailscale session was inspected.
+- **CFT-3 isolated order-persistence proof**: Existing checkout suite passed
+  17 tests/170 assertions. A new cross-boundary regression now creates a public
+  order in guarded test storage, then confirms the same public ID in an
+  authenticated admin Orders index, selection and detail. Parent reran full
+  OrderCheckoutHttpTest:18 tests/195 assertions; scoped Pint and PHPStan passed.
+  Manual private-host authentication and a genuine customer order appearing in
+  the live panel remain unverified; do not create a fake live order.
 
 
 - **CFT-6 locally verified**, commit `76c71bc5b7f4c8e9d5a685deb38dda8552c1c369`
