@@ -154,6 +154,7 @@ creation are authorized by this deployment task.
   invalid price preview and received expected 422; no live order was submitted.
   Local private loopback8082 still served `/up` and `/login` (200) and redirected
   unauthenticated `/admin` to login (302); no Tailscale session was inspected.
+- **CFT-3 local test work-unit** `b33741e9bef75a264fe7bb80589e775727b153a4` (`test(orders): prove public checkout reaches admin view`), 2 paths, 39 authored lines. Native committed-only assessment from passive boundary `a1c815f` returned MEDIUM, `under_budget`; no review due yet.
 - **CFT-3 isolated order-persistence proof**: Existing checkout suite passed
   17 tests/170 assertions. A new cross-boundary regression now creates a public
   order in guarded test storage, then confirms the same public ID in an
