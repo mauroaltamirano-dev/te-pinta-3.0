@@ -141,6 +141,8 @@ creation are authorized by this deployment task.
 
 ## Progress and verification
 
+- **Continuous-uptime and CFT-8 scope update**: User wants an always-available public site and a newer release. Local `loginctl enable-linger` readback showed `Linger=yes`; connector remains active/enabled and HTTPS root 200. The older public image must not be rebuilt from the 179-path dirty checkout. Tracker update commit `70fbbe712c9937cc678579f3df01e073c93caf26`; native committed-only assessment from passive boundary `a1c815f` is MEDIUM, `under_budget` (73 authored lines including previous test work), no review due yet. No reboot or new image cutover was attempted.
+
 - **CFT-2 local work-unit commit** `0b2195f4f1b6fde0f43d98ece017213998c262a0` (`docs(deploy): record scoped public tunnel activation`), 2 paths, 335 authored lines. Gateway and public-app harnesses, both Compose validators and diff check passed. Native committed-only assessment from reviewed boundary `0fbf525` returned PASSIVE (`non_executable_only`), review_due=false; no review ceremony required. This documentation commit records operational state; live Cloudflare tunnel/DNS are external state, not Git changes.
 
 - **CFT-2 published and verified** (2026-09-29). Fresh isolated browser login
