@@ -1,51 +1,68 @@
-# Narrow public application image
+# Public application release
 
-This image derives from the verified local operational ImageID
-`sha256:e2c78c01075a5a774cb1164a8bc93736a68994dc3b6991f959df603aada2a519`.
-It checks the two frozen baked serializer checksums and the reviewed image helper
-checksum before applying only the same-origin product-image URL overlay. It does
-not copy the working tree's serializers, storage, environment file, Composer
-dependencies, or any private application files.
+The public Compose service runs the locally built, tested full storefront release
+`tepinta3-public-app:release-de09382` (ImageID
+`sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`).
+Its source is commit `de09382654918831bc61e99a209d7714c57dd0cf`, not the mutable
+working tree. The previous checksum-gated image overlay and its Dockerfile remain
+for historical verification; **do not run `docker compose build` from this
+checkout** to prepare a new release. Compose has no `build` directive and will
+never pull an image from a registry.
 
-The local Docker daemon currently resolves that content-addressed base with the
-legacy builder only. Build with the exact local base identity after running the
-disposable proof:
+## Prepare and start
 
-```bash
-bash tests/deploy/public-app/test.sh
-DOCKER_BUILDKIT=0 docker compose -f deploy/cloudflare/public-app/compose.yaml build public-app
-```
-
-`compose.yaml` references the existing operational environment file by path; it
-does not contain or print its values. The public app publishes only
-`127.0.0.1:8084:80`, joins the existing database network, mounts public media
-read-only, and writes logs only to `public-app-logs`. Its inherited entrypoint is
-the application server; this Compose service adds no scheduler, migration command,
-or private-media mount.
-
-After separate approval to start the new local service, use only these lifecycle
-commands:
+Build future releases from a clean detached worktree at an approved commit,
+using `deploy/tailscale/Dockerfile` and the verified local Sail base ImageID.
+Before starting, verify that the expected image is present:
 
 ```bash
-docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build public-app
+docker image inspect tepinta3-public-app:release-de09382 --format '{{.Id}}'
+# Expected: sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250
+docker compose -f deploy/cloudflare/public-app/compose.yaml config --quiet
+docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build --pull never public-app
 docker compose -f deploy/cloudflare/public-app/compose.yaml ps public-app
-docker compose -f deploy/cloudflare/public-app/compose.yaml stop public-app
-docker compose -f deploy/cloudflare/public-app/compose.yaml down
 ```
 
-## Safe rollback
+The service listens only on `127.0.0.1:8084`, joins the existing database
+network, mounts public media read-only, and stores logs in `public-app-logs`.
+It uses the existing operational environment file by path without embedding it
+in the image or Compose file. `restart: unless-stopped` keeps the public app
+running after a daemon or host restart. It does not run a scheduler or database
+migrations and does not mount private media. The gateway remains a separate
+default-deny service on loopback `8083`; the private Tailscale app on `8082` is
+not involved.
 
-Never repoint the public gateway or hostname to private `127.0.0.1:8082`. If the
-public service must be withdrawn, first disable the public connector/tunnel and
-confirm that it is down. Then stop the gateway, then stop the public app:
+## Roll back the application image
+
+The prior public ImageID is
+`sha256:372050c8d42d0ab5aa97a8de2abe3fe7928ecdb613e4c8bea816f19949a476fa`.
+Retain and tag it locally before cutover. To restore that image later, override
+only the public app image; do not change the gateway or point it at private
+`8082`:
 
 ```bash
+docker image tag sha256:372050c8d42d0ab5aa97a8de2abe3fe7928ecdb613e4c8bea816f19949a476fa tepinta3-public-app:rollback-372050c8
+PUBLIC_APP_IMAGE=tepinta3-public-app:rollback-372050c8 \
+  docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build --pull never public-app
+```
+
+The image override is per command. Repeat it for later Compose operations while
+the rollback is active; an unqualified `up` selects the release image again.
+Recreating the public app may briefly interrupt storefront requests, but cannot
+expose the private panel through the unchanged gateway.
+
+## Withdraw public access
+
+If the public service must be withdrawn, first stop the scoped public connector
+and confirm that it is inactive; then stop the gateway and public app:
+
+```bash
+systemctl --user stop tepinta-public-cloudflared.service
+systemctl --user is-active tepinta-public-cloudflared.service # expect: inactive
 docker compose -f deploy/cloudflare/compose.yaml stop gateway
 docker compose -f deploy/cloudflare/public-app/compose.yaml stop public-app
 ```
 
-The temporary public-domain outage is intentional: it prevents a public fallback
-to the private Tailscale application. This rollback never changes
-`tailscale-app-1`; it affects only the public connector, gateway, and public app.
-Tunnel operations remain separately authorized and are not performed by these
-commands.
+This intentionally takes the public domain offline instead of falling back to
+the private Tailscale runtime. Tunnel operation remains separately authorized;
+these commands are instructions only, not an automatic cutover.

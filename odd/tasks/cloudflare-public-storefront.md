@@ -73,18 +73,30 @@ creation are authorized by this deployment task.
   an unauthorized Tailscale session. Document any manual authenticated check that
   still requires the user. Update deployment/security docs with actual results.
 
-- [ ] **CFT-8 — Refresh the public image to a verified recent release** (scope pending).
-  The running public image is based on a 2026-08-30 operational image plus only
-  the image-URL overlay, so September storefront changes are not live. Select an
-  immutable clean source cut containing completed public behavior only; exclude
-  the 179-path dirty checkout and unfinished derived-pricing/quick-order work
-  unless the user explicitly includes them after completion. Verify database
-  migration compatibility, build/test the separate image, then cut over without
-  exposing admin or redirecting to private8082. Keep the current image available
-  for rollback. Do not rebuild the mutable checkout or run a live migration by
-  default. Clarify the release cut before implementation.
-  Checks: clean source manifest, affected/full quality checks, schema compatibility,
-  staged loopback and HTTPS smoke, rollback proof, native assessment when due.
+- [x] **CFT-8A — Complete the immutable public source cut** (delegated direct).
+  User confirmed publishing only completed/verified public-site changes now;
+  derived pricing and quick-create remain deferred. Include the existing missing
+  menu background PNG as one bounded tracked asset and add a regression checking
+  the actual asset response, not only its DOM URL. Do not stage any other dirty
+  artwork or source. Observe the focused test and existing public checks; commit
+  the asset and test together. Forecast: under100 authored text lines plus binary.
+- [x] **CFT-8B — Build and stage the clean recent public image** (delegated direct).
+  Use a Git-archived immutable commit, not the 179-path mutable checkout or the
+  old overlay-only Dockerfile. Build a separate full image from the existing
+  operational Dockerfile and locked dependencies, with no environment secrets in
+  the build context. Verify the source manifest and resulting image contents,
+  run affected/full quality checks, and stage via a separate loopback-only public
+  app instance before cutover. Preserve the current image for rollback. The live
+  DB already has both nullable Product metadata columns and migration row (read-
+  only Laravel checks on 2026-09-30), so no migration is needed or authorized.
+  Forecast: about100–250 authored lines if a release harness is necessary.
+- [ ] **CFT-8C — Cut over and verify customer-only release** (primary operator).
+  Change only the public app image after staged checks and applicable native
+  review/consent, keeping gateway8083 and private admin8082 unchanged. Verify
+  HTTPS pages, asset/image 200, cart/CSRF/invalid preview, public denials,
+  connector health and fast rollback to the saved prior image. Never create a
+  fake live order; genuine-order admin confirmation remains CFT-3. Record the
+  final source/image IDs and observed checks. Forecast: docs/tracker only.
 
 - [x] **CFT-4 — Same-origin public product images** (delegated; two non-trivial serializers plus tests trigger).
   User explicitly authorized fixing image links. Return safe request-relative
@@ -140,6 +152,10 @@ creation are authorized by this deployment task.
   Forecast30–90 authored lines; cached local chain, no push/PR.
 
 ## Progress and verification
+
+- **CFT-8A completed**: Clean source cut includes existing menu artwork and HTTP response regression in commit `6a84243b2eeb687b0bfedd5dfb6f8c289401c8af`; public card CSS nested under the admin shell was fixed in `de09382654918831bc61e99a209d7714c57dd0cf`. Both commits used a temporary index, preserving unrelated staged/dirty changes. Focused artwork Playwright test passed against the final staged gateway (1/1); final browser at 390px loaded the artwork and correct card colors.
+- **CFT-8B staged and verified**: Clean detached worktree at `de09382` built full image `tepinta3-public-app:release-de09382` (`sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`) from the pinned local base. No `.env` or Vite hot marker is baked; manifest, artwork hash and image helper are present. Final app/gateway staged only on loopback8087/8088. Root, menu, cart, catalog, checkout options and artwork all returned200; admin/login/up returned404. Clean-source PHP tests:81 passed/733 assertions; PHPStan passed; Prettier, TypeScript and ESLint passed; full image build passed. No live order submitted. Native committed-only assessment from passive boundary `a1c815f`: MEDIUM,111 lines, `under_budget`, no review due. Older live public image still runs on8084; private8082 unchanged.
+
 
 - **Continuous-uptime and CFT-8 scope update**: User wants an always-available public site and a newer release. Local `loginctl enable-linger` readback showed `Linger=yes`; connector remains active/enabled and HTTPS root 200. The older public image must not be rebuilt from the 179-path dirty checkout. Tracker update commit `70fbbe712c9937cc678579f3df01e073c93caf26`; native committed-only assessment from passive boundary `a1c815f` is MEDIUM, `under_budget` (73 authored lines including previous test work), no review due yet. No reboot or new image cutover was attempted.
 
@@ -311,7 +327,7 @@ creation are authorized by this deployment task.
 
 CFT-2 is published at `https://tepinta.com.ar` through the scoped, active tunnel.
 CFT-3 has isolated same-order test proof; still confirm a genuine customer order
-in the private admin without creating a fake live order. Clarify the CFT-8
-release cut before replacing the older public image. Observe unattended startup
+in the private admin without creating a fake live order. Execute the user-approved CFT-8 source cut and staged release before replacing
+the older public image. Observe unattended startup
 at a future reboot; current user service is enabled with `Linger=yes`. Keep the
 public gateway pointed only to loopback8084.

@@ -8,8 +8,9 @@ The gateway runs with Linux host networking but listens only on
 `127.0.0.1:8083`; it proxies only to the isolated public application at
 `127.0.0.1:8084`. The existing private Tailscale application remains on
 `127.0.0.1:8082` and is never a public fallback. The public application is a
-separate, narrowly derived Laravel image that shares the existing database but
-does not replace the private runtime.
+separate, clean-source Laravel release image that shares the existing database
+but does not replace the private runtime. Its release and image rollback are
+documented in [public-app/README.md](public-app/README.md).
 
 The gateway trusts `CF-Connecting-IP` only from its loopback direct peer and uses
 that validated address for the upstream `X-Forwarded-For` and `X-Real-IP` headers.
@@ -32,7 +33,7 @@ After a passing test, a local operator can start or stop the reversible public
 application and gateway with:
 
 ```bash
-docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build public-app
+docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build --pull never public-app
 docker compose -f deploy/cloudflare/compose.yaml up -d
 docker compose -f deploy/cloudflare/compose.yaml down
 docker compose -f deploy/cloudflare/public-app/compose.yaml down
