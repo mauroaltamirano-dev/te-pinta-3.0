@@ -90,7 +90,7 @@ creation are authorized by this deployment task.
   DB already has both nullable Product metadata columns and migration row (read-
   only Laravel checks on 2026-09-30), so no migration is needed or authorized.
   Forecast: about100–250 authored lines if a release harness is necessary.
-- [ ] **CFT-8C — Cut over and verify customer-only release** (primary operator).
+- [x] **CFT-8C — Cut over and verify customer-only release** (primary operator).
   Change only the public app image after staged checks and applicable native
   review/consent, keeping gateway8083 and private admin8082 unchanged. Verify
   HTTPS pages, asset/image 200, cart/CSRF/invalid preview, public denials,
@@ -153,8 +153,10 @@ creation are authorized by this deployment task.
 
 ## Progress and verification
 
+- **CFT-8C published and smoke-verified** (2026-09-30): Deployment configuration/work-unit commit `04ccc97e8529d58d79cca0e7f0f5ebe1a08594a3` pins `tepinta3-public-app:release-de09382` and prevents Compose rebuilding or pulling mutable checkout content. Default and rollback override Compose rendering, public-app harness, gateway allowlist harness, Prettier and diffcheck passed. Native committed-only assessment from `a1c815f`: MEDIUM,227 authored lines, `under_budget`, no review due. Tagged prior ImageID as `tepinta3-public-app:rollback-372050c8`, then recreated only `public-app-public-app-1` on loopback8084. New running ImageID is `sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`, restart `unless-stopped`; gateway8083 and private8082 were not reconfigured. Live HTTPS `/`, `/menu`, `/cart`, catalog, options, menu artwork, built CSS/JS/fonts and sampled product PNG returned200; `/admin`, `/login`, `/up`, `/api` returned404. A real-browser mobile cart added a Fatay dozen, loaded artwork, received successful raw-price preview with no JS errors and **zero order submissions**; a CSRF-authenticated empty preview returned expected422. Connector active/enabled, `Linger=yes`; private `/up` and `/login` remained200, unauthenticated `/admin` redirected302. No reboot, real customer order, or authenticated Tailnet admin proof was performed; CFT-3 remains pending. Rollback image and command are documented in `deploy/cloudflare/public-app/README.md`.
+
 - **CFT-8A completed**: Clean source cut includes existing menu artwork and HTTP response regression in commit `6a84243b2eeb687b0bfedd5dfb6f8c289401c8af`; public card CSS nested under the admin shell was fixed in `de09382654918831bc61e99a209d7714c57dd0cf`. Both commits used a temporary index, preserving unrelated staged/dirty changes. Focused artwork Playwright test passed against the final staged gateway (1/1); final browser at 390px loaded the artwork and correct card colors.
-- **CFT-8B staged and verified**: Clean detached worktree at `de09382` built full image `tepinta3-public-app:release-de09382` (`sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`) from the pinned local base. No `.env` or Vite hot marker is baked; manifest, artwork hash and image helper are present. Final app/gateway staged only on loopback8087/8088. Root, menu, cart, catalog, checkout options and artwork all returned200; admin/login/up returned404. Clean-source PHP tests:81 passed/733 assertions; PHPStan passed; Prettier, TypeScript and ESLint passed; full image build passed. No live order submitted. Native committed-only assessment from passive boundary `a1c815f`: MEDIUM,111 lines, `under_budget`, no review due. Older live public image still runs on8084; private8082 unchanged.
+- **CFT-8B staged and verified**: Clean detached worktree at `de09382` built full image `tepinta3-public-app:release-de09382` (`sha256:66fce021afda0b48bee4bcb354a4b4eba047d4d59c3eebf1deabb8737fd83250`) from the pinned local base. No `.env` or Vite hot marker is baked; manifest, artwork hash and image helper are present. Final app/gateway staged only on loopback8087/8088. Root, menu, cart, catalog, checkout options and artwork all returned200; admin/login/up returned404. Clean-source PHP tests:81 passed/733 assertions; PHPStan passed; Prettier, TypeScript and ESLint passed; full image build passed. No live order submitted. Native committed-only assessment from passive boundary `a1c815f`: MEDIUM,111 lines, `under_budget`, no review due. At staging time the older public image still ran on8084; private8082 was unchanged.
 
 
 - **Continuous-uptime and CFT-8 scope update**: User wants an always-available public site and a newer release. Local `loginctl enable-linger` readback showed `Linger=yes`; connector remains active/enabled and HTTPS root 200. The older public image must not be rebuilt from the 179-path dirty checkout. Tracker update commit `70fbbe712c9937cc678579f3df01e073c93caf26`; native committed-only assessment from passive boundary `a1c815f` is MEDIUM, `under_budget` (73 authored lines including previous test work), no review due yet. No reboot or new image cutover was attempted.
@@ -327,7 +329,6 @@ creation are authorized by this deployment task.
 
 CFT-2 is published at `https://tepinta.com.ar` through the scoped, active tunnel.
 CFT-3 has isolated same-order test proof; still confirm a genuine customer order
-in the private admin without creating a fake live order. Execute the user-approved CFT-8 source cut and staged release before replacing
-the older public image. Observe unattended startup
-at a future reboot; current user service is enabled with `Linger=yes`. Keep the
-public gateway pointed only to loopback8084.
+in the private admin without creating a fake live order. The CFT-8 clean public
+release is live. Observe unattended startup at a future reboot; the user service
+is enabled with `Linger=yes`. Keep the public gateway pointed only to loopback8084.
