@@ -48,6 +48,27 @@ creation are authorized by this deployment task.
 
 ## Tasks
 
+- [x] **CFT-10 — Publish only the reviewed PM-4 public view.** User authorized
+  native review of the mixed committed range and updating `tepinta.com.ar`.
+  Native lineage `review-c2b7cf2595211868` approved and acknowledged target
+  `sha256:aff35d77b0377f423f9cd803b4b5fa2b2682bf65d82411825e98495d6b6a2e9c`.
+  Build from the currently deployed clean source `3cceb12` plus only the
+  `fb1bb62` public layout/menu source diff, not from the dirty checkout or the
+  full branch with unrelated Marketing/Admin changes. Preserve the active image
+  under a new rollback tag before replacing only loopback public-app 8084;
+  leave gateway 8083, private app 8082 and Cloudflare connector untouched.
+  Verify image source identity, build, staged runtime and browser cart/divider
+  behavior, then live HTTPS public paths/assets and private-path denials without
+  submitting a live order. Pin the new image in Compose and document rollback.
+  **Route:** delegated direct; read-only deployment mapping completed, root owns
+  local cutover, bounded writer owns Compose/README. **TDD:** existing setting
+  unresolved; ordinary checks, no invented RED/GREEN. **Forecast:** under 100
+  authored repo lines for release pin/docs; existing PM-4 source/tests are
+  already committed. **Checks:** scoped Compose config, gateway harness, clean
+  build, local and public HTTP/browser checks, formatting/diffcheck, rollback
+  readiness and native assessment of any new work-unit commit. No push/PR, DB
+  migration, private login, Cloudflare credential access or fake order.
+
 - [x] **CFT-1 — Public-only boundary and local security proof** (delegated).
   Map public routes, deploy/proxy configuration and host/session behavior. Add the
   smallest deploy-native public boundary and a regression harness with a mock
@@ -163,6 +184,34 @@ creation are authorized by this deployment task.
   Forecast30–90 authored lines; cached local chain, no push/PR.
 
 ## Progress and verification
+
+- **CFT-10 public view published and verified** (2026-10-01): The existing
+  deployed source `3cceb12` and only the two PM-4 runtime source hunks from
+  `fb1bb62` became clean release commit `9a4dac270136c6100d5dad13105d87a648613c0d`
+  on `release/public-pm4`; the release diff hash matched the original PM-4
+  source diff. The pinned local Sail base built
+  `tepinta3-public-app:release-9a4dac2` (ImageID
+  `sha256:9b5675ca64de92b0c94a1a0cff04b0b0f5aa428dc243f734720e9f7304be6894`).
+  Staged HTTP root/menu/cart/catalog/assets were 200, source hashes inside
+  the image matched the release commit, gateway allowlist harness and Compose
+  config passed, and staged Chromium verified the full-width category divider,
+  56 px floating cart, 1683/390/320 px bounds, cart navigation and no overflow.
+  The original production image was tagged
+  `tepinta3-public-app:rollback-before-pm4-20261001` with matching ImageID
+  `sha256:37648c04428295c4fc7fe1be07e70832123fe0687c196748a7ae9efb48fe9069`.
+  Only public-app on loopback 8084 was recreated; gateway/private container IDs
+  and active Cloudflare connector were unchanged. Live HTTPS root/menu/cart,
+  catalog and menu artwork returned 200; admin/login/up/api returned 404.
+  Live Chromium verified 43 built asset responses, the full-width divider and
+  floating cart at 1683/390/320 px, navigation to cart, no overflow and zero
+  JS/network errors. Manifest URL returned 404 at the public boundary while
+  actual hashed assets loaded successfully. Private loopback `/up` remained
+  200. No order, migration, credential access, push or PR occurred. The staged
+  container was removed; both release and immediate rollback image tags remain.
+  Compose default pin and README were updated; scoped Compose, README Prettier
+  and `git diff --check` passed. The original mixed committed range received
+  native approval and exact acknowledgement; the CFT-10 pin/docs commit and
+  its separate assessment are pending.
 
 - **CFT-9 public UI pin verified** (2026-09-30): User selected
   `feature-branch-chain`; this is a local work-unit slice, without push or PR.
@@ -367,8 +416,9 @@ creation are authorized by this deployment task.
 
 CFT-2 is published at `https://tepinta.com.ar` through the scoped, active tunnel.
 CFT-3 has isolated same-order test proof; still confirm a genuine customer order
-in the private admin without creating a fake live order. The CFT-9 PM-3 public
-UI release is live; native review is due and needs separate candidate consent.
-The isolated checkout E2E remains blocked by pgsql. Observe unattended startup
+in the private admin without creating a fake live order. The CFT-10 PM-4 public
+view is live; its source and immediate rollback image are pinned locally.
+PM-4 isolated public E2E passed 30/30 on a guarded test database. Observe
+unattended startup
 at a future reboot; the user service is enabled with `Linger=yes`. Keep the public
 gateway pointed only to loopback8084.
