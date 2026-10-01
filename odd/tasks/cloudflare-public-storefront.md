@@ -208,10 +208,18 @@ creation are authorized by this deployment task.
   actual hashed assets loaded successfully. Private loopback `/up` remained
   200. No order, migration, credential access, push or PR occurred. The staged
   container was removed; both release and immediate rollback image tags remain.
-  Compose default pin and README were updated; scoped Compose, README Prettier
-  and `git diff --check` passed. The original mixed committed range received
-  native approval and exact acknowledgement; the CFT-10 pin/docs commit and
-  its separate assessment are pending.
+  Compose default pin and README were updated in work-unit commit
+  `043842f` (`chore(deploy): pin floating-cart public release`); scoped Compose,
+  README Prettier and `git diff --check` passed. The original mixed committed
+  range received native approval and exact acknowledgement. The CFT-10
+  pin/docs commit assesses MEDIUM, 102 authored lines, `under_budget`; its
+  separately derived release-source commit `9a4dac2` assesses MEDIUM, 89
+  authored lines, `under_budget`. Neither assessment is due for a new review.
+  Post-cutover image `npm run lint:check` passed. Image `npm run types:check`
+  failed with seven shared Admin/auth TypeScript errors, including an unresolved
+  `@inertiajs/core` type; the previous live `release-3cceb12` image produced
+  identical errors. This is a pre-existing image baseline failure, not a PM-4
+  regression. No unrelated type fixes were added to the public release.
 
 - **CFT-9 public UI pin verified** (2026-09-30): User selected
   `feature-branch-chain`; this is a local work-unit slice, without push or PR.
