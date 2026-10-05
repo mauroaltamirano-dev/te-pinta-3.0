@@ -1,7 +1,7 @@
 export interface FeaturedProductPriceView {
     unit: number;
-    half_dozen: number;
-    dozen: number;
+    half_dozen: number | null;
+    dozen: number | null;
 }
 
 export interface FeaturedProductProductView {
@@ -9,6 +9,7 @@ export interface FeaturedProductProductView {
     name: string;
     description: string | null;
     image_url: string | null;
+    pricing_family: 'empanada' | 'unit';
     prices: FeaturedProductPriceView;
 }
 

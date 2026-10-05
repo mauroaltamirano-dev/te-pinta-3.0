@@ -28,6 +28,7 @@ final class UpdateProduct
             DB::transaction(function () use ($product, $data, $newImagePath, $removeImage): void {
                 $product->update([
                     'category_id' => $data->categoryId,
+                    'pricing_family' => $data->pricingFamily,
                     'name' => $data->name,
                     'slug' => $data->slug ?? $product->slug,
                     'description' => $data->description,

@@ -133,9 +133,9 @@ export function OrderDistributions({
             <div className="h-px bg-admin-border" />
             <DistributionBlock
                 title="Cocinadas y crudas"
-                unit="por empanadas"
+                unit="por unidades de productos"
                 items={conditionItems}
-                empty="No hay empanadas para distribuir."
+                empty="No hay productos para distribuir."
             />
         </DashboardCard>
     );

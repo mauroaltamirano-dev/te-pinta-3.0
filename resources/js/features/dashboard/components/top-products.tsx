@@ -1,8 +1,5 @@
 import { DashboardCard } from '@/features/dashboard/components/dashboard-card';
-import {
-    formatDashboardDozens,
-    formatDashboardNumber,
-} from '@/features/dashboard/presentation';
+import { formatDashboardNumber } from '@/features/dashboard/presentation';
 import type { DashboardData } from '@/features/dashboard/types';
 
 export function TopProducts({
@@ -35,22 +32,12 @@ export function TopProducts({
                                 {product.name}
                             </span>
                             <span className="text-right text-sm font-semibold text-admin-text-secondary tabular-nums">
-                                {formatDashboardDozens.format(
-                                    product.units_count / 12,
+                                {formatDashboardNumber.format(
+                                    product.units_count,
                                 )}{' '}
-                                {product.units_count === 12
-                                    ? 'docena'
-                                    : 'docenas'}{' '}
-                                <span className="whitespace-nowrap text-admin-text-tertiary">
-                                    (
-                                    {formatDashboardNumber.format(
-                                        product.units_count,
-                                    )}{' '}
-                                    {product.units_count === 1
-                                        ? 'unidad'
-                                        : 'unidades'}
-                                    )
-                                </span>
+                                {product.units_count === 1
+                                    ? 'unidad'
+                                    : 'unidades'}
                             </span>
                         </li>
                     ))}

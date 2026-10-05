@@ -255,12 +255,25 @@ export default function Menu() {
                                             <div className="mt-auto pt-6">
                                                 <div className="border-t border-border pt-5">
                                                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                                        Precios cocinados
+                                                        {product.pricing_family ===
+                                                        'empanada'
+                                                            ? 'Precios cocinados'
+                                                            : 'Precio'}
                                                     </p>
-                                                    <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                                                    <dl
+                                                        className={`mt-3 grid gap-2 text-xs ${
+                                                            product.pricing_family ===
+                                                            'empanada'
+                                                                ? 'grid-cols-3'
+                                                                : 'grid-cols-1'
+                                                        }`}
+                                                    >
                                                         <div>
                                                             <dt className="text-muted-foreground">
-                                                                Unidad
+                                                                {product.pricing_family ===
+                                                                'empanada'
+                                                                    ? 'Unidad'
+                                                                    : 'Por unidad'}
                                                             </dt>
                                                             <dd className="mt-1 font-bold tabular-nums">
                                                                 {money.format(
@@ -270,30 +283,36 @@ export default function Menu() {
                                                                 )}
                                                             </dd>
                                                         </div>
-                                                        <div>
-                                                            <dt className="text-muted-foreground">
-                                                                Media docena
-                                                            </dt>
-                                                            <dd className="mt-1 font-bold tabular-nums">
-                                                                {money.format(
-                                                                    product
-                                                                        .prices
-                                                                        .half_dozen,
-                                                                )}
-                                                            </dd>
-                                                        </div>
-                                                        <div>
-                                                            <dt className="text-muted-foreground">
-                                                                Docena
-                                                            </dt>
-                                                            <dd className="mt-1 font-bold tabular-nums">
-                                                                {money.format(
-                                                                    product
-                                                                        .prices
-                                                                        .dozen,
-                                                                )}
-                                                            </dd>
-                                                        </div>
+                                                        {product.pricing_family ===
+                                                            'empanada' && (
+                                                            <>
+                                                                <div>
+                                                                    <dt className="text-muted-foreground">
+                                                                        Media
+                                                                        docena
+                                                                    </dt>
+                                                                    <dd className="mt-1 font-bold tabular-nums">
+                                                                        {money.format(
+                                                                            product
+                                                                                .prices
+                                                                                .half_dozen!,
+                                                                        )}
+                                                                    </dd>
+                                                                </div>
+                                                                <div>
+                                                                    <dt className="text-muted-foreground">
+                                                                        Docena
+                                                                    </dt>
+                                                                    <dd className="mt-1 font-bold tabular-nums">
+                                                                        {money.format(
+                                                                            product
+                                                                                .prices
+                                                                                .dozen!,
+                                                                        )}
+                                                                    </dd>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </dl>
                                                 </div>
                                                 {quantity > 0 && (
@@ -350,34 +369,39 @@ export default function Menu() {
                                                         <Plus aria-hidden="true" />{' '}
                                                         Unidad
                                                     </Button>
-                                                    <Button
-                                                        type="button"
-                                                        size="lg"
-                                                        variant="outline"
-                                                        className="min-h-11 rounded-full border-white/70 bg-public-earth px-2 text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                                                        onClick={() =>
-                                                            addProduct(
-                                                                product.slug,
-                                                                6,
-                                                            )
-                                                        }
-                                                    >
-                                                        + Media docena
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        size="lg"
-                                                        variant="outline"
-                                                        className="min-h-11 rounded-full border-white/70 bg-public-earth px-2 text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                                                        onClick={() =>
-                                                            addProduct(
-                                                                product.slug,
-                                                                12,
-                                                            )
-                                                        }
-                                                    >
-                                                        + Docena
-                                                    </Button>
+                                                    {product.pricing_family ===
+                                                        'empanada' && (
+                                                        <>
+                                                            <Button
+                                                                type="button"
+                                                                size="lg"
+                                                                variant="outline"
+                                                                className="min-h-11 rounded-full border-white/70 bg-public-earth px-2 text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                                                onClick={() =>
+                                                                    addProduct(
+                                                                        product.slug,
+                                                                        6,
+                                                                    )
+                                                                }
+                                                            >
+                                                                + Media docena
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                size="lg"
+                                                                variant="outline"
+                                                                className="min-h-11 rounded-full border-white/70 bg-public-earth px-2 text-public-ink transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                                                onClick={() =>
+                                                                    addProduct(
+                                                                        product.slug,
+                                                                        12,
+                                                                    )
+                                                                }
+                                                            >
+                                                                + Docena
+                                                            </Button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

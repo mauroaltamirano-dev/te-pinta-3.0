@@ -42,20 +42,10 @@ export function OperationalStatus({
                     </div>
                 ))}
             </dl>
-            <dl className="mt-5 grid grid-cols-2 gap-2 border-t border-admin-border pt-5">
+            <dl className="mt-5 border-t border-admin-border pt-5">
                 <div className="rounded-lg bg-admin-canvas px-3 py-3">
                     <dt className="text-xs text-admin-text-tertiary">
-                        Docenas vendidas
-                    </dt>
-                    <dd className="mt-1 text-lg font-semibold text-white tabular-nums">
-                        {formatDashboardNumber.format(
-                            Math.round(empanadasCount / 12),
-                        )}
-                    </dd>
-                </div>
-                <div className="rounded-lg bg-admin-canvas px-3 py-3">
-                    <dt className="text-xs text-admin-text-tertiary">
-                        Empanadas Vendidas
+                        Unidades de productos vendidas
                     </dt>
                     <dd className="mt-1 text-lg font-semibold text-white tabular-nums">
                         {formatDashboardNumber.format(empanadasCount)}

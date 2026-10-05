@@ -93,7 +93,7 @@ export function DashboardKpis({ dashboard }: { dashboard: DashboardData }) {
                         : 'Pedidos del período'
                 }
                 value={kpis.orders_count.toString()}
-                detail={`${kpis.empanadas_count} ${kpis.empanadas_count === 1 ? 'empanada vendida' : 'empanadas vendidas'}`}
+                detail={`${kpis.empanadas_count} ${kpis.empanadas_count === 1 ? 'unidad de producto vendida' : 'unidades de productos vendidas'}`}
             />
             <KpiCard
                 icon={<Clock3 className="size-5" aria-hidden="true" />}

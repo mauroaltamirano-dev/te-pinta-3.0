@@ -176,7 +176,7 @@ export function OrderDetailContent({
                                         : ''}
                                 </p>
                                 <p className="mt-1 text-xs text-admin-text-tertiary">
-                                    {item.units_count} empanadas ·{' '}
+                                    {item.units_count} unidades ·{' '}
                                     {formatOrderMoney.format(item.unit_price)}
                                 </p>
                                 {item.composition.length > 0 && (
@@ -257,8 +257,8 @@ export function OrderDetailContent({
                     <div className="flex justify-between gap-4">
                         <span>
                             {hasRawPricing
-                                ? 'Empanadas cocinadas'
-                                : 'Empanadas'}
+                                ? 'Productos cocinados'
+                                : 'Productos'}
                         </span>
                         <span className="tabular-nums">
                             {formatOrderMoney.format(

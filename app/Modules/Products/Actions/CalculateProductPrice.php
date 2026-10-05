@@ -3,6 +3,7 @@
 namespace App\Modules\Products\Actions;
 
 use App\Modules\Products\Enums\PriceTier;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
 use LogicException;
@@ -11,6 +12,10 @@ final class CalculateProductPrice
 {
     public function execute(Product $product, PriceTier $tier, bool $isCooked = true): int
     {
+        if ($product->pricing_family === ProductPricingFamily::Unit) {
+            return $product->unit_price;
+        }
+
         $basePrice = match ($tier) {
             PriceTier::Unit => $product->unit_price,
             PriceTier::HalfDozen => $product->half_dozen_price,

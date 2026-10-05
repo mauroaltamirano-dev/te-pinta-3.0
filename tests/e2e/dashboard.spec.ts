@@ -89,16 +89,22 @@ test('dashboard muestra la operación real, estados vacíos y prioridad móvil',
         'Humita Tucumana',
     );
     await expect(page.getByTestId('dashboard-top-products')).toContainText(
-        '1 docena (12 unidades)',
+        '12 unidades',
     );
-    await expect(page.getByTestId('dashboard-top-products')).toContainText(
-        '0,5 docenas (6 unidades)',
+    await expect(page.getByTestId('dashboard-top-products')).not.toContainText(
+        /docena/i,
     );
     await expect(page.getByTestId('dashboard-distributions')).toContainText(
         'Crudas',
     );
     await expect(page.getByTestId('dashboard-distributions')).toContainText(
         'Cocinadas',
+    );
+    await expect(page.getByTestId('dashboard-distributions')).toContainText(
+        'por unidades de productos',
+    );
+    await expect(page.getByTestId('dashboard-distributions')).not.toContainText(
+        /empanadas/i,
     );
     await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
 
@@ -243,7 +249,7 @@ test('dashboard presenta estados vacíos sin mutar los datos compartidos', async
         'No hay pedidos para distribuir.',
     );
     await expect(page.getByTestId('dashboard-distributions')).toContainText(
-        'No hay empanadas para distribuir.',
+        'No hay productos para distribuir.',
     );
 });
 

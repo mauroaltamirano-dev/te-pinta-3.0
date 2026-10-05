@@ -2,6 +2,10 @@
 
 `Orders` administra el pedido y su estado operativo. Cuando un administrador confirma `paid`, emite un contrato acotado para que `Management` registre el dinero. Orders nunca escribe el ledger ni elige directamente una billetera.
 
+## Catálogo y snapshots de precio
+
+Orders recibe una familia de precio ya validada desde Products. Una línea `unit` usa únicamente su precio unitario y no se incorpora a bloques de empanadas ni a descuentos crudos. La familia sólo afecta cotizaciones nuevas o una edición económica confirmada del pedido seleccionado; las filas y totales ya persistidos continúan siendo snapshots y nunca se reinterpretan por cambios posteriores de familia o catálogo. Las vistas y resúmenes históricos usan etiquetas genéricas de productos y unidades; no deducen una familia desde el Product actual.
+
 ## Regla principal
 
 ```text

@@ -4,6 +4,7 @@ namespace Tests\Support;
 
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
+use App\Modules\Management\Models\Wallet;
 use App\Modules\Marketing\Models\FeaturedProduct;
 use App\Modules\Marketing\Support\MarketingClock;
 use App\Modules\Orders\Models\Order;
@@ -29,7 +30,25 @@ final class PlaywrightDatabaseSeeder extends Seeder
         ]);
 
         $this->call(ProductCatalogSeeder::class);
+        $unitFixtureCategoryId = Product::query()->where('slug', 'saltena')->value('category_id');
+        Product::query()->firstOrCreate(
+            ['slug' => 'playwright-unit-beverage'],
+            [
+                'category_id' => $unitFixtureCategoryId,
+                'pricing_family' => 'unit',
+                'name' => 'Bebida individual',
+                'unit_price' => 2_500,
+                'half_dozen_price' => 2_500,
+                'dozen_price' => 2_500,
+                'is_available' => true,
+                'sort_order' => 999,
+            ],
+        );
         $this->call(InstagramStoryAutomationSeeder::class);
+        Wallet::query()->create([
+            'name' => 'Caja Playwright',
+            'is_order_payment_default' => true,
+        ]);
         $this->seedMarketingFeaturedProducts();
 
         $habitualCustomer = Customer::query()->create([

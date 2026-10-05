@@ -73,6 +73,57 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertCount(1, $order->items);
     }
 
+    public function test_public_checkout_requotes_unit_products_and_preserves_the_persisted_snapshot(): void
+    {
+        $unitProduct = Product::query()->create([
+            'category_id' => $this->product->category_id,
+            'pricing_family' => 'unit',
+            'name' => 'Soda',
+            'slug' => 'soda',
+            'unit_price' => 2_500,
+            'half_dozen_price' => 2_500,
+            'dozen_price' => 2_500,
+            'is_available' => true,
+            'sort_order' => 2,
+        ]);
+        $payload = $this->payload();
+        $payload['items'] = [['product_slug' => $unitProduct->slug, 'quantity' => 3]];
+        $this->postJson(route('public.orders.store'), $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.total', 7_500)
+            ->assertJsonPath('data.raw_discount', 0);
+
+        $order = Order::query()->with('items.compositions')->sole();
+        $item = $order->items->sole();
+        $this->assertSame(['unit', 3, 3, 2_500, 7_500, 0], [
+            $item->pricing_mode->value,
+            $item->quantity,
+            $item->units_count,
+            $item->unit_price,
+            $item->line_total,
+            $item->raw_discount,
+        ]);
+
+        $unitProduct->update([
+            'pricing_family' => 'empanada',
+            'unit_price' => 99_999,
+            'half_dozen_price' => 500_000,
+            'dozen_price' => 900_000,
+        ]);
+        RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->update(['amount' => 1_000]);
+
+        $resource = (new AdminOrderResource($order->fresh(['items.compositions', 'toppings'])))->resolve();
+        $this->assertSame(7_500, $resource['total']);
+        $this->assertSame(2_500, $resource['items'][0]['unit_price']);
+        $this->assertSame(0, $resource['items'][0]['raw_discount']);
+        $this->assertSame(['unit', 3, 2_500, 7_500], [
+            $resource['items'][0]['pricing_mode'],
+            $resource['items'][0]['quantity'],
+            $resource['items'][0]['unit_price'],
+            $resource['items'][0]['subtotal'],
+        ]);
+    }
+
     public function test_public_checkout_order_is_visible_to_an_administrator(): void
     {
         $publicOrderId = $this->postJson(route('public.orders.store'), $this->payload())
@@ -136,7 +187,7 @@ final class OrderCheckoutHttpTest extends TestCase
             ->assertJsonPath('data.items_cooked_subtotal', 10000)
             ->assertJsonPath('data.raw_discount', 0)
             ->assertJsonPath('data.total', 10000);
-        $this->assertStringContainsString('Empanadas cocinadas: $10.000', $response->json('data.summary'));
+        $this->assertStringContainsString('Productos cocinados: $10.000', $response->json('data.summary'));
         $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with(['items.compositions', 'toppings'])->firstOrFail();
@@ -156,7 +207,7 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->product->update(['half_dozen_price' => 50000]);
 
         $summary = app(OrderSummaryFormatter::class)->format($order->fresh(['items.compositions', 'toppings']));
-        $this->assertStringContainsString('Empanadas cocinadas: $10.000', $summary);
+        $this->assertStringContainsString('Productos cocinados: $10.000', $summary);
         $this->assertStringNotContainsString('Descuento por preparación cruda', $summary);
         $this->assertStringContainsString('Total: $10.000', $summary);
 
@@ -280,7 +331,7 @@ final class OrderCheckoutHttpTest extends TestCase
 
 *RESUMEN*
 
-Empanadas: $20.700
+Productos: $20.700
 Envío: +$2.000
 Toppings: $0
 
@@ -360,7 +411,7 @@ TEXT, $summary);
 
         $this->assertNull($order->items_base_subtotal);
         $this->assertNull($order->cooking_surcharge);
-        $this->assertStringContainsString('Empanadas: $9.000', $summary);
+        $this->assertStringContainsString('Productos: $9.000', $summary);
         $this->assertStringNotContainsString('Cocción:', $summary);
     }
 

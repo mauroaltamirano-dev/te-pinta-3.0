@@ -53,10 +53,21 @@ final readonly class OrderPricingEngine
         if (count($products) !== count($quantities)) {
             throw ValidationException::withMessages(['items' => 'Todos los productos deben estar disponibles.']);
         }
+
+        $empanadaQuantities = [];
+        $unitQuantities = [];
+        foreach ($quantities as $productId => $quantity) {
+            if ($products[$productId]->pricingFamily === 'empanada') {
+                $empanadaQuantities[$productId] = $quantity;
+            } else {
+                $unitQuantities[$productId] = $quantity;
+            }
+        }
+
         $lines = [];
 
         // Product-specific dozens have priority because they retain the flavor's own commercial price.
-        foreach ($quantities as $productId => &$quantity) {
+        foreach ($empanadaQuantities as $productId => &$quantity) {
             $dozens = intdiv($quantity, 12);
             if ($dozens > 0) {
                 $lines[] = $this->productLine(
@@ -77,8 +88,8 @@ final readonly class OrderPricingEngine
         $combinedPrice = OrderSetting::integer($condition === OrderCondition::Cooked
             ? OrderSettingKey::CombinedDozenCookedPrice
             : OrderSettingKey::CombinedDozenRawPrice);
-        while (array_sum($quantities) >= 12 && count(array_filter($quantities)) > 1) {
-            $composition = $this->takeCombinedDozen($quantities, $products);
+        while (array_sum($empanadaQuantities) >= 12 && count(array_filter($empanadaQuantities)) > 1) {
+            $composition = $this->takeCombinedDozen($empanadaQuantities, $products);
             $regularPrice = 0;
             foreach ($composition as $part) {
                 $regularPrice += $this->normalPrice($products[$part['product_id']], $part['quantity']);
@@ -94,7 +105,7 @@ final readonly class OrderPricingEngine
             );
         }
 
-        foreach ($quantities as $productId => $quantity) {
+        foreach ($empanadaQuantities as $productId => $quantity) {
             $product = $products[$productId];
             $halves = intdiv($quantity, 6);
             if ($halves > 0) {
@@ -118,6 +129,18 @@ final readonly class OrderPricingEngine
                     $product->cookedUnitPrice,
                 );
             }
+        }
+
+        foreach ($unitQuantities as $productId => $quantity) {
+            $product = $products[$productId];
+            $lines[] = $this->productLine(
+                $product,
+                'unit',
+                $quantity,
+                1,
+                $product->unitPrice,
+                $product->cookedUnitPrice,
+            );
         }
 
         $pricedAddons = $this->priceAddons($addons);

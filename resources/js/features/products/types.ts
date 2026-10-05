@@ -21,6 +21,7 @@ export interface Product {
     public_ingredients: string | null;
     image_url: string | null;
     category_id: number;
+    pricing_family: 'empanada' | 'unit';
     tags: ProductTag[];
     unit_price: number;
     half_dozen_price: number;

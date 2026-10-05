@@ -109,8 +109,8 @@ export function PriceSummary({
                     <div className="flex justify-between">
                         <dt>
                             {quote.products_cooked_subtotal !== undefined
-                                ? 'Empanadas cocinadas'
-                                : 'Empanadas'}
+                                ? 'Productos cocinados'
+                                : 'Productos'}
                         </dt>
                         <dd>
                             {formatOrderMoney.format(

@@ -129,11 +129,16 @@ export function QuickOrderCatalog({
                                 </span>
                                 <span className="mt-1 text-admin-text-secondary sm:mt-2">
                                     <span className="block text-[0.6875rem] font-medium uppercase sm:text-xs">
-                                        Desde · docena cocinada
+                                        {product.pricing_family === 'empanada'
+                                            ? 'Desde · docena cocinada'
+                                            : 'Precio por unidad'}
                                     </span>
                                     <span className="mt-0.5 block text-sm font-semibold text-admin-text-primary tabular-nums">
                                         {formatOrderMoney.format(
-                                            product.dozen_price,
+                                            product.pricing_family ===
+                                                'empanada'
+                                                ? product.dozen_price
+                                                : product.unit_price,
                                         )}
                                     </span>
                                 </span>
@@ -141,10 +146,13 @@ export function QuickOrderCatalog({
                                     {product.category.name}
                                 </span>
                                 <div
-                                    className="mt-auto grid w-full grid-cols-3 gap-1 pt-2 sm:gap-2 sm:pt-3"
+                                    className={`mt-auto grid w-full gap-1 pt-2 sm:gap-2 sm:pt-3 ${product.pricing_family === 'empanada' ? 'grid-cols-3' : 'grid-cols-1'}`}
                                     aria-label={`Agregar ${product.name} al pedido`}
                                 >
-                                    {[12, 6, 1].map((increment) => (
+                                    {(product.pricing_family === 'empanada'
+                                        ? [12, 6, 1]
+                                        : [1]
+                                    ).map((increment) => (
                                         <button
                                             key={increment}
                                             type="button"

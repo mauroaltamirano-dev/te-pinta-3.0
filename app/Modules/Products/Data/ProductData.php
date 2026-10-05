@@ -2,6 +2,7 @@
 
 namespace App\Modules\Products\Data;
 
+use App\Modules\Products\Enums\ProductPricingFamily;
 use Illuminate\Foundation\Http\FormRequest;
 
 final readonly class ProductData
@@ -15,6 +16,7 @@ final readonly class ProductData
         public ?string $publicIngredients,
         public int $categoryId,
         public array $tagIds,
+        public ProductPricingFamily $pricingFamily,
         public int $unitPrice,
         public int $halfDozenPrice,
         public int $dozenPrice,
@@ -29,6 +31,8 @@ final readonly class ProductData
         $description = $validated['description'] ?? null;
         $longDescription = $validated['long_description'] ?? null;
         $publicIngredients = $validated['public_ingredients'] ?? null;
+        $pricingFamily = ProductPricingFamily::from($validated->string('pricing_family')->toString());
+        $unitPrice = $validated->integer('unit_price');
 
         return new self(
             name: $validated->string('name')->toString(),
@@ -38,9 +42,10 @@ final readonly class ProductData
             publicIngredients: is_string($publicIngredients) && $publicIngredients !== '' ? $publicIngredients : null,
             categoryId: $validated->integer('category_id'),
             tagIds: $validated->collect('tags')->map(fn (mixed $id): int => (int) $id)->all(),
-            unitPrice: $validated->integer('unit_price'),
-            halfDozenPrice: $validated->integer('half_dozen_price'),
-            dozenPrice: $validated->integer('dozen_price'),
+            pricingFamily: $pricingFamily,
+            unitPrice: $unitPrice,
+            halfDozenPrice: $pricingFamily === ProductPricingFamily::Unit ? $unitPrice : $validated->integer('half_dozen_price'),
+            dozenPrice: $pricingFamily === ProductPricingFamily::Unit ? $unitPrice : $validated->integer('dozen_price'),
             isAvailable: $validated->boolean('is_available'),
             sortOrder: $validated->integer('sort_order'),
             removeImage: $validated->boolean('remove_image'),

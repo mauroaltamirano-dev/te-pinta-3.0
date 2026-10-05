@@ -6,6 +6,7 @@ use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Enums\PriceTier;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Settings\Data\OrderingSettingsData;
@@ -66,7 +67,7 @@ final class UpdateOrderingSettings
         ];
 
         foreach ($columns as $mode => $column) {
-            $minimumCookedPrice = Product::query()->min($column);
+            $minimumCookedPrice = Product::query()->where('pricing_family', ProductPricingFamily::Empanada)->min($column);
 
             if ($minimumCookedPrice !== null && $data->rawPriceDiscounts[$mode] > (int) $minimumCookedPrice) {
                 throw ValidationException::withMessages([

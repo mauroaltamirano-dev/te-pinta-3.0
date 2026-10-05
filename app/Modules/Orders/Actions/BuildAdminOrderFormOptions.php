@@ -38,6 +38,7 @@ final class BuildAdminOrderFormOptions
                     'id' => $product->id,
                     'name' => $product->name,
                     'description' => $product->description,
+                    'pricing_family' => $product->pricing_family->value,
                     'image_url' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
                     'category' => ['id' => $category->id, 'name' => $category->name],
                     'unit_price' => $product->unit_price,

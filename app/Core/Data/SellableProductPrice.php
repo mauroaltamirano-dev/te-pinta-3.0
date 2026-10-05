@@ -8,6 +8,7 @@ final readonly class SellableProductPrice
         public int $id,
         public string $slug,
         public string $name,
+        public string $pricingFamily,
         public int $unitPrice,
         public int $halfDozenPrice,
         public int $dozenPrice,

@@ -66,10 +66,17 @@ export function FeaturedProductCard({
                     <div className="mt-8 flex flex-wrap items-end justify-between gap-5 border-t border-border pt-6">
                         <div>
                             <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                Docena cocinada
+                                {featured.product.pricing_family === 'empanada'
+                                    ? 'Docena cocinada'
+                                    : 'Precio por unidad'}
                             </p>
                             <p className="mt-1 text-2xl font-bold tabular-nums">
-                                {formatPesos(featured.product.prices.dozen)}
+                                {formatPesos(
+                                    featured.product.pricing_family ===
+                                        'empanada'
+                                        ? featured.product.prices.dozen!
+                                        : featured.product.prices.unit,
+                                )}
                             </p>
                         </div>
                         <Button

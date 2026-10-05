@@ -46,30 +46,34 @@ export function AdminProductSelector({
                             >
                                 <Plus /> Unidad
                             </Button>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                aria-label={`Agregar media docena de ${product.name}`}
-                                onClick={() =>
-                                    draft.changeProduct(product.id, 6)
-                                }
-                                disabled={product.is_sellable === false}
-                            >
-                                +6
-                            </Button>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                aria-label={`Agregar una docena de ${product.name}`}
-                                onClick={() =>
-                                    draft.changeProduct(product.id, 12)
-                                }
-                                disabled={product.is_sellable === false}
-                            >
-                                +12
-                            </Button>
+                            {product.pricing_family === 'empanada' && (
+                                <>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        aria-label={`Agregar media docena de ${product.name}`}
+                                        onClick={() =>
+                                            draft.changeProduct(product.id, 6)
+                                        }
+                                        disabled={product.is_sellable === false}
+                                    >
+                                        +6
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        aria-label={`Agregar una docena de ${product.name}`}
+                                        onClick={() =>
+                                            draft.changeProduct(product.id, 12)
+                                        }
+                                        disabled={product.is_sellable === false}
+                                    >
+                                        +12
+                                    </Button>
+                                </>
+                            )}
                             {quantity > 0 && (
                                 <>
                                     <Button

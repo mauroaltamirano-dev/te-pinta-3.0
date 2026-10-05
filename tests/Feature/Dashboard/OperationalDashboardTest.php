@@ -243,6 +243,18 @@ final class OperationalDashboardTest extends TestCase
 
         $cookedDelivery = $this->order($customer, status: 'prepared', condition: 'cooked', deliveryType: 'delivery');
         $this->directItem($cookedDelivery, $caprese, 'Caprese', 'half_dozen', 1, 6);
+        $unitProduct = Product::query()->create([
+            'category_id' => $saltena->category_id,
+            'pricing_family' => 'unit',
+            'name' => 'Bebida histórica',
+            'slug' => 'bebida-historica',
+            'unit_price' => 2_500,
+            'half_dozen_price' => 2_500,
+            'dozen_price' => 2_500,
+            'is_available' => true,
+            'sort_order' => 99,
+        ]);
+        $this->directItem($cookedDelivery, $unitProduct, 'Bebida histórica', 'unit', 2, 2);
         $combined = $cookedDelivery->items()->create([
             'product_id' => null,
             'product_name' => 'Docena combinada',
@@ -274,15 +286,16 @@ final class OperationalDashboardTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('dashboard.kpis.empanadas_count', 30)
+                ->where('dashboard.kpis.empanadas_count', 32)
                 ->where('dashboard.top_products', [
                     ['product_id' => $saltena->id, 'name' => 'Salteña histórica', 'units_count' => 19],
                     ['product_id' => $caprese->id, 'name' => 'Caprese', 'units_count' => 6],
                     ['product_id' => $humita->id, 'name' => 'Humita', 'units_count' => 5],
+                    ['product_id' => $unitProduct->id, 'name' => 'Bebida histórica', 'units_count' => 2],
                 ])
                 ->where('dashboard.condition_distribution', [
                     ['condition' => 'raw', 'units_count' => 12],
-                    ['condition' => 'cooked', 'units_count' => 18],
+                    ['condition' => 'cooked', 'units_count' => 20],
                 ])
                 ->where('dashboard.delivery_distribution', [
                     ['type' => 'delivery', 'orders_count' => 2],

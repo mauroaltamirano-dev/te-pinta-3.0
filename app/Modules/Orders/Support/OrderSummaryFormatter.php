@@ -55,7 +55,7 @@ final class OrderSummaryFormatter
         $lines[] = '';
         $lines[] = '*RESUMEN*';
         $lines[] = '';
-        $lines[] = ($order->items_cooked_subtotal === null ? 'Empanadas' : 'Empanadas cocinadas').': '.$this->money(
+        $lines[] = ($order->items_cooked_subtotal === null ? 'Productos' : 'Productos cocinados').': '.$this->money(
             (int) ($order->items_cooked_subtotal ?? $order->items_subtotal),
         );
         if ($order->raw_discount !== null && (int) $order->raw_discount !== 0) {
@@ -109,7 +109,7 @@ final class OrderSummaryFormatter
             }
         }
         $lines[] = '';
-        $lines[] = ($order->items_cooked_subtotal === null ? 'Empanadas' : 'Empanadas cocinadas').': '.$this->money(
+        $lines[] = ($order->items_cooked_subtotal === null ? 'Productos' : 'Productos cocinados').': '.$this->money(
             (int) ($order->items_cooked_subtotal ?? $order->items_subtotal),
         );
         if ($order->raw_discount !== null && (int) $order->raw_discount !== 0) {

@@ -15,6 +15,7 @@ export interface AdminProductOption {
     description: string | null;
     image_url: string | null;
     category: { id: number; name: string };
+    pricing_family: 'empanada' | 'unit';
     unit_price: number;
     half_dozen_price: number;
     dozen_price: number;

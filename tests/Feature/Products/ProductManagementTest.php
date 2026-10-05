@@ -91,6 +91,7 @@ final class ProductManagementTest extends TestCase
         $this->actingAs($admin)->put(route('admin.products.update', $product), $this->validPayload($special, [
             'name' => 'Caprese especial',
             'tags' => [],
+            'pricing_family' => 'empanada',
             'is_available' => false,
             'sort_order' => 8,
         ]))->assertRedirect(route('admin.products.index'));
@@ -316,6 +317,7 @@ final class ProductManagementTest extends TestCase
             'name',
             'category_id',
             'tags.0',
+            'pricing_family',
             'unit_price',
             'half_dozen_price',
             'dozen_price',
@@ -336,6 +338,29 @@ final class ProductManagementTest extends TestCase
         ]))->assertSessionHasErrors('image');
 
         $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_administrator_can_create_a_unit_product_with_only_its_unit_price(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+        $payload = $this->validPayload($category, [
+            'pricing_family' => 'unit',
+            'unit_price' => 1_200,
+        ]);
+        unset($payload['half_dozen_price'], $payload['dozen_price']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.products.store'), $payload)
+            ->assertRedirect(route('admin.products.index'));
+
+        $product = Product::query()->sole();
+        $this->assertSame('unit', $product->pricing_family->value);
+        $this->assertSame([1_200, 1_200, 1_200], [
+            $product->unit_price,
+            $product->half_dozen_price,
+            $product->dozen_price,
+        ]);
     }
 
     public function test_product_image_is_stored_replaced_and_removed_through_laravel_storage(): void
@@ -511,6 +536,7 @@ final class ProductManagementTest extends TestCase
             'description' => null,
             'category_id' => $category->id,
             'tags' => [],
+            'pricing_family' => 'empanada',
             'unit_price' => 1600,
             'half_dozen_price' => 9000,
             'dozen_price' => 16000,

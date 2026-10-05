@@ -161,32 +161,58 @@ export default function ProductDetail({
                         )}
                         <section
                             className="mt-7 border-t border-white/35 pt-6"
-                            aria-label="Precios cocinados"
+                            aria-label={
+                                product.pricing_family === 'empanada'
+                                    ? 'Precios cocinados'
+                                    : 'Precio por unidad'
+                            }
                         >
                             <h2 className="text-xs font-bold tracking-[0.16em] text-white uppercase">
-                                Precios cocinados
+                                {product.pricing_family === 'empanada'
+                                    ? 'Precios cocinados'
+                                    : 'Precio'}
                             </h2>
-                            <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                            <dl
+                                className={`mt-4 grid gap-2 text-sm ${
+                                    product.pricing_family === 'empanada'
+                                        ? 'grid-cols-3'
+                                        : 'grid-cols-1'
+                                }`}
+                            >
                                 <div>
-                                    <dt className="text-white">Unidad</dt>
+                                    <dt className="text-white">
+                                        {product.pricing_family === 'empanada'
+                                            ? 'Unidad'
+                                            : 'Por unidad'}
+                                    </dt>
                                     <dd className="mt-1 font-bold tabular-nums">
                                         {money.format(product.prices.unit)}
                                     </dd>
                                 </div>
-                                <div>
-                                    <dt className="text-white">Media docena</dt>
-                                    <dd className="mt-1 font-bold tabular-nums">
-                                        {money.format(
-                                            product.prices.half_dozen,
-                                        )}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-white">Docena</dt>
-                                    <dd className="mt-1 font-bold tabular-nums">
-                                        {money.format(product.prices.dozen)}
-                                    </dd>
-                                </div>
+                                {product.pricing_family === 'empanada' && (
+                                    <>
+                                        <div>
+                                            <dt className="text-white">
+                                                Media docena
+                                            </dt>
+                                            <dd className="mt-1 font-bold tabular-nums">
+                                                {money.format(
+                                                    product.prices.half_dozen!,
+                                                )}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-white">
+                                                Docena
+                                            </dt>
+                                            <dd className="mt-1 font-bold tabular-nums">
+                                                {money.format(
+                                                    product.prices.dozen!,
+                                                )}
+                                            </dd>
+                                        </div>
+                                    </>
+                                )}
                             </dl>
                             <p className="mt-3 text-xs text-white">
                                 El total se calcula y confirma al revisar el

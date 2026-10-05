@@ -100,7 +100,7 @@ async function createDefaultCookedOrder(page: Page, customerName: string) {
     await expect(page.getByText('Cantidad: 12')).toBeVisible();
     await page.getByLabel('Nombre').fill(customerName);
     await expect(page.getByText('Resumen del pedido')).toBeVisible();
-    await expect(page.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(page.getByText('Productos cocinados')).toBeVisible();
     await expect(
         page.getByText('Descuento por preparación en crudo'),
     ).toHaveCount(0);
@@ -182,7 +182,7 @@ test('inicio móvil muestra navegación práctica y variedades en dos columnas',
     const cards = page.locator('article').filter({
         has: page.getByRole('button', { name: /Agregar 1 unidad de/ }),
     });
-    await expect(cards).toHaveCount(9);
+    await expect(cards).toHaveCount(10);
     const first = await cards.nth(0).boundingBox();
     const second = await cards.nth(1).boundingBox();
     expect(Math.abs((first?.y ?? 0) - (second?.y ?? 0))).toBeLessThan(2);
@@ -192,6 +192,34 @@ test('inicio móvil muestra navegación práctica y variedades en dos columnas',
         path: 'storage/app/admin-quick-order-mobile-grid.png',
         fullPage: true,
     });
+});
+
+test('admin order selector hides tier quick-add controls for a unit product', async ({
+    page,
+}) => {
+    await logIn(page);
+    await page.goto('/admin/orders/create');
+
+    const product = page.locator('article').filter({
+        hasText: 'Bebida individual',
+    });
+
+    await expect(product).toBeVisible();
+    await expect(
+        product.getByRole('button', {
+            name: 'Agregar una unidad de Bebida individual',
+        }),
+    ).toBeVisible();
+    await expect(
+        product.getByRole('button', {
+            name: 'Agregar media docena de Bebida individual',
+        }),
+    ).toHaveCount(0);
+    await expect(
+        product.getByRole('button', {
+            name: 'Agregar una docena de Bebida individual',
+        }),
+    ).toHaveCount(0);
 });
 
 test('administrador crea un pedido cocinado con desglose explícito', async ({
@@ -207,7 +235,7 @@ test('administrador crea un pedido cocinado con desglose explícito', async ({
 
     await expect(page.getByRole('heading', { name: orderId })).toBeVisible();
     await expect(page.getByText(customerName, { exact: true })).toBeVisible();
-    await expect(page.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(page.getByText('Productos cocinados')).toBeVisible();
     await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
 });
 

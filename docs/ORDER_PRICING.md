@@ -2,6 +2,10 @@
 
 `app/Modules/Orders/Pricing/OrderPricingEngine.php` es el único calculador autoritativo de agrupación comercial y totales. El POS, el checkout público y las ediciones administrativas económicas lo invocan; React sólo representa previews del backend.
 
+## Agrupación por familia de precio
+
+Cada Product tiene una familia explícita: `empanada` o `unit`. La familia no se deriva de categoría, slug, nombre ni ID. Sólo `empanada` participa en unidad/media docena/docena/docena combinada y en descuentos por preparación cruda; su algoritmo existente y su redondeo se conservan. `unit` se cotiza como `quantity × unit_price` para cualquier condición, sin agrupación ni descuento crudo. Una cotización puede mezclar ambas familias internamente; no se implementa una superficie POS adicional por ello.
+
 ## Entradas y fuentes de precios
 
 El motor recibe las cantidades finales por producto, una condición global del pedido (`cooked` o `raw`), cantidades de adicionales, tipo de entrega y el tipo/valor opcional de descuento administrativo. No recibe precios confiables ni un importe de descuento calculado por el cliente.
@@ -102,7 +106,7 @@ Crear un pedido persiste la cotización, no una referencia a un cálculo futuro:
 
 Para pedidos nuevos, la invariante es `items_subtotal = products_cooked_subtotal - raw_discount`. Los campos históricos anteriores `items_base_subtotal`, `cooking_surcharge`, `base_unit_price`, `base_line_total` y `order_items.cooking_surcharge` se conservan para leer pedidos existentes, pero quedan null en pedidos nuevos. Del mismo modo, los campos nuevos quedan null en pedidos históricos: no se reconstruyen con precios o configuración actuales.
 
-Abrir un pedido nunca vuelve a ejecutar pricing. Los cambios actuales de catálogo, clientes, adicionales o Settings no afectan snapshots existentes.
+Abrir un pedido nunca vuelve a ejecutar pricing. Los cambios actuales de catálogo, clientes, adicionales o Settings no afectan snapshots existentes. Las superficies históricas presentan productos y unidades de forma genérica: no clasifican una línea persistida como empanada según el catálogo actual.
 
 ## Edición administrativa y nueva cotización
 

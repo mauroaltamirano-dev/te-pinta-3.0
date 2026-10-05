@@ -6,7 +6,7 @@ Te Pinta 3.0 cuenta actualmente con un slice vertical completo de pedidos: el ca
 
 | Capacidad               | Comportamiento actual                                                                                                                                                                                            |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Productos               | Categorías, CRUD de productos, disponibilidad, imágenes y precios base de productos cocinados, con la alternativa cruda a menor precio                                                                           |
+| Productos               | Categorías, CRUD, disponibilidad, imágenes y familia de precio explícita: empanadas conservan tiers cocinados/crudos; productos unitarios se venden sólo por cantidad y precio unitario |
 | Configuración           | Precios de docena combinada cocinada/cruda, costo de entrega, número de WhatsApp y toppings                                                                                                                      |
 | Clientes                | Lista y perfil de gestión responsive en español, teléfono opcional normalizado, notas privadas, agregados e historial de pedidos eficientes, borrado lógico, papelera y restauración segura                      |
 | Pedidos administrativos | Lista de tarjetas basada primero en snapshots, creación, edición segura, búsqueda y filtrado, controles rápidos de estado y pago, vista previa y copia del ticket, descuentos, papelera y restauración           |
@@ -25,7 +25,7 @@ Te Pinta 3.0 cuenta actualmente con un slice vertical completo de pedidos: el ca
 - El día actual, la semana ISO y el mes calendario se resuelven mediante la zona horaria comercial de Orders y filtran por `delivery_date`, nunca por `created_at`. Cambiar el período no modifica la cola urgente exclusiva del día actual.
 - Las ventas suman los totales persistidos de los pedidos con estado `waiting`, `prepared` y `delivered`. Los ingresos cobrados aplican la misma regla de estados confirmados y además exigen `paid`. Los pedidos incluyen los estados pendientes de confirmación y confirmados; las filas canceladas y con borrado lógico se excluyen en todos los casos.
 - Los pedidos urgentes contienen únicamente el trabajo pendiente de confirmación, en espera y preparado para hoy. Se ordenan por prioridad de estado, período de entrega, hora exacta —con las horas faltantes al final— y el ID como desempate estable. La lista general de hoy se ordena cronológicamente.
-- El ranking de productos y las distribuciones de producción utilizan snapshots persistidos de ítems y composiciones. Las cantidades directas de media docena y docena aportan 6 y 12 unidades; las docenas combinadas distribuyen la composición guardada; cocinadas/crudas mide unidades de empanadas y entrega/retiro mide pedidos.
+- El ranking de productos y las distribuciones de producción utilizan snapshots persistidos de ítems y composiciones. Las cantidades directas de media docena y docena aportan 6 y 12 unidades; las docenas combinadas distribuyen la composición guardada; cocinadas/crudas mide unidades de productos y entrega/retiro mide pedidos.
 - La evolución utiliza intervalos del backend completados con ceros y una presentación SVG liviana y accesible; React no recalcula los agregados del período.
 - Los identificadores TP abren el `OrderDetailSheet` perteneciente a Orders y preservan su autorización, acciones, resumen y navegación al detalle completo.
 - Dashboard sigue el flujo natural de la página. En dispositivos móviles, muestra el trabajo urgente y los pedidos de hoy antes que los KPI y los indicadores, y evita las tablas anchas y el desplazamiento horizontal de toda la página.
@@ -51,7 +51,7 @@ Los resultados ambiguos de Meta no se reintentan automáticamente de manera inte
 
 ## UI de Orders
 
-- `/admin` es el Inicio operativo: las tarjetas del catálogo incrementan cantidades reales de empanadas, mientras que el panel fijo del pedido muestra la vista previa autoritativa del backend.
+- `/admin` es el Inicio operativo: las tarjetas del catálogo incrementan cantidades reales de productos, mientras que el panel fijo del pedido muestra la vista previa autoritativa del backend.
 - **Continuar** abre el panel de cliente, condición, complementos, entrega y pago sin persistir. Solo **Confirmar pedido** invoca el almacenamiento existente de pedidos administrativos y el límite `CreateOrder`.
 - El mismo hook de borrador y los mismos componentes de campos sustentan `/admin/orders/create`, que continúa siendo el flujo alternativo completo. Dashboard está disponible en `/admin/dashboard`.
 - `/admin/orders` utiliza un espacio de trabajo de escritorio limitado por el viewport, con métricas compactas, búsqueda en el encabezado, pestañas de grupos de estados, un panel avanzado de filtrado y ordenamiento, y densidad de grilla o lista persistida en la URL. Ambas vistas exponen entrega, condición, cada variedad de ítem y composición, toppings, total, estado, pago y acceso al comprobante.

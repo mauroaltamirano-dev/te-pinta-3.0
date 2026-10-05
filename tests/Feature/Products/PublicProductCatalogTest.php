@@ -49,6 +49,25 @@ final class PublicProductCatalogTest extends TestCase
             ->assertJsonMissingPath('data.0.is_available');
     }
 
+    public function test_unit_products_expose_only_their_unit_price(): void
+    {
+        $category = $this->createCategory('Bebidas', 'bebidas', true, 1);
+        $product = $this->createProduct($category, 'Soda', 'soda', true, 1);
+        $product->update([
+            'pricing_family' => 'unit',
+            'unit_price' => 1_500,
+            'half_dozen_price' => 1_500,
+            'dozen_price' => 1_500,
+        ]);
+
+        $this->getJson(route('public.products.index'))
+            ->assertOk()
+            ->assertJsonPath('data.0.pricing_family', 'unit')
+            ->assertJsonPath('data.0.prices.unit', 1_500)
+            ->assertJsonPath('data.0.prices.half_dozen', null)
+            ->assertJsonPath('data.0.prices.dozen', null);
+    }
+
     public function test_public_catalog_respects_manual_category_and_product_order(): void
     {
         $second = $this->createCategory('Second', 'second', true, 20);

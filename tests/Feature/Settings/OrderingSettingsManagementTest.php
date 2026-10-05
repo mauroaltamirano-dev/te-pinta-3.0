@@ -194,6 +194,32 @@ final class OrderingSettingsManagementTest extends TestCase
         $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
     }
 
+    public function test_raw_discounts_ignore_cheap_unit_products(): void
+    {
+        $category = Category::query()->create([
+            'name' => 'Bebidas', 'slug' => 'bebidas', 'sort_order' => 1, 'is_active' => true,
+        ]);
+        Product::query()->create([
+            'category_id' => $category->id,
+            'pricing_family' => 'unit',
+            'name' => 'Soda',
+            'slug' => 'soda',
+            'unit_price' => 100,
+            'half_dozen_price' => 100,
+            'dozen_price' => 100,
+            'is_available' => true,
+            'sort_order' => 1,
+        ]);
+        $payload = $this->validPayload();
+        $payload['raw_price_discounts']['unit'] = 200;
+
+        $this->actingAs(User::factory()->administrator()->create())
+            ->put(route('admin.settings.general.update'), $payload)
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
+    }
+
     /** @return array<string, mixed> */
     private function validPayload(): array
     {

@@ -7,7 +7,7 @@ Cada módulo es dueño de una capacidad de negocio y sólo de las capas que nece
 | Módulo                   | Es responsable de                                                                                                                   | No es responsable de                                            |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | `Identity`               | Identidad, sesiones y límite de administrador                                                                                       | Perfiles de clientes o estado de pedidos                        |
-| `Products`               | Categorías, productos, tags, disponibilidad, precios base cocinados, descuentos crudos y catálogo público                           | Agrupación del carrito o líneas históricas de venta             |
+| `Products`               | Categorías, productos, tags, disponibilidad, familia de precio explícita, precios base cocinados, descuentos crudos y catálogo público | Agrupación del carrito o líneas históricas de venta             |
 | `Customers`              | CRUD de perfiles, teléfono/dirección/notas privadas opcionales, normalización de teléfono, búsqueda paginada, agregados e historial | Verificación pública de identidad o detalle de pedidos          |
 | `Orders`                 | Pricing, creación POS/pública, edición segura, snapshots/revisiones, entrega, estados y confirmación operativa de pagos             | Escribir el ledger o elegir cómo se administra el dinero        |
 | `Settings`               | Edición administrativa de configuración de pedidos, descuentos de precios crudos y adicionales existentes                           | Cálculos de pricing                                             |
@@ -56,6 +56,8 @@ Orders/
   Support/       summary formatter and WhatsApp link builder
   routes.php
 ```
+
+`Products` valida la familia `empanada` o `unit` al límite administrativo. `empanada` conserva sus tres tiers y descuentos crudos; `unit` sólo expone y cotiza su precio unitario. Orders recibe ese contrato mediante `ProductPriceProvider`, sin clasificar por categorías o nombres.
 
 `CreateOrder` es el límite de aplicación compartido entre POS y checkout público. En una transacción resuelve/crea el cliente, calcula la cotización, resuelve el pago, crea el pedido, persiste snapshots de ítems/composiciones/adicionales y guarda totales. La fuente pública fija `pending_confirmation`; la administrativa inicia en `waiting`. `ResolveOrderPayment` normaliza todo total cero calculado por backend como `not_required` sin método.
 
@@ -125,7 +127,7 @@ El read model define una población confirmada compartida (`waiting`, `prepared`
 
 El trabajo urgente es siempre de hoy y se ordena por prioridad de estado, período, hora exacta con faltantes al final e ID. El resumen general de hoy se ordena cronológicamente. Ambas superficies hidratan pedidos seleccionados mediante `AdminOrderResource` y `OrderSummaryFormatter`; el frontend reutiliza `OrderDetailSheet` y Orders conserva toda autorización de comandos.
 
-El ranking cuenta unidades reales persistidas: `units_count` en líneas directas o cantidades de composición en combinadas sin duplicar el padre. Crudas/cocinadas distribuye unidades de empanadas; delivery/pickup distribuye pedidos. La evolución vuelve en orden calendario y el backend completa ceros. Consultá [DASHBOARD.md](DASHBOARD.md).
+El ranking cuenta unidades reales persistidas: `units_count` en líneas directas o cantidades de composición en combinadas sin duplicar el padre. Crudas/cocinadas distribuye unidades de productos; delivery/pickup distribuye pedidos. La evolución vuelve en orden calendario y el backend completa ceros. Consultá [DASHBOARD.md](DASHBOARD.md).
 
 Dashboard sólo consume el resumen compacto de Marketing para la recomendación activa, siguiente, no disponible o vacía. No consulta ventanas de Featured Product ni posee comandos, descuentos, códigos, ofertas ficticias o fallbacks de Marketing.
 

@@ -182,7 +182,7 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
         draft.getByLabel('Cantidad de Humita Tucumana: 1'),
     ).toHaveCount(0);
 
-    await expect(draft.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(draft.getByText('Productos cocinados')).toBeVisible();
     await expect(
         draft.getByText('Total', { exact: true }).first(),
     ).toBeVisible();
@@ -237,7 +237,7 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
         name: 'Entregar crudas',
     });
     await expect(raw).not.toBeChecked();
-    await expect(continuation.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(continuation.getByText('Productos cocinados')).toBeVisible();
     const rawQuote = await changeDraftPricing(page, () => raw.click());
     await expect(raw).toBeChecked();
     expect(rawQuote.products_cooked_subtotal).toBeGreaterThan(0);
@@ -408,7 +408,7 @@ test('cerrar o cancelar la continuación conserva el borrador y no persiste dato
     await addProduct(page, 'Salteña', 2);
     await openDraftOnMobile(page);
     let draft = draftPanel(page);
-    await expect(draft.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(draft.getByText('Productos cocinados')).toBeVisible();
     await draft.getByRole('button', { name: 'Continuar' }).click();
     await page
         .getByRole('dialog')

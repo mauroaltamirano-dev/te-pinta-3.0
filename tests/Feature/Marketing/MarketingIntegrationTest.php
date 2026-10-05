@@ -162,6 +162,7 @@ final class MarketingIntegrationTest extends TestCase
                         'name' => 'Salteña',
                         'description' => 'Carne cortada a cuchillo.',
                         'image_url' => '/storage/products/saltena.jpg',
+                        'pricing_family' => 'empanada',
                         'prices' => [
                             'unit' => 1600,
                             'half_dozen' => 9000,
@@ -188,6 +189,23 @@ final class MarketingIntegrationTest extends TestCase
         $category->restore();
         $featured->update(['is_enabled' => false]);
         $this->get(route('home'))->assertInertia(fn (Assert $page) => $page->where('featuredProduct', null));
+    }
+
+    public function test_featured_unit_product_exposes_its_family_and_only_unit_price(): void
+    {
+        $product = $this->product(null, [
+            'pricing_family' => 'unit',
+            'unit_price' => 2_500,
+            'half_dozen_price' => 2_500,
+            'dozen_price' => 2_500,
+        ]);
+        $this->featured($product);
+
+        $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
+            ->where('featuredProduct.product.pricing_family', 'unit')
+            ->where('featuredProduct.product.prices.unit', 2_500)
+            ->where('featuredProduct.product.prices.half_dozen', null)
+            ->where('featuredProduct.product.prices.dozen', null));
     }
 
     public function test_future_expired_and_inactive_features_are_not_public(): void

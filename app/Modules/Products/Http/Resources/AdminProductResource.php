@@ -2,6 +2,7 @@
 
 namespace App\Modules\Products\Http\Resources;
 
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,9 +14,12 @@ final class AdminProductResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
+        $pricingFamily = $this->pricing_family ?? ProductPricingFamily::Empanada;
+
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
+            'pricing_family' => $pricingFamily->value,
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,

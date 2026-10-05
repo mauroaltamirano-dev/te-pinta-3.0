@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
@@ -75,6 +76,7 @@ final class ProductCatalogSeeder extends Seeder
 
                 $product = Product::query()->create([
                     'category_id' => $category->id,
+                    'pricing_family' => ProductPricingFamily::Empanada,
                     'name' => $attributes['name'],
                     'slug' => $slug,
                     'description' => null,

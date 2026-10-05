@@ -17,7 +17,8 @@ export interface PublicProduct {
     image_url: string | null;
     category: { slug: string; name: string };
     tags: Array<{ slug: string; name: string }>;
-    prices: { unit: number; half_dozen: number; dozen: number };
+    pricing_family: 'empanada' | 'unit';
+    prices: { unit: number; half_dozen: number | null; dozen: number | null };
 }
 export interface OrderAddon {
     id?: number;

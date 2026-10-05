@@ -56,12 +56,26 @@ export function ProductCard({ product, onEdit, onFeature }: ProductCardProps) {
                 </div>
             </CardHeader>
             <CardContent className="grid gap-2 bg-transparent px-5 pb-5 text-xs">
-                <PriceRow label="Unidad cocinada" value={product.unit_price} />
                 <PriceRow
-                    label="Media docena cocinada"
-                    value={product.half_dozen_price}
+                    label={
+                        product.pricing_family === 'empanada'
+                            ? 'Unidad cocinada'
+                            : 'Precio por unidad'
+                    }
+                    value={product.unit_price}
                 />
-                <PriceRow label="Docena cocinada" value={product.dozen_price} />
+                {product.pricing_family === 'empanada' && (
+                    <>
+                        <PriceRow
+                            label="Media docena cocinada"
+                            value={product.half_dozen_price}
+                        />
+                        <PriceRow
+                            label="Docena cocinada"
+                            value={product.dozen_price}
+                        />
+                    </>
+                )}
             </CardContent>
             <CardFooter className="mt-auto grid h-auto auto-cols-fr grid-flow-col bg-admin-action p-0">
                 <Button

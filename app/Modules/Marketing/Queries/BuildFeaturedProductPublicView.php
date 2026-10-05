@@ -3,12 +3,13 @@
 namespace App\Modules\Marketing\Queries;
 
 use App\Modules\Marketing\Models\FeaturedProduct;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Support\PublicProductImageUrl;
 
 final class BuildFeaturedProductPublicView
 {
-    /** @return array{headline: ?string, short_copy: ?string, product: array{slug: string, name: string, description: ?string, image_url: ?string, prices: array{unit: int, half_dozen: int, dozen: int}}} */
+    /** @return array{headline: ?string, short_copy: ?string, product: array{slug: string, name: string, description: ?string, image_url: ?string, pricing_family: string, prices: array{unit: int, half_dozen: ?int, dozen: ?int}}} */
     public function execute(FeaturedProduct $featuredProduct): array
     {
         $featuredProduct->loadMissing('product');
@@ -21,18 +22,21 @@ final class BuildFeaturedProductPublicView
         ];
     }
 
-    /** @return array{slug: string, name: string, description: ?string, image_url: ?string, prices: array{unit: int, half_dozen: int, dozen: int}} */
+    /** @return array{slug: string, name: string, description: ?string, image_url: ?string, pricing_family: string, prices: array{unit: int, half_dozen: ?int, dozen: ?int}} */
     public function product(Product $product): array
     {
+        $pricingFamily = $product->pricing_family ?? ProductPricingFamily::Empanada;
+
         return [
             'slug' => $product->slug,
             'name' => $product->name,
             'description' => $product->description,
             'image_url' => PublicProductImageUrl::fromPath($product->image_path),
+            'pricing_family' => $pricingFamily->value,
             'prices' => [
                 'unit' => (int) $product->unit_price,
-                'half_dozen' => (int) $product->half_dozen_price,
-                'dozen' => (int) $product->dozen_price,
+                'half_dozen' => $pricingFamily === ProductPricingFamily::Empanada ? (int) $product->half_dozen_price : null,
+                'dozen' => $pricingFamily === ProductPricingFamily::Empanada ? (int) $product->dozen_price : null,
             ],
         ];
     }

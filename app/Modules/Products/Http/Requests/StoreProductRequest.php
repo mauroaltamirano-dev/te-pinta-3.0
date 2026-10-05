@@ -3,6 +3,7 @@
 namespace App\Modules\Products\Http\Requests;
 
 use App\Modules\Products\Enums\PriceTier;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Rules\CookedPriceSupportsRawDiscount;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,6 +38,10 @@ final class StoreProductRequest extends FormRequest
     /** @return array<string, array<int, mixed>> */
     private function productRules(): array
     {
+        $isEmpanada = $this->input('pricing_family') === ProductPricingFamily::Empanada->value;
+        $isUnit = $this->input('pricing_family') === ProductPricingFamily::Unit->value;
+        $money = ['integer', 'min:0', 'max:2147483647'];
+
         return [
             'name' => ['required', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', Rule::unique('products', 'slug')],
@@ -47,9 +52,10 @@ final class StoreProductRequest extends FormRequest
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
             'tags' => ['sometimes', 'array', 'max:50'],
             'tags.*' => ['required', 'integer', 'distinct', 'exists:tags,id'],
-            'unit_price' => ['required', 'integer', 'min:0', 'max:2147483647', new CookedPriceSupportsRawDiscount(PriceTier::Unit)],
-            'half_dozen_price' => ['required', 'integer', 'min:0', 'max:2147483647', new CookedPriceSupportsRawDiscount(PriceTier::HalfDozen)],
-            'dozen_price' => ['required', 'integer', 'min:0', 'max:2147483647', new CookedPriceSupportsRawDiscount(PriceTier::Dozen)],
+            'pricing_family' => ['required', Rule::enum(ProductPricingFamily::class)],
+            'unit_price' => ['required', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::Unit)] : [])],
+            'half_dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::HalfDozen)] : [])],
+            'dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::Dozen)] : [])],
             'is_available' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:2147483647'],
         ];

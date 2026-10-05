@@ -34,6 +34,7 @@ interface ProductFormData {
     long_description: string;
     public_ingredients: string;
     category_id: string;
+    pricing_family: 'empanada' | 'unit';
     tags: number[];
     unit_price: string;
     half_dozen_price: string;
@@ -67,6 +68,7 @@ export function ProductFormDialog({
         description: product?.description ?? '',
         long_description: product?.long_description ?? '',
         public_ingredients: product?.public_ingredients ?? '',
+        pricing_family: product?.pricing_family ?? 'empanada',
         category_id:
             product?.category_id.toString() ??
             defaultCategoryId?.toString() ??
@@ -113,6 +115,25 @@ export function ProductFormDialog({
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
+        form.transform((data) => {
+            const payload =
+                data.pricing_family === 'empanada'
+                    ? data
+                    : (() => {
+                          const {
+                              half_dozen_price,
+                              dozen_price,
+                              ...unitProduct
+                          } = data;
+                          void half_dozen_price;
+                          void dozen_price;
+
+                          return unitProduct;
+                      })();
+
+            return product ? { ...payload, _method: 'put' } : payload;
+        });
+
         const options = {
             forceFormData: true,
             preserveScroll: true,
@@ -120,7 +141,6 @@ export function ProductFormDialog({
         };
 
         if (product) {
-            form.transform((data) => ({ ...data, _method: 'put' }));
             form.post(`/admin/settings/products/${product.id}`, options);
 
             return;
@@ -186,7 +206,7 @@ export function ProductFormDialog({
                 nextOpen ? onOpenChange(true) : closeDialog()
             }
         >
-            <DialogContent className="dark admin-shell products-workspace top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[92vh] flex-col gap-0 overflow-hidden sm:top-1/2 sm:h-auto sm:max-w-3xl">
+            <DialogContent className="admin-shell products-workspace dark top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[92vh] flex-col gap-0 overflow-hidden sm:top-1/2 sm:h-auto sm:max-w-3xl">
                 <DialogHeader className="relative z-10 shrink-0">
                     <DialogTitle>
                         {product ? 'Editar producto' : 'Agregar producto'}
@@ -478,9 +498,41 @@ export function ProductFormDialog({
 
                     <fieldset className="grid gap-3 rounded-lg border border-border/80 p-4">
                         <legend className="px-1 text-sm font-semibold">
-                            Precios cocinados
+                            Tipo de precio
                         </legend>
-                        <div className="grid gap-4 sm:grid-cols-3">
+                        <Select
+                            value={form.data.pricing_family}
+                            onValueChange={(value: 'empanada' | 'unit') =>
+                                form.setData('pricing_family', value)
+                            }
+                        >
+                            <SelectTrigger id="product-pricing-family">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="empanada">
+                                    Empanada: unidad, media docena y docena
+                                </SelectItem>
+                                <SelectItem value="unit">
+                                    Precio por unidad
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </fieldset>
+
+                    <fieldset className="grid gap-3 rounded-lg border border-border/80 p-4">
+                        <legend className="px-1 text-sm font-semibold">
+                            {form.data.pricing_family === 'empanada'
+                                ? 'Precios cocinados'
+                                : 'Precio por unidad'}
+                        </legend>
+                        <div
+                            className={cn(
+                                'grid gap-4',
+                                form.data.pricing_family === 'empanada' &&
+                                    'sm:grid-cols-3',
+                            )}
+                        >
                             <PriceField
                                 id="unit-price"
                                 label="Unidad"
@@ -490,24 +542,31 @@ export function ProductFormDialog({
                                     form.setData('unit_price', value)
                                 }
                             />
-                            <PriceField
-                                id="half-dozen-price"
-                                label="Media docena"
-                                value={form.data.half_dozen_price}
-                                error={form.errors.half_dozen_price}
-                                onChange={(value) =>
-                                    form.setData('half_dozen_price', value)
-                                }
-                            />
-                            <PriceField
-                                id="dozen-price"
-                                label="Docena"
-                                value={form.data.dozen_price}
-                                error={form.errors.dozen_price}
-                                onChange={(value) =>
-                                    form.setData('dozen_price', value)
-                                }
-                            />
+                            {form.data.pricing_family === 'empanada' && (
+                                <>
+                                    <PriceField
+                                        id="half-dozen-price"
+                                        label="Media docena"
+                                        value={form.data.half_dozen_price}
+                                        error={form.errors.half_dozen_price}
+                                        onChange={(value) =>
+                                            form.setData(
+                                                'half_dozen_price',
+                                                value,
+                                            )
+                                        }
+                                    />
+                                    <PriceField
+                                        id="dozen-price"
+                                        label="Docena"
+                                        value={form.data.dozen_price}
+                                        error={form.errors.dozen_price}
+                                        onChange={(value) =>
+                                            form.setData('dozen_price', value)
+                                        }
+                                    />
+                                </>
+                            )}
                         </div>
                     </fieldset>
 

@@ -47,6 +47,7 @@ final class ProductCatalogSeederTest extends TestCase
                 $product->dozen_price,
             ]);
             $this->assertSame($categorySlug, $product->category->slug);
+            $this->assertSame('empanada', $product->pricing_family->value);
             $this->assertSame($vegetarian, $product->tags->contains('slug', 'vegetariana'));
             $this->assertTrue($product->is_available);
             $this->assertNull($product->description);

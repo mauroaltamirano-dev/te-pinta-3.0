@@ -174,3 +174,26 @@ test('menu category divider spans the viewport and cart action remains reachable
     await expect(page).toHaveURL(/\/cart$/);
     await expect(floatingCart).toHaveCount(0);
 });
+
+test('menu hides tier quick-add controls for a unit product', async ({
+    page,
+}) => {
+    await page.goto('/menu');
+
+    const product = page
+        .getByTestId('public-product-card')
+        .filter({ hasText: 'Bebida individual' });
+
+    await expect(product).toBeVisible();
+    await expect(
+        product.getByRole('button', {
+            name: 'Agregar una unidad de Bebida individual',
+        }),
+    ).toBeVisible();
+    await expect(
+        product.getByRole('button', { name: '+ Media docena' }),
+    ).toHaveCount(0);
+    await expect(product.getByRole('button', { name: '+ Docena' })).toHaveCount(
+        0,
+    );
+});

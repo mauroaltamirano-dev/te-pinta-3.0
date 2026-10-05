@@ -6,6 +6,7 @@ use App\Core\Contracts\ProductPriceProvider;
 use App\Core\Data\SellableProductPrice;
 use App\Modules\Products\Actions\CalculateProductPrice;
 use App\Modules\Products\Enums\PriceTier;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,9 +30,11 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->first();
 
-        return $product
-            ? $this->calculateProductPrice->execute($product, $tier, $isCooked)
-            : null;
+        if (! $product || ($product->pricing_family === ProductPricingFamily::Unit && $tier !== PriceTier::Unit)) {
+            return null;
+        }
+
+        return $this->calculateProductPrice->execute($product, $tier, $isCooked);
     }
 
     public function productForSale(int $productId, bool $isCooked): ?SellableProductPrice
@@ -77,18 +80,34 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
      */
     private function pricesForProducts($products, bool $isCooked): array
     {
-        $discounts = RawPriceDiscount::query()
+        $empanadas = $products->filter(fn (Product $product): bool => $product->pricing_family === ProductPricingFamily::Empanada);
+        $discounts = $empanadas->isEmpty() ? [] : RawPriceDiscount::query()
             ->pluck('amount', 'pricing_mode')
             ->map(fn ($amount): int => (int) $amount)
             ->all();
 
         foreach (PriceTier::cases() as $tier) {
-            if (! array_key_exists($tier->value, $discounts)) {
+            if (! $empanadas->isEmpty() && ! array_key_exists($tier->value, $discounts)) {
                 throw new LogicException("Falta el descuento de precio crudo para {$tier->value}.");
             }
         }
 
         return $products->map(function (Product $product) use ($discounts, $isCooked): SellableProductPrice {
+            if ($product->pricing_family === ProductPricingFamily::Unit) {
+                return new SellableProductPrice(
+                    id: $product->id,
+                    slug: $product->slug,
+                    name: $product->name,
+                    pricingFamily: $product->pricing_family->value,
+                    unitPrice: $product->unit_price,
+                    halfDozenPrice: $product->half_dozen_price,
+                    dozenPrice: $product->dozen_price,
+                    cookedUnitPrice: $product->unit_price,
+                    cookedHalfDozenPrice: $product->half_dozen_price,
+                    cookedDozenPrice: $product->dozen_price,
+                );
+            }
+
             $rawUnitPrice = $product->unit_price - $discounts[PriceTier::Unit->value];
             $rawHalfDozenPrice = $product->half_dozen_price - $discounts[PriceTier::HalfDozen->value];
             $rawDozenPrice = $product->dozen_price - $discounts[PriceTier::Dozen->value];
@@ -101,6 +120,7 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
                 id: $product->id,
                 slug: $product->slug,
                 name: $product->name,
+                pricingFamily: $product->pricing_family->value,
                 unitPrice: $isCooked ? $product->unit_price : $rawUnitPrice,
                 halfDozenPrice: $isCooked ? $product->half_dozen_price : $rawHalfDozenPrice,
                 dozenPrice: $isCooked ? $product->dozen_price : $rawDozenPrice,

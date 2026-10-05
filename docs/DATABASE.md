@@ -9,6 +9,10 @@ PostgreSQL es la base de datos de la aplicación y el límite final de integrida
 - `orders.public_id` obtiene de forma predeterminada un valor de la secuencia de PostgreSQL `order_public_id_seq`, compuesto por `TP-` más seis dígitos con relleno.
 - La asignación de la secuencia es segura ante concurrencia. Los valores son estables y únicos, pero la reversión de transacciones y la actualización de la secuencia pueden crear espacios. Estos espacios son válidos y nunca deben “repararse” con `max(id) + 1`.
 
+## Productos y familia de precio
+
+`products.pricing_family` es un enum físico restringido a `empanada` o `unit`, con valor predeterminado `empanada`. La migración clasifica exclusivamente los registros legacy con las tres columnas de precio estructuralmente presentes como `empanada`; aborta si encuentra precios legacy incompletos. No infiere semántica desde texto. Las columnas de media docena y docena se mantienen no nulas para compatibilidad de esquema: en un producto `unit` almacenan el mismo valor que `unit_price` y son inertes para pricing y recursos públicos. Los catálogos legacy que debían ser unit requieren revisión y reclasificación administrativa explícita después de la migración.
+
 ## Customers
 
 | Columna/regla      | Propósito                                                 |

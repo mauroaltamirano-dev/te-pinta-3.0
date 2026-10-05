@@ -52,12 +52,12 @@ Las métricas de productos usan snapshots persistidos de ítems y composiciones 
 - Los ítems directos aportan su `units_count` persistido; media docena equivale a 6 y una docena a 12.
 - Una docena combinada aporta a cada variedad su cantidad persistida en la composición. Su línea principal no vuelve a contarse en la clasificación por variedad.
 - Los nombres históricos de productos siguen siendo legibles desde los snapshots cuando el producto actual cambia de nombre o se elimina de forma lógica.
-- **Más vendidos** clasifica todas las variedades por unidades reales de empanadas, con un desempate estable por etiqueta o identificador. La interfaz presenta el total equivalente en docenas y conserva las unidades reales entre paréntesis.
-- **Empanadas vendidas** es la suma de unidades reales de empanadas del período seleccionado.
-- **Crudas / Cocinadas** distribuye esas unidades según la condición persistida del pedido. No es un gráfico de cantidad de pedidos.
-- **Envío / Retiro** distribuye pedidos según el tipo de entrega persistido. No es un gráfico de unidades de empanadas.
+- **Más vendidos** clasifica todas las variedades por unidades de producto reales de snapshots, con un desempate estable por etiqueta o identificador. La interfaz muestra siempre la cantidad literal de unidades, sin convertir productos históricos a docenas.
+- La clave de compatibilidad `empanadas_count` conserva su nombre de API, pero representa la suma de unidades de producto de snapshots del período seleccionado; no prueba que esas unidades sean empanadas.
+- **Crudas / Cocinadas** distribuye esas unidades según la condición persistida del pedido. No es un gráfico de cantidad de pedidos ni una clasificación de familia actual.
+- **Envío / Retiro** distribuye pedidos según el tipo de entrega persistido. No es un gráfico de unidades de producto.
 
-Los pedidos pendientes de confirmación, cancelados y eliminados de forma lógica no aportan ventas, ingresos cobrados, productos ni unidades de empanadas.
+Los pedidos pendientes de confirmación, cancelados y eliminados de forma lógica no aportan ventas, ingresos cobrados, productos ni unidades de producto.
 
 ## Evolución de ventas
 
