@@ -10,10 +10,10 @@ import type { OrderStatus } from '@/features/orders/types';
 
 interface DeletedOrder {
     id: string;
-    customer_name: string;
+    customer_name: string | null;
     status: OrderStatus;
     total: number;
-    delivery_date: string;
+    delivery_date: string | null;
     deleted_at: string;
 }
 
@@ -108,7 +108,8 @@ export default function OrderTrash({ orders }: { orders: DeletedOrdersPage }) {
                                                     {order.id}
                                                 </td>
                                                 <td className="px-3 py-4">
-                                                    {order.customer_name}
+                                                    {order.customer_name ??
+                                                        'Sin cliente asociado'}
                                                 </td>
                                                 <td className="px-3 py-4">
                                                     {

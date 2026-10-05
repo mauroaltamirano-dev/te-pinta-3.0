@@ -93,3 +93,9 @@ Las vistas previas de precios del frontend llaman a Laravel. Son únicamente inf
 ## Aún fuera de alcance
 
 No están implementados los gateways de pago, la automatización de WhatsApp, las promociones, cupones o combos de Marketing, el inventario/stock, la distribución automática de cobros de Orders, la reversión automática al cancelar o desmarcar un pago, la reconciliación histórica, Analytics ni otros tipos de combos de pedidos. Featured Product es únicamente de presentación y no modifica precios.
+
+## POS-1: contexto de pedidos y acceso acotado
+
+Orders conserva `source` (origen de creación) separado de `delivery_type` (fulfillment). Identity conserva `is_admin` como autoridad administrativa y ofrece capacidades fijas de POS/caja mediante `staff_profile`; no hay RBAC genérico ni módulo Restaurant. El contexto inmediato de salón pertenece a Orders, sin mesa ni sesión. La ausencia de cliente es un estado legítimo, no un perfil ficticio.
+
+Los próximos slices deben utilizar comandos autorizados para confirmación, submissions, fulfillment y cierre; asignar arbitrariamente `status = X` no representa esos hechos ni garantiza sus efectos. POS-1 no modifica los contratos de pago ni Inventory.

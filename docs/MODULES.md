@@ -197,3 +197,11 @@ Los adicionales iniciales son Lactonesa (500) y Yasgua (200); nombre, precio, di
 3. Mantené input/output HTTP explícito mediante Form Requests y resources.
 4. Usá una transacción para invariantes entre múltiples registros.
 5. Agregá sólo carpetas con código real.
+
+## POS-1: contratos preparados
+
+- Orders persiste `admin`, `public_checkout` o `pos` como origen; `delivery`, `pickup` o `dine_in` describe fulfillment, no el canal público.
+- `OrderCheckoutData::assertContext` protege la creación antes de resolver clientes. `CreateOrder` exige un actor con capacidad POS para el origen `pos`; el argumento histórico `adminId` identifica ese actor interno y nunca debe venir de un payload público.
+- Identity publica `isAdministrator`, `canUsePos` y `canOperateCashier`, con Gates `administrator`, `use-pos` y `operate-cashier`. Los perfiles son fijos; no agregan rutas ni pantallas.
+- Admin puede leer/editar un pedido POS de salón con Customer y programación nulos. Recursos, resumen y consumidores administrativos leen snapshots sin queries por cliente.
+- No se crea Restaurant, DiningArea, DiningTable, TableSession, KitchenTicket ni un nuevo Quick Order. Las superficies existentes del baseline se conservan sin recuperaciones o rediseños.

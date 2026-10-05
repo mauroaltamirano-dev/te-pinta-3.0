@@ -9,7 +9,8 @@ import {
 import { CopyOrderDetailButton } from '@/features/orders/components/copy-order-detail-button';
 import { OrderEditButton } from '@/features/orders/components/order-edit-button';
 import {
-    deliveryPeriodLabels,
+    formatDeliveryPeriod,
+    formatOrderCustomer,
     deliveryTypeLabels,
     formatOrderDate,
     formatOrderMoney,
@@ -90,16 +91,14 @@ export function OrderTicketDialog({
                             <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-b border-dashed border-ticket-rule py-5 text-sm">
                                 <dt className="text-ticket-muted">Cliente</dt>
                                 <dd className="text-right font-semibold">
-                                    {order.customer.name}
+                                    {formatOrderCustomer(order)}
                                 </dd>
                                 <dt className="text-ticket-muted">Entrega</dt>
                                 <dd className="text-right font-medium">
                                     {formatOrderDate(order.delivery_date)} ·{' '}
-                                    {
-                                        deliveryPeriodLabels[
-                                            order.delivery_period
-                                        ]
-                                    }
+                                    {formatDeliveryPeriod(
+                                        order.delivery_period,
+                                    )}
                                 </dd>
                                 <dt className="text-ticket-muted">Modalidad</dt>
                                 <dd className="text-right font-medium">

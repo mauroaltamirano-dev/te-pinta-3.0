@@ -2,7 +2,8 @@ import { Link } from '@inertiajs/react';
 import { ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-    deliveryPeriodLabels,
+    formatDeliveryPeriod,
+    formatOrderCustomer,
     deliveryTypeLabels,
     formatOrderDate,
     formatOrderMoney,
@@ -26,12 +27,12 @@ function unitsLabel(units: number): string {
 export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
     const deliveryMoment = order.delivery_time
         ? order.delivery_time.slice(0, 5)
-        : deliveryPeriodLabels[order.delivery_period];
+        : formatDeliveryPeriod(order.delivery_period);
 
     return (
         <article
             data-testid="order-card"
-            aria-label={`Pedido ${order.id} de ${order.customer.name}`}
+            aria-label={`Pedido ${order.id} de ${formatOrderCustomer(order)}`}
             className={cn(
                 'min-w-0 overflow-hidden rounded-lg border border-admin-border bg-admin-surface',
                 view === 'grid' && 'flex h-full flex-col',
@@ -57,16 +58,22 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
 
                 <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <Link
-                            href={`/admin/customers/${order.customer.id}`}
-                            className={cn(
-                                'block font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent',
-                                view === 'grid' && 'truncate text-lg',
-                                view === 'list' && 'text-base leading-snug',
-                            )}
-                        >
-                            {order.customer.name}
-                        </Link>
+                        {order.customer !== null ? (
+                            <Link
+                                href={`/admin/customers/${order.customer.id}`}
+                                className={cn(
+                                    'block font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent',
+                                    view === 'grid' && 'truncate text-lg',
+                                    view === 'list' && 'text-base leading-snug',
+                                )}
+                            >
+                                {formatOrderCustomer(order)}
+                            </Link>
+                        ) : (
+                            <p className="font-semibold text-white">
+                                {formatOrderCustomer(order)}
+                            </p>
+                        )}
                         <button
                             type="button"
                             onClick={() => onOpen(order)}

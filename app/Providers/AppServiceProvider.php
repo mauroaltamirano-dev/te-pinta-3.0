@@ -6,6 +6,7 @@ use App\Core\Contracts\ProductPriceProvider;
 use App\Core\Support\TestingDatabaseGuard;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Policies\CustomerPolicy;
+use App\Modules\Identity\Models\User;
 use App\Modules\Management\Listeners\RecordConfirmedOrderPayment;
 use App\Modules\Management\Models\DistributionRule;
 use App\Modules\Management\Models\FinancialTransaction;
@@ -94,6 +95,10 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+
+        Gate::define('administrator', fn (User $user): bool => $user->isAdministrator());
+        Gate::define('use-pos', fn (User $user): bool => $user->canUsePos());
+        Gate::define('operate-cashier', fn (User $user): bool => $user->canOperateCashier());
 
         Gate::policy(Order::class, OrderPolicy::class);
         Gate::policy(Customer::class, CustomerPolicy::class);

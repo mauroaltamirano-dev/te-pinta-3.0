@@ -541,11 +541,10 @@ export function TransactionHistory({
                                         {transaction.management_order_payment && (
                                             <div className="mt-1 text-xs text-admin-text-secondary">
                                                 <p>
-                                                    {
-                                                        transaction
-                                                            .management_order_payment
-                                                            .order.customer_name
-                                                    }
+                                                    {transaction
+                                                        .management_order_payment
+                                                        .order.customer_name ??
+                                                        'Sin cliente asociado'}
                                                 </p>
                                                 <p className="mt-0.5 text-admin-text-tertiary">
                                                     {
@@ -919,7 +918,7 @@ function transactionDescription(transaction: ManagementTransaction) {
 
 function transactionSecondary(transaction: ManagementTransaction) {
     if (transaction.management_order_payment) {
-        return `${transaction.management_order_payment.order.customer_name} · ${orderPaymentDistributionStatus(transaction)}`;
+        return `${transaction.management_order_payment.order.customer_name ?? 'Sin cliente asociado'} · ${orderPaymentDistributionStatus(transaction)}`;
     }
 
     if (transaction.management_transfer) {

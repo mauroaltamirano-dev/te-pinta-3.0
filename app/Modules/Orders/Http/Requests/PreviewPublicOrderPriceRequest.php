@@ -27,8 +27,9 @@ final class PreviewPublicOrderPriceRequest extends FormRequest
             'addons.*.addon_slug' => ['required', 'string', 'distinct', 'max:160'],
             'addons.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'condition' => ['required', Rule::enum(OrderCondition::class)],
-            'delivery_type' => ['required', Rule::enum(DeliveryType::class)],
+            'delivery_type' => ['required', Rule::in([DeliveryType::Delivery->value, DeliveryType::Pickup->value])],
             'discount_type' => ['prohibited'], 'discount_value' => ['prohibited'], 'discount_amount' => ['prohibited'], 'payment_method' => ['prohibited'],
+            'source' => ['prohibited'],
             'total' => ['prohibited'], 'shipping_fee' => ['prohibited'], 'combined_price' => ['prohibited'],
         ];
     }

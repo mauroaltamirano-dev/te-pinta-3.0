@@ -97,3 +97,25 @@ Order Payment
 El pago aumenta el ledger por el importe externo. La distribución posterior suma cero, guarda la versión usada y queda vinculada 0..1 con el pago mediante una restricción única.
 
 Consulte [MANAGEMENT.md](MANAGEMENT.md) para el ledger y [ADR 0009](decisions/0009-idempotent-order-payments-in-management.md) para las compensaciones.
+
+## POS-1: origen y fulfillment independientes
+
+`source` es el snapshot del origen (`admin`, `public_checkout`, `pos`), establecido por el comando de creación y no inferido desde cliente/mesa. `delivery_type` conserva su nombre por compatibilidad y representa `delivery`, `pickup` o `dine_in`. Su eventual rename queda fuera de este slice. Un pedido público puede ser delivery o pickup; `public_web` no es una modalidad.
+
+| Contexto | Cliente/contacto | Dirección | Programación | Envío |
+| --- | --- | --- | --- | --- |
+| Public delivery | Nombre y teléfono requeridos; asociación real existente | Requerida | Fecha/período requeridos, fecha pública no pasada | Configuración existente |
+| Public pickup | Nombre y teléfono requeridos | No requerida | Contrato público existente | 0 |
+| Admin delivery | Cliente real seleccionado o nombre nuevo; teléfono opcional como antes | Requerida | Fecha/período existentes | Configuración existente |
+| Admin pickup | Cliente real seleccionado o nombre nuevo; teléfono opcional | No requerida | Fecha/período existentes | 0 |
+| POS dine-in inmediato | Customer, nombre y teléfono opcionales; no se crea perfil sin cliente | No aplicable | Fecha/período/hora nulos | 0 |
+
+El checkout público y las altas administrativas no aceptan `dine_in` ni un `source` enviado por el cliente. POS-1 prepara el comando de dominio, no un endpoint o formulario POS. Las claves de idempotencia pública no se aceptan en otros orígenes; no se comparte ese namespace con POS. Una edición administrativa de un POS dine-in existente conserva el contexto inmediato; puede modificar contacto opcional sin crear Customer y registra sólo el nombre del campo cambiado en auditoría. Un Customer real opcional conserva su perfil, sin copiar su dirección al salón.
+
+La condición `raw`/`cooked` es comercial y necesaria para cotizar, no programación; se mantiene. El motor existente sólo cobra shipping para delivery. Los pedidos no dine-in mantienen su asociación real al cliente para conservar la semántica administrativa existente. No se quitan columnas ni se backfillean clientes, fuentes o snapshots históricos.
+
+Los recursos devuelven `customer = null` cuando no hay FK y exponen `customer_name` como snapshot opcional independiente. No usan nombres ficticios ni convierten una fecha nula en hoy. Las vistas admin muestran el contexto de salón y no generan enlaces a clientes inexistentes. La distribución existente mantiene delivery/pickup y agrega el bucket dine-in sólo si hay pedidos de ese tipo; el Dashboard diario basado en fecha programada no incorpora automáticamente los dine-in inmediatos. Una cola POS en tiempo real pertenece a un slice futuro.
+
+### Operaciones diferidas
+
+No implementar confirmación pública, submissions, fulfillment físico, cierre ni rondas con asignaciones arbitrarias de estado. Deben contar con comandos, autorización y efectos definidos en sus slices. `delivered` y el futuro consumo Inventory no cambian aquí. La confirmación administrativa de pago existente sigue funcionando; POS-1 no abre cobros para staff ni agrega pagos POS. `paid → unpaid` no revierte Management: la corrección financiera sigue diferida a POS-6B y debe conservar/revertir el ledger por sus comandos, nunca por shortcuts.

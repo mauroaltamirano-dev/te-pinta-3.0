@@ -95,7 +95,9 @@ final class BuildOrderDashboardData
                     'type' => $type->value,
                     'orders_count' => (int) ($deliveryCounts[$type->value] ?? 0),
                 ],
-                DeliveryType::cases(),
+                array_values(array_filter(DeliveryType::cases(),
+                    fn (DeliveryType $type): bool => $type !== DeliveryType::DineIn || (int) ($deliveryCounts[$type->value] ?? 0) > 0,
+                )),
             ),
             'conditionDistribution' => array_map(
                 fn (OrderCondition $condition): array => [

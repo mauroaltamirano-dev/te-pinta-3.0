@@ -13,7 +13,8 @@ import {
 import { CopyOrderDetailButton } from '@/features/orders/components/copy-order-detail-button';
 import { OrderEditButton } from '@/features/orders/components/order-edit-button';
 import {
-    deliveryPeriodLabels,
+    formatDeliveryPeriod,
+    formatOrderCustomer,
     deliveryTypeLabels,
     formatOrderDate,
     formatOrderMoney,
@@ -150,13 +151,25 @@ export function OrderDetailContent({
                 </div>
             </section>
 
-            <DetailSection title="Cliente">
-                <Link
-                    href={`/admin/customers/${order.customer.id}`}
-                    className="font-medium text-white underline-offset-4 hover:text-admin-accent hover:underline"
-                >
-                    {order.customer.name}
-                </Link>
+            <DetailSection
+                title={
+                    order.customer === null && order.customer_name === null
+                        ? 'Contexto del pedido'
+                        : 'Cliente'
+                }
+            >
+                {order.customer !== null ? (
+                    <Link
+                        href={`/admin/customers/${order.customer.id}`}
+                        className="font-medium text-white underline-offset-4 hover:text-admin-accent hover:underline"
+                    >
+                        {formatOrderCustomer(order)}
+                    </Link>
+                ) : (
+                    <p className="font-semibold text-white">
+                        {formatOrderCustomer(order)}
+                    </p>
+                )}
             </DetailSection>
 
             <DetailSection title="Detalle del pedido">
@@ -233,7 +246,7 @@ export function OrderDetailContent({
                     </p>
                     <p className="text-admin-text-secondary">
                         {formatOrderDate(order.delivery_date)} ·{' '}
-                        {deliveryPeriodLabels[order.delivery_period]}
+                        {formatDeliveryPeriod(order.delivery_period)}
                         {order.delivery_time ? ` · ${order.delivery_time}` : ''}
                     </p>
                     {order.delivery_address && (

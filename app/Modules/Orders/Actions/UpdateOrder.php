@@ -3,6 +3,7 @@
 namespace App\Modules\Orders\Actions;
 
 use App\Modules\Orders\Data\OrderCheckoutData;
+use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Enums\PaymentMethod;
@@ -44,6 +45,7 @@ final readonly class UpdateOrder
                 throw ValidationException::withMessages(['closed_edit' => 'Pedido cerrado — edición bloqueada. Habilitá la edición antes de continuar.']);
             }
 
+            $data->assertContext($locked->delivery_type === DeliveryType::DineIn ? $locked->source : OrderSource::Admin);
             $locked->load(['items.compositions', 'toppings']);
             $wasPaid = $locked->payment_status === PaymentStatus::Paid;
             $oldItems = $this->formOptions->itemQuantities($locked);
@@ -77,10 +79,10 @@ final readonly class UpdateOrder
             $changedFields = $this->changedFields($locked, $data, $status, $payment['status'], $payment['method'], $oldItems, $newItems, $oldAddons, $newAddons);
 
             $customerAttributes = [];
-            if ($data->customerId !== $locked->customer_id) {
-                $customer = $this->customers->execute($data, OrderSource::Admin);
+            if ($data->customerId !== $locked->customer_id || ($locked->customer_id === null && ($data->customerName !== $locked->customer_name_snapshot || $data->customerPhone !== $locked->customer_phone_snapshot))) {
+                $customer = $this->customers->execute($data, $locked->source === OrderSource::Pos ? OrderSource::Pos : OrderSource::Admin);
                 $customerAttributes = [
-                    'customer_id' => $customer->id,
+                    'customer_id' => $customer?->id,
                     'customer_name_snapshot' => $data->customerName,
                     'customer_phone_snapshot' => $data->customerPhone,
                 ];
@@ -170,13 +172,14 @@ final readonly class UpdateOrder
     {
         $changes = [];
         $comparisons = [
-            'customer' => $order->customer_id !== $data->customerId,
+            'customer' => $order->customer_id !== $data->customerId
+                || ($order->customer_id === null && ($order->customer_name_snapshot !== $data->customerName || $order->customer_phone_snapshot !== $data->customerPhone)),
             'items' => $oldItems !== $newItems,
             'addons' => $oldAddons !== $newAddons,
             'condition' => $order->condition !== $data->condition,
             'delivery_type' => $order->delivery_type !== $data->deliveryType,
             'delivery_period' => $order->delivery_period !== $data->deliveryPeriod,
-            'delivery_date' => CarbonImmutable::parse($order->delivery_date)->toDateString() !== $data->deliveryDate,
+            'delivery_date' => ($order->delivery_date === null ? null : CarbonImmutable::parse($order->delivery_date)->toDateString()) !== $data->deliveryDate,
             'delivery_time' => ($order->delivery_time === null ? null : CarbonImmutable::parse($order->delivery_time)->format('H:i')) !== $data->deliveryTime,
             'delivery_address' => ($order->delivery_address_snapshot ?? null) !== $data->deliveryAddress,
             'notes' => ($order->notes ?? null) !== $data->notes,

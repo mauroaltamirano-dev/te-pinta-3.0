@@ -98,7 +98,8 @@ export function OrderPaymentDetailSheet({
                             {payment.order.public_id}
                         </p>
                         <p className="mt-1 text-sm text-admin-text-secondary">
-                            {payment.order.customer_name}
+                            {payment.order.customer_name ??
+                                'Sin cliente asociado'}
                         </p>
                     </div>
 

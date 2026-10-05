@@ -18,7 +18,8 @@ final class AdminOrderResource extends JsonResource
     {
         return [
             'id' => $this->public_id,
-            'customer' => ['id' => $this->customer_id, 'name' => $this->customer_name_snapshot],
+            'customer' => $this->customer_id === null ? null : ['id' => $this->customer_id, 'name' => $this->customer_name_snapshot],
+            'customer_name' => $this->customer_name_snapshot,
             'source' => $this->source->value,
             'status' => $this->status->value,
             'payment_status' => $this->payment_status->value,
@@ -26,7 +27,7 @@ final class AdminOrderResource extends JsonResource
             'condition' => $this->condition->value,
             'delivery_type' => $this->delivery_type->value,
             'delivery_period' => $this->getRawOriginal('delivery_period'),
-            'delivery_date' => CarbonImmutable::parse($this->delivery_date)->toDateString(),
+            'delivery_date' => $this->delivery_date === null ? null : CarbonImmutable::parse($this->delivery_date)->toDateString(),
             'delivery_time' => $this->delivery_time,
             'delivery_address' => $this->delivery_address_snapshot,
             'notes' => $this->notes,

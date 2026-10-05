@@ -2,6 +2,7 @@
 
 namespace App\Modules\Orders\Actions;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
@@ -10,6 +11,7 @@ use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Orders\Support\OrderBusinessDate;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +29,13 @@ final readonly class CreateOrder
 
     public function execute(OrderCheckoutData $data, OrderSource $source, ?int $adminId = null): Order
     {
+        if ($source === OrderSource::Pos) {
+            $actor = $adminId === null ? null : User::query()->find($adminId);
+            if ($actor === null || ! $actor->canUsePos() || ($data->paymentStatus === PaymentStatus::Paid && ! $actor->isAdministrator())) {
+                throw new AuthorizationException('The actor cannot create this POS order.');
+            }
+        }
+        $data->assertContext($source);
         $idempotencyHash = $data->idempotencyKey === null ? null : hash_hmac('sha256', $data->idempotencyKey, (string) config('app.key'));
         $fingerprint = $data->idempotencyKey === null ? null : $data->fingerprint();
 
@@ -50,7 +59,7 @@ final readonly class CreateOrder
                 $payment = $this->payments->forTotal($quote->total, $data->paymentStatus, $data->paymentMethod);
 
                 $order = Order::query()->create([
-                    'customer_id' => $customer->id,
+                    'customer_id' => $customer?->id,
                     'source' => $source,
                     'customer_name_snapshot' => $data->customerName,
                     'customer_phone_snapshot' => $data->customerPhone,
@@ -95,7 +104,9 @@ final readonly class CreateOrder
         }
 
         Log::info($source === OrderSource::PublicCheckout ? '[Orders] public_order.created' : '[Orders] order.created', [
-            'module' => 'Orders', 'order_id' => $order->public_id, 'admin_id' => $adminId,
+            'module' => 'Orders', 'order_id' => $order->public_id,
+            'admin_id' => $source === OrderSource::Pos ? null : $adminId,
+            'actor_id' => $source === OrderSource::Pos ? $adminId : null,
         ]);
 
         return $order;

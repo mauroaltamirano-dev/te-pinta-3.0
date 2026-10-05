@@ -1,4 +1,5 @@
 import type {
+    AdminOrder,
     DeliveryPeriod,
     DeliveryType,
     OrderCondition,
@@ -43,6 +44,7 @@ export const orderConditionLabels: Record<OrderCondition, string> = {
 export const deliveryTypeLabels: Record<DeliveryType, string> = {
     delivery: 'Envío',
     pickup: 'Retiro',
+    dine_in: 'Salón',
 };
 
 export const deliveryPeriodLabels: Record<DeliveryPeriod, string> = {
@@ -66,7 +68,25 @@ export const formatOrderMoney = new Intl.NumberFormat('es-AR', {
     maximumFractionDigits: 0,
 });
 
-export function formatOrderDate(value: string): string {
+export function formatOrderCustomer(order: AdminOrder): string {
+    return (
+        order.customer_name ??
+        order.customer?.name ??
+        (order.delivery_type === 'dine_in'
+            ? 'Salón · sin cliente asociado'
+            : 'Sin cliente asociado')
+    );
+}
+
+export function formatDeliveryPeriod(period: DeliveryPeriod | null): string {
+    return period === null ? 'Sin programación' : deliveryPeriodLabels[period];
+}
+
+export function formatOrderDate(value: string | null): string {
+    if (value === null) {
+        return 'Sin programación';
+    }
+
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
 
     return match ? `${match[3]}/${match[2]}/${match[1]}` : value;

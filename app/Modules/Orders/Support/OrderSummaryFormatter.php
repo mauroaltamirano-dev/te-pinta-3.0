@@ -2,6 +2,7 @@
 
 namespace App\Modules\Orders\Support;
 
+use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Models\Order;
 use Carbon\CarbonImmutable;
 
@@ -10,7 +11,7 @@ final class OrderSummaryFormatter
     public function formatAdmin(Order $order): string
     {
         $order->loadMissing(['items.compositions', 'toppings']);
-        $delivery = CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' · '.$this->deliveryPeriod($order->getRawOriginal('delivery_period'));
+        $delivery = $order->delivery_date === null ? 'Inmediato' : CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' · '.$this->deliveryPeriod($order->getRawOriginal('delivery_period'));
         if ($order->delivery_time !== null) {
             $delivery .= ' · '.CarbonImmutable::parse($order->delivery_time)->format('H:i');
         }
@@ -18,9 +19,9 @@ final class OrderSummaryFormatter
         $lines = [
             "🧾 *PEDIDO {$order->public_id}*",
             '',
-            "👤 *Cliente:* {$order->customer_name_snapshot}",
+            ...($order->customer_name_snapshot === null ? [] : ["👤 *Cliente:* {$order->customer_name_snapshot}"]),
             "📅 *Entrega:* {$delivery}",
-            '🛵 *Modalidad:* '.($order->delivery_type->value === 'delivery' ? 'Envío' : 'Retiro'),
+            '🛵 *Modalidad:* '.$this->fulfillmentLabel($order->delivery_type),
             '🔥 *Condición:* '.($order->condition->value === 'cooked' ? 'Cocinadas' : 'Crudas'),
             '',
             '*DETALLE DEL PEDIDO*',
@@ -86,9 +87,9 @@ final class OrderSummaryFormatter
     public function format(Order $order): string
     {
         $order->loadMissing(['items.compositions', 'toppings']);
-        $lines = ["Pedido {$order->public_id}", '', "Cliente: {$order->customer_name_snapshot}",
-            'Entrega: '.CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' - '.$this->deliveryPeriod($order->getRawOriginal('delivery_period')),
-            'Modalidad: '.($order->delivery_type->value === 'delivery' ? 'Envío' : 'Retiro'),
+        $lines = ["Pedido {$order->public_id}", '', ...($order->customer_name_snapshot === null ? [] : ["Cliente: {$order->customer_name_snapshot}"]),
+            'Entrega: '.($order->delivery_date === null ? 'Inmediato' : CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' - '.$this->deliveryPeriod($order->getRawOriginal('delivery_period'))),
+            'Modalidad: '.$this->fulfillmentLabel($order->delivery_type),
             'Condición: '.($order->condition->value === 'cooked' ? 'Cocinado' : 'Crudo'), ''];
         foreach ($order->items as $item) {
             $label = match ($item->getRawOriginal('pricing_mode')) {
@@ -130,6 +131,15 @@ final class OrderSummaryFormatter
         }
 
         return implode("\n", $lines);
+    }
+
+    private function fulfillmentLabel(DeliveryType $type): string
+    {
+        return match ($type) {
+            DeliveryType::Delivery => 'Envío',
+            DeliveryType::Pickup => 'Retiro',
+            DeliveryType::DineIn => 'Salón',
+        };
     }
 
     private function money(int $amount): string

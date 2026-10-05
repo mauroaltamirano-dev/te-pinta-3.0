@@ -129,3 +129,18 @@ La aplicación solo genera una URL `wa.me`. No envía mensajes, no autentica al 
 - [ ] Pasan las pruebas de invitado/administrador, manipulación de precios, campos públicos, idempotencia y rate limit.
 - [ ] El `APP_URL` operativo es el origen HTTPS estable y la configuración de cookies de sesión es segura.
 - [ ] El cambio a Tailscale Serve se verifica explícitamente; el puerto de staging `8082` por sí solo no demuestra exposición.
+
+## POS-1: perfiles y capacidades backend fijos
+
+| Identidad efectiva | `administrator` | `use-pos` | `operate-cashier` |
+| --- | --- | --- | --- |
+| `is_admin = true` | Sí | Sí | Sí |
+| `staff_profile = cashier`, no admin | No | Sí | Sí |
+| `staff_profile = waiter`, no admin | No | Sí | No |
+| Sin perfil, no admin | No | No | No |
+
+`is_admin` permanece como fuente administrativa; un perfil de staff nunca eleva ese flag. `staff_profile` no es mass-assignable. No hay builder de permisos, roles configurables ni matriz ACL. Los Gates se aplican con el middleware nativo `can:` o mediante autorización explícita en futuros endpoints; ocultar UI no constituye autorización.
+
+Todas las rutas administrativas existentes conservan su middleware/policy admin-only, incluidas configuración, finanzas, correcciones y cambios de pago. POS-1 no entrega el dashboard/admin actual a mozos o caja, no agrega gestión de perfiles por HTTP ni nuevas pantallas; el aprovisionamiento de staff queda como operación interna controlada. `CreateOrder` con source `pos` rechaza actores ausentes o sin capacidad POS, y no permite a staff confirmar un pago mediante creación. Los futuros controladores deben tomar el actor de la sesión autenticada, nunca del body.
+
+El checkout público continúa exigiendo nombre/teléfono y dirección sólo en delivery. Store y preview públicos restringen modalidades a delivery/pickup aun después de ampliar el enum de dominio. Ningún cliente puede suministrar `source`; POS-1 no debilita `StorePublicOrderRequest`.

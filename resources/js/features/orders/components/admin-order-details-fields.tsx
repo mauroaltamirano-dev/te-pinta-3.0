@@ -145,7 +145,7 @@ export function AdminOrderDetailsFields({
                                         name,
                                     })
                                 }
-                                required
+                                required={form.data.delivery_type !== 'dine_in'}
                             />
                             <Field
                                 id="new-customer-phone"
@@ -158,12 +158,14 @@ export function AdminOrderDetailsFields({
                                     })
                                 }
                             />
-                            <Field
-                                id="new-customer-address"
-                                label="Dirección"
-                                value={form.data.customer.address}
-                                onChange={draft.setCustomerAddress}
-                            />
+                            {form.data.delivery_type !== 'dine_in' && (
+                                <Field
+                                    id="new-customer-address"
+                                    label="Dirección"
+                                    value={form.data.customer.address}
+                                    onChange={draft.setCustomerAddress}
+                                />
+                            )}
                         </>
                     )}
                 </section>
@@ -253,85 +255,98 @@ export function AdminOrderDetailsFields({
             <div className="grid content-start gap-5">
                 <section className="grid gap-3">
                     <h3 className="font-semibold">Entrega</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                        {(['pickup', 'delivery'] as const).map((type) => (
-                            <Button
-                                key={type}
-                                type="button"
-                                variant={
-                                    form.data.delivery_type === type
-                                        ? 'default'
-                                        : 'outline'
+                    {form.data.delivery_type === 'dine_in' ? (
+                        <p>
+                            Salón · pedido inmediato, sin dirección ni
+                            programación.
+                        </p>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-2 gap-3">
+                                {(['pickup', 'delivery'] as const).map(
+                                    (type) => (
+                                        <Button
+                                            key={type}
+                                            type="button"
+                                            variant={
+                                                form.data.delivery_type === type
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
+                                            onClick={() =>
+                                                draft.selectDeliveryType(type)
+                                            }
+                                        >
+                                            {type === 'pickup'
+                                                ? 'Retiro en local'
+                                                : 'Envío'}
+                                        </Button>
+                                    ),
+                                )}
+                            </div>
+                            {form.data.delivery_type === 'delivery' && (
+                                <Field
+                                    id="delivery-address"
+                                    label="Dirección de entrega"
+                                    value={form.data.delivery_address}
+                                    onChange={draft.setDeliveryAddress}
+                                    required
+                                />
+                            )}
+                            <DeliveryDatePicker
+                                value={form.data.delivery_date}
+                                minimumDate={minimumDeliveryDate}
+                                onChange={(value) =>
+                                    form.setData('delivery_date', value)
                                 }
-                                onClick={() => draft.selectDeliveryType(type)}
-                            >
-                                {type === 'pickup'
-                                    ? 'Retiro en local'
-                                    : 'Envío'}
-                            </Button>
-                        ))}
-                    </div>
-                    {form.data.delivery_type === 'delivery' && (
-                        <Field
-                            id="delivery-address"
-                            label="Dirección de entrega"
-                            value={form.data.delivery_address}
-                            onChange={draft.setDeliveryAddress}
-                            required
-                        />
+                            />
+                            <div className="grid gap-2">
+                                <Label htmlFor="delivery-period">Franja</Label>
+                                <Select
+                                    value={form.data.delivery_period ?? ''}
+                                    onValueChange={(
+                                        value: 'midday' | 'afternoon' | 'night',
+                                    ) => form.setData('delivery_period', value)}
+                                >
+                                    <SelectTrigger
+                                        id="delivery-period"
+                                        className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                        <SelectItem
+                                            value="midday"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
+                                            Mediodía
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="afternoon"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
+                                            Tarde
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="night"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                        >
+                                            Noche
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Field
+                                id="delivery-time"
+                                type="time"
+                                label="Hora opcional"
+                                value={form.data.delivery_time}
+                                onChange={(value) =>
+                                    form.setData('delivery_time', value)
+                                }
+                            />
+                        </>
                     )}
-                    <DeliveryDatePicker
-                        value={form.data.delivery_date}
-                        minimumDate={minimumDeliveryDate}
-                        onChange={(value) =>
-                            form.setData('delivery_date', value)
-                        }
-                    />
-                    <div className="grid gap-2">
-                        <Label htmlFor="delivery-period">Franja</Label>
-                        <Select
-                            value={form.data.delivery_period}
-                            onValueChange={(
-                                value: 'midday' | 'afternoon' | 'night',
-                            ) => form.setData('delivery_period', value)}
-                        >
-                            <SelectTrigger
-                                id="delivery-period"
-                                className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
-                                <SelectItem
-                                    value="midday"
-                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
-                                >
-                                    Mediodía
-                                </SelectItem>
-                                <SelectItem
-                                    value="afternoon"
-                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
-                                >
-                                    Tarde
-                                </SelectItem>
-                                <SelectItem
-                                    value="night"
-                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
-                                >
-                                    Noche
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Field
-                        id="delivery-time"
-                        type="time"
-                        label="Hora opcional"
-                        value={form.data.delivery_time}
-                        onChange={(value) =>
-                            form.setData('delivery_time', value)
-                        }
-                    />
                 </section>
 
                 <section className="grid gap-3">

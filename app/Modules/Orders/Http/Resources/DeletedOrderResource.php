@@ -19,7 +19,7 @@ final class DeletedOrderResource extends JsonResource
             'status' => $this->status->value,
             'payment_status' => $this->payment_status->value,
             'total' => (int) $this->total,
-            'delivery_date' => CarbonImmutable::parse($this->delivery_date)->toDateString(),
+            'delivery_date' => $this->delivery_date === null ? null : CarbonImmutable::parse($this->delivery_date)->toDateString(),
             'deleted_at' => $this->deleted_at?->toJSON(),
         ];
     }

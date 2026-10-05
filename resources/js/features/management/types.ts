@@ -120,7 +120,7 @@ export interface ManagementOrderPayment {
     order: {
         id: number;
         public_id: string;
-        customer_name: string;
+        customer_name: string | null;
     };
     destination_wallet: {
         id: number;

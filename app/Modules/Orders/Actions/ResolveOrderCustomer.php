@@ -4,14 +4,19 @@ namespace App\Modules\Orders\Actions;
 
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Data\OrderCheckoutData;
+use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Enums\OrderSource;
 
 final class ResolveOrderCustomer
 {
-    public function execute(OrderCheckoutData $data, OrderSource $source): Customer
+    public function execute(OrderCheckoutData $data, OrderSource $source): ?Customer
     {
-        if ($source === OrderSource::Admin && $data->customerId !== null) {
+        if ($source !== OrderSource::PublicCheckout && $data->customerId !== null) {
             return Customer::query()->findOrFail($data->customerId);
+        }
+
+        if ($data->deliveryType === DeliveryType::DineIn) {
+            return null;
         }
 
         if ($source === OrderSource::PublicCheckout && $data->customerPhoneNormalized !== null) {
@@ -31,7 +36,7 @@ final class ResolveOrderCustomer
             'updated_at' => now(),
         ];
 
-        if ($source === OrderSource::Admin) {
+        if ($source !== OrderSource::PublicCheckout) {
             return Customer::query()->create($attributes);
         }
 

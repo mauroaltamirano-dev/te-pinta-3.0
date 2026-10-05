@@ -187,3 +187,11 @@ La limpieza de clientes de desarrollo está separada intencionalmente de la conf
 ## Informe de entrega
 
 Informar los comandos exactos ejecutados, sus resultados y cualquier control omitido o bloqueado por el entorno. Nunca describir como aprobado un control que no se ejecutó.
+
+## POS-1: contexto, acceso e historia
+
+- `tests/Feature/Orders/OrderContextTest.php`: dine-in inmediato sin Customer/PII/programación, dirección prohibida, shipping cero, precios unitarios POS-0, fuente/modo separados, requisitos públicos/admin, serialización sin queries adicionales, edición/contacto opcional, integración administrativa de pago existente, autorización de creación POS, CHECK PostgreSQL y preservación exacta de filas históricas por up/down.
+- `tests/Feature/Identity/StaffAccessTest.php`: administradores existentes, perfiles/capacidades fijos, middleware backend `can:`, rechazo de rutas sensibles, privilegios no mass-assignable, CHECK y conservación/rollback seguro.
+- `tests/e2e/order-context.spec.ts`: listado, detalle y edición admin desktop/mobile de un pedido inmediato sin cliente; no hay enlaces falsos, programación artificial ni errores de página. No crea UI POS.
+- Strict TDD y las cifras observadas se registran en el task del slice. Todas las suites se ejecutan secuencialmente en `testing_pos1`, dentro del contenedor PostgreSQL privado de POS-1. No ejecutar suites concurrentes sobre esa DB ni usar development para `migrate:fresh`.
+- La regresión incluye Orders, Products/POS-0, Auth/Identity y Management. Inventory no tiene suite/comportamiento de stock implementado en este baseline; POS-1 no cambia `delivered`. Los checks de PHP, TypeScript, lint, formatting y build son independientes de una aprobación de revisión nativa.

@@ -2,7 +2,7 @@
 
 namespace App\Modules\Identity\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\Identity\Enums\StaffProfile;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -21,6 +21,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property StaffProfile|null $staff_profile
  * @property bool $is_admin
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -37,6 +38,21 @@ class User extends Authenticatable implements PasskeyUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
+    public function isAdministrator(): bool
+    {
+        return $this->is_admin === true;
+    }
+
+    public function canUsePos(): bool
+    {
+        return $this->isAdministrator() || $this->staff_profile !== null;
+    }
+
+    public function canOperateCashier(): bool
+    {
+        return $this->isAdministrator() || $this->staff_profile === StaffProfile::Cashier;
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -48,6 +64,7 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'staff_profile' => StaffProfile::class,
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

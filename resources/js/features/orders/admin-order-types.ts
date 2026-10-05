@@ -46,7 +46,7 @@ export interface AdminOrderForm {
     customer: { name: string; phone: string; address: string };
     delivery_type: DeliveryType;
     delivery_date: string;
-    delivery_period: DeliveryPeriod;
+    delivery_period: DeliveryPeriod | null;
     delivery_time: string;
     delivery_address: string;
     notes: string;

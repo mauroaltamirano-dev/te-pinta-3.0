@@ -1,5 +1,6 @@
+export type OrderSource = 'admin' | 'public_checkout' | 'pos';
 export type OrderCondition = 'raw' | 'cooked';
-export type DeliveryType = 'delivery' | 'pickup';
+export type DeliveryType = 'delivery' | 'pickup' | 'dine_in';
 export type DeliveryPeriod = 'midday' | 'afternoon' | 'night';
 export type OrderStatus =
     'pending_confirmation' | 'waiting' | 'prepared' | 'delivered' | 'cancelled';
@@ -102,15 +103,16 @@ export interface CreatedOrderResponse {
 }
 export interface AdminOrder {
     id: string;
-    customer: { id: number; name: string };
-    source: string;
+    customer: { id: number; name: string | null } | null;
+    customer_name: string | null;
+    source: OrderSource;
     status: OrderStatus;
     payment_status: PaymentStatus;
     payment_method?: PaymentMethod | null;
     condition: OrderCondition;
     delivery_type: DeliveryType;
-    delivery_period: DeliveryPeriod;
-    delivery_date: string;
+    delivery_period: DeliveryPeriod | null;
+    delivery_date: string | null;
     delivery_time: string | null;
     delivery_address: string | null;
     notes: string | null;

@@ -12,6 +12,7 @@ use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -19,7 +20,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property string $public_id
- * @property int $customer_id
+ * @property int|null $customer_id
+ * @property string|null $customer_name_snapshot
+ * @property CarbonImmutable|null $delivery_date
  * @property int $edit_version
  * @property int|numeric-string $total
  * @property int|numeric-string|null $items_base_subtotal
@@ -39,7 +42,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property OrderSource $source
  * @property OrderCondition $condition
  * @property DeliveryType $delivery_type
- * @property DeliveryPeriod $delivery_period
+ * @property DeliveryPeriod|null $delivery_period
  */
 final class Order extends Model implements PublicIdentifier
 {

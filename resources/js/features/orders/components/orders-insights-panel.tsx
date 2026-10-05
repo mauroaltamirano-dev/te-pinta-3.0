@@ -13,6 +13,7 @@ import type {
 
 const deliveryColors = {
     pickup: '#FFB572',
+    dine_in: '#50D1AA',
     delivery: '#65B0F6',
 } as const;
 

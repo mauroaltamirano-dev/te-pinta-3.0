@@ -227,3 +227,11 @@ Nunca ejecute `migrate:fresh` sobre la base de datos de desarrollo actual. Prueb
 - [ ] Las comprobaciones de PostgreSQL reflejan invariantes importantes del dominio.
 - [ ] La actualización preserva los administradores, productos, clientes y pedidos existentes.
 - [ ] El comportamiento de reversión es seguro en el entorno previsto.
+
+## POS-1: cambios aditivos y conservación histórica
+
+- `2026_10_05_000000_prepare_order_context` permite null en `orders.customer_id`, `customer_name_snapshot`, `delivery_date` y `delivery_period`, sin modificar ninguna fila. La FK real y su `RESTRICT` permanecen. Amplía los CHECK de source/fulfillment y agrega `orders_context_valid`.
+- `orders_context_valid` exige source `pos` y programación nula para dine-in inmediato; fuera de dine-in conserva Customer, nombre, fecha y período no nulos. `orders_delivery_details_valid` exige shipping cero/dirección nula en salón, mantiene pickup cero y delivery con dirección no vacía. Los CHECK de precios, pagos e idempotencia no cambian.
+- `2026_10_05_000100_add_fixed_staff_profiles` agrega `users.staff_profile` nullable y `users_staff_profile_valid` (`waiter`/`cashier` o null). No asigna perfiles ni modifica `is_admin`; todos los administradores actuales conservan acceso.
+- La aplicación aplica los requisitos de PII/contacto y prohíbe fuente inyectada; PostgreSQL protege sólo combinaciones estructurales, no replica el formulario completo.
+- Ambas migraciones rechazan un rollback que perdería contextos POS o perfiles ya utilizados. No sustituyen datos por clientes ficticios ni convierten historia para permitir rollback. Antes de uso, up/down restaura el esquema anterior sin cambiar las filas. Ejecutar sólo migraciones normales en development; las pruebas from-scratch usan exclusivamente la DB privada.

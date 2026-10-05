@@ -141,3 +141,9 @@ Los resultados ambiguos de Meta no se reintentan automáticamente de manera inte
 2. Lea [ORDER_PRICING.md](ORDER_PRICING.md) antes de modificar la agrupación o los totales.
 3. Utilice [PROJECT_MAP.md](PROJECT_MAP.md) para encontrar al responsable de cada regla.
 4. Ejecute las verificaciones documentadas en [TESTING.md](TESTING.md).
+
+## POS-1 — Order Context & Access
+
+Se prepara el dominio para source `pos` y fulfillment `dine_in` inmediato: Customer/contacto/programación pueden estar ausentes, dirección no aplica y shipping es cero. Source y fulfillment son conceptos independientes; el checkout público y el alta admin mantienen sus contratos. Las migraciones no reescriben historia y los consumidores existentes toleran Customer null. Identity ofrece perfiles fijos waiter/cashier y capacidades backend sin ampliar el límite administrativo.
+
+Este slice no implementa mesas, sesiones, plano, submissions, comandas, impresión, packaging, fulfillment físico, cierre, pagos POS ni deployment LAN. Tampoco recupera Quick Order ni integra el rediseño público congelado. POS-2 puede consumir estos contratos una vez cerrada la verificación/revisión del candidato; evidencia y pendientes en `odd/tasks/pos-1-order-context-access.md`.
