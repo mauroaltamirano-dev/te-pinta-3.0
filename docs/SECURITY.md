@@ -144,3 +144,17 @@ La aplicación solo genera una URL `wa.me`. No envía mensajes, no autentica al 
 Todas las rutas administrativas existentes conservan su middleware/policy admin-only, incluidas configuración, finanzas, correcciones y cambios de pago. POS-1 no entrega el dashboard/admin actual a mozos o caja, no agrega gestión de perfiles por HTTP ni nuevas pantallas; el aprovisionamiento de staff queda como operación interna controlada. `CreateOrder` con source `pos` rechaza actores ausentes o sin capacidad POS, y no permite a staff confirmar un pago mediante creación. Los futuros controladores deben tomar el actor de la sesión autenticada, nunca del body.
 
 El checkout público continúa exigiendo nombre/teléfono y dirección sólo en delivery. Store y preview públicos restringen modalidades a delivery/pickup aun después de ampliar el enum de dominio. Ningún cliente puede suministrar `source`; POS-1 no debilita `StorePublicOrderRequest`.
+
+## POS-2 floor administration
+
+All Restaurant routes remain inside auth/verified/admin/admin.request.log with
+web CSRF. Requests and the read controller independently require administrator;
+waiter/cashier profiles cannot read or modify this admin surface. No staff/POS
+read route is exposed yet.
+
+Only validated attributes reach the Actions. IDs must identify all and only the
+existing tables of the locked area, including numeric-string alias defense.
+Unknown table/obstacle keys and malformed schemas are rejected. Positions,
+rotated bounds, dimensions, capacity and shapes are enforced by the backend and
+PostgreSQL, not by drag UI. Conflict responses preserve the client's draft;
+reloading explicitly discards it only after confirmation.

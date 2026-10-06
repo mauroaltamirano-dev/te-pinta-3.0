@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified', 'admin', 'admin.request.log'])
         require base_path('app/Modules/Analytics/routes.php');
         require base_path('app/Modules/Management/routes.php');
         require base_path('app/Modules/Settings/routes.php');
+        require base_path('app/Modules/Restaurant/routes.php');
         require base_path('app/Modules/Marketing/routes.php');
         require base_path('app/Modules/Instagram/routes.php');
     });

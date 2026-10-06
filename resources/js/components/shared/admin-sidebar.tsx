@@ -35,6 +35,11 @@ const navigation = [
     { label: 'Clientes', href: '/admin/customers', icon: Users },
     { label: 'Analíticas', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Gestión', href: '/admin/management', icon: WalletCards },
+    {
+        label: 'Plano del restaurante',
+        href: '/admin/restaurant/floor',
+        icon: Store,
+    },
     { label: 'Marketing', href: '/admin/marketing', icon: Megaphone },
     {
         label: 'Instagram',

@@ -190,3 +190,20 @@ El destino visible **Gestión** enlaza a `/admin/management`. La URL anterior `/
 En anchos de escritorio y tablet, el panel sigue el nodo Figma `177:735`: 104 px de ancho con la superficie `#1F1D2B`, un bloque de marca redondeado de 56 px, seis posiciones de navegación de 102 px, wrappers de iconos de trazo fino de 24 px y un control de cierre de sesión alineado abajo. Los controles de escritorio comienzan en x=24. El control activo usa `#EA7C69`, un radio de 8 px, la sombra coral especificada y un tratamiento empotrado `#252836` en el borde derecho. En teléfonos, la navegación se convierte en una barra inferior consciente del área segura, con Inicio, Pedidos, Clientes y Más; los destinos secundarios y el cierre de sesión se encuentran en la hoja inferior Más.
 
 Las capturas comparativas de Playwright se generan en `storage/app/` y no se versionan intencionalmente. Los nodos de Figma y el contrato semántico de este documento son la fuente de verdad duradera.
+
+## Restaurant floor workspace
+
+POS-2 reuses the admin canvas/surface/raised/border/accent tokens and Barlow;
+it introduces no new palette or design system. The proportional floor maintains
+logical aspect ratio on desktop and phone; selection uses a clear coral border,
+and inactivity has explicit text and dashed borders rather than color alone.
+
+Desktop supports pointer drag and a selected resize handle. Mobile provides
+44px-or-larger selection targets and labeled numeric geometry controls instead
+of relying on precise drag. A selection dropdown covers tiny/overlapping floor
+elements; renderer text remains upright when furniture rotates. Read-only mode
+disables geometry changes but retains selection for future consumers.
+
+Explicit save and dirty feedback replace autosave. Version conflicts preserve
+the draft and explain reconciliation before intentional reload. Obstacles are
+subtle operational geometry, not decorative textures.

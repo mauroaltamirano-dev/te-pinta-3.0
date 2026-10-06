@@ -205,3 +205,22 @@ Los adicionales iniciales son Lactonesa (500) y Yasgua (200); nombre, precio, di
 - Identity publica `isAdministrator`, `canUsePos` y `canOperateCashier`, con Gates `administrator`, `use-pos` y `operate-cashier`. Los perfiles son fijos; no agregan rutas ni pantallas.
 - Admin puede leer/editar un pedido POS de salón con Customer y programación nulos. Recursos, resumen y consumidores administrativos leen snapshots sin queries por cliente.
 - No se crea Restaurant, DiningArea, DiningTable, TableSession, KitchenTicket ni un nuevo Quick Order. Las superficies existentes del baseline se conservan sin recuperaciones o rediseños.
+
+## Restaurant — POS-2
+
+`app/Modules/Restaurant/` contains physical Models, aggregate Actions, validated
+HTTP Requests/Controller, an explicit FloorLayoutQuery and integer FloorGeometry.
+The admin surface is `/admin/restaurant/floor`; area creation uses
+`POST /admin/restaurant/areas`, and aggregate saving uses
+`PUT /admin/restaurant/areas/{area}/layout`. There is no ordinary deletion route.
+
+Areas are configurable, can be inactive and have independent logical dimensions.
+Tables have stable integer identity, required visible code, optional name/capacity,
+rectangle/circle shape, normalized geometry, rotation and active flag. Numeric
+codes render as Mesa N; an optional name overrides the code presentation. Codes
+are trimmed/uppercased and unique per area, including inactive tables.
+
+A save includes all existing tables; omissions, duplicate/foreign IDs and unknown
+element fields are rejected. Deactivate tables to preserve future references.
+No TableSession, order submission, occupancy, payment, kitchen or Inventory
+fulfillment behavior is part of this module.

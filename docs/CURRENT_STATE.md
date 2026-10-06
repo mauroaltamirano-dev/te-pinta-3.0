@@ -147,3 +147,22 @@ Los resultados ambiguos de Meta no se reintentan automáticamente de manera inte
 Se prepara el dominio para source `pos` y fulfillment `dine_in` inmediato: Customer/contacto/programación pueden estar ausentes, dirección no aplica y shipping es cero. Source y fulfillment son conceptos independientes; el checkout público y el alta admin mantienen sus contratos. Las migraciones no reescriben historia y los consumidores existentes toleran Customer null. Identity ofrece perfiles fijos waiter/cashier y capacidades backend sin ampliar el límite administrativo.
 
 Este slice no implementa mesas, sesiones, plano, submissions, comandas, impresión, packaging, fulfillment físico, cierre, pagos POS ni deployment LAN. Tampoco recupera Quick Order ni integra el rediseño público congelado. POS-2 puede consumir estos contratos una vez cerrada la verificación/revisión del candidato; evidencia y pendientes en `odd/tasks/pos-1-order-context-access.md`.
+
+## POS-2 — floor plan and dining tables
+
+Restaurant physical configuration and the admin editor are implemented on the
+isolated `feat/pos-2-floor-tables` branch based exactly on `e39f5df`.
+The visual editor supports configurable areas, tables, simple obstacles, pointer
+movement/resizing, accessible geometry fields, inactivity and explicit atomic
+saving with dirty/conflict feedback. A shared proportional renderer supports
+read-only mode for a future waiter surface. No production dependency was added.
+
+Pending final verification/review evidence is recorded in
+`odd/tasks/pos-2-floor-tables.md`; implementation alone does not assert review
+approval or commit completion.
+
+TableSession and operational occupancy, table orders, Quick Order POS, rounds,
+OrderSubmission, KitchenTicket, printing, payments/closing, reservations, waiter
+assignment, packaging, Inventory fulfillment and LAN/deployment remain excluded.
+Collision warnings and arbitrary-angle/CAD editing are deferred; hard area
+bounds are implemented. No production/development migration was applied.

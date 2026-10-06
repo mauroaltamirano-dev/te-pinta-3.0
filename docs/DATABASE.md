@@ -235,3 +235,36 @@ Nunca ejecute `migrate:fresh` sobre la base de datos de desarrollo actual. Prueb
 - `2026_10_05_000100_add_fixed_staff_profiles` agrega `users.staff_profile` nullable y `users_staff_profile_valid` (`waiter`/`cashier` o null). No asigna perfiles ni modifica `is_admin`; todos los administradores actuales conservan acceso.
 - La aplicación aplica los requisitos de PII/contacto y prohíbe fuente inyectada; PostgreSQL protege sólo combinaciones estructurales, no replica el formulario completo.
 - Ambas migraciones rechazan un rollback que perdería contextos POS o perfiles ya utilizados. No sustituyen datos por clientes ficticios ni convierten historia para permitir rollback. Antes de uso, up/down restaura el esquema anterior sin cambiar las filas. Ejecutar sólo migraciones normales en development; las pruebas from-scratch usan exclusivamente la DB privada.
+
+## POS-2: dining areas and physical tables
+
+Incremental migration `2026_10_05_230000_create_restaurant_floor_configuration.php`
+adds only `dining_areas` and `dining_tables`. IDs follow the existing integer
+convention; the area FK uses RESTRICT. No default area/table data is seeded.
+
+`dining_areas`: name, active flag, logical integer width/height (100..10000),
+non-negative `layout_version`, `layout_schema_version=1`, obstacles JSONB and
+timestamps. `layout_version` is optimistic concurrency, not historical versioning
+or event sourcing. `layout_schema_version` identifies the obstacle schema only.
+
+`dining_tables`: area ID, code, optional name, rectangle/circle shape,
+`position_x/position_y/width/height NUMERIC(5,4)`, rotation, nullable capacity,
+active flag and timestamps. Canonical four-decimal coordinates are persistence
+authority, never absolute pixels. Capacity is 1..100 or null and has no reservation,
+pricing or ordering semantics. Rotation is one of 0/45/90/135/180/225/270/315.
+
+Checks enforce shape, positive dimensions, normalized coordinates and sums,
+rotation/capacity, canonical non-empty codes, area dimensions/version/schema and
+obstacle schema/bounds. A deferred unique constraint protects area/code while
+allowing atomic code swaps. Final-state constraint triggers verify rotated table
+bounds against area dimensions, including area resizing. Geometry uses exact
+NUMERIC/scaled-integer arithmetic and conservative 7072/10000 diagonal
+coefficients; circles allow one logical unit of quantization tolerance.
+
+Obstacles are bounded arrays (max 100) of type, x/y/width/height decimal strings
+and optional label, with no unknown fields or domain relationships. Tables are
+limited to 200 per aggregate by application validation. Overlap is allowed.
+
+One transaction locks the area, checks expected_version, updates all configuration
+and increments layout_version once. A stale save returns 409 before mutation.
+There are no layout-history tables or operational free/occupied columns.

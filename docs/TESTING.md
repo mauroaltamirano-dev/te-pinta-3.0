@@ -195,3 +195,29 @@ Informar los comandos exactos ejecutados, sus resultados y cualquier control omi
 - `tests/e2e/order-context.spec.ts`: listado, detalle y edición admin desktop/mobile de un pedido inmediato sin cliente; no hay enlaces falsos, programación artificial ni errores de página. No crea UI POS.
 - Strict TDD y las cifras observadas se registran en el task del slice. Todas las suites se ejecutan secuencialmente en `testing_pos1`, dentro del contenedor PostgreSQL privado de POS-1. No ejecutar suites concurrentes sobre esa DB ni usar development para `migrate:fresh`.
 - La regresión incluye Orders, Products/POS-0, Auth/Identity y Management. Inventory no tiene suite/comportamiento de stock implementado en este baseline; POS-1 no cambia `delivered`. Los checks de PHP, TypeScript, lint, formatting y build son independientes de una aprobación de revisión nativa.
+
+## POS-2 verification
+
+`tests/Feature/Restaurant/FloorLayoutTest.php` covers admin HTTP/domain behavior,
+exact coordinates, shapes/rotation/capacity, inactivity, identifiers, obstacle
+schema, optimistic conflict, rollback and table identity preservation.
+`FloorDatabaseTest.php` exercises PostgreSQL checks, FK/unique constraints and
+final rotated-footprint triggers using direct SQL and SET CONSTRAINTS IMMEDIATE.
+It also checks the internal active-only read query.
+
+Strict backend TDD includes observed RED before Restaurant implementation and a
+separate RED for numeric-string ID aliases. Run Restaurant plus Identity and
+`tests/Feature/Orders/OrderContextTest.php` sequentially against a private DB.
+
+`tests/e2e/restaurant-floor.spec.ts` proves six tables, two circular obstacles,
+pointer movement/resizing without per-move writes, save/reload persistence,
+mobile selection, read-only rendering, inactivity and two-tab conflicts.
+Viewport matrix: 320/360/390/393/Pixel 7/1280/1920. Coordinate persistence and
+area containment are semantic assertions, not pixel screenshot baselines.
+Screenshots in storage/app/ are visual-review artifacts only.
+
+POS-2 verification uses a dedicated PostgreSQL instance (loopback 55439), backend
+DB `testing` and separate browser DB `testing_pos2_browser`, with one Playwright
+worker. No development DB is touched. If native browser libraries are missing,
+use the local verification container with the worktree and cached browsers
+mounted; do not change application dependencies or system configuration.

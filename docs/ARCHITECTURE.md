@@ -96,6 +96,22 @@ No están implementados los gateways de pago, la automatización de WhatsApp, la
 
 ## POS-1: contexto de pedidos y acceso acotado
 
-Orders conserva `source` (origen de creación) separado de `delivery_type` (fulfillment). Identity conserva `is_admin` como autoridad administrativa y ofrece capacidades fijas de POS/caja mediante `staff_profile`; no hay RBAC genérico ni módulo Restaurant. El contexto inmediato de salón pertenece a Orders, sin mesa ni sesión. La ausencia de cliente es un estado legítimo, no un perfil ficticio.
+Orders conserva `source` (origen de creación) separado de `delivery_type` (fulfillment). Identity conserva `is_admin` como autoridad administrativa y ofrece capacidades fijas de POS/caja mediante `staff_profile`; POS-1 no introduce RBAC genérico ni el módulo Restaurant (agregado en POS-2). El contexto inmediato de salón pertenece a Orders, sin mesa ni sesión. La ausencia de cliente es un estado legítimo, no un perfil ficticio.
 
 Los próximos slices deben utilizar comandos autorizados para confirmación, submissions, fulfillment y cierre; asignar arbitrariamente `status = X` no representa esos hechos ni garantiza sus efectos. POS-1 no modifica los contratos de pago ni Inventory.
+
+## POS-2: Restaurant physical configuration
+
+`Restaurant` owns DiningArea, DiningTable and floor-layout administration. Orders,
+Products and Management/Payments retain their existing responsibilities.
+DiningTable is physical configuration only; TableSession is future operational
+occupancy and is not implemented. There are no orders or status transitions on
+table selection.
+
+`FloorLayoutController -> FormRequest -> Action -> Models` is the write path.
+`FloorLayoutQuery` provides explicit, consistent snapshots while holding area
+share locks; writers lock the same area first. Active-only reads are available
+internally for a future `use-pos` endpoint, not exposed to staff in POS-2.
+
+The shared React `features/restaurant/floor-plan.tsx` supports `editable=false`
+without duplicating the floor or introducing order behavior.
