@@ -20,7 +20,7 @@ final class InventoryCostLayer extends Model
 {
     protected $fillable = [
         'inventory_item_id', 'inventory_transaction_id', 'stock_movement_id',
-        'quantity', 'total_cost', 'effective_date',
+        'quantity', 'total_cost', 'effective_date', 'reversal_of_id',
     ];
 
     protected function casts(): array

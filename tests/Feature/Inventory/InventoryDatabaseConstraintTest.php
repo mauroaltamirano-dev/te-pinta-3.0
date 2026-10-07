@@ -30,13 +30,13 @@ final class InventoryDatabaseConstraintTest extends TestCase
         $constraints = DB::table('pg_constraint')->whereIn('conname', [
             'inventory_items_quantity_precision_valid', 'inventory_transactions_type_valid',
             'inventory_transactions_source_type_valid', 'inventory_stock_movements_quantity_nonzero',
-            'inventory_cost_layers_quantity_positive', 'inventory_cost_layers_total_cost_nonnegative',
+            'inventory_cost_layers_reversal_shape_valid',
             'inventory_cost_layers_stock_movement_id_unique',
         ])->pluck('conname')->all();
         $this->assertEqualsCanonicalizing([
             'inventory_items_quantity_precision_valid', 'inventory_transactions_type_valid',
             'inventory_transactions_source_type_valid', 'inventory_stock_movements_quantity_nonzero',
-            'inventory_cost_layers_quantity_positive', 'inventory_cost_layers_total_cost_nonnegative',
+            'inventory_cost_layers_reversal_shape_valid',
             'inventory_cost_layers_stock_movement_id_unique',
         ], $constraints);
 

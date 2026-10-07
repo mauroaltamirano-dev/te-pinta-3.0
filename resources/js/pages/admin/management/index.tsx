@@ -1,17 +1,3 @@
-import { Head, Link } from '@inertiajs/react';
-import {
-    ArrowDown,
-    ArrowLeftRight,
-    ArrowUp,
-    HandCoins,
-    Plus,
-    PieChart,
-    ReceiptText,
-    ShoppingBasket,
-    ShieldCheck,
-    WalletCards,
-} from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DistributionFormDialog } from '@/features/management/components/distribution-form-dialog';
 import { DistributionRuleDialog } from '@/features/management/components/distribution-rule-dialog';
@@ -31,6 +17,20 @@ import type {
     ManagementTransaction,
     ManagementWallet,
 } from '@/features/management/types';
+import { Head, Link } from '@inertiajs/react';
+import {
+    ArrowDown,
+    ArrowLeftRight,
+    ArrowUp,
+    HandCoins,
+    Plus,
+    PieChart,
+    ReceiptText,
+    ShoppingBasket,
+    ShieldCheck,
+    WalletCards,
+} from 'lucide-react';
+import { useState } from 'react';
 
 export default function Management({
     wallets,
@@ -94,6 +94,11 @@ export default function Management({
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:flex">
+                        <Button asChild variant="outline">
+                            <Link href="/admin/management/purchases">
+                                Compras
+                            </Link>
+                        </Button>
                         <Button
                             asChild
                             variant="outline"

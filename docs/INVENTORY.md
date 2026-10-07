@@ -26,7 +26,7 @@ Categories do not infer pricing or capabilities. Classification may be null for 
 
 A transaction atomically creates nonzero signed base-unit movements and optional positive-receipt cost layers. Stock is derived from movements, not an editable cached balance. Negative stock is technically allowed. Cost layers must match their movement, item, transaction and effective date. Historical transactions, movements and layers cannot be updated/deleted. Movement validation locks the parent item row inside PostgreSQL, serializing direct SQL inserts with stockability, unit and precision changes. A deferred PostgreSQL trigger rejects orphan transactions. Provenance and reversal shape/uniqueness are enforced by constraints.
 
-AOB-1 only installs positive quantity/nonnegative cost layers. Coordinated purchase/production/adjustment/Order reversals and signed compensating cost layers belong to their subsequent reconstruction units. The generic transaction primitive alone is not a business reversal workflow.
+AOB-1 installs positive quantity/nonnegative cost layers. AOB-2 adds only exact original-linked signed compensation for coordinated Purchase reversals. Production/adjustment/Order reversal workflows remain in their later owning units. The generic transaction primitive alone is not a business reversal workflow.
 
 ## Current valuation
 

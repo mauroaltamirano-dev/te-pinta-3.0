@@ -8,5 +8,6 @@ final readonly class InventoryMovementData
         public int $inventoryItemId,
         public string $quantity,
         public ?int $totalCost = null,
+        public ?int $reversalOfCostLayerId = null,
     ) {}
 }

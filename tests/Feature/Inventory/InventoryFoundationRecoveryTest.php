@@ -142,9 +142,9 @@ final class InventoryFoundationRecoveryTest extends TestCase
     private function record(InventoryItem $item, User $admin, string $quantity, ?int $cost, string $source): InventoryTransaction
     {
         return app(RecordInventoryTransaction::class)->execute(new InventoryTransactionData(
-            $cost === null ? InventoryTransactionType::Adjustment : InventoryTransactionType::PurchaseReceipt,
+            InventoryTransactionType::Adjustment,
             CarbonImmutable::parse('2026-10-06'), [new InventoryMovementData($item->id, $quantity, $cost)],
-            $cost === null ? InventorySourceType::Adjustment : InventorySourceType::Purchase, $source,
+            InventorySourceType::Adjustment, $source,
         ), $admin->id);
     }
 }

@@ -1,13 +1,3 @@
-import { Link, router } from '@inertiajs/react';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Eye,
-    Paperclip,
-    RotateCcw,
-} from 'lucide-react';
-import { useState } from 'react';
-import type { FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +10,16 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Link, router } from '@inertiajs/react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Eye,
+    Paperclip,
+    RotateCcw,
+} from 'lucide-react';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 import {
     administratorName,
     formatManagementDate,
@@ -576,7 +576,8 @@ export function TransactionHistory({
                                                 Reversión
                                             </Badge>
                                         )}
-                                        {transaction.type !== 'reversal' &&
+                                        {transaction.type !== 'purchase' &&
+                                            transaction.type !== 'reversal' &&
                                             isReversed(transaction) && (
                                                 <Badge
                                                     variant="destructive"
@@ -816,6 +817,7 @@ function distributionRoute(transaction: ManagementTransaction) {
 
 function canReverse(transaction: ManagementTransaction) {
     return (
+        transaction.type !== 'purchase' &&
         transaction.type !== 'reversal' &&
         transaction.reversal_transaction_id === null &&
         transaction.management_order_payment?.distribution_status !==

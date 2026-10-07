@@ -13,6 +13,7 @@ enum FinancialTransactionType: string
     case Transfer = 'transfer';
     case Distribution = 'distribution';
     case OrderPayment = 'order_payment';
+    case Purchase = 'purchase';
     case Reversal = 'reversal';
 
     public function signedAmount(int $amount): int
@@ -23,6 +24,7 @@ enum FinancialTransactionType: string
             self::ManagementOutflow => throw new \LogicException('Management outflows determine their ledger sign in their use case.'),
             self::Transfer => throw new \LogicException('Transfers determine both ledger impacts in their use case.'),
             self::Distribution => throw new \LogicException('Distributions determine their ledger allocations in their use case.'),
+            self::Purchase => throw new \LogicException('Purchases determine their ledger impact in their use case.'),
             self::Reversal => throw new \LogicException('Reversals copy opposite ledger entries.'),
         };
     }
@@ -39,6 +41,7 @@ enum FinancialTransactionType: string
             self::Transfer => 'Transferencia',
             self::Distribution => 'Distribución',
             self::OrderPayment => 'Pago de pedido',
+            self::Purchase => 'Compra',
             self::Reversal => 'Reversión',
         };
     }

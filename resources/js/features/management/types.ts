@@ -8,6 +8,7 @@ export type ManagementTransactionType =
     | 'transfer'
     | 'distribution'
     | 'order_payment'
+    | 'purchase'
     | 'reversal';
 
 export type ManagementOutflowType =

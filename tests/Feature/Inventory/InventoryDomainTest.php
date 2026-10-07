@@ -89,10 +89,10 @@ final class InventoryDomainTest extends TestCase
         $mozzarella = $this->createItem('Mozzarella', UnitFamily::Weight, 'g', 'kg', 3);
 
         $receipt = app(RecordInventoryTransaction::class)->execute(new InventoryTransactionData(
-            InventoryTransactionType::PurchaseReceipt,
+            InventoryTransactionType::Adjustment,
             CarbonImmutable::parse('2026-09-01'),
             [new InventoryMovementData($mozzarella->id, '4000', 40000)],
-            InventorySourceType::Purchase,
+            InventorySourceType::Adjustment,
             'purchase-001',
             'Initial receipt',
         ), $admin->id);
@@ -123,10 +123,10 @@ final class InventoryDomainTest extends TestCase
         $admin = User::factory()->administrator()->create();
         $egg = $this->createItem('Egg', UnitFamily::Count, 'unit', 'unit', 0);
         app(RecordInventoryTransaction::class)->execute(new InventoryTransactionData(
-            InventoryTransactionType::PurchaseReceipt,
+            InventoryTransactionType::Adjustment,
             CarbonImmutable::parse('2026-09-02'),
             [new InventoryMovementData($egg->id, '30', 6500)],
-            InventorySourceType::Purchase,
+            InventorySourceType::Adjustment,
             'purchase-eggs',
         ), $admin->id);
 

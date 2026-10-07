@@ -35,3 +35,5 @@ Inventory foundation: [INVENTORY.md](INVENTORY.md) documents physical quantities
 5. Actualice esta documentación cuando cambie un límite o una regla duradera.
 
 Para la instalación móvil y el runtime de Tailscale, comience por [DEVELOPMENT.md](DEVELOPMENT.md#operational-runtime-and-mobile-installation). El servicio operativo se ejecuta en el puerto loopback `8082`; use `deploy/tailscale/route.sh status` en lugar de inferir el estado de la ruta a partir de un contenedor en ejecución.
+
+Rich purchases: [PURCHASES.md](PURCHASES.md) describes coordinated money/stock receipts, historical snapshots and reversal integrity.

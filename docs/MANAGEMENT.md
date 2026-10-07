@@ -455,3 +455,7 @@ Los escenarios mutables crean identidades con namespace de proyecto, worker y re
 - integración con Inventory o cualquier modificación automática de stock.
 
 La separación entre el origen semántico y el ledger se registra en [ADR 0007](decisions/0007-semantic-management-outflows.md). El versionado y conservación de distribuciones se registra en [ADR 0008](decisions/0008-versioned-immutable-management-distributions.md). El límite idempotente y su distribución automática se registra en [ADR 0009](decisions/0009-idempotent-order-payments-in-management.md). La evidencia documental privada y su retención conservadora se registran en [ADR 0011](decisions/0011-private-management-document-attachments.md).
+
+## Rich Purchase integration
+
+The new Purchase aggregate is documented in [PURCHASES.md](PURCHASES.md). Its ledger impact and attachments use Management; physical receipts and signed cost compensation use Inventory. Existing simple purchases remain historical Management outflows. Existing operating-outflow totals and the Purchase filter include rich and legacy facts with signed reversals; expanded overview metrics remain scoped to AOB-7.

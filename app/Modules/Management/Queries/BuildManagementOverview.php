@@ -82,6 +82,10 @@ final class BuildManagementOverview
                     $query->where(function (Builder $semantic) use ($filters): void {
                         $semantic->whereHas('managementOutflow', fn (Builder $outflow) => $outflow->where('type', $filters['type']))
                             ->orWhereHas('reversalOf.managementOutflow', fn (Builder $outflow) => $outflow->where('type', $filters['type']));
+                        if ($filters['type'] === ManagementOutflowType::Purchase->value) {
+                            $semantic->orWhere('type', FinancialTransactionType::Purchase)
+                                ->orWhereHas('reversalOf', fn (Builder $original) => $original->where('type', FinancialTransactionType::Purchase));
+                        }
                     });
                 } else {
                     $query->where('type', $filters['type']);
@@ -122,12 +126,15 @@ final class BuildManagementOverview
             ->join('financial_transactions as transactions', 'transactions.id', '=', 'entries.financial_transaction_id')
             ->leftJoin('management_outflows as direct_outflows', 'direct_outflows.financial_transaction_id', '=', 'transactions.id')
             ->leftJoin('management_outflows as reversed_outflows', 'reversed_outflows.financial_transaction_id', '=', 'transactions.reversal_of_id')
+            ->leftJoin('purchases as direct_purchases', 'direct_purchases.financial_transaction_id', '=', 'transactions.id')
+            ->leftJoin('purchases as reversed_purchases', 'reversed_purchases.financial_transaction_id', '=', 'transactions.reversal_of_id')
             ->whereBetween('transactions.effective_date', [$filters['from'], $filters['to']])
             ->where(function ($query): void {
-                $query->whereNotNull('direct_outflows.id')->orWhereNotNull('reversed_outflows.id');
+                $query->whereNotNull('direct_outflows.id')->orWhereNotNull('reversed_outflows.id')
+                    ->orWhereNotNull('direct_purchases.id')->orWhereNotNull('reversed_purchases.id');
             })
             ->selectRaw(
-                'COALESCE(SUM(CASE WHEN COALESCE(direct_outflows.type, reversed_outflows.type) IN (?, ?) THEN -entries.amount ELSE 0 END), 0) AS operating_outflow',
+                'COALESCE(SUM(CASE WHEN COALESCE(direct_outflows.type, reversed_outflows.type) IN (?, ?) OR direct_purchases.id IS NOT NULL OR reversed_purchases.id IS NOT NULL THEN -entries.amount ELSE 0 END), 0) AS operating_outflow',
                 [ManagementOutflowType::Purchase->value, ManagementOutflowType::Expense->value],
             )
             ->selectRaw(

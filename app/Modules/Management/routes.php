@@ -3,6 +3,7 @@
 use App\Modules\Management\Http\Controllers\ManagementAttachmentController;
 use App\Modules\Management\Http\Controllers\ManagementAuditController;
 use App\Modules\Management\Http\Controllers\ManagementController;
+use App\Modules\Management\Http\Controllers\PurchaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/management', [ManagementController::class, 'index'])->name('management.index');
@@ -24,3 +25,11 @@ Route::get('/management/transactions/{financialTransaction}/attachments', [Manag
 Route::post('/management/transactions/{financialTransaction}/attachments', [ManagementAttachmentController::class, 'store'])->name('management.transactions.attachments.store');
 Route::get('/management/transactions/{financialTransaction}/attachments/{managementAttachment}', [ManagementAttachmentController::class, 'show'])->name('management.transactions.attachments.show');
 Route::delete('/management/transactions/{financialTransaction}/attachments/{managementAttachment}', [ManagementAttachmentController::class, 'destroy'])->name('management.transactions.attachments.destroy');
+
+Route::controller(PurchaseController::class)->prefix('management/purchases')->name('management.purchases.')->group(function (): void {
+    Route::get('/', 'index')->name('index');
+    Route::get('/create', 'create')->name('create');
+    Route::post('/', 'store')->name('store');
+    Route::get('/{purchase}', 'show')->name('show');
+    Route::post('/{purchase}/reverse', 'reverse')->name('reverse');
+});

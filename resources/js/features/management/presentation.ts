@@ -28,6 +28,7 @@ export const transactionTypeLabels: Record<ManagementTransactionType, string> =
         transfer: 'Transferencia',
         distribution: 'Distribución',
         order_payment: 'Pago de pedido',
+        purchase: 'Compra',
         reversal: 'Reversión',
     };
 

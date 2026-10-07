@@ -77,7 +77,7 @@ final class RecordInventoryTransaction
                 ]);
 
                 if ($movementData->totalCost !== null) {
-                    if ($movementData->totalCost < 0 || $quantity[0] === '-') {
+                    if ($movementData->reversalOfCostLayerId === null && ($movementData->totalCost < 0 || $quantity[0] === '-')) {
                         throw ValidationException::withMessages(["movements.{$index}.total_cost" => 'Cost layers require a positive movement and non-negative total cost.']);
                     }
                     $transaction->costLayers()->create([
@@ -85,6 +85,7 @@ final class RecordInventoryTransaction
                         'stock_movement_id' => $movement->id,
                         'quantity' => $quantity,
                         'total_cost' => $movementData->totalCost,
+                        'reversal_of_id' => $movementData->reversalOfCostLayerId,
                         'effective_date' => $data->effectiveDate,
                     ]);
                 }
