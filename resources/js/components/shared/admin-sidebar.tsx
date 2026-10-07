@@ -1,19 +1,3 @@
-import { Link, router, usePage } from '@inertiajs/react';
-import {
-    BarChart3,
-    Instagram,
-    LayoutDashboard,
-    LogOut,
-    Megaphone,
-    Menu,
-    Settings,
-    ShoppingBasket,
-    Store,
-    Users,
-    WalletCards,
-} from 'lucide-react';
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -23,6 +7,23 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { Link, router, usePage } from '@inertiajs/react';
+import {
+    BarChart3,
+    Instagram,
+    LayoutDashboard,
+    LogOut,
+    Megaphone,
+    Menu,
+    Package,
+    Settings,
+    ShoppingBasket,
+    Store,
+    Users,
+    WalletCards,
+} from 'lucide-react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const navigation = [
     { label: 'Inicio', href: '/admin', icon: Store },
@@ -35,6 +36,7 @@ const navigation = [
     { label: 'Clientes', href: '/admin/customers', icon: Users },
     { label: 'Analíticas', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Gestión', href: '/admin/management', icon: WalletCards },
+    { label: 'Inventario', href: '/admin/inventory', icon: Package },
     {
         label: 'Plano del restaurante',
         href: '/admin/restaurant/floor',

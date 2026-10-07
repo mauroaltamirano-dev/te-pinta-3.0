@@ -131,7 +131,7 @@ Los resultados ambiguos de Meta no se reintentan automáticamente de manera inte
 
 ## Pospuesto intencionalmente
 
-- Analytics e Inventory/stock continúan fuera de alcance. Gestión no implementa inventario.
+- Analytics sigue fuera de alcance. Inventory ahora tiene su base física AOB-1; Gestión sigue sin modificar stock hasta recuperar Rich Purchases.
 - El CRUD de categorías, el Dashboard financiero avanzado y la reparación/reversión automática quedan para slices posteriores. Las compras todavía no modifican Inventory/stock.
 - El pago en línea no forma parte del producto; la confirmación del checkout utiliza WhatsApp.
 
@@ -166,3 +166,7 @@ OrderSubmission, KitchenTicket, printing, payments/closing, reservations, waiter
 assignment, packaging, Inventory fulfillment and LAN/deployment remain excluded.
 Collision warnings and arbitrary-angle/CAD editing are deferred; hard area
 bounds are implemented. No production/development migration was applied.
+
+## Inventory foundation recovery (AOB-1)
+
+The Inventory placeholder is replaced by functional category/item/presentation administration, stock/history reads and current valuation. Exact quantities and integer-peso costs are enforced by PostgreSQL. The seven-unit operational reconstruction is tracked in `odd/tasks/admin-operational-base-reconstruction.md`; AOB-2…7 remain pending. This is not global UX normalization or POS-3.

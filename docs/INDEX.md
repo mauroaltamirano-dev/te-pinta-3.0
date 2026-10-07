@@ -24,6 +24,8 @@ Comience por el documento más acotado que sea responsable del cambio.
 | Ver qué está completo y qué se pospuso intencionalmente                     | [CURRENT_STATE.md](CURRENT_STATE.md)                       |
 | Implementar el próximo slice de Inicio para pedidos rápidos administrativos | [design/ADMIN_QUICK_ORDER.md](design/ADMIN_QUICK_ORDER.md) |
 
+Inventory foundation: [INVENTORY.md](INVENTORY.md) documents physical quantities, integer-peso cost, current valuation and the staged reconstruction boundary.
+
 ## Lista de verificación para cambios
 
 1. Identifique el módulo responsable y lea su guía específica.

@@ -268,3 +268,7 @@ limited to 200 per aggregate by application validation. Overlap is allowed.
 One transaction locks the area, checks expected_version, updates all configuration
 and increments layout_version once. A stale save returns 409 before mutation.
 There are no layout-history tables or operational free/occupied columns.
+
+## Inventory foundation (AOB-1)
+
+Three new independent migrations create the seven physical Inventory tables and system units (`2026_09_02_000000`), add nullable classification and three explicit capability flags (`2026_09_30_000000`), and add optional count-item reference mass (`2026_09_30_010000`). Existing POS migrations are unchanged. Quantities use NUMERIC(20,6), factors NUMERIC(20,9), and money integer pesos. PostgreSQL checks, immutable-history triggers and a deferred transaction-requires-movement trigger enforce the contract described in [INVENTORY.md](INVENTORY.md). Cross-domain recipe/consumption capability protections are deferred until their owning tables exist.

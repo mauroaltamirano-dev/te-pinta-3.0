@@ -158,3 +158,7 @@ Unknown table/obstacle keys and malformed schemas are rejected. Positions,
 rotated bounds, dimensions, capacity and shapes are enforced by the backend and
 PostgreSQL, not by drag UI. Conflict responses preserve the client's draft;
 reloading explicitly discards it only after confirmation.
+
+## Inventory foundation administration
+
+All `/admin/inventory` reads and category/item/presentation mutations require the existing `administrator` gate and resource policies. Neither `use-pos` nor `operate-cashier` grants Inventory administration; waiter/cashier access remains forbidden. Physical commands are internal action APIs, not public stock-edit endpoints.

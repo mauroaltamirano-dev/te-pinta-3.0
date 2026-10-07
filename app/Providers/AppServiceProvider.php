@@ -7,6 +7,12 @@ use App\Core\Support\TestingDatabaseGuard;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Policies\CustomerPolicy;
 use App\Modules\Identity\Models\User;
+use App\Modules\Inventory\Models\InventoryCategory;
+use App\Modules\Inventory\Models\InventoryItem;
+use App\Modules\Inventory\Models\PurchasePresentation;
+use App\Modules\Inventory\Policies\InventoryCategoryPolicy;
+use App\Modules\Inventory\Policies\InventoryItemPolicy;
+use App\Modules\Inventory\Policies\PurchasePresentationPolicy;
 use App\Modules\Management\Listeners\RecordConfirmedOrderPayment;
 use App\Modules\Management\Models\DistributionRule;
 use App\Modules\Management\Models\FinancialTransaction;
@@ -111,6 +117,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ManagementOutflow::class, ManagementOutflowPolicy::class);
         Gate::policy(ManagementTransfer::class, ManagementTransferPolicy::class);
         Gate::policy(Product::class, ProductPolicy::class);
+        Gate::policy(InventoryCategory::class, InventoryCategoryPolicy::class);
+        Gate::policy(InventoryItem::class, InventoryItemPolicy::class);
+        Gate::policy(PurchasePresentation::class, PurchasePresentationPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
     }
 }

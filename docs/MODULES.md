@@ -16,7 +16,7 @@ Cada módulo es dueño de una capacidad de negocio y sólo de las capas que nece
 | `Management`             | Billeteras, ledger inmutable, movimientos, egresos, transferencias, distribuciones y cobros idempotentes de Orders                  | Ciclo de vida de Orders, stock o Analytics                      |
 | `Marketing`              | Historial, programación, elegibilidad/view model público, preview administrativo y resumen de Dashboard de Featured Product         | Catálogo/precios, descuentos, Orders o publicación en Instagram |
 | `Instagram`              | Assets de Stories, programaciones, historial pendiente/publicado, API n8n, medios firmados y recuperación conservadora              | Credenciales Meta, requests Graph, diseño, Feed o Reels         |
-| `Analytics`, `Inventory` | Capacidades no implementadas                                                                                                        | Analítica funcional o comportamiento de stock                   |
+| `Analytics`              | Capacidades no implementadas                                                                                                        | Analítica funcional o comportamiento de stock                   |
 
 ## Customers
 
@@ -224,3 +224,7 @@ A save includes all existing tables; omissions, duplicate/foreign IDs and unknow
 element fields are rejected. Deactivate tables to preserve future references.
 No TableSession, order submission, occupancy, payment, kitchen or Inventory
 fulfillment behavior is part of this module.
+
+## Inventory foundation (AOB-1)
+
+`Inventory` now owns categories, classified items and explicit capabilities, exact units/conversions, purchase presentations, immutable physical transactions/movements/cost layers, balances and current valuation. Administrator-only CRUD and reads are available at `/admin/inventory`. See [INVENTORY.md](INVENTORY.md). Rich purchases, recipes/production, adjustments and sale consumption are separate pending reconstruction units; no new cashflow or Order effects are registered by this foundation.

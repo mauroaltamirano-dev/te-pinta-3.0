@@ -1,9 +1,377 @@
-import { PlaceholderPage } from '@/components/shared/placeholder-page';
-export default function Inventory() {
+import { Button } from '@/components/ui/button';
+import { CategoryDialog } from '@/features/inventory/components/category-dialog';
+import {
+    ItemDialog,
+    itemKinds,
+} from '@/features/inventory/components/item-dialog';
+import { PresentationDialog } from '@/features/inventory/components/presentation-dialog';
+import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import type {
+    InventoryCategory,
+    InventoryItem,
+    InventoryTransaction,
+    InventoryUnit,
+    Pagination,
+    PurchasePresentation,
+} from '@/features/inventory/types';
+import { formatOrderMoney } from '@/features/orders/presentation';
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
+
+interface Props {
+    categories: InventoryCategory[];
+    items: InventoryItem[];
+    units: InventoryUnit[];
+    transactions: Pagination<InventoryTransaction>;
+    filters: { transaction_id: number | null };
+    valuation: {
+        confident_value: number;
+        fully_valued: number;
+        partial: number;
+        unknown: number;
+        negative: number;
+        zero: number;
+    };
+}
+const coverageLabels = {
+    zero: 'Sin stock valorizable',
+    fully_valued: 'Valoración completa',
+    partial: 'Cobertura de costo parcial',
+    unknown: 'Sin costo conocido',
+    negative: 'Stock negativo: valoración no confiable',
+};
+const transactionLabels: Record<string, string> = {
+    purchase_receipt: 'Compra',
+    production: 'Producción',
+    adjustment: 'Ajuste',
+    production_consumption: 'Consumo de producción',
+    sale_consumption: 'Consumo de venta',
+    reversal: 'Reversión',
+};
+
+export default function Inventory({
+    categories,
+    items,
+    units,
+    transactions,
+    filters,
+    valuation,
+}: Props) {
+    const [categoryEditor, setCategoryEditor] = useState<
+        InventoryCategory | 'new' | null
+    >(null);
+    const [itemEditor, setItemEditor] = useState<InventoryItem | 'new' | null>(
+        null,
+    );
+    const [presentationEditor, setPresentationEditor] = useState<{
+        item: InventoryItem;
+        presentation?: PurchasePresentation;
+    } | null>(null);
+    const visitPage = (page: number) =>
+        router.get(
+            '/admin/inventory',
+            {
+                page,
+                ...(filters.transaction_id
+                    ? { transaction_id: filters.transaction_id }
+                    : {}),
+            },
+            { preserveScroll: true },
+        );
+
     return (
-        <PlaceholderPage
-            title="Inventario"
-            description="La gestión avanzada de stock permanece pendiente."
-        />
+        <section className="grid gap-6 font-orders text-admin-text-primary">
+            <header className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-semibold">
+                        Inventario físico
+                    </h1>
+                    <p className="mt-2 text-sm text-admin-text-secondary">
+                        Insumos, presentaciones de compra, stock e historial
+                        físico. Configurar datos no registra movimientos.
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => setCategoryEditor('new')}
+                    >
+                        Nueva categoría
+                    </Button>
+                    <Button
+                        onClick={() => setItemEditor('new')}
+                        disabled={
+                            !categories.some((category) => category.is_active)
+                        }
+                    >
+                        Nuevo insumo
+                    </Button>
+                </div>
+            </header>
+            <section className="rounded-xl border border-admin-border bg-admin-surface p-4">
+                <h2 className="text-lg font-semibold">Valoración actual</h2>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                    {formatOrderMoney.format(valuation.confident_value)}
+                </p>
+                <p className="mt-2 text-sm text-admin-text-secondary">
+                    Sólo incluye stock con cobertura completa de costo. No es
+                    una valoración histórica ni un saldo financiero.
+                </p>
+                <p className="mt-2 text-sm">
+                    {valuation.fully_valued} completos · {valuation.partial}{' '}
+                    parciales · {valuation.unknown} sin costo ·{' '}
+                    {valuation.negative} negativos
+                </p>
+            </section>
+            <section className="grid gap-3">
+                <h2 className="text-lg font-semibold">Categorías</h2>
+                {categories.length ? (
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map((category) => (
+                            <Button
+                                key={category.id}
+                                variant="outline"
+                                onClick={() => setCategoryEditor(category)}
+                            >
+                                {category.name}
+                                {!category.is_active && ' (inactiva)'}
+                            </Button>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-admin-text-secondary">
+                        Creá una categoría para comenzar a cargar insumos.
+                    </p>
+                )}
+            </section>
+            <section className="grid gap-3">
+                <h2 className="text-lg font-semibold">Insumos</h2>
+                {items.length ? (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        {items.map((item) => (
+                            <article
+                                key={item.id}
+                                aria-label={item.name}
+                                className="min-w-0 rounded-xl border border-admin-border bg-admin-surface p-4"
+                            >
+                                <h3 className="font-semibold break-words">
+                                    {item.name}
+                                    {!item.is_active && ' (inactivo)'}
+                                </h3>
+                                <p className="mt-1 text-sm text-admin-text-secondary">
+                                    {item.category.name} ·{' '}
+                                    {item.kind
+                                        ? itemKinds[item.kind]
+                                        : 'Clasificación pendiente'}
+                                </p>
+                                <p className="mt-3 text-lg font-medium tabular-nums">
+                                    {item.tracks_stock
+                                        ? formatInventoryQuantity(
+                                              item.stock_quantity,
+                                              item.base_unit,
+                                          )
+                                        : 'No controla stock'}
+                                </p>
+                                <p className="mt-1 text-sm">
+                                    {coverageLabels[item.valuation.coverage]}
+                                    {item.valuation.value !== null &&
+                                        ` · ${formatOrderMoney.format(item.valuation.value)}`}
+                                </p>
+                                <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-admin-text-secondary">
+                                    {item.recipe_input_enabled && (
+                                        <li>Usar en recetas</li>
+                                    )}
+                                    {item.production_output_enabled && (
+                                        <li>Salida de producción</li>
+                                    )}
+                                    {item.order_consumption_enabled && (
+                                        <li>Consumo al vender</li>
+                                    )}
+                                </ul>
+                                {item.classification_pending && (
+                                    <p className="mt-2 text-sm text-admin-text-secondary">
+                                        Editá este insumo para definir su
+                                        clasificación y capacidades.
+                                    </p>
+                                )}
+                                {item.presentations.length > 0 && (
+                                    <ul className="mt-3 grid gap-2 text-sm">
+                                        {item.presentations.map(
+                                            (presentation) => (
+                                                <li
+                                                    key={presentation.id}
+                                                    className="flex flex-wrap items-center justify-between gap-2"
+                                                >
+                                                    <span>
+                                                        {presentation.name}:{' '}
+                                                        {formatInventoryQuantity(
+                                                            presentation.content_quantity,
+                                                            presentation.content_unit,
+                                                        )}
+                                                        {!presentation.is_active &&
+                                                            ' (inactiva)'}
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setPresentationEditor(
+                                                                {
+                                                                    item,
+                                                                    presentation,
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        Editar presentación
+                                                    </Button>
+                                                </li>
+                                            ),
+                                        )}
+                                    </ul>
+                                )}
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setItemEditor(item)}
+                                    >
+                                        Editar insumo
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setPresentationEditor({ item })
+                                        }
+                                    >
+                                        Presentaciones
+                                    </Button>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-admin-text-secondary">
+                        Todavía no hay insumos. Definí las unidades y
+                        capacidades de cada uno antes de registrar operaciones.
+                    </p>
+                )}
+            </section>
+            <section className="grid gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold">Historial físico</h2>
+                    {filters.transaction_id && (
+                        <Button
+                            variant="outline"
+                            onClick={() => router.get('/admin/inventory')}
+                        >
+                            Ver todo el historial
+                        </Button>
+                    )}
+                </div>
+                <p className="text-sm text-admin-text-secondary">
+                    Movimientos inmutables en la unidad base de cada insumo. Las
+                    reversiones conservan el registro original.
+                </p>
+                {transactions.data.length ? (
+                    <ol className="grid gap-3">
+                        {transactions.data.map((transaction) => (
+                            <li
+                                key={transaction.id}
+                                className="rounded-xl border border-admin-border bg-admin-surface p-4"
+                            >
+                                <h3 className="font-medium">
+                                    #{transaction.id} ·{' '}
+                                    {transactionLabels[transaction.type] ??
+                                        transaction.type}{' '}
+                                    · {transaction.effective_date}
+                                </h3>
+                                {transaction.description && (
+                                    <p className="mt-1 text-sm">
+                                        {transaction.description}
+                                    </p>
+                                )}
+                                <ul className="mt-2 grid gap-1 text-sm">
+                                    {transaction.movements.map((movement) => (
+                                        <li key={movement.id}>
+                                            {movement.inventory_item.name}:{' '}
+                                            {formatInventoryQuantity(
+                                                movement.quantity,
+                                                movement.inventory_item
+                                                    .base_unit,
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </li>
+                        ))}
+                    </ol>
+                ) : (
+                    <p className="text-sm text-admin-text-secondary">
+                        Todavía no hay movimientos físicos.
+                    </p>
+                )}
+                {transactions.last_page > 1 && (
+                    <nav
+                        aria-label="Páginas de historial"
+                        className="flex flex-wrap items-center gap-3"
+                    >
+                        <Button
+                            variant="outline"
+                            disabled={transactions.current_page <= 1}
+                            onClick={() =>
+                                visitPage(transactions.current_page - 1)
+                            }
+                        >
+                            Anterior
+                        </Button>
+                        <span className="text-sm">
+                            Página {transactions.current_page} de{' '}
+                            {transactions.last_page}
+                        </span>
+                        <Button
+                            variant="outline"
+                            disabled={
+                                transactions.current_page >=
+                                transactions.last_page
+                            }
+                            onClick={() =>
+                                visitPage(transactions.current_page + 1)
+                            }
+                        >
+                            Siguiente
+                        </Button>
+                    </nav>
+                )}
+            </section>
+            {categoryEditor && (
+                <CategoryDialog
+                    key={categoryEditor === 'new' ? 'new' : categoryEditor.id}
+                    category={
+                        categoryEditor === 'new' ? undefined : categoryEditor
+                    }
+                    onClose={() => setCategoryEditor(null)}
+                />
+            )}
+            {itemEditor && (
+                <ItemDialog
+                    key={itemEditor === 'new' ? 'new' : itemEditor.id}
+                    item={itemEditor === 'new' ? undefined : itemEditor}
+                    categories={categories}
+                    units={units}
+                    onClose={() => setItemEditor(null)}
+                />
+            )}
+            {presentationEditor && (
+                <PresentationDialog
+                    key={
+                        presentationEditor.presentation?.id ??
+                        `new-${presentationEditor.item.id}`
+                    }
+                    {...presentationEditor}
+                    units={units}
+                    onClose={() => setPresentationEditor(null)}
+                />
+            )}
+        </section>
     );
 }
