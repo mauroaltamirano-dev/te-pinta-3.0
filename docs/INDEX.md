@@ -37,3 +37,5 @@ Inventory foundation: [INVENTORY.md](INVENTORY.md) documents physical quantities
 Para la instalación móvil y el runtime de Tailscale, comience por [DEVELOPMENT.md](DEVELOPMENT.md#operational-runtime-and-mobile-installation). El servicio operativo se ejecuta en el puerto loopback `8082`; use `deploy/tailscale/route.sh status` en lugar de inferir el estado de la ruta a partir de un contenedor en ejecución.
 
 Rich purchases: [PURCHASES.md](PURCHASES.md) describes coordinated money/stock receipts, historical snapshots and reversal integrity.
+
+Recipes and production: [RECIPES_AND_PRODUCTION.md](RECIPES_AND_PRODUCTION.md) describes immutable formulas, current estimates and actual-output historical production/reversal.

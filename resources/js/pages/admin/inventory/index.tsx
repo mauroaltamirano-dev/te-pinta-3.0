@@ -15,7 +15,7 @@ import type {
     PurchasePresentation,
 } from '@/features/inventory/types';
 import { formatOrderMoney } from '@/features/orders/presentation';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface Props {
@@ -30,6 +30,7 @@ interface Props {
         partial: number;
         unknown: number;
         negative: number;
+        unreliable: number;
         zero: number;
     };
 }
@@ -39,6 +40,7 @@ const coverageLabels = {
     partial: 'Cobertura de costo parcial',
     unknown: 'Sin costo conocido',
     negative: 'Stock negativo: valoración no confiable',
+    unreliable: 'Costo transferido no confiable',
 };
 const transactionLabels: Record<string, string> = {
     purchase_receipt: 'Compra',
@@ -92,6 +94,14 @@ export default function Inventory({
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Button asChild variant="outline">
+                        <Link href="/admin/inventory/recipes">Recetas</Link>
+                    </Button>
+                    <Button asChild variant="outline">
+                        <Link href="/admin/inventory/production">
+                            Producción
+                        </Link>
+                    </Button>
                     <Button
                         variant="outline"
                         onClick={() => setCategoryEditor('new')}
@@ -120,7 +130,8 @@ export default function Inventory({
                 <p className="mt-2 text-sm">
                     {valuation.fully_valued} completos · {valuation.partial}{' '}
                     parciales · {valuation.unknown} sin costo ·{' '}
-                    {valuation.negative} negativos
+                    {valuation.negative} negativos · {valuation.unreliable} no
+                    confiables
                 </p>
             </section>
             <section className="grid gap-3">

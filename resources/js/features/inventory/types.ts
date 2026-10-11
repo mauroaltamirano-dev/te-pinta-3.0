@@ -48,7 +48,13 @@ export interface InventoryItem {
     stock_quantity: string;
     presentations: PurchasePresentation[];
     valuation: {
-        coverage: 'zero' | 'fully_valued' | 'partial' | 'unknown' | 'negative';
+        coverage:
+            | 'zero'
+            | 'fully_valued'
+            | 'partial'
+            | 'unknown'
+            | 'negative'
+            | 'unreliable';
         value: number | null;
         cost_quantity: string;
         cost_value: number;

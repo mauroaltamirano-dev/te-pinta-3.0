@@ -7,6 +7,8 @@ use App\Modules\Inventory\Enums\UnitFamily;
 use App\Modules\Inventory\Models\InventoryCategory;
 use App\Modules\Inventory\Models\InventoryItem;
 use App\Modules\Inventory\Models\InventoryUnit;
+use App\Modules\Inventory\Models\RecipeIngredient;
+use App\Modules\Inventory\Models\RecipeVersion;
 use Illuminate\Validation\ValidationException;
 
 final class InventoryItemValidator
@@ -24,6 +26,17 @@ final class InventoryItemValidator
                 || $current->base_unit_id !== $data->baseUnitId
                 || $current->quantity_precision !== $data->quantityPrecision;
             $stockIdentityChanged = $measurementChanged || $current->tracks_stock !== $data->tracksStock;
+
+            if ($stockIdentityChanged && (RecipeVersion::query()->where('output_inventory_item_id', $current->id)->exists()
+                || RecipeIngredient::query()->where('inventory_item_id', $current->id)->exists())) {
+                $errors['measurement'] = 'Item measurement cannot change after recipe references exist.';
+            }
+            if (! $data->productionOutputEnabled && RecipeVersion::query()->where('output_inventory_item_id', $current->id)->where('is_active', true)->exists()) {
+                $errors['production_output_enabled'] = 'An active recipe requires this output capability.';
+            }
+            if (! $data->recipeInputEnabled && RecipeIngredient::query()->where('inventory_item_id', $current->id)->whereIn('recipe_version_id', RecipeVersion::query()->select('id')->where('is_active', true))->exists()) {
+                $errors['recipe_input_enabled'] = 'An active recipe requires this input capability.';
+            }
 
             if ($stockIdentityChanged && $current->stockMovements()->exists()) {
                 $errors['measurement'] = 'Stock measurement identity cannot change after movements exist.';

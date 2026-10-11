@@ -14,13 +14,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $stock_movement_id
  * @property numeric-string $quantity
  * @property int $total_cost
+ * @property string|null $valuation_warning
+ * @property int|null $reversal_of_id
  * @property CarbonImmutable $effective_date
  */
 final class InventoryCostLayer extends Model
 {
     protected $fillable = [
         'inventory_item_id', 'inventory_transaction_id', 'stock_movement_id',
-        'quantity', 'total_cost', 'effective_date', 'reversal_of_id',
+        'quantity', 'total_cost', 'effective_date', 'reversal_of_id', 'valuation_warning',
     ];
 
     protected function casts(): array

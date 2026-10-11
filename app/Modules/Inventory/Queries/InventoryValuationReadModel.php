@@ -20,20 +20,24 @@ final class InventoryValuationReadModel
             $ids[] = (int) $item->id;
         }
         if ($ids === []) {
-            return ['summary' => ['fully_valued' => 0, 'partial' => 0, 'unknown' => 0, 'zero' => 0, 'negative' => 0, 'confident_value' => 0], 'by_item' => [], 'by_category' => []];
+            return ['summary' => ['fully_valued' => 0, 'partial' => 0, 'unknown' => 0, 'zero' => 0, 'negative' => 0, 'unreliable' => 0, 'confident_value' => 0], 'by_item' => [], 'by_category' => []];
         }
         $costs = DB::table('inventory_cost_layers')
             ->whereIn('inventory_item_id', $ids)
-            ->selectRaw('inventory_item_id, COALESCE(SUM(quantity), 0) AS cost_quantity, COALESCE(SUM(total_cost), 0) AS cost_value')
+            ->selectRaw('inventory_item_id, COALESCE(SUM(quantity), 0) AS cost_quantity, COALESCE(SUM(total_cost), 0) AS cost_value, COALESCE(SUM(quantity) FILTER (WHERE valuation_warning IS NOT NULL), 0) AS warning_quantity')
             ->groupBy('inventory_item_id')->get()->keyBy('inventory_item_id');
         $byItem = [];
-        $summary = ['fully_valued' => 0, 'partial' => 0, 'unknown' => 0, 'zero' => 0, 'negative' => 0, 'confident_value' => 0];
+        $summary = ['fully_valued' => 0, 'partial' => 0, 'unknown' => 0, 'zero' => 0, 'negative' => 0, 'unreliable' => 0, 'confident_value' => 0];
         foreach ($items as $item) {
             $stock = (string) ($item->stock_quantity ?? '0');
             $cost = $costs->get($item->id);
             $costQuantity = (string) ($cost->cost_quantity ?? '0');
             $costValue = (int) ($cost->cost_value ?? 0);
             ['coverage' => $coverage, 'value' => $value] = $this->classify($item->tracks_stock, $stock, $costQuantity, $costValue);
+            if ($coverage === 'fully_valued' && DecimalMath::compare((string) ($cost->warning_quantity ?? '0'), '0') > 0) {
+                $coverage = 'unreliable';
+                $value = null;
+            }
             if ($coverage === 'fully_valued') {
                 $summary['confident_value'] += $value;
             }
@@ -51,7 +55,7 @@ final class InventoryValuationReadModel
                 $categories[$id]['confident_value'] += $byItem[(int) $item->id]['value'] ?? 0;
             } elseif ($coverage === 'negative') {
                 $categories[$id]['negative']++;
-            } elseif (in_array($coverage, ['partial', 'unknown'], true)) {
+            } elseif (in_array($coverage, ['partial', 'unknown', 'unreliable'], true)) {
                 $categories[$id]['partial_or_unknown']++;
             }
         }
