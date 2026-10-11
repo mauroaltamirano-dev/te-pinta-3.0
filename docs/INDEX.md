@@ -39,3 +39,5 @@ Para la instalación móvil y el runtime de Tailscale, comience por [DEVELOPMENT
 Rich purchases: [PURCHASES.md](PURCHASES.md) describes coordinated money/stock receipts, historical snapshots and reversal integrity.
 
 Recipes and production: [RECIPES_AND_PRODUCTION.md](RECIPES_AND_PRODUCTION.md) describes immutable formulas, current estimates and actual-output historical production/reversal.
+
+Inventory adjustments: [INVENTORY_ADJUSTMENTS.md](INVENTORY_ADJUSTMENTS.md) describes locked physical counts, loss semantics, preview and historical exact reversals.

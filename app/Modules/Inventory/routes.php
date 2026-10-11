@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
 use App\Modules\Inventory\Http\Controllers\InventoryCategoryController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
 use App\Modules\Inventory\Http\Controllers\InventoryItemController;
@@ -26,3 +27,9 @@ Route::get('/inventory/production/create', [ProductionController::class, 'create
 Route::post('/inventory/production', [ProductionController::class, 'store'])->name('inventory.production.store');
 Route::get('/inventory/production/{productionBatch}', [ProductionController::class, 'show'])->name('inventory.production.show');
 Route::post('/inventory/production/{productionBatch}/reverse', [ProductionController::class, 'reverse'])->name('inventory.production.reverse');
+
+Route::get('/inventory/adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory.adjustments.index');
+Route::post('/inventory/adjustments/preview', [InventoryAdjustmentController::class, 'preview'])->name('inventory.adjustments.preview');
+Route::post('/inventory/adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
+Route::get('/inventory/adjustments/{inventoryAdjustment}', [InventoryAdjustmentController::class, 'show'])->name('inventory.adjustments.show');
+Route::post('/inventory/adjustments/{inventoryAdjustment}/reverse', [InventoryAdjustmentController::class, 'reverse'])->name('inventory.adjustments.reverse');

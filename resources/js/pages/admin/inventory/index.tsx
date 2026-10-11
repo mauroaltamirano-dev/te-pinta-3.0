@@ -95,6 +95,14 @@ export default function Inventory({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Button asChild variant="outline">
+                        <Link
+                            href="/admin/inventory/adjustments"
+                            className="underline"
+                        >
+                            Ajustes
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline">
                         <Link href="/admin/inventory/recipes">Recetas</Link>
                     </Button>
                     <Button asChild variant="outline">

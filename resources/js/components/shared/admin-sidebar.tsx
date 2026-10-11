@@ -38,6 +38,7 @@ const navigation = [
     { label: 'Gestión', href: '/admin/management', icon: WalletCards },
     { label: 'Inventario', href: '/admin/inventory', icon: Package },
     { label: 'Recetas', href: '/admin/inventory/recipes', icon: Package },
+    { label: 'Ajustes', href: '/admin/inventory/adjustments', icon: Package },
     { label: 'Producción', href: '/admin/inventory/production', icon: Package },
     {
         label: 'Plano del restaurante',

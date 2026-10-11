@@ -9,7 +9,7 @@ Inventory owns physical facts. Management owns money; Products owns the sellable
 1. Create an active category to organize items.
 2. Define the item's classification, physical measure and explicit capabilities.
 3. Define purchase presentations using exact decimal strings and compatible units.
-4. Review physical stock and current valuation. Purchases/production/adjustment entry is recovered in the subsequent owning units, not through an unrestricted stock-edit endpoint.
+4. Review physical stock and current valuation. Purchases, production and semantic adjustments are operated through their owning AOB-2/3/4 workflows, not an unrestricted stock-edit endpoint.
 
 Categories do not infer pricing or capabilities. Classification may be null for pending/imported items; the administrative form requires an explicit classification. Allowed kinds are raw material, semi-finished, finished, packaging, consumable and other. Recipe input, production output and sale consumption are independent flags. Recipe/Production integration is now recovered in AOB-3; Order consumption remains deferred.
 
@@ -26,7 +26,7 @@ Categories do not infer pricing or capabilities. Classification may be null for 
 
 A transaction atomically creates nonzero signed base-unit movements and optional positive-receipt cost layers. Stock is derived from movements, not an editable cached balance. Negative stock is technically allowed. Cost layers must match their movement, item, transaction and effective date. Historical transactions, movements and layers cannot be updated/deleted. Movement validation locks the parent item row inside PostgreSQL, serializing direct SQL inserts with stockability, unit and precision changes. A deferred PostgreSQL trigger rejects orphan transactions. Provenance and reversal shape/uniqueness are enforced by constraints.
 
-AOB-1 installs positive quantity/nonnegative cost layers. AOB-2 adds only exact original-linked signed compensation for coordinated Purchase reversals. AOB-3 adds signed production consumption and exact linked compensation; adjustment/Order reversal workflows remain deferred. The generic transaction primitive alone is not a business reversal workflow.
+AOB-1 installs positive quantity/nonnegative cost layers. AOB-2 adds only exact original-linked signed compensation for coordinated Purchase reversals. AOB-3 adds signed production consumption and exact linked compensation; AOB-4 recovers semantic adjustment consumption/reversal; Order consumption/reversal remains deferred. The generic transaction primitive alone is not a business reversal workflow.
 
 ## Current valuation
 
@@ -53,3 +53,7 @@ The concurrency regression uses two independent PostgreSQL sessions and committe
 ## Recipe and Production operation
 
 See [RECIPES_AND_PRODUCTION.md](RECIPES_AND_PRODUCTION.md). Production uncertainty is carried by signed layer warning quantities: even fully cost-covered stock is excluded from confident valuation while it contains positive unreliable cost quantity. Administrator sidebar/Inventory links expose Recipes and Production without changing global navigation or staff permissions.
+
+## Adjustment operation
+
+See [INVENTORY_ADJUSTMENTS.md](INVENTORY_ADJUSTMENTS.md). AOB-4 introduces semantic count/loss/manual adjustments and exact reversals; reserved-source adjustments can consume signed cost layers without opening generic sale consumption. Merma changes physical Inventory only, not financial expenses or COGS. Existing AOB-1/2/3 histories and costing remain authoritative.
