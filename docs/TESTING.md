@@ -248,3 +248,23 @@ repeat cancellation returns exactly 180 g and reversed redelivery is rejected.
 Build assets must finish before HTTP/backend/browser tests; never overlap Vite writes
 with requests. Global lint is compared with an actual pre-AOB-5 JSON baseline rather
 than cleaning inherited errors. Ignore runtime logs/artifacts, not source failures.
+
+## AOB-6 current product costing
+
+Focused suites are `CostingPolicyTest`, `ProductUnitEconomicsTest` and
+`CostingConstraintTest`. They exercise administrator HTTP configuration/assignment,
+invalid requests, SQL invariants, current reliable/unknown/unreliable valuation,
+exact conversion and aggregate rounding, actual POS-0 quotes for Empanada and Unit,
+explicit packaging none versus missing, historical COGS and all-ledger isolation,
+and safe populated rollback. Run them and full backend sequentially in private
+`aob6_testing`, never development. The independent migration cycle uses
+`aob6_migration_testing`; no tests overlap on one DB.
+
+`tests/e2e/current-product-costing.spec.ts` runs desktop Chromium and Pixel 7 with
+one worker in separate `aob6_playwright_testing`. It uses real inventory/purchase,
+consumption, policy create/edit/assignment and read surfaces; exact unit display,
+canonical Products navigation, no physical deduction, family-aware presentation,
+missing-cost explanations and policy removal are asserted. Complete Vite writes
+before requests. Compare actual global lint baseline and final JSON, preserving
+unrelated inherited findings. Tooling/harness failures are not behavioral RED or
+native review approval.

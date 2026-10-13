@@ -162,3 +162,11 @@ reloading explicitly discards it only after confirmation.
 ## Inventory foundation administration
 
 All `/admin/inventory` reads and category/item/presentation mutations require the existing `administrator` gate and resource policies. Neither `use-pos` nor `operate-cashier` grants Inventory administration; waiter/cashier access remains forbidden. Physical commands are internal action APIs, not public stock-edit endpoints.
+
+## Current costing administration (AOB-6)
+
+All costing reads, policy create/update and per-Product assignment/removal require
+`administrator` in the backend. Waiter/cashier POS capabilities do not confer access.
+The backend validates overhead, exact quantities, eligible items, references and
+explicit presentation modes; PostgreSQL adds independent FK/unique/range/conversion/
+completeness guards. Costing reads have no stock, ledger or historical COGS writes.

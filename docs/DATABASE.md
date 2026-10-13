@@ -272,3 +272,22 @@ There are no layout-history tables or operational free/occupied columns.
 ## Inventory foundation (AOB-1)
 
 Three new independent migrations create the seven physical Inventory tables and system units (`2026_09_02_000000`), add nullable classification and three explicit capability flags (`2026_09_30_000000`), and add optional count-item reference mass (`2026_09_30_010000`). Existing POS migrations are unchanged. Quantities use NUMERIC(20,6), factors NUMERIC(20,9), and money integer pesos. PostgreSQL checks, immutable-history triggers and a deferred transaction-requires-movement trigger enforce the contract described in [INVENTORY.md](INVENTORY.md). Cross-domain recipe/consumption capability protections are deferred until their owning tables exist.
+
+## Current costing configuration (AOB-6)
+
+Incremental `2026_10_13_000000_create_current_product_costing.php` adds four
+configuration tables without changing previous migrations or historical facts:
+`inventory_costing_policies`, `inventory_costing_policy_presentations`,
+`inventory_costing_policy_packaging_components`, `inventory_product_costing_policies`.
+Names are trimmed/nonempty/case-insensitively unique; overhead is 0–10000 bp.
+A policy has at most one rule per commercial quantity (1–120). A Product has at
+most one assignment; FK restrictions preserve valid policy, Product, InventoryItem
+and unit references. Packaging quantities are positive finite NUMERIC(20,6).
+A PostgreSQL trigger checks active stock-tracked packaging/consumable eligibility,
+unit family, exact base conversion and item precision. Deferred graph constraints
+require either explicit `none` with no components or `components` with nonempty
+unique item rows. Rule writes serialize on their parent presentation; configuration
+and assignment actions are atomic. Existing current valuation remains the only
+source of packaging price; no duplicated economic value is stored in policy.
+Populated migration rollback deliberately refuses before deleting policies or
+assignments; empty down/up is supported. See [INVENTORY.md](INVENTORY.md#current-product-costing-aob-6).

@@ -37,6 +37,12 @@ const navigation = [
     { label: 'Analíticas', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Gestión', href: '/admin/management', icon: WalletCards },
     { label: 'Inventario', href: '/admin/inventory', icon: Package },
+    { label: 'Costo actual', href: '/admin/inventory/costing', icon: Package },
+    {
+        label: 'Políticas de costo',
+        href: '/admin/inventory/costing-policies',
+        icon: Package,
+    },
     { label: 'Recetas', href: '/admin/inventory/recipes', icon: Package },
     { label: 'Ajustes', href: '/admin/inventory/adjustments', icon: Package },
     { label: 'Producción', href: '/admin/inventory/production', icon: Package },

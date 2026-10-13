@@ -88,3 +88,86 @@ Economic line/product/quantity/pricing changes are blocked after any fulfillment
 ### Deferred POS/fulfillment limitation
 
 Cancelling/refunding already served food does **not** necessarily recover physical stock. This reconstruction does not introduce rounds, tickets, table sessions, preparation-time consumption or dine-in special cases. Future POS/fulfillment must distinguish preparation cancellation, financial refund, waste and genuinely recoverable physical return. AOB-6 Product Costing, AOB-7 Management and UX normalization remain outside this candidate. AOB-4 R3-stale-preview-body remains an unrelated documented follow-up.
+
+## Current product costing (AOB-6)
+
+`/admin/inventory/costing` estimates what a sellable product would cost **today**.
+It is not historical COGS, accounting profit, cashflow or an Order cost snapshot.
+Only administrators may read costing, configure policies or assign/remove them.
+The canonical catalog link remains `/admin/settings/products`; no Inventory
+Products alias is introduced.
+
+### Sources and calculation
+
+| Component | Authority |
+| --- | --- |
+| Physical formula | Active, sealed ConsumptionDefinition version; never expand Recipes |
+| Direct component value | Current physical balance and current weighted cost layers, including valuation warnings |
+| Packaging | Explicit policy presentation, InventoryItem and exact quantity/unit; current valuation only |
+| Overhead | Policy basis points, 0–10000 inclusive |
+| Selling price | Existing POS-0 `OrderPricingEngine` cooked quote, pickup, no additions/discounts |
+
+Category organizes the catalog; pricing family chooses commercial semantics;
+ConsumptionDefinition describes physical inputs; CostingPolicy describes current
+estimates. No policy is inferred from category or from the first policy in storage.
+Assignment is explicit per Product and may be replaced or removed. An assigned
+inactive policy remains visible but cannot supply a total or margin. Policy
+configuration is current mutable state, not an immutable historical snapshot.
+
+Empanada estimates unit, half-dozen and dozen with the real independently priced
+backend tiers. Unit products show one unit by default, not empanada tiers; an
+explicit quantity 1–120 uses actual unit-family backend pricing. Mixed empanada
+cart/quote costing is a follow-up: the existing combined pricing engine is neither
+copied nor changed. Unavailable products retain physical cost information but have
+no current sellable price or margin. Current estimates use cooked pricing, matching
+the historical costing contract; future raw/cart/topping scenarios are not guessed.
+
+```text
+overhead = round_half_up((direct cost + packaging cost) × basis_points / 10000)
+estimated total = direct cost + packaging cost + overhead
+estimated margin = selling price − estimated total
+margin percentage bp = round_half_up(estimated margin × 10000 / selling price)
+```
+
+This preserves the historical overhead **cost base**, not a percentage of sales.
+Money outputs are integer pesos. Quantities remain exact decimal strings and use
+existing base-unit conversions; reference mass never reinterprets physical stock.
+Each presentation scales exact physical requirements before costing. Direct and
+packaging totals each sum PostgreSQL NUMERIC ratios and round once, half-up; they
+never multiply a pre-rounded unit cost. Individually displayed rounded component
+estimates may differ from the rounded aggregate by a peso. Overhead then rounds
+once on the displayed direct+packaging totals; margin percentage is unavailable
+for a zero selling price. Standalone reads use a repeatable-read read-only snapshot;
+callers already inside a transaction own its isolation.
+
+### Coverage and configuration
+
+- `missing_config`: direct cost unavailable, never zero. Reasons link to physical
+  consumption configuration and policy assignment.
+- `no_inventory`: explicit known direct zero. A known free inventory valuation
+  is also zero; unknown valuation is not.
+- `consume`: only current active components; multiple inputs propagate coverage.
+- Packaging `none`: explicitly known zero for that presentation. A missing policy
+  or missing presentation is **unconfigured**, not “no packaging required”.
+- Known positive stock with full valuation is reliable. Zero/no current valuation
+  is incomplete; negative, partial, warning-bearing valuation or insufficient stock
+  is unreliable. Ineligible packaging is incomplete. Partial known subtotals are
+  diagnostic lower bounds, not totals used for margin.
+- Stock sufficiency uses the combined exact base-unit demand per InventoryItem
+  across direct consumption and presentation packaging. Shared insufficient stock
+  makes both affected sources unreliable; this read never deducts physical stock.
+- Total and exact margin are unavailable unless all required costs are reliable.
+  The UI exposes Complete, Incomplete and Unreliable with actionable reasons; it
+  never calculates price minus an invented zero or calls the estimate net profit.
+
+### Explicit side-effect limits
+
+**Packaging estimate is not physical packaging consumption.** No StockMovement,
+OrderInventoryConsumption, COGS update, InventoryTransaction, FinancialTransaction
+or ledger entry is created by costing or overhead. Physical fulfillment packaging
+belongs to future fulfillment/POS work. Historical Order COGS, delivery/reversal
+facts and ConsumptionDefinition history remain unchanged when current item costs
+or policies change. Overhead is not a recorded expense; estimated margin is not
+net profit and does not necessarily include taxes, rent, actual payroll, utilities,
+aggregate waste or commissions. AOB-7 and global Admin UX Normalization remain
+outside AOB-6.

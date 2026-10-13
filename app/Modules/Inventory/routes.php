@@ -1,9 +1,11 @@
 <?php
 
+use App\Modules\Inventory\Http\Controllers\CostingPolicyController;
 use App\Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
 use App\Modules\Inventory\Http\Controllers\InventoryCategoryController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
 use App\Modules\Inventory\Http\Controllers\InventoryItemController;
+use App\Modules\Inventory\Http\Controllers\ProductCostingController;
 use App\Modules\Inventory\Http\Controllers\ProductInventoryConsumptionController;
 use App\Modules\Inventory\Http\Controllers\ProductionController;
 use App\Modules\Inventory\Http\Controllers\PurchasePresentationController;
@@ -37,3 +39,9 @@ Route::post('/inventory/adjustments/{inventoryAdjustment}/reverse', [InventoryAd
 
 Route::get('/inventory/product-consumption/{product}', [ProductInventoryConsumptionController::class, 'show'])->whereNumber('product')->name('inventory.product-consumption.show');
 Route::post('/inventory/product-consumption/{product}', [ProductInventoryConsumptionController::class, 'store'])->whereNumber('product')->name('inventory.product-consumption.store');
+
+Route::get('/inventory/costing-policies', [CostingPolicyController::class, 'index'])->name('inventory.costing-policies.index');
+Route::post('/inventory/costing-policies', [CostingPolicyController::class, 'store'])->name('inventory.costing-policies.store');
+Route::match(['put', 'patch'], '/inventory/costing-policies/{costingPolicy}', [CostingPolicyController::class, 'update'])->whereNumber('costingPolicy')->name('inventory.costing-policies.update');
+Route::post('/inventory/costing-policies/assignments/{product}', [CostingPolicyController::class, 'assign'])->whereNumber('product')->name('inventory.costing-policies.assign');
+Route::get('/inventory/costing', [ProductCostingController::class, 'index'])->name('inventory.costing.index');
