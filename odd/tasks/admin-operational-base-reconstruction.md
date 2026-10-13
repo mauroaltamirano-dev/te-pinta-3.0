@@ -194,3 +194,60 @@ Functional AOB-3 implementation is verified. Freeze the normalized candidate and
 ## Next step
 
 Freeze the verified normalized AOB-4 candidate, perform primary structured self-review and attempt normal native STATUS/START. Relay its exact consent envelope or observed tooling failure fallback and STOP for candidate-specific user input. No automatic commit or AOB-5.
+
+## AOB-4 closure and AOB-5 authorized scope
+
+AOB-4 closed in local commit `c6ebdd19e660eb38e36e91b712e6027f5ccb627f`, with native approval and acknowledged authority recorded in ignored runtime closure evidence. Advisory R3-stale-preview-body remains a follow-up; AOB-5 does not modify adjustments. AOB-5 initial HEAD is exact and clean, AOB-1–4 present, original dirty checkout fingerprints unchanged.
+
+- [x] **AOB-5/D:** Strict TDD versioned physical definitions, explicit no-inventory vs missing configuration, exact aggregate allocation, immutable historical snapshots/reversals and PostgreSQL invariants/concurrency.
+- [x] **AOB-5/I:** Scalar synchronous fulfillment events, atomic delivered/cancelled transitions, economic edit lock, administrator configuration UI linked from canonical Products. POS context/pricing unchanged.
+- [ ] **AOB-5/V:** Private migration cycle, focused/domain/POS/full regression, static/frontend/build/browser checks, lint baseline comparison, normalized primary inspection and normal native review. Stop before commit.
+
+Route: solo, retained delegation_unverifiable; public effective role/model/effort/UUID missing, root only and no mutable worker. Sequential bounded implementation. Forecast approximately 2,000–3,500 authored lines; one coherent uncommitted candidate, delivery/remote operations not authorized. No automatic work-unit commits because explicit task instructions require review and consent first.
+
+Historical reconciliation: missing configuration blocks fulfillment atomically; no_inventory is explicit known zero with a semantic fact, mode cannot change after identity creation; consume formulas versioned. Nullable unknown cost replaces dirty historical invented zero. Sold product/unit/item snapshots and coverage persist. Aggregate per item before allocating weighted cost. Order locks serialize duplicate delivery/reversal; product identity locks serialize configuration with fulfillment; sorted item locks serialize shared valuation. No recipe expansion or pricing-family coupling.
+
+Allowed surfaces: new narrow Inventory consumption actions/models/controller/request/listeners and incremental migration; Orders fulfillment events/support and UpdateOrder/UpdateOrderStatus hunks; AppServiceProvider listener registration; Inventory routes; existing Product card plus one consumption page; focused Inventory tests/browser; Inventory/testing documentation and this tracker. Committed migrations, dependencies and unrelated UX remain untouched. Local memory mirror pending: host has not registered authoritative runtime identity and forbids attributed writes.
+
+Future limitation: historical delivered→cancelled returns physical stock exactly. Served-food financial refund is not necessarily recoverable stock; separating preparation cancellation, financial return, waste and physical return is deferred to POS/fulfillment, not AOB-5.
+
+
+### AOB-5 final normalized functional evidence (native review/commit pending)
+
+- Initial strict TDD RED: 6 tests, 4 missing-action errors and 2 behavioral/HTTP failures (missing configuration did not block delivery, configuration route absent). First GREEN: 6/34. Expanded final AOB-5 suite: **26 tests / 129 assertions**, including actual independent PHP/PG lock wait-and-resume schedules, idempotent deliveries/listener retries and cancellations/reversal retries, shared-item allocation and committed-history append rejection.
+- Additional observed RED→GREEN SQL corrections: economic snapshots such as cooking surcharge could mutate; added complete economic field guard. A retired formula could be inserted as a new semantic snapshot; require locked current definition/version at source insert. Deferred snapshot validation used mutable item name and current valuation after later replenishment; validate names/basis at transaction capture, preserve historical structural reconciliation. Same-transaction header insertion with an already-linked physical transaction could bypass immediate cost capture; require semantic source first and only same-XID linkage completion. Each correction has a focused failing deterministic log followed by passing checks; no abandoned fixture/environment error is called behavioral RED.
+- Final full backend: **627 tests / 4,555 assertions** passed (83.7 s), including AOB-1–4, Purchases, POS-0 pricing, POS-1 context/access and existing POS-2 floor tests. Separate affected regression before the last isolated source-linkage guard: **184 tests / 1,105 assertions** passed; final full/focused suites cover the renewed guard. No suites overlap on the same DB.
+- Final private migration cycle: up, 22 action/SQL tests, empty rollback restoring exact AOB-4 validator via byte comparison, up, 6 SQL tests / 20 assertions. Seven units and purchases/recipes/adjustments/dining tables remain. Populated down refuses without deleting facts. Committed migrations untouched; no development DB.
+- Browser desktop Chromium + Pixel 7 pass: actual purchase, canonical Product link, explicit missing state, 55→60 g versioning and separate Current/Retired formulas, sale of three units, duplicate delivered consumes exactly 180 g once (1,000→820 g), duplicate cancelled restores once (820→1,000 g), reversed redelivery returns validation error. Mobile screenshot inspected; no horizontal overflow. Initial browser failures were bounded harness assumptions (hidden category, PATCH redirect method/asset-version negotiation, item cards mistaken for table rows); corrected tests, not unrelated production UI.
+- Production build, TypeScript, scoped ESLint/Prettier, 4 shared exact formatter cases, PHPStan level 7 (0 errors), Pint check (24 PHP files) pass. Actual global baseline is **234 inherited**, final **233**, **0 new AOB-5 errors**. One inherited import-order error in the necessarily modified Product card is removed by scoped normalization; no global cleanup and no AOB-4 changes. Do not repeat the older 232 claim as current measured baseline.
+- Products 404 investigation: current and individually inspected historical Settings links target valid `/admin/settings/products`. `/admin/products` is not canonical. The new minimal consumption route is linked from Product cards, verified via HTTP/browser; no alias or catalog redesign is needed.
+- HEAD remains exact `c6ebdd19e660eb38e36e91b712e6027f5ccb627f`, branch `feat/admin-operational-base-reconstruction`. Original dirty checkout HEAD/status/unstaged/staged diff hashes remain unchanged. No dependency/lockfile, committed migration, AOB-4 warning, remote, commit, push, PR, AOB-6/7, global UX or POS-3 mutation.
+- Primary self-review examines the final normalized source/schema/UI/test diff; it is not native or independent approval. Allocation/quantity/transaction provenance, authorization and source/stock locking were inspected against actual private proofs. Remaining limits: native adversarial review and consent are pending; no exhaustive performance/stress proof, future served-food refund semantics deliberately unchanged. Engram attributed mirror/saves remain pending because the host has no registered runtime identity; local recovery preserved without inventing a session.
+
+## AOB-5 next step
+
+Freeze this normalized candidate, record its exact index tree/diff identity and primary self-review, then attempt ordinary native selectorless STATUS and execute only its returned START tokens. Relay the exact candidate consent/failure and STOP for user input. Do not commit, start AOB-6 or repair AOB-4 R3-stale-preview-body.
+
+
+## AOB-5 bounded correction — authorized 2026-10-13
+
+Only restore the baseline cancellation log, add its regression proof, document mandatory category versus nullable classification, and prepare a new review candidate. Preserve escalated lineage `review-0e81f34c6345283d` and frozen tree `80ab436a1b9ab43588bc6ec1a253e2c8b38ee2ec`. No acknowledge/invalidate/abandon, source changes outside this correction, commit, or AOB-6.
+
+### Specs
+
+- **S-AOB5-C1:** Accepted proposal: “corregir únicamente el log dentro de AOB-5 con Strict TDD, documentar la evidencia de categoría y preparar un nuevo candidato para review, preservando la lineage escalada”. User answer: “autorizo”. Baseline log messages: `[Orders] order.cancelled` for cancellation and `[Orders] order.status_changed` otherwise. Existing log context and physical fulfillment semantics remain unchanged.
+- **S-AOB5-C2:** Native R3-null-category premise is contradicted by schema evidence: `inventory_category_id` NOT NULL + FK ON DELETE RESTRICT; `kind` is nullable. Document evidence, not an invented null-category support path or native clearance.
+
+### Tasks
+
+- [x] **AOB5-C1 functional correction (new review/commit pending)** — S-AOB5-C1/C2; solo inline under retained delegation_unverifiable; RED/GREEN logging test, classification/category proof, scoped normalization and affected checks; new candidate consent pending, no commit.
+
+### Log
+
+- **L-AOB5-C1 (2026-10-13)** — User: “autorizo”. AOB-5 remains staged on exact AOB-4 HEAD. Old native capture completed after capacity failure but escalated unknown logging causality; no native approval. Native corroboration of null category does not match private PG schema. User authorizes this bounded correction/new candidate, not an exception or delivery.
+- Allowed edit surfaces: `app/Modules/Orders/Actions/UpdateOrderStatus.php`, `tests/Feature/Inventory/OrderConsumptionRecoveryTest.php`, `docs/INVENTORY.md`, this existing tracker. No frontend, allocator, schema, permissions or AOB-4 changes. Forecast: approximately 50–90 additional authored lines. Engram mirror remains pending under host runtime-identity write restriction; local recovery retained.
+
+- Correction evidence: initial spy assertion order was a harness mistake (discarded); corrected argument-filtered RED observes zero matching `[Orders] order.cancelled` calls. After restoring the baseline conditional message, both message/context and supported nullable-classification proofs pass: 2 tests / 20 assertions. Final normalized AOB-5 focused suite passes 28 / 149, renewed full backend 629 / 4,575, PHPStan 0 errors, Pint two changed PHP files, desktop/Pixel 7 browser 2 passed / 20.9 s. No concurrent suites on the same DB.
+- Existing migration up/tests/empty rollback/up and populated refusal proof remain valid: migration/allocator/frontend/permissions bytes did not change in this correction. Existing frontend/static/build and lint baseline proof (234 inherited, 233 final, 0 new) is retained for unchanged surfaces. Original dirty checkout status/unstaged/staged fingerprints match baseline; own private sessions quiescent, live agent inventory root only.
+- New primary inspection: restore the exact old log message selection and preserve every context field; supported `kind=NULL` item keeps category, can configure consumption, and a rejected SQL null-category mutation leaves the row identical. No defensive support for impossible category state was added. Old native escalation is preserved, not reclassified as approved; corrected native verdict/consent and commit remain pending. Runtime tooling now reports installed Gentle AI 4.1.1 with start_lens_selection capability; no tool installation or repository authority repair was performed by this agent.
+- Next: freeze the corrected full AOB-5 candidate, assess its prospective risk, and follow a new provider preflight/consent. The full candidate includes data/authorization guards, retry/concurrency paths, observable APIs/log/docs, and deterministic cost/quantity logic; choose only those pertinent risk/resilience/readability/reliability lenses. Do not reuse the old target consent, alter the escalated authority, commit or start AOB-6.

@@ -1,4 +1,3 @@
-import { ImageIcon, Megaphone, Pencil } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,8 @@ import {
     CardFooter,
     CardHeader,
 } from '@/components/ui/card';
+import { Link } from '@inertiajs/react';
+import { ImageIcon, Megaphone, Pencil } from 'lucide-react';
 import type { Product } from '../types';
 import { formatPesos } from '../utils';
 
@@ -56,6 +57,12 @@ export function ProductCard({ product, onEdit, onFeature }: ProductCardProps) {
                 </div>
             </CardHeader>
             <CardContent className="grid gap-2 bg-transparent px-5 pb-5 text-xs">
+                <Link
+                    href={`/admin/inventory/product-consumption/${product.id}`}
+                    className="underline"
+                >
+                    Configurar consumo físico
+                </Link>
                 <PriceRow
                     label={
                         product.pricing_family === 'empanada'

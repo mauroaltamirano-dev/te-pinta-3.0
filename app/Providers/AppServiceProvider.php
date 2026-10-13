@@ -7,6 +7,8 @@ use App\Core\Support\TestingDatabaseGuard;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Policies\CustomerPolicy;
 use App\Modules\Identity\Models\User;
+use App\Modules\Inventory\Listeners\RecordDeliveredOrderConsumption;
+use App\Modules\Inventory\Listeners\ReverseCancelledOrderConsumption;
 use App\Modules\Inventory\Models\InventoryCategory;
 use App\Modules\Inventory\Models\InventoryItem;
 use App\Modules\Inventory\Models\PurchasePresentation;
@@ -32,6 +34,8 @@ use App\Modules\Management\Policies\PurchasePolicy;
 use App\Modules\Management\Policies\WalletPolicy;
 use App\Modules\Marketing\Models\FeaturedProduct;
 use App\Modules\Marketing\Policies\FeaturedProductPolicy;
+use App\Modules\Orders\Events\OrderDelivered;
+use App\Modules\Orders\Events\OrderDeliveryCancelled;
 use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Policies\OrderPolicy;
@@ -79,6 +83,8 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Event::listen(OrderPaymentConfirmed::class, RecordConfirmedOrderPayment::class);
+        Event::listen(OrderDelivered::class, RecordDeliveredOrderConsumption::class);
+        Event::listen(OrderDeliveryCancelled::class, ReverseCancelledOrderConsumption::class);
 
         RateLimiter::for('instagram-automation', fn (Request $request) => Limit::perMinute(30)->by($request->ip()));
     }

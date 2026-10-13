@@ -12,6 +12,7 @@ use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Orders\Support\OrderBusinessDate;
+use App\Modules\Orders\Support\OrderPhysicalFulfillment;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +27,7 @@ final readonly class UpdateOrder
         private BuildAdminOrderFormOptions $formOptions,
         private ResolveOrderPayment $payments,
         private OrderBusinessDate $businessDate,
+        private OrderPhysicalFulfillment $fulfillment,
     ) {}
 
     public function execute(
@@ -47,6 +49,8 @@ final readonly class UpdateOrder
 
             $data->assertContext($locked->delivery_type === DeliveryType::DineIn ? $locked->source : OrderSource::Admin);
             $locked->load(['items.compositions', 'toppings']);
+            $previousStatus = $locked->status;
+            $this->fulfillment->assertTransition($locked->id, $previousStatus, $status);
             $wasPaid = $locked->payment_status === PaymentStatus::Paid;
             $oldItems = $this->formOptions->itemQuantities($locked);
             $oldAddons = $this->formOptions->addonQuantities($locked);
@@ -58,6 +62,9 @@ final readonly class UpdateOrder
                 || $locked->delivery_type !== $data->deliveryType
                 || $locked->discount_type !== $data->discountType
                 || $locked->discount_value !== $data->discountValue;
+            if ($economicChange && $this->fulfillment->hasEvidence($locked->id)) {
+                throw ValidationException::withMessages(['items' => 'Inventory fulfillment evidence prevents economic edits.']);
+            }
             if ($wasPaid && $economicChange) {
                 throw ValidationException::withMessages([
                     'payment_status' => 'Un pago confirmado no permite modificar el importe; revertí el movimiento financiero antes de corregirlo.',
@@ -132,6 +139,8 @@ final readonly class UpdateOrder
                     adminId: $adminId,
                 ));
             }
+
+            $this->fulfillment->dispatch($locked->id, $previousStatus, $status, $this->businessDate->today(), $adminId);
 
             return $locked->refresh()->load(['items.compositions', 'toppings']);
         });

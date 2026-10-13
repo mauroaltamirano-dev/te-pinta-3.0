@@ -4,19 +4,28 @@ namespace App\Modules\Orders\Actions;
 
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Support\OrderBusinessDate;
+use App\Modules\Orders\Support\OrderPhysicalFulfillment;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-final class UpdateOrderStatus
+final readonly class UpdateOrderStatus
 {
+    public function __construct(private OrderBusinessDate $businessDate, private OrderPhysicalFulfillment $fulfillment) {}
+
     public function execute(Order $order, OrderStatus $status, int $adminId): Order
     {
-        $previous = $order->status;
-        $order->update(['status' => $status, 'edit_version' => $order->edit_version + 1]);
-        Log::info($status === OrderStatus::Cancelled ? '[Orders] order.cancelled' : '[Orders] order.status_changed', [
-            'module' => 'Orders', 'order_id' => $order->public_id, 'admin_id' => $adminId,
-            'from' => $previous->value, 'to' => $status->value,
-        ]);
+        return DB::transaction(function () use ($order, $status, $adminId): Order {
+            $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $previous = $locked->status;
+            $this->fulfillment->assertTransition($locked->id, $previous, $status);
+            if ($previous !== $status) {
+                $locked->update(['status' => $status, 'edit_version' => $locked->edit_version + 1]);
+                $this->fulfillment->dispatch($locked->id, $previous, $status, $this->businessDate->today(), $adminId);
+            }
+            Log::info($status === OrderStatus::Cancelled ? '[Orders] order.cancelled' : '[Orders] order.status_changed', ['module' => 'Orders', 'order_id' => $locked->public_id, 'admin_id' => $adminId, 'from' => $previous->value, 'to' => $status->value]);
 
-        return $order->refresh();
+            return $order->refresh();
+        });
     }
 }

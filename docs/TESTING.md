@@ -221,3 +221,30 @@ DB `testing` and separate browser DB `testing_pos2_browser`, with one Playwright
 worker. No development DB is touched. If native browser libraries are missing,
 use the local verification container with the worktree and cached browsers
 mounted; do not change application dependencies or system configuration.
+
+
+## AOB-5 consumption reconstruction
+
+Focused suites: `OrderConsumptionRecoveryTest`, `OrderConsumptionConstraintTest` and
+`OrderConsumptionConcurrencyTest` under `tests/Feature/Inventory`. The live schedule
+uses separate fresh PHP subprocesses, never inherited PDO/forked Laravel connections;
+both contenders must be observed in PostgreSQL Lock wait before releasing the holder.
+Scenarios include duplicate deliveries/listener retries, distinct Orders sharing weighted
+layers, duplicate cancellations/reversal retries and committed-history append rejection.
+SQL probes additionally verify economic locks (including no_inventory), missing delivery/
+reversal evidence, immutable formula/mode and retired formula capture rejection.
+
+Run Inventory AOB-1–5 plus Purchases/Production/Adjustments, POS-0 pricing and POS-1
+context/access, then full backend sequentially on the private `aob_testing` DB.
+The migration up/tests/empty rollback/up harness uses `aob5_migration_testing` and
+compares restored AOB-4 validator definitions byte-for-byte. Populated rollback must
+refuse before dropping history. No committed migration is edited.
+
+`tests/e2e/order-consumption-recovery.spec.ts` uses the separate private
+`aob5_playwright_testing` database, one worker, desktop Chromium and Pixel 7.
+It follows canonical Products links, versions 55→60 g, distinguishes Actual/Retiradas,
+creates an actual commercial Order, checks repeat delivery only removes 180 g,
+repeat cancellation returns exactly 180 g and reversed redelivery is rejected.
+Build assets must finish before HTTP/backend/browser tests; never overlap Vite writes
+with requests. Global lint is compared with an actual pre-AOB-5 JSON baseline rather
+than cleaning inherited errors. Ignore runtime logs/artifacts, not source failures.

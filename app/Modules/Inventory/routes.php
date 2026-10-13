@@ -4,6 +4,7 @@ use App\Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
 use App\Modules\Inventory\Http\Controllers\InventoryCategoryController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
 use App\Modules\Inventory\Http\Controllers\InventoryItemController;
+use App\Modules\Inventory\Http\Controllers\ProductInventoryConsumptionController;
 use App\Modules\Inventory\Http\Controllers\ProductionController;
 use App\Modules\Inventory\Http\Controllers\PurchasePresentationController;
 use App\Modules\Inventory\Http\Controllers\RecipeController;
@@ -33,3 +34,6 @@ Route::post('/inventory/adjustments/preview', [InventoryAdjustmentController::cl
 Route::post('/inventory/adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
 Route::get('/inventory/adjustments/{inventoryAdjustment}', [InventoryAdjustmentController::class, 'show'])->name('inventory.adjustments.show');
 Route::post('/inventory/adjustments/{inventoryAdjustment}/reverse', [InventoryAdjustmentController::class, 'reverse'])->name('inventory.adjustments.reverse');
+
+Route::get('/inventory/product-consumption/{product}', [ProductInventoryConsumptionController::class, 'show'])->whereNumber('product')->name('inventory.product-consumption.show');
+Route::post('/inventory/product-consumption/{product}', [ProductInventoryConsumptionController::class, 'store'])->whereNumber('product')->name('inventory.product-consumption.store');
