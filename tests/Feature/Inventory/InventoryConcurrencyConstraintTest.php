@@ -3,6 +3,7 @@
 namespace Tests\Feature\Inventory;
 
 use App\Core\Support\TestingDatabaseGuard;
+use App\Core\Tenancy\RestaurantContext;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Models\InventoryCategory;
 use App\Modules\Inventory\Models\InventoryItem;
@@ -128,6 +129,7 @@ final class InventoryConcurrencyConstraintTest extends TestCase
         );
         // Real conflicting statements with bounded lock waits; no sleeps or race timing assumptions.
         $pdo->exec("SET lock_timeout = '300ms'; SET statement_timeout = '2s'");
+        $pdo->exec("SET app.current_restaurant_id = '".app(RestaurantContext::class)->id()."'");
 
         return $pdo;
     }

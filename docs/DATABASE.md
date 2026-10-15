@@ -9,6 +9,13 @@ PostgreSQL es la base de datos de la aplicación y el límite final de integrida
 - `orders.public_id` obtiene de forma predeterminada un valor de la secuencia de PostgreSQL `order_public_id_seq`, compuesto por `TP-` más seis dígitos con relleno.
 - La asignación de la secuencia es segura ante concurrencia. Los valores son estables y únicos, pero la reversión de transacciones y la actualización de la secuencia pueden crear espacios. Estos espacios son válidos y nunca deben “repararse” con `max(id) + 1`.
 
+## Restaurantes (multi-tenant)
+
+- Toda fila de negocio pertenece a un restaurante: `restaurant_id bigint not null` con FK a `restaurants`. Quedan fuera solo las tablas del framework, `users` (su pertenencia será por membresía) e `inventory_units` (unidades del sistema).
+- El valor por defecto de `restaurant_id` es la configuración de sesión de PostgreSQL `app.current_restaurant_id`, que `App\Core\Tenancy\RestaurantContext` fija en cada conexión. Una escritura sin contexto falla con violación de NOT NULL; las conexiones PDO manuales (tests de concurrencia, scripts) deben ejecutar `SET app.current_restaurant_id = '<id>'`.
+- Hoy todo proceso usa `tenancy.default_restaurant_id` (1, "Te Pinta"). Las claves únicas de negocio (slugs, nombres, códigos, teléfono activo, billetera por defecto, regla activa, ventanas de destacados) son únicas por restaurante.
+- Pendiente antes de un segundo restaurante: aislamiento de lecturas con row-level security (cubre también consultas `DB::table`), numeración de pedidos por restaurante (hoy `order_public_id_seq` es global), validación de mismo restaurante en triggers entre tablas, y configuración inicial por restaurante (`order_settings`, `order_addons`, categorías de egreso, Instagram).
+
 ## Productos y familia de precio
 
 `products.pricing_family` es un enum físico restringido a `empanada` o `unit`, con valor predeterminado `empanada`. La migración clasifica exclusivamente los registros legacy con las tres columnas de precio estructuralmente presentes como `empanada`; aborta si encuentra precios legacy incompletos. No infiere semántica desde texto. Las columnas de media docena y docena se mantienen no nulas para compatibilidad de esquema: en un producto `unit` almacenan el mismo valor que `unit_price` y son inertes para pricing y recursos públicos. Los catálogos legacy que debían ser unit requieren revisión y reclasificación administrativa explícita después de la migración.

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Core\Contracts\ProductPriceProvider;
 use App\Core\Support\TestingDatabaseGuard;
+use App\Core\Tenancy\RestaurantContext;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Policies\CustomerPolicy;
 use App\Modules\Identity\Models\User;
@@ -46,6 +47,7 @@ use App\Modules\Products\Policies\ProductPolicy;
 use App\Modules\Products\Pricing\DatabaseProductPriceProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ProductPriceProvider::class, DatabaseProductPriceProvider::class);
+        $this->app->singleton(
+            RestaurantContext::class,
+            fn () => new RestaurantContext((int) config('tenancy.default_restaurant_id')),
+        );
     }
 
     /**
@@ -81,12 +87,28 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->configureDefaults();
+        $this->configureRestaurantContext();
 
         Event::listen(OrderPaymentConfirmed::class, RecordConfirmedOrderPayment::class);
         Event::listen(OrderDelivered::class, RecordDeliveredOrderConsumption::class);
         Event::listen(OrderDeliveryCancelled::class, ReverseCancelledOrderConsumption::class);
 
         RateLimiter::for('instagram-automation', fn (Request $request) => Limit::perMinute(30)->by($request->ip()));
+    }
+
+    /**
+     * Expose the current restaurant to every PostgreSQL session so that
+     * `restaurant_id` columns default to it.
+     */
+    protected function configureRestaurantContext(): void
+    {
+        $context = $this->app->make(RestaurantContext::class);
+
+        Event::listen(ConnectionEstablished::class, fn (ConnectionEstablished $event) => $context->applyTo($event->connection));
+
+        foreach (DB::getConnections() as $connection) {
+            $context->applyTo($connection);
+        }
     }
 
     /**

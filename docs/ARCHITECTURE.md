@@ -90,6 +90,8 @@ Las vistas previas de precios del frontend llaman a Laravel. Son únicamente inf
 | Ledger inmutable de Management          | El saldo se deriva de entries firmadas; las correcciones crean reversiones o ajustes nuevos y nunca mutan historia financiera.                                                              |
 | Pago de Order como origen financiero    | `paid` sigue siendo estado operativo mutable; `ManagementOrderPayment` es el hecho financiero durable, único por pedido y creado síncronamente en la transición confirmada.                 |
 
+- Multi-tenant en una sola base: cada fila de negocio tiene `restaurant_id`, cuyo valor proviene de la sesión de PostgreSQL (`RestaurantContext`). El aislamiento de lecturas se hará con row-level security, no con scopes de Eloquent, porque gran parte de los read models usa `DB::table`. Detalle en `DATABASE.md`.
+
 ## Aún fuera de alcance
 
 No están implementados los gateways de pago, la automatización de WhatsApp, las promociones, cupones o combos de Marketing, el inventario/stock, la distribución automática de cobros de Orders, la reversión automática al cancelar o desmarcar un pago, la reconciliación histórica, Analytics ni otros tipos de combos de pedidos. Featured Product es únicamente de presentación y no modifica precios.
