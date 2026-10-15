@@ -10,6 +10,7 @@ import SettingsLayout from '@/layouts/settings-layout';
 interface OrderingSettings {
     combined_dozen_raw_price: number;
     combined_dozen_cooked_price: number;
+    combined_half_dozen_surcharge: number;
     delivery_fee: number;
     whatsapp_order_phone: string;
     raw_price_discounts: { unit: number; half_dozen: number; dozen: number };
@@ -49,6 +50,28 @@ export default function GeneralSettings({
                     </p>
                 </header>
                 <form onSubmit={submit} className="grid gap-6 p-5 sm:p-7">
+                    <fieldset className="grid gap-4 rounded-lg border border-admin-border bg-admin-surface p-4">
+                        <legend className="px-1 font-semibold">
+                            Precios derivados — preparación P0
+                        </legend>
+                        <p className="text-sm text-admin-text-secondary">
+                            Este recargo se aplicará una sola vez a cada media
+                            docena combinada. El nuevo cálculo todavía no está
+                            activado en pedidos.
+                        </p>
+                        <MoneyField
+                            id="combined-half-surcharge"
+                            label="Recargo de media docena combinada"
+                            value={form.data.combined_half_dozen_surcharge}
+                            error={form.errors.combined_half_dozen_surcharge}
+                            onChange={(value) =>
+                                form.setData(
+                                    'combined_half_dozen_surcharge',
+                                    value,
+                                )
+                            }
+                        />
+                    </fieldset>
                     <fieldset className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
                         <legend className="px-1 font-semibold">
                             Docena combinada y entrega

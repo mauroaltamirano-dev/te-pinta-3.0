@@ -10,6 +10,8 @@ use Illuminate\Validation\Rule;
 
 final class UpdateProductRequest extends FormRequest
 {
+    use NormalizesHomogeneousSurcharge;
+
     public function authorize(): bool
     {
         return $this->user()?->can('update', $this->route('product')) === true;
@@ -44,6 +46,7 @@ final class UpdateProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->normalizeHomogeneousSurcharge();
         $this->merge([
             'description' => $this->input('description') ?: null,
             'long_description' => $this->input('long_description') ?: null,

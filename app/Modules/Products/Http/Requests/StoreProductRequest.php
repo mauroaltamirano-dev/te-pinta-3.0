@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 final class StoreProductRequest extends FormRequest
 {
+    use NormalizesHomogeneousSurcharge;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', Product::class) === true;
@@ -24,6 +26,7 @@ final class StoreProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->normalizeHomogeneousSurcharge();
         $slug = $this->input('slug');
 
         $this->merge([

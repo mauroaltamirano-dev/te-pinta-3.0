@@ -41,3 +41,5 @@ Rich purchases: [PURCHASES.md](PURCHASES.md) describes coordinated money/stock r
 Recipes and production: [RECIPES_AND_PRODUCTION.md](RECIPES_AND_PRODUCTION.md) describes immutable formulas, current estimates and actual-output historical production/reversal.
 
 Inventory adjustments: [INVENTORY_ADJUSTMENTS.md](INVENTORY_ADJUSTMENTS.md) describes locked physical counts, loss semantics, preview and historical exact reversals.
+
+Derived pricing preparation: [DERIVED_PRICING_FOUNDATION.md](DERIVED_PRICING_FOUNDATION.md) describes the inactive P0-A foundation, exact surcharges, raw conflicts and the P0-B activation boundary.

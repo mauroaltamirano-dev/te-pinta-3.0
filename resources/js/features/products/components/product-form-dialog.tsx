@@ -26,6 +26,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Product, ProductCategory, ProductTag } from '../types';
+import { HomogeneousSurchargePreview } from './homogeneous-surcharge-preview';
 
 interface ProductFormData {
     name: string;
@@ -38,6 +39,7 @@ interface ProductFormData {
     tags: number[];
     unit_price: string;
     half_dozen_price: string;
+    homogeneous_half_dozen_surcharge: string;
     dozen_price: string;
     is_available: boolean;
     sort_order: string;
@@ -76,12 +78,15 @@ export function ProductFormDialog({
         tags: product?.tags.map((tag) => tag.id) ?? [],
         unit_price: product?.unit_price.toString() ?? '',
         half_dozen_price: product?.half_dozen_price.toString() ?? '',
+        homogeneous_half_dozen_surcharge:
+            product?.homogeneous_half_dozen_surcharge ?? '2000',
         dozen_price: product?.dozen_price.toString() ?? '',
         is_available: product?.is_available ?? true,
         sort_order: product?.sort_order.toString() ?? '0',
         image: null,
         remove_image: false,
     });
+    const [usingSurcharge, setUsingSurcharge] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const removeButtonRef = useRef<HTMLButtonElement>(null);
@@ -116,20 +121,22 @@ export function ProductFormDialog({
         event.preventDefault();
 
         form.transform((data) => {
+            const {
+                half_dozen_price,
+                dozen_price,
+                homogeneous_half_dozen_surcharge,
+                ...common
+            } = data;
             const payload =
-                data.pricing_family === 'empanada'
-                    ? data
-                    : (() => {
-                          const {
-                              half_dozen_price,
-                              dozen_price,
-                              ...unitProduct
-                          } = data;
-                          void half_dozen_price;
-                          void dozen_price;
-
-                          return unitProduct;
-                      })();
+                data.pricing_family === 'unit'
+                    ? common
+                    : {
+                          ...common,
+                          dozen_price,
+                          ...(usingSurcharge
+                              ? { homogeneous_half_dozen_surcharge }
+                              : { half_dozen_price }),
+                      };
 
             return product ? { ...payload, _method: 'put' } : payload;
         });
@@ -544,18 +551,74 @@ export function ProductFormDialog({
                             />
                             {form.data.pricing_family === 'empanada' && (
                                 <>
-                                    <PriceField
-                                        id="half-dozen-price"
-                                        label="Media docena"
-                                        value={form.data.half_dozen_price}
-                                        error={form.errors.half_dozen_price}
-                                        onChange={(value) =>
-                                            form.setData(
-                                                'half_dozen_price',
-                                                value,
-                                            )
-                                        }
-                                    />
+                                    {!usingSurcharge && (
+                                        <PriceField
+                                            id="half-dozen-price"
+                                            label="Media docena"
+                                            value={form.data.half_dozen_price}
+                                            error={form.errors.half_dozen_price}
+                                            onChange={(value) =>
+                                                form.setData(
+                                                    'half_dozen_price',
+                                                    value,
+                                                )
+                                            }
+                                        />
+                                    )}
+                                    <div className="sm:col-span-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setUsingSurcharge(
+                                                    !usingSurcharge,
+                                                )
+                                            }
+                                            className="h-auto min-h-11 w-full px-3 py-2 whitespace-normal text-admin-text-primary"
+                                            aria-pressed={usingSurcharge}
+                                        >
+                                            {usingSurcharge
+                                                ? 'Editar precio de media directamente'
+                                                : 'Configurar media mediante recargo'}
+                                        </Button>
+                                        {product?.homogeneous_half_dozen_surcharge && (
+                                            <p className="mt-2 text-xs text-admin-text-secondary">
+                                                Recargo guardado: $
+                                                {
+                                                    product.homogeneous_half_dozen_surcharge
+                                                }
+                                                . No se modifica
+                                                automáticamente.
+                                            </p>
+                                        )}
+                                        <FieldError
+                                            id="homogeneous-surcharge-error"
+                                            message={
+                                                form.errors
+                                                    .homogeneous_half_dozen_surcharge
+                                            }
+                                        />
+                                    </div>
+                                    {usingSurcharge && (
+                                        <HomogeneousSurchargePreview
+                                            error={
+                                                form.errors
+                                                    .homogeneous_half_dozen_surcharge ??
+                                                form.errors.half_dozen_price
+                                            }
+                                            dozen={form.data.dozen_price}
+                                            value={
+                                                form.data
+                                                    .homogeneous_half_dozen_surcharge
+                                            }
+                                            onChange={(value) =>
+                                                form.setData(
+                                                    'homogeneous_half_dozen_surcharge',
+                                                    value,
+                                                )
+                                            }
+                                        />
+                                    )}
                                     <PriceField
                                         id="dozen-price"
                                         label="Docena"

@@ -1,11 +1,13 @@
 <?php
 
 use App\Modules\Products\Http\Controllers\CategoryManagementController;
+use App\Modules\Products\Http\Controllers\HalfDozenPricePreviewController;
 use App\Modules\Products\Http\Controllers\ProductManagementController;
 use App\Modules\Products\Http\Controllers\TagManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/settings/products', [ProductManagementController::class, 'index'])->name('products.index');
+Route::post('/settings/products/half-dozen-preview', HalfDozenPricePreviewController::class)->name('products.half-dozen-preview');
 Route::post('/settings/products', [ProductManagementController::class, 'store'])->name('products.store');
 Route::match(['put', 'patch'], '/settings/products/{product}', [ProductManagementController::class, 'update'])->name('products.update');
 Route::delete('/settings/products/{product}', [ProductManagementController::class, 'destroy'])->name('products.destroy');

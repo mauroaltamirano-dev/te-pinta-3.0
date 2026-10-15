@@ -18,8 +18,12 @@ final class UpdateOrderingSettings
     public function execute(OrderingSettingsData $data): void
     {
         $this->validateRawPrices($data);
+        $this->validateCombinedSurcharge($data);
 
         DB::transaction(function () use ($data): void {
+            if ($data->combinedHalfDozenSurcharge !== null) {
+                $this->updateIntegerSetting(OrderSettingKey::CombinedHalfDozenSurcharge, $data->combinedHalfDozenSurcharge);
+            }
             $this->updateIntegerSetting(OrderSettingKey::CombinedDozenRawPrice, $data->combinedDozenRawPrice);
             $this->updateIntegerSetting(OrderSettingKey::CombinedDozenCookedPrice, $data->combinedDozenCookedPrice);
             $this->updateIntegerSetting(OrderSettingKey::DeliveryFee, $data->deliveryFee);
@@ -74,6 +78,21 @@ final class UpdateOrderingSettings
                     "raw_price_discounts.{$mode}" => 'El descuento crudo no puede superar el menor precio cocinado.',
                 ]);
             }
+        }
+    }
+
+    private function validateCombinedSurcharge(OrderingSettingsData $data): void
+    {
+        if ($data->combinedHalfDozenSurcharge === null
+            || $data->combinedHalfDozenSurcharge === OrderSetting::integer(OrderSettingKey::CombinedHalfDozenSurcharge)) {
+            return;
+        }
+        $conflicts = Product::query()->where('pricing_family', ProductPricingFamily::Empanada)
+            ->where('is_available', true)->whereHas('category', fn ($query) => $query->where('is_active', true))
+            ->whereRaw('dozen_price::bigint + ? >= 12 * unit_price::bigint', [2 * $data->combinedHalfDozenSurcharge])
+            ->orderBy('id')->pluck('name')->all();
+        if ($conflicts !== []) {
+            throw ValidationException::withMessages(['combined_half_dozen_surcharge' => 'El recargo no conserva ahorro por empanada cocinada en: '.implode(', ', $conflicts).'.']);
         }
     }
 

@@ -23,6 +23,7 @@ final class UpdateOrderingSettingsRequest extends FormRequest
         return [
             'combined_dozen_raw_price' => [...$moneyRules, 'lt:combined_dozen_cooked_price'],
             'combined_dozen_cooked_price' => $moneyRules,
+            'combined_half_dozen_surcharge' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
             'delivery_fee' => $moneyRules,
             'whatsapp_order_phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9 ()-]*$/'],
             'raw_price_discounts' => ['required', 'array:unit,half_dozen,dozen'],

@@ -30,6 +30,7 @@ final class OrderingSettingsController
             'orderingSettings' => [
                 'combined_dozen_raw_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice),
                 'combined_dozen_cooked_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice),
+                'combined_half_dozen_surcharge' => OrderSetting::integer(OrderSettingKey::CombinedHalfDozenSurcharge),
                 'delivery_fee' => OrderSetting::integer(OrderSettingKey::DeliveryFee),
                 'whatsapp_order_phone' => OrderSetting::string(OrderSettingKey::WhatsappOrderPhone),
                 'raw_price_discounts' => collect(PriceTier::cases())

@@ -141,3 +141,7 @@ Un producto/addon no disponible, de categoría inactiva o eliminado lógicamente
 3. Actualizá la matriz de `tests/Feature/Orders/OrderPricingEngineTest.php`.
 4. Actualizá las pruebas de snapshots/restricciones si cambia la persistencia.
 5. Actualizá este documento y `PROJECT_MAP.md` si se mueve una responsabilidad.
+
+## Pending derived pricing foundation (P0-A)
+
+The active rules above have not been replaced. See [DERIVED_PRICING_FOUNDATION.md](DERIVED_PRICING_FOUNDATION.md) for the prepared, inactive derived allocator, per-product homogeneous surcharge, configurable mixed-six surcharge, peso HALF-UP arithmetic, raw compatibility constraints and reserved exact schema. P0-B must complete and verify the shared-engine/persistence cutover before these rules can price an order.

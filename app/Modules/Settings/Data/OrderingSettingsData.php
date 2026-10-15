@@ -17,6 +17,7 @@ final readonly class OrderingSettingsData
         public string $whatsappOrderPhone,
         public array $rawPriceDiscounts,
         public array $addons,
+        public ?int $combinedHalfDozenSurcharge = null,
     ) {}
 
     public static function fromRequest(FormRequest $request): self
@@ -25,6 +26,7 @@ final readonly class OrderingSettingsData
         $addons = $request->safe()->array('addons');
 
         return new self(
+            combinedHalfDozenSurcharge: $request->has('combined_half_dozen_surcharge') ? $request->integer('combined_half_dozen_surcharge') : null,
             combinedDozenRawPrice: $request->integer('combined_dozen_raw_price'),
             combinedDozenCookedPrice: $request->integer('combined_dozen_cooked_price'),
             deliveryFee: $request->integer('delivery_fee'),
