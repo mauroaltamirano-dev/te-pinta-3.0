@@ -48,14 +48,36 @@ return new class extends Migration
         'management_outflow_categories_type_code_unique' => ['management_outflow_categories', 'unique (restaurant_id, type, code)'],
     ];
 
+    /** Unique indexes that must hold per restaurant: name => [per-restaurant definition, original definition]. */
     private const SCOPED_UNIQUE_INDEXES = [
-        'customers_active_phone_normalized_unique' => 'customers (restaurant_id, phone_normalized) where phone_normalized is not null and deleted_at is null',
-        'inventory_categories_name_unique' => 'inventory_categories (restaurant_id, lower(name::text))',
-        'inventory_items_name_unique' => 'inventory_items (restaurant_id, lower(name::text))',
-        'inventory_recipe_name_unique' => 'inventory_recipes (restaurant_id, lower(btrim(name::text)))',
-        'costing_policy_name_unique' => 'inventory_costing_policies (restaurant_id, lower(name::text))',
-        'management_distribution_rules_single_active_unique' => 'management_distribution_rules (restaurant_id) where active',
-        'wallets_single_order_payment_default_unique' => 'wallets (restaurant_id) where is_order_payment_default',
+        'customers_active_phone_normalized_unique' => [
+            'customers (restaurant_id, phone_normalized) where phone_normalized is not null and deleted_at is null',
+            'customers (phone_normalized) where phone_normalized is not null and deleted_at is null',
+        ],
+        'inventory_categories_name_unique' => [
+            'inventory_categories (restaurant_id, lower(name::text))',
+            'inventory_categories (lower(name::text))',
+        ],
+        'inventory_items_name_unique' => [
+            'inventory_items (restaurant_id, lower(name::text))',
+            'inventory_items (lower(name::text))',
+        ],
+        'inventory_recipe_name_unique' => [
+            'inventory_recipes (restaurant_id, lower(btrim(name::text)))',
+            'inventory_recipes (lower(btrim(name::text)))',
+        ],
+        'costing_policy_name_unique' => [
+            'inventory_costing_policies (restaurant_id, lower(name::text))',
+            'inventory_costing_policies (lower(name::text))',
+        ],
+        'management_distribution_rules_single_active_unique' => [
+            'management_distribution_rules (restaurant_id) where active',
+            'management_distribution_rules ((1)) where active',
+        ],
+        'wallets_single_order_payment_default_unique' => [
+            'wallets (restaurant_id) where is_order_payment_default',
+            'wallets (is_order_payment_default) where is_order_payment_default',
+        ],
     ];
 
     public function up(): void
@@ -97,9 +119,9 @@ return new class extends Migration
             DB::statement("alter table {$table} add constraint {$name} {$definition}");
         }
 
-        foreach (self::SCOPED_UNIQUE_INDEXES as $name => $definition) {
+        foreach (self::SCOPED_UNIQUE_INDEXES as $name => [$scoped]) {
             DB::statement("drop index {$name}");
-            DB::statement("create unique index {$name} on {$definition}");
+            DB::statement("create unique index {$name} on {$scoped}");
         }
 
         DB::statement('create extension if not exists btree_gist');
@@ -125,9 +147,9 @@ return new class extends Migration
                 ) where (is_enabled)
             SQL);
 
-        foreach (self::SCOPED_UNIQUE_INDEXES as $name => $definition) {
+        foreach (self::SCOPED_UNIQUE_INDEXES as $name => [, $original]) {
             DB::statement("drop index {$name}");
-            DB::statement('create unique index '.$name.' on '.str_replace(['(restaurant_id, ', '(restaurant_id)'], ['(', '((1))'], $definition));
+            DB::statement("create unique index {$name} on {$original}");
         }
 
         foreach (self::SCOPED_UNIQUE_CONSTRAINTS as $name => [$table, $definition]) {

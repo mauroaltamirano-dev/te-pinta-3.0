@@ -19,7 +19,7 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 |---|---|---|---|---|
 | T1 | S1 | inline | done | `03eb3db` (cherry-pick, no conflicts) |
 | T2 | S2 | inline | done | `db3eda9` lock sync, `f322db3` eslint autofix, `694abea` CI Postgres; local: 730 tests pass, pint/phpstan/eslint/prettier/tsc clean. CI run not yet observed (not pushed). |
-| T3 | S3 | inline (explorer mapped schema) | in progress | |
+| T3 | S3 | inline (explorer mapped schema) | verifying | `9660ced`: RED 6/6 failing → GREEN; full suite 736 pass; pint/phpstan clean; migration rollback round-trip OK. Independent verifier running. RDD assess: high, review due. |
 | T4 | S4 | inline | pending | |
 | T5 | S5 | inline | pending | |
 | T6 | S6 | delegated (bounded writer) | pending | |
@@ -31,3 +31,4 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 - L3: Found CI could never pass: Pest declared but missing from `composer.lock`; `package.json` deps missing from `package-lock.json`; no Postgres service. Fixed in T2.
 - L4: Collision reports ~700 "warnings" while plain PHPUnit reports none; triage later (likely PHP 8.5 vendor deprecations).
 - L5: `composer update --lock` reported 7 security advisories in 5 packages; triage in a dependency task (Phase 2).
+- L6: S3 scope refined (lead decision): schema-level tenancy now (column + per-tenant uniques, value from PostgreSQL session setting `app.current_restaurant_id`); read isolation via row-level security, per-tenant order numbering, cross-tenant trigger checks and per-tenant seed settings deferred until a second restaurant — ~40 `DB::table` read paths would bypass an Eloquent global scope, RLS covers them without rewrites.
