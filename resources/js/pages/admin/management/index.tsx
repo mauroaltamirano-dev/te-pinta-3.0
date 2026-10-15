@@ -1,15 +1,13 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import type { WalletCards } from 'lucide-react';
 import {
-    ArrowDown,
     ArrowLeftRight,
-    ArrowUp,
     HandCoins,
     Plus,
     PieChart,
     ReceiptText,
     ShoppingBasket,
     ShieldCheck,
-    WalletCards,
 } from 'lucide-react';
 import { useState } from 'react';
 import { AdminPageShell } from '@/components/shared/admin-page-shell';
@@ -18,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { DistributionFormDialog } from '@/features/management/components/distribution-form-dialog';
 import { DistributionRuleDialog } from '@/features/management/components/distribution-rule-dialog';
 import { DistributionRulesPanel } from '@/features/management/components/distribution-rules-panel';
-import { ManagementPeriodFilter } from '@/features/management/components/management-period-filter';
+import { ManagementOverview } from '@/features/management/components/management-overview';
 import { MovementFormDialog } from '@/features/management/components/movement-form-dialog';
 import { OutflowFormDialog } from '@/features/management/components/outflow-form-dialog';
 import { ReversalDialog } from '@/features/management/components/reversal-dialog';
@@ -26,7 +24,6 @@ import { TransactionHistory } from '@/features/management/components/transaction
 import { TransferFormDialog } from '@/features/management/components/transfer-form-dialog';
 import { WalletFormDialog } from '@/features/management/components/wallet-form-dialog';
 import { WalletGrid } from '@/features/management/components/wallet-grid';
-import { formatManagementMoney } from '@/features/management/presentation';
 import type {
     ManagementPageProps,
     DistributionRule,
@@ -143,12 +140,14 @@ export default function Management({
                                 </Link>
                             </Button>
                         </nav>
-                        <Button
-                            type="button"
-                            onClick={() => setWalletFormOpen(true)}
-                        >
-                            <Plus /> Nueva billetera
-                        </Button>
+                        {activeSection === 'wallets' && (
+                            <Button
+                                type="button"
+                                onClick={() => setWalletFormOpen(true)}
+                            >
+                                <Plus /> Nueva billetera
+                            </Button>
+                        )}
                     </>
                 }
                 navigation={
@@ -167,107 +166,12 @@ export default function Management({
                     data-testid="management-summary-group"
                     className="grid min-w-0 gap-4"
                 >
-                    <ManagementPeriodFilter
-                        key={`${filters.period}:${filters.from}:${filters.to}`}
+                    <ManagementOverview
+                        summary={summary}
+                        wallets={wallets}
                         filters={filters}
+                        sectionHref={sectionHref}
                     />
-                    <section
-                        aria-label="Resumen financiero"
-                        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
-                    >
-                        <SummaryCard
-                            label="Saldo total"
-                            value={summary.total_balance}
-                            description="Todas las billeteras, incluidas las archivadas"
-                            icon={WalletCards}
-                        />
-                        <SummaryCard
-                            label="Ingresos del período"
-                            value={summary.period_income}
-                            description="Movimientos registrados"
-                            icon={ArrowUp}
-                        />
-                        <SummaryCard
-                            label="Compras"
-                            value={summary.period_purchases}
-                            description="Rich + legacy, incluye envío"
-                            icon={ArrowDown}
-                            negative
-                        />
-                        <SummaryCard
-                            label="Retiros personales"
-                            value={summary.period_personal_withdrawal}
-                            description="Separados de la operación"
-                            icon={HandCoins}
-                            negative
-                        />
-                        <SummaryCard
-                            label="Distribuciones internas"
-                            value={summary.period_distribution}
-                            description="Asignaciones del período"
-                            icon={PieChart}
-                        />
-                        <SummaryCard
-                            label="Saldo inicial"
-                            value={summary.period_opening_balance}
-                            description="Antes del período"
-                            icon={WalletCards}
-                        />
-                        <SummaryCard
-                            label="Saldo final"
-                            value={summary.period_closing_balance}
-                            description="Al cierre del período"
-                            icon={WalletCards}
-                        />
-                        <SummaryCard
-                            label="Gastos"
-                            value={
-                                summary.period_expenses +
-                                (summary.period_expense ?? 0)
-                            }
-                            description="Gastos operativos y egresos manuales"
-                            icon={ReceiptText}
-                        />
-                        <SummaryCard
-                            label="Resultado operativo"
-                            value={summary.period_operating_result}
-                            description="Ingresos − compras − gastos; sin retiros personales"
-                            icon={ArrowUp}
-                        />
-                        <SummaryCard
-                            label="Envío de compras"
-                            value={summary.period_purchase_shipping}
-                            description="Incluido en compras, no se suma nuevamente"
-                            icon={ShoppingBasket}
-                        />
-                        <SummaryCard
-                            label="Otros movimientos"
-                            value={summary.period_other_movements}
-                            description="Aperturas y ajustes financieros del período"
-                            icon={WalletCards}
-                        />
-                    </section>
-
-                    <p
-                        role={
-                            summary.reconciliation_difference !== 0
-                                ? 'alert'
-                                : undefined
-                        }
-                        className="text-sm text-admin-text-secondary"
-                    >
-                        Diferencia de reconciliación:{' '}
-                        {formatManagementMoney.format(
-                            summary.reconciliation_difference,
-                        )}
-                        .{' '}
-                        <Link
-                            className="underline"
-                            href={`/admin/management/audit?period=custom&from=${filters.from}&to=${filters.to}`}
-                        >
-                            Ver auditoría del período
-                        </Link>
-                    </p>
                 </div>
 
                 <section
@@ -497,42 +401,5 @@ function OperationButton({
         >
             <Icon /> {label}
         </Button>
-    );
-}
-
-function SummaryCard({
-    label,
-    value,
-    description,
-    icon: Icon,
-    negative = false,
-}: {
-    label: string;
-    value: number;
-    description: string;
-    icon: typeof WalletCards;
-    negative?: boolean;
-}) {
-    return (
-        <article className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <p className="text-sm font-medium text-admin-text-secondary">
-                        {label}
-                    </p>
-                    <p
-                        className={`mt-2 text-2xl font-semibold tabular-nums ${negative ? 'text-destructive' : 'text-white'}`}
-                    >
-                        {formatManagementMoney.format(value)}
-                    </p>
-                    <p className="mt-1 text-xs text-admin-text-tertiary">
-                        {description}
-                    </p>
-                </div>
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-admin-action text-admin-accent">
-                    <Icon className="size-5" aria-hidden="true" />
-                </span>
-            </div>
-        </article>
     );
 }

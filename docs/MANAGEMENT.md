@@ -491,3 +491,32 @@ Summary defaults to inclusive last **30 days**; movements to inclusive last **7 
 Section selection is derived solely from the URL; navigation preserves query parameters and supports reload/direct links/browser history. Wallets, manual financial operations, transfer/distribution/versioning and attachments retain their existing routes and administrator policies. New purchases use the dedicated Rich Purchase flow only; the operations UI does not offer legacy purchases, including inside the expense selector. The legacy outflow backend contract/history remain compatible. Financial movements link rich receipts and their reversals to the original Purchase detail.
 
 No schema migration or PostgreSQL invariant weakening is required. No POS pricing/payment/access contract changes, public-site changes or global visual normalization are included. Widths, headers, tabs, cards, button colors, breadcrumbs/back behavior and technical Inventory/Costing wording remain for **Admin UX Normalization**.
+
+## AUX-2A: operational overview presentation
+
+The shared AUX-1 page shell remains the exterior authority (80rem maximum,
+AdminLayout-only gutters). Panorama now separates three primary indicators—current
+ledger balance, period income and backend operating result—from secondary net
+outflows, opening/closing balances, distributions, financial adjustments, current
+wallet balances and period reconciliation. Shipping remains visible as already
+included in purchases; personal withdrawals remain outside operating result.
+The previous display aggregate of operating plus manual expenses is unchanged.
+No financial query, formula, mutation, authorization or HTTP contract changes.
+
+The current balance and wallet balances are explicitly independent of the selected
+reporting period. Net-zero reporting is not proof of missing history: a purchase
+and its reversal can cancel. The zero-net state says so and links to real operation
+and movement sections instead of asserting that no transactions exist. Audit links
+retain the selected custom reporting dates. URL remains the section authority and
+history filters do not change Panorama totals.
+
+Purchases and Audit stay subordinate navigation links; New wallet appears only in
+the Wallets section. This is the user's AUX-2A boundary: operation dialogs, wallet
+management cards, movement filters/tables, Purchases pages and Audit presentation
+remain for separately approved AUX-2B/C/D candidates. In particular, the inherited
+Wallet-dialog close-focus defect is recorded in TESTING.md for a separate fix.
+Representative fixtures and visual handoffs use a private testing database only.
+
+The two native date controls opt into the dark color scheme and declare es-AR;
+filter values and URLs remain exact ISO business dates. Native widget display
+format is browser-owned; no parallel date parser or calendar dependency is added.

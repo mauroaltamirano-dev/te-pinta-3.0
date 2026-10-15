@@ -127,12 +127,21 @@ test('Management exposes one Rich Purchase entry point and retains financial ope
     await expect(page.getByRole('listbox')).toBeHidden();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
+    const navigation = page.getByRole('navigation', {
+        name: 'Secciones de Gestión',
+    });
+    await navigation
+        .getByRole('link', { name: 'Billeteras', exact: true })
+        .click();
     await page
         .getByRole('button', { name: 'Nueva billetera', exact: true })
         .click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
+    await navigation
+        .getByRole('link', { name: 'Registrar operación', exact: true })
+        .click();
     await page
         .getByRole('button', { name: 'Movimiento manual / Más acciones' })
         .click();

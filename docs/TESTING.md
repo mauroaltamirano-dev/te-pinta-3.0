@@ -274,3 +274,38 @@ native review approval.
 Run `php artisan test tests/Feature/Management/OperationalManagementTest.php` in a private PostgreSQL testing database, followed by the existing Management, Inventory/Purchases, Products, Orders and Identity suites and the complete backend. The focused HTTP tests cover business-period boundaries, signed manual/rich/legacy reversals, ledger balances (including archived wallets), transfers/distributions, shipping separation, staff denial and legacy paid Orders with no financial evidence.
 
 `npx playwright test tests/e2e/operational-management.spec.ts --workers=1` covers desktop/mobile URL navigation, reload/back/forward, independently persistent summary/history filters, canonical purchase/audit routes, purchase-entry-point exclusivity and operational dialogs. Existing AdjustmentRecovery and ProductUnitEconomics tests explicitly snapshot financial tables for waste, COGS and costing isolation. Run builds before HTTP/browser suites, and never run simultaneous suites against the same database. A host without GD cannot supply complete attachment/image regression proof; use the existing local verification runtime with GD and PostgreSQL support, not a dependency change or a skipped test.
+
+## AUX-2A: shared browser history is not an empty database
+
+The AUX-1 `34 passed / 2 failed` result is reproduced unchanged on both
+`d3c970c` (AUX-1) and `426001c` (before AUX-1), using the same four spec files,
+one worker, separate private PostgreSQL databases and their respective builds.
+The Inventory foundation spec runs at positions 16/36 and 34/36, after Adjustment
+recovery/stale-preview specs. Global setup resets once per invocation, not per
+spec or test. The retained data totals 14 physical transactions/movements: two
+purchase receipts, eight adjustments and four reversals. Browser contexts isolate
+sessions, not the database. No AUX-1 production regression was established.
+
+Configuration must not create physical history, but cannot assume unrelated
+history is absent. The foundation test now compares the paginated history response (rows and total)
+before/after category/item/presentation configuration and retains the
+empty-state assertion when that history starts empty. It attaches both snapshots.
+No cleanup/delete, assertion removal without replacement, or domain change is
+needed. The combined run passes 36/36; the isolated empty run passes 2/2.
+
+Run the four existing specs together with `--workers=1`. Never execute simultaneous
+suites against the same DB. `management-overview.spec.ts` additionally seeds
+`Tests\Support\ManagementOverviewSeeder` explicitly in the protected testing
+runtime; it is not part of application/default seeding. Its repeated execution is
+idempotent across serialized browser projects. Real actions produce ledger,
+Rich/legacy purchase, reversal, distribution, transfer and private PNG attachment
+evidence. The focused PHP fixture test asserts exact balances and repeatability;
+browser display checks compare against the real backend response, not a guessed
+shared global total. No screenshot-only HTTP response/DOM/style overrides are used.
+
+Known separate accessibility follow-up: the controlled Wallet dialog does not
+restore focus to its trigger after Escape. A real-browser probe on `426001c`
+returns `restored=false`, active element `BODY`; its source is unchanged by AUX-1
+and AUX-2A. The existing keyboard launch/close behavior is covered, but restoration
+is not reported as passed. Correct it in an explicit functional unit before
+normalizing Management dialogs in AUX-2B; do not silently bundle it into Panorama.

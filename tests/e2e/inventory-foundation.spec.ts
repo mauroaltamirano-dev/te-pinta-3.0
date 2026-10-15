@@ -16,6 +16,9 @@ test('administrator configures classified items and exact purchase presentations
     await expect(
         page.getByRole('heading', { name: 'Inventario físico', exact: true }),
     ).toBeVisible();
+    const historyBefore = JSON.parse(
+        (await page.locator('script[data-page="app"]').textContent()) ?? '{}',
+    ).props.transactions;
     const suffix = test.info().project.name;
 
     await page
@@ -79,9 +82,23 @@ test('administrator configures classified items and exact purchase presentations
     await expect(
         page.getByRole('heading', { name: 'Historial físico' }),
     ).toBeVisible();
-    await expect(
-        page.getByText('Todavía no hay movimientos físicos.'),
-    ).toBeVisible();
+    await page.reload();
+    const historyAfter = JSON.parse(
+        (await page.locator('script[data-page="app"]').textContent()) ?? '{}',
+    ).props.transactions;
+    // Configuration must preserve both existing history and an initially empty history.
+    expect(historyAfter).toEqual(historyBefore);
+    await test.info().attach('inventory-history-invariant', {
+        body: JSON.stringify({ before: historyBefore, after: historyAfter }),
+        contentType: 'application/json',
+    });
+
+    if (historyBefore.total === 0) {
+        await expect(
+            page.getByText('Todavía no hay movimientos físicos.'),
+        ).toBeVisible();
+    }
+
     expect(
         await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth + 1,
