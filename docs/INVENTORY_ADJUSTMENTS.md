@@ -28,7 +28,9 @@ Positive deltas accept an optional explicit non-negative **total** in integer pe
 
 A historical 2 kg loss with -8,000 pesos never changes when tomorrow's price becomes 6,000 pesos/kg. A reversal creates a separate linked adjustment/transaction and the exact opposite movement and optional layer, preserving null cost, original layer linkage and warning provenance. It never consults current valuation. Reversal-of-reversal and duplicate reversal are rejected. Count reversal compensates the original delta; it does not perform a new physical count.
 
-Canonical lowercase UUID plus normalized request HMAC protects creation retries and rejects conflicting reuse. Preview returns transient data only. The client invalidates previews on input changes and ignores responses for earlier revisions; confirmation still recomputes server-side.
+Canonical lowercase UUID plus normalized request HMAC protects creation retries and rejects conflicting reuse. Preview returns transient data only. The client binds each preview to its request identity, input revision and exact submitted payload. Every input edit invalidates confirmation and permits fresh validation; obsolete response bodies, errors and completion callbacks cannot replace a newer result or clear its loading state. Confirmation rechecks that binding synchronously and consumes it before posting; the backend still locks and recomputes server-side. No stock changes until confirmation.
+
+`tests/e2e/adjustment-stale-preview.spec.ts` delays real response bodies after headers and exercises all submitted fields, out-of-order completion, return-to-original inputs, errors and current-preview confirmation. Its two-page stock scenario verifies that an intervening adjustment changes the final locked delta, not the observed physical count. This is AUX-FIX-0, separate from visual normalization; no backend, pricing, authorization or historical contract changes.
 
 ## PostgreSQL boundary
 

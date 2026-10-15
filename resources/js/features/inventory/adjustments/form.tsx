@@ -1,3 +1,5 @@
+import { useForm } from '@inertiajs/react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
@@ -7,8 +9,6 @@ import {
     costCoverageLabels,
 } from '@/features/inventory/recipes/presentation';
 import type { InventoryUnit } from '@/features/inventory/types';
-import { useForm } from '@inertiajs/react';
-import { useRef, useState } from 'react';
 import {
     adjustmentTypes,
     adjustmentWarnings,
@@ -42,16 +42,27 @@ export function AdjustmentForm({
     );
     const [loading, setLoading] = useState(false);
     const revision = useRef(0);
+    const request = useRef(0);
+    const inputs = useRef(form.data);
+    const validated = useRef<(() => boolean) | null>(null);
+    const payload = (data: typeof form.data) =>
+        JSON.stringify({
+            ...data,
+            explicit_total_cost: data.explicit_total_cost || null,
+        });
     const item = items.find(
         (i) => String(i.id) === form.data.inventory_item_id,
     );
     const errors: Record<string, string> = { ...previewErrors, ...form.errors };
     const update = (v: Partial<typeof form.data>) => {
         revision.current++;
+        inputs.current = { ...inputs.current, ...v };
+        validated.current = null;
         setPreview(null);
         setPreviewErrors({});
+        setLoading(false);
         form.clearErrors();
-        form.setData({ ...form.data, ...v });
+        form.setData(inputs.current);
     };
     const attrs = (field: string) => ({
         'aria-invalid': Boolean(errors[field]),
@@ -68,6 +79,13 @@ export function AdjustmentForm({
             onSubmit={async (e) => {
                 e.preventDefault();
                 const version = revision.current;
+                const requestId = ++request.current;
+                const body = payload(inputs.current);
+                const isCurrent = () =>
+                    requestId === request.current &&
+                    version === revision.current &&
+                    body === payload(inputs.current);
+                validated.current = null;
                 setLoading(true);
                 setPreview(null);
                 setPreviewErrors({});
@@ -89,22 +107,22 @@ export function AdjustmentForm({
                                 Accept: 'application/json',
                                 'X-XSRF-TOKEN': token,
                             },
-                            body: JSON.stringify({
-                                ...form.data,
-                                explicit_total_cost:
-                                    form.data.explicit_total_cost || null,
-                            }),
+                            body,
                         },
                     );
 
-                    if (version !== revision.current) {
+                    if (!isCurrent()) {
                         return;
                     }
 
-                    const body = await response.json();
+                    const result = await response.json();
+
+                    if (!isCurrent()) {
+                        return;
+                    }
 
                     if (response.status === 422) {
-                        const messages = body.errors as Record<
+                        const messages = result.errors as Record<
                             string,
                             string[]
                         >;
@@ -117,7 +135,8 @@ export function AdjustmentForm({
                             ),
                         );
                     } else if (response.ok) {
-                        setPreview(body.data as AdjustmentPreview);
+                        validated.current = isCurrent;
+                        setPreview(result.data as AdjustmentPreview);
                     } else {
                         setPreviewErrors({
                             preview:
@@ -125,14 +144,16 @@ export function AdjustmentForm({
                         });
                     }
                 } catch {
-                    if (version === revision.current) {
+                    if (isCurrent()) {
                         setPreviewErrors({
                             preview:
                                 'No se pudo obtener la vista previa. Intentar nuevamente.',
                         });
                     }
                 } finally {
-                    setLoading(false);
+                    if (isCurrent()) {
+                        setLoading(false);
+                    }
                 }
             }}
         >
@@ -307,6 +328,13 @@ export function AdjustmentForm({
             {errors.idempotency_key && (
                 <p role="alert">{errors.idempotency_key}</p>
             )}
+            <p role="status">
+                {loading
+                    ? 'Calculando la vista previa de los datos actuales.'
+                    : preview
+                      ? 'Vista previa actualizada.'
+                      : 'Datos pendientes de validación. Se necesita una nueva vista previa para confirmar.'}
+            </p>
             <Button type="submit" disabled={loading || form.processing}>
                 {loading ? 'Calculando…' : 'Ver vista previa'}
             </Button>
@@ -360,8 +388,21 @@ export function AdjustmentForm({
                     </p>
                     <Button
                         type="button"
-                        disabled={!preview.can_confirm || form.processing}
+                        disabled={
+                            loading || !preview.can_confirm || form.processing
+                        }
                         onClick={() => {
+                            if (
+                                loading ||
+                                form.processing ||
+                                !preview.can_confirm ||
+                                !validated.current?.()
+                            ) {
+                                return;
+                            }
+
+                            validated.current = null;
+                            setPreview(null);
                             form.transform((v) => ({
                                 ...v,
                                 explicit_total_cost:
