@@ -1,6 +1,6 @@
+import type { PropsWithChildren } from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import type { PropsWithChildren } from 'react';
 
 interface FormFieldProps extends PropsWithChildren {
     id: string;

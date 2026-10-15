@@ -1,3 +1,5 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -15,8 +17,6 @@ import {
     productionWarningLabels,
 } from '@/features/inventory/recipes/presentation';
 import type { ProductionBatch } from '@/features/inventory/recipes/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 export default function ShowProduction({
     batch: b,
     business_today,

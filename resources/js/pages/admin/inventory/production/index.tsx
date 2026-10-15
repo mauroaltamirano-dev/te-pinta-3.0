@@ -1,3 +1,4 @@
+import { Head, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
@@ -7,7 +8,6 @@ import {
 } from '@/features/inventory/recipes/presentation';
 import type { ProductionBatch } from '@/features/inventory/recipes/types';
 import type { Pagination } from '@/features/inventory/types';
-import { Head, Link } from '@inertiajs/react';
 export default function Production({
     batches,
 }: {

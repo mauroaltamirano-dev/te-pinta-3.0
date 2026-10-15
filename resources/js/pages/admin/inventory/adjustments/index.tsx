@@ -1,3 +1,4 @@
+import { Head, Link } from '@inertiajs/react';
 import { AdjustmentForm } from '@/features/inventory/adjustments/form';
 import { adjustmentTypes } from '@/features/inventory/adjustments/presentation';
 import type {
@@ -11,7 +12,6 @@ import {
     costCoverageLabels,
 } from '@/features/inventory/recipes/presentation';
 import type { InventoryUnit, Pagination } from '@/features/inventory/types';
-import { Head, Link } from '@inertiajs/react';
 export default function Adjustments({
     items,
     units,

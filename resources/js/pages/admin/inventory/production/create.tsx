@@ -1,3 +1,5 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
@@ -8,8 +10,6 @@ import {
 } from '@/features/inventory/recipes/presentation';
 import type { RecipeVersion } from '@/features/inventory/recipes/types';
 import type { InventoryUnit } from '@/features/inventory/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 export default function CreateProduction({
     versions,
     units,

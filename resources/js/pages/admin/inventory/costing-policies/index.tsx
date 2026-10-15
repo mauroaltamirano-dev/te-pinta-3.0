@@ -1,3 +1,5 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +10,6 @@ import type {
     PolicyPresentation,
 } from '@/features/inventory/costing/types';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 
 type Item = {
     id: number;

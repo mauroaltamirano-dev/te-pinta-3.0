@@ -1,9 +1,9 @@
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import type { PurchaseOptions } from '@/features/purchases/types';
-import { Head, Link, useForm } from '@inertiajs/react';
 interface Line {
     inventory_item_id: string;
     input_unit_id: string;

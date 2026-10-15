@@ -1,12 +1,3 @@
-import { BrandLogo } from '@/components/brand-logo';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     BarChart3,
@@ -24,6 +15,15 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { BrandLogo } from '@/components/brand-logo';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 const navigation = [
     { label: 'Inicio', href: '/admin', icon: Store },

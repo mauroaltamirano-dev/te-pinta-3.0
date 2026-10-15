@@ -1,8 +1,8 @@
+import { useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
-import { useForm } from '@inertiajs/react';
-import { useState } from 'react';
 import type { RecipeOptions, RecipeVersion } from './types';
 
 const selectClass =

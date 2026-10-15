@@ -1,3 +1,13 @@
+import { Link, router, usePage } from '@inertiajs/react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Eye,
+    Paperclip,
+    RotateCcw,
+} from 'lucide-react';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,16 +20,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Link, router, usePage } from '@inertiajs/react';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Eye,
-    Paperclip,
-    RotateCcw,
-} from 'lucide-react';
-import type { FormEvent } from 'react';
-import { useState } from 'react';
 import {
     administratorName,
     formatManagementDate,

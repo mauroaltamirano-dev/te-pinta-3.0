@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { formatInventoryQuantity } from '@/features/inventory/presentation';
 
 type Unit = { id: number; code: string; family: string };
 type Item = {

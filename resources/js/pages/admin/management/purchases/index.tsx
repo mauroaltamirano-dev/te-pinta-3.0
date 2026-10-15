@@ -1,9 +1,9 @@
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
 import { formatManagementMoney as money } from '@/features/management/presentation';
 import type { Purchase, PurchaseOptions } from '@/features/purchases/types';
-import { Head, Link, router, useForm } from '@inertiajs/react';
 interface Props extends PurchaseOptions {
     filters: {
         from?: string;

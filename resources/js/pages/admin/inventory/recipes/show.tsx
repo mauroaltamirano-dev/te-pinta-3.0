@@ -1,3 +1,5 @@
+import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
@@ -11,8 +13,6 @@ import type {
     RecipeOptions,
     RecipePage,
 } from '@/features/inventory/recipes/types';
-import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
 export default function ShowRecipe({
     recipe,
     versions,

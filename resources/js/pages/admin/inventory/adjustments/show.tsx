@@ -1,3 +1,5 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,8 +21,6 @@ import {
     costCoverageLabels,
     formatRecipeMoney as money,
 } from '@/features/inventory/recipes/presentation';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 export default function ShowAdjustment({
     adjustment: a,
     business_today,

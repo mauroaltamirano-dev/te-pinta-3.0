@@ -1,8 +1,8 @@
+import { Head, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
 import type { Recipe } from '@/features/inventory/recipes/types';
 import type { Pagination } from '@/features/inventory/types';
-import { Head, Link } from '@inertiajs/react';
 export default function Recipes({ recipes }: { recipes: Pagination<Recipe> }) {
     return (
         <section className="grid gap-6 text-admin-text-primary">

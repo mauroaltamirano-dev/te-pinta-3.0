@@ -1,3 +1,5 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -15,8 +17,6 @@ import {
 import { AttachmentSection } from '@/features/management/components/attachment-section';
 import { formatManagementMoney as money } from '@/features/management/presentation';
 import type { Purchase } from '@/features/purchases/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 export default function ShowPurchase({
     purchase: p,
     business_today,

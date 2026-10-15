@@ -1,3 +1,4 @@
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -5,7 +6,6 @@ import { percentage } from '@/features/inventory/costing/types';
 import type { CostLine, Economics } from '@/features/inventory/costing/types';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { formatOrderMoney } from '@/features/orders/presentation';
-import { Head, Link, router, useForm } from '@inertiajs/react';
 
 type PolicyOption = { id: number; name: string };
 const statusNames = {

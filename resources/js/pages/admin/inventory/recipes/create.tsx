@@ -1,6 +1,6 @@
+import { Head, Link } from '@inertiajs/react';
 import { RecipeForm } from '@/features/inventory/recipes/recipe-form';
 import type { RecipeOptions } from '@/features/inventory/recipes/types';
-import { Head, Link } from '@inertiajs/react';
 export default function CreateRecipe(props: RecipeOptions) {
     return (
         <section className="grid gap-6 text-admin-text-primary">

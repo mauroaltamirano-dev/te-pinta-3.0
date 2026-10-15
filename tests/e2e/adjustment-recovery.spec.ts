@@ -52,11 +52,13 @@ test('administrator previews a physical count, records loss and reverses exact h
         .click();
     await expect(page).toHaveURL(/\/admin\/management\/purchases\/\d+$/);
     await page.goto('/admin/inventory/adjustments');
+
     if (test.info().project.name === 'chromium') {
         await expect(
             page.getByText('No hay ajustes registrados.', { exact: false }),
         ).toBeVisible();
     }
+
     await expect(
         page.getByRole('heading', {
             name: 'Historial de ajustes',
