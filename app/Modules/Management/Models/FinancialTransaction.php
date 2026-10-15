@@ -82,4 +82,10 @@ final class FinancialTransaction extends Model
     {
         return $this->hasOne(ManagementOrderPayment::class);
     }
+
+    /** @return HasOne<Purchase, $this> */
+    public function purchase(): HasOne
+    {
+        return $this->hasOne(Purchase::class);
+    }
 }

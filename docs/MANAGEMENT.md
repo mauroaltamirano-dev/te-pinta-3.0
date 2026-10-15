@@ -1,6 +1,6 @@
 # Gestión financiera
 
-`Management` reúne la operación financiera administrativa de Te Pinta. La superficie vive en `/admin/management` y muestra **Gestión**. `Inventory` queda reservado para el futuro dominio de stock.
+`Management` reúne la operación financiera administrativa de Te Pinta. La superficie vive en `/admin/management` y muestra **Gestión**. El módulo representa la verdad financiera; `Inventory` representa la verdad física y económica del stock.
 
 ## Alcance actual
 
@@ -17,7 +17,7 @@ Gestión permite:
 - reconciliar el ledger con sus orígenes semánticos mediante findings derivados de solo lectura;
 - revertir una transacción una sola vez mediante un movimiento compensatorio.
 
-La integración con Orders registra el ingreso externo en una billetera predeterminada y, si existe una regla activa, aplica después una distribución interna conservativa. Una compra no incrementa stock.
+La integración con Orders registra el ingreso externo en una billetera predeterminada y, si existe una regla activa, aplica después una distribución interna conservativa. Las compras legacy no incrementan stock; Rich Purchase coordina ledger e Inventory según sus líneas, sin duplicar el hecho financiero.
 
 ## Dos responsabilidades separadas
 
@@ -452,10 +452,42 @@ Los escenarios mutables crean identidades con namespace de proyecto, worker y re
 - reversión automática por cancelar o volver a no pagado;
 - recreación o corrección estructurada del cobro después de una edición económica;
 - Dashboard financiero avanzado, ganancia, rentabilidad o Analytics;
-- integración con Inventory o cualquier modificación automática de stock.
+- gastos financieros automáticos por waste, consumo físico o costing de Inventory.
 
 La separación entre el origen semántico y el ledger se registra en [ADR 0007](decisions/0007-semantic-management-outflows.md). El versionado y conservación de distribuciones se registra en [ADR 0008](decisions/0008-versioned-immutable-management-distributions.md). El límite idempotente y su distribución automática se registra en [ADR 0009](decisions/0009-idempotent-order-payments-in-management.md). La evidencia documental privada y su retención conservadora se registran en [ADR 0011](decisions/0011-private-management-document-attachments.md).
 
 ## Rich Purchase integration
 
-The new Purchase aggregate is documented in [PURCHASES.md](PURCHASES.md). Its ledger impact and attachments use Management; physical receipts and signed cost compensation use Inventory. Existing simple purchases remain historical Management outflows. Existing operating-outflow totals and the Purchase filter include rich and legacy facts with signed reversals; expanded overview metrics remain scoped to AOB-7.
+The new Purchase aggregate is documented in [PURCHASES.md](PURCHASES.md). Its ledger impact and attachments use Management; physical receipts and signed cost compensation use Inventory. Existing simple purchases remain historical Management outflows. Purchase metrics and filters include rich and legacy facts with signed reversals, without converting or duplicating history.
+
+## AOB-7 operational reporting
+
+Balances are ledger sums, never cached wallet attributes. Current balance includes every wallet, including archived history, and every recorded effective date; period opening is the sum before `from`, closing the sum through `to`. Future-dated records affect current booked balance but not an earlier period closing. Wallet/type/category/history filters affect only movements, not the business-wide summary.
+
+The set-based summary aggregates each FinancialTransaction once, then joins its unique semantic source or original source for reversals. Rich Purchase and its financial header are **one** purchase, not two. Legacy purchase outflows remain historical facts and are not converted. Purchases include shipping; shipping and subtotal are exposed separately, without adding shipping a second time. Reversal effects belong to their own effective business date, including when the original purchase is outside the selected period.
+
+Operating result is income minus purchases minus operating expenses (including exceptional manual expenses). Personal withdrawals are reported separately and excluded from that result. Transfers and distributions are internal, globally neutral ledger movements, not operating income or expense. Distribution applied/reversed/net totals remain separate from result. Reconciliation compares period ledger change against income, outflows and signed openings/adjustments; the existing audit remains derived, with no persisted findings or new financial authority.
+
+Inventory waste is not an automatic expense. Historical COGS is not cashflow. Product costing packaging/overhead estimates are not financial transactions or expenses. Management reporting never recalculates stock consumption or invents a payment from Order status: a legacy `paid` Order without ManagementOrderPayment evidence contributes no income.
+
+### Business dates and periods
+
+Reporting uses `financial_transactions.effective_date`, not the UTC creation date, and today's business date uses `orders.timezone` (`America/Argentina/Buenos_Aires`). Manual forms receive the backend's business date; audit form fallbacks use the same business zone, never the browser's timezone. Payment confirmation keeps its existing configured business-date and idempotency contract.
+
+Summary defaults to inclusive last **30 days**; movements to inclusive last **7 days**. Supported periods are `today`, `7_days`, `30_days`, `this_month`, `previous_month`, `custom`; historical `week`/`month` selectors map to 7/30 days. Summary uses `period/from/to`; movements use `history_period/history_from/history_to`. Custom ranges are validated. Existing links supplying only `from/to` still scope both summary and history; a missing custom boundary retains the historical month-start/today fallback. A transaction deep link isolates its effective date. Neither a history filter nor section navigation changes the summary period.
+
+### Canonical routes and operations
+
+| Surface                           | URL                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Panorama                          | `/admin/management?section=panorama` (default without movement filters)                                       |
+| Register operation                | `/admin/management?section=operations`                                                                        |
+| Wallets                           | `/admin/management?section=wallets`                                                                           |
+| Movements                         | `/admin/management?section=movements` (also selected by existing movement-filter/deep links)                  |
+| Rich Purchases list/create/detail | `/admin/management/purchases`, `/admin/management/purchases/create`, `/admin/management/purchases/{purchase}` |
+| Purchase reversal                 | `POST /admin/management/purchases/{purchase}/reverse`                                                         |
+| Audit                             | `/admin/management/audit`                                                                                     |
+
+Section selection is derived solely from the URL; navigation preserves query parameters and supports reload/direct links/browser history. Wallets, manual financial operations, transfer/distribution/versioning and attachments retain their existing routes and administrator policies. New purchases use the dedicated Rich Purchase flow only; the operations UI does not offer legacy purchases, including inside the expense selector. The legacy outflow backend contract/history remain compatible. Financial movements link rich receipts and their reversals to the original Purchase detail.
+
+No schema migration or PostgreSQL invariant weakening is required. No POS pricing/payment/access contract changes, public-site changes or global visual normalization are included. Widths, headers, tabs, cards, button colors, breadcrumbs/back behavior and technical Inventory/Costing wording remain for **Admin UX Normalization**.

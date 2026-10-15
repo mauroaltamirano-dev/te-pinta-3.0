@@ -10,7 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -58,6 +58,7 @@ export function TransactionHistory({
     categories: ManagementOutflowCategory[];
     onReverse: (transaction: ManagementTransaction) => void;
 }) {
+    const { url } = usePage();
     const [walletId, setWalletId] = useState(
         filters.wallet_id?.toString() ?? 'all',
     );
@@ -65,8 +66,8 @@ export function TransactionHistory({
     const [categoryId, setCategoryId] = useState(
         filters.category_id?.toString() ?? 'all',
     );
-    const [from, setFrom] = useState(filters.from ?? '');
-    const [to, setTo] = useState(filters.to ?? '');
+    const [from, setFrom] = useState(filters.history_from ?? '');
+    const [to, setTo] = useState(filters.history_to ?? '');
     const [selectedDetail, setSelectedDetail] =
         useState<ManagementTransaction | null>(null);
     const viewRelatedTransaction = (
@@ -86,7 +87,11 @@ export function TransactionHistory({
         setSelectedDetail(null);
         router.get(
             '/admin/management',
-            { type: fallbackType },
+            {
+                transaction_id: financialTransactionId,
+                section: 'movements',
+                type: fallbackType,
+            },
             { preserveState: true, preserveScroll: true },
         );
     };
@@ -95,11 +100,21 @@ export function TransactionHistory({
         router.get(
             '/admin/management',
             {
+                ...Object.fromEntries(
+                    new URL(url, 'http://localhost').searchParams,
+                ),
+                section: 'movements',
+                wallet_id: walletId === 'all' ? null : walletId,
+                type: type === 'all' ? null : type,
+                category_id: categoryId === 'all' ? null : categoryId,
+                page: null,
+                transaction_id: null,
+                history_period: 'custom',
                 ...(walletId !== 'all' ? { wallet_id: walletId } : {}),
                 ...(type !== 'all' ? { type } : {}),
                 ...(categoryId !== 'all' ? { category_id: categoryId } : {}),
-                ...(from ? { from } : {}),
-                ...(to ? { to } : {}),
+                ...(from ? { history_from: from } : {}),
+                ...(to ? { history_to: to } : {}),
             },
             { preserveState: true, replace: true, preserveScroll: true },
         );
@@ -112,8 +127,13 @@ export function TransactionHistory({
         setTo('');
         router.get(
             '/admin/management',
-            {},
-            { preserveState: true, replace: true, preserveScroll: true },
+            {
+                period: filters.period,
+                from: filters.from,
+                to: filters.to,
+                section: 'movements',
+            },
+            { preserveState: false, preserveScroll: true },
         );
     };
     const filterTypes = [
@@ -131,7 +151,10 @@ export function TransactionHistory({
     );
 
     return (
-        <section className="overflow-hidden rounded-xl border border-admin-border bg-admin-surface">
+        <section
+            data-testid="management-history-group"
+            className="overflow-hidden rounded-xl border border-admin-border bg-admin-surface"
+        >
             <header className="border-b border-admin-border p-4 sm:p-5">
                 <h2 className="text-xl font-semibold text-white">
                     Movimientos
@@ -332,6 +355,14 @@ export function TransactionHistory({
                                                         transaction,
                                                     )}
                                                 </p>
+                                                {transaction.purchase_id && (
+                                                    <Link
+                                                        className="text-admin-accent underline"
+                                                        href={`/admin/management/purchases/${transaction.purchase_id}`}
+                                                    >
+                                                        Ver compra
+                                                    </Link>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-admin-text-secondary">
                                                 <span className="line-clamp-2">
@@ -567,6 +598,14 @@ export function TransactionHistory({
                                                     )}
                                                 </p>
                                             </div>
+                                        )}
+                                        {transaction.purchase_id && (
+                                            <Link
+                                                className="mt-2 block text-admin-accent underline"
+                                                href={`/admin/management/purchases/${transaction.purchase_id}`}
+                                            >
+                                                Ver compra
+                                            </Link>
                                         )}
                                         {transaction.type === 'reversal' && (
                                             <Badge

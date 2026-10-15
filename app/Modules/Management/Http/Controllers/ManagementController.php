@@ -24,6 +24,7 @@ use App\Modules\Management\Data\ReversalData;
 use App\Modules\Management\Data\WalletData;
 use App\Modules\Management\Enums\FinancialTransactionType;
 use App\Modules\Management\Enums\ManagementOutflowType;
+use App\Modules\Management\Http\Requests\ManagementOverviewRequest;
 use App\Modules\Management\Http\Requests\ReverseFinancialTransactionRequest;
 use App\Modules\Management\Http\Requests\StoreDistributionRuleRequest;
 use App\Modules\Management\Http\Requests\StoreDistributionRuleVersionRequest;
@@ -46,16 +47,16 @@ use App\Modules\Management\Models\ManagementOutflowCategory;
 use App\Modules\Management\Models\ManagementTransfer;
 use App\Modules\Management\Models\Wallet;
 use App\Modules\Management\Queries\BuildManagementOverview;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class ManagementController
 {
-    public function index(Request $request, BuildManagementOverview $overview): Response
+    public function index(ManagementOverviewRequest $request, BuildManagementOverview $overview): Response
     {
         Gate::authorize('viewAny', Wallet::class);
         Gate::authorize('viewAny', FinancialTransaction::class);
@@ -63,27 +64,16 @@ final class ManagementController
         Gate::authorize('viewAny', ManagementTransfer::class);
         Gate::authorize('viewAny', DistributionRule::class);
         Gate::authorize('viewAny', ManagementDistribution::class);
-        $defaults = BuildManagementOverview::defaultFilters();
-        $request->merge([
-            'from' => $request->input('from', $defaults['from']),
-            'to' => $request->input('to', $defaults['to']),
-        ]);
-        $validated = $request->validate([
-            'transaction_id' => ['nullable', 'integer', Rule::exists('financial_transactions', 'id')],
-            'wallet_id' => ['nullable', 'integer', Rule::exists('wallets', 'id')],
-            'type' => ['nullable', Rule::in([
-                ...array_column(FinancialTransactionType::cases(), 'value'),
-                ...array_column(ManagementOutflowType::cases(), 'value'),
-            ])],
-            'category_id' => ['nullable', 'integer', Rule::exists('management_outflow_categories', 'id')],
-            'from' => ['required', 'date_format:Y-m-d'],
-            'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
-        ]);
+        $validated = $request->validated();
         $transactionId = isset($validated['transaction_id']) ? (int) $validated['transaction_id'] : null;
         $deepLinkedTransaction = $transactionId === null
             ? null
             : FinancialTransaction::query()->findOrFail($transactionId);
         $filters = [
+            'period' => $validated['period'],
+            'history_period' => $transactionId === null ? $validated['history_period'] : 'custom',
+            'history_from' => $deepLinkedTransaction?->effective_date->toDateString() ?? $validated['history_from'],
+            'history_to' => $deepLinkedTransaction?->effective_date->toDateString() ?? $validated['history_to'],
             'transaction_id' => $transactionId,
             'wallet_id' => $transactionId === null && isset($validated['wallet_id']) ? (int) $validated['wallet_id'] : null,
             'type' => $transactionId === null ? ($validated['type'] ?? null) : null,
@@ -94,6 +84,7 @@ final class ManagementController
         $data = $overview->execute($filters);
 
         return Inertia::render('admin/management/index', [
+            'business_today' => CarbonImmutable::today(config('orders.timezone'))->toDateString(),
             'summary' => $data['summary'],
             'wallets' => $data['wallets']->map(fn (Wallet $wallet): array => (new AdminWalletResource($wallet))->resolve($request))->all(),
             'transactions' => $data['transactions']->through(fn (FinancialTransaction $transaction): array => (new AdminFinancialTransactionResource($transaction))->resolve($request)),

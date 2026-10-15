@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { DistributionFormDialog } from '@/features/management/components/distribution-form-dialog';
 import { DistributionRuleDialog } from '@/features/management/components/distribution-rule-dialog';
 import { DistributionRulesPanel } from '@/features/management/components/distribution-rules-panel';
+import { ManagementPeriodFilter } from '@/features/management/components/management-period-filter';
 import { MovementFormDialog } from '@/features/management/components/movement-form-dialog';
 import { OutflowFormDialog } from '@/features/management/components/outflow-form-dialog';
 import { ReversalDialog } from '@/features/management/components/reversal-dialog';
@@ -17,7 +18,7 @@ import type {
     ManagementTransaction,
     ManagementWallet,
 } from '@/features/management/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowDown,
     ArrowLeftRight,
@@ -32,7 +33,37 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+const sections = [
+    { id: 'panorama', label: 'Panorama' },
+    { id: 'operations', label: 'Registrar operación' },
+    { id: 'wallets', label: 'Billeteras' },
+    { id: 'movements', label: 'Movimientos' },
+] as const;
+
+function requestedSection(url: string) {
+    const query = new URL(url, 'http://localhost').searchParams;
+    const section = query.get('section');
+
+    if (sections.some((candidate) => candidate.id === section)) {
+        return section;
+    }
+
+    return [
+        'transaction_id',
+        'type',
+        'wallet_id',
+        'category_id',
+        'page',
+        'history_period',
+        'history_from',
+        'history_to',
+    ].some((key) => query.has(key))
+        ? 'movements'
+        : 'panorama';
+}
+
 export default function Management({
+    business_today: businessToday,
     wallets,
     transactions,
     summary,
@@ -42,6 +73,14 @@ export default function Management({
     outflow_categories: outflowCategories,
     distribution_rules: distributionRules,
 }: ManagementPageProps) {
+    const { url } = usePage();
+    const activeSection = requestedSection(url);
+    const sectionHref = (section: string) => {
+        const query = new URL(url, 'http://localhost').searchParams;
+        query.set('section', section);
+
+        return `/admin/management?${query}`;
+    };
     const [walletFormOpen, setWalletFormOpen] = useState(false);
     const [editingWallet, setEditingWallet] = useState<ManagementWallet | null>(
         null,
@@ -78,7 +117,7 @@ export default function Management({
     return (
         <>
             <Head title="Gestión" />
-            <section className="grid gap-6 font-orders">
+            <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 font-orders">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p className="text-sm font-medium text-admin-accent">
@@ -119,45 +158,146 @@ export default function Management({
                     </div>
                 </header>
 
-                <section
-                    aria-label="Resumen financiero"
-                    className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+                <nav
+                    aria-label="Secciones de Gestión"
+                    className="flex flex-wrap gap-2"
                 >
-                    <SummaryCard
-                        label="Saldo total"
-                        value={summary.total_balance}
-                        description="Billeteras activas"
-                        icon={WalletCards}
+                    {sections.map((section) => (
+                        <Button
+                            key={section.id}
+                            asChild
+                            variant={
+                                activeSection === section.id
+                                    ? 'default'
+                                    : 'outline'
+                            }
+                        >
+                            <Link
+                                href={sectionHref(section.id)}
+                                aria-current={
+                                    activeSection === section.id
+                                        ? 'page'
+                                        : undefined
+                                }
+                            >
+                                {section.label}
+                            </Link>
+                        </Button>
+                    ))}
+                </nav>
+                <div
+                    hidden={activeSection !== 'panorama'}
+                    data-testid="management-summary-group"
+                    className="grid min-w-0 gap-4"
+                >
+                    <ManagementPeriodFilter
+                        key={`${filters.period}:${filters.from}:${filters.to}`}
+                        filters={filters}
                     />
-                    <SummaryCard
-                        label="Ingresos del período"
-                        value={summary.period_income}
-                        description="Movimientos registrados"
-                        icon={ArrowUp}
-                    />
-                    <SummaryCard
-                        label="Egresos operativos"
-                        value={summary.period_operating_outflow}
-                        description="Compras y gastos del período"
-                        icon={ArrowDown}
-                        negative
-                    />
-                    <SummaryCard
-                        label="Retiros personales"
-                        value={summary.period_personal_withdrawal}
-                        description="Separados de la operación"
-                        icon={HandCoins}
-                        negative
-                    />
-                    <SummaryCard
-                        label="Distribuciones internas"
-                        value={summary.period_distribution}
-                        description="Asignaciones del período"
-                        icon={PieChart}
-                    />
-                </section>
+                    <section
+                        aria-label="Resumen financiero"
+                        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+                    >
+                        <SummaryCard
+                            label="Saldo total"
+                            value={summary.total_balance}
+                            description="Todas las billeteras, incluidas las archivadas"
+                            icon={WalletCards}
+                        />
+                        <SummaryCard
+                            label="Ingresos del período"
+                            value={summary.period_income}
+                            description="Movimientos registrados"
+                            icon={ArrowUp}
+                        />
+                        <SummaryCard
+                            label="Compras"
+                            value={summary.period_purchases}
+                            description="Rich + legacy, incluye envío"
+                            icon={ArrowDown}
+                            negative
+                        />
+                        <SummaryCard
+                            label="Retiros personales"
+                            value={summary.period_personal_withdrawal}
+                            description="Separados de la operación"
+                            icon={HandCoins}
+                            negative
+                        />
+                        <SummaryCard
+                            label="Distribuciones internas"
+                            value={summary.period_distribution}
+                            description="Asignaciones del período"
+                            icon={PieChart}
+                        />
+                        <SummaryCard
+                            label="Saldo inicial"
+                            value={summary.period_opening_balance}
+                            description="Antes del período"
+                            icon={WalletCards}
+                        />
+                        <SummaryCard
+                            label="Saldo final"
+                            value={summary.period_closing_balance}
+                            description="Al cierre del período"
+                            icon={WalletCards}
+                        />
+                        <SummaryCard
+                            label="Gastos"
+                            value={
+                                summary.period_expenses +
+                                (summary.period_expense ?? 0)
+                            }
+                            description="Gastos operativos y egresos manuales"
+                            icon={ReceiptText}
+                        />
+                        <SummaryCard
+                            label="Resultado operativo"
+                            value={summary.period_operating_result}
+                            description="Ingresos − compras − gastos; sin retiros personales"
+                            icon={ArrowUp}
+                        />
+                        <SummaryCard
+                            label="Envío de compras"
+                            value={summary.period_purchase_shipping}
+                            description="Incluido en compras, no se suma nuevamente"
+                            icon={ShoppingBasket}
+                        />
+                        <SummaryCard
+                            label="Otros movimientos"
+                            value={summary.period_other_movements}
+                            description="Aperturas y ajustes financieros del período"
+                            icon={WalletCards}
+                        />
+                    </section>
 
-                <section className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5">
+                    <p
+                        role={
+                            summary.reconciliation_difference !== 0
+                                ? 'alert'
+                                : undefined
+                        }
+                        className="text-sm text-admin-text-secondary"
+                    >
+                        Diferencia de reconciliación:{' '}
+                        {formatManagementMoney.format(
+                            summary.reconciliation_difference,
+                        )}
+                        .{' '}
+                        <Link
+                            className="underline"
+                            href={`/admin/management/audit?period=custom&from=${filters.from}&to=${filters.to}`}
+                        >
+                            Ver auditoría del período
+                        </Link>
+                    </p>
+                </div>
+
+                <section
+                    hidden={activeSection !== 'operations'}
+                    data-testid="management-operations-group"
+                    className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5"
+                >
                     <header>
                         <h2 className="text-xl font-semibold text-white">
                             Registrar operación
@@ -168,12 +308,11 @@ export default function Management({
                         </p>
                     </header>
                     <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-                        <OperationButton
-                            label="Registrar compra"
-                            icon={ShoppingBasket}
-                            disabled={!canCreateOutflow('purchase')}
-                            onClick={() => setOutflowType('purchase')}
-                        />
+                        <Button asChild>
+                            <Link href="/admin/management/purchases/create">
+                                <ShoppingBasket /> Registrar compra
+                            </Link>
+                        </Button>
                         <OperationButton
                             label="Registrar gasto"
                             icon={ReceiptText}
@@ -240,7 +379,11 @@ export default function Management({
                     </div>
                 </section>
 
-                <section className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5">
+                <section
+                    hidden={activeSection !== 'wallets'}
+                    data-testid="management-wallets-group"
+                    className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5"
+                >
                     <header className="mb-4">
                         <h2 className="text-xl font-semibold text-white">
                             Billeteras
@@ -252,21 +395,29 @@ export default function Management({
                     <WalletGrid wallets={wallets} onEdit={editWallet} />
                 </section>
 
-                <DistributionRulesPanel
-                    rules={distributionRules}
-                    onCreate={() => setRuleFormOpen(true)}
-                    onCreateVersion={setVersioningRule}
-                />
+                <div hidden={activeSection !== 'operations'}>
+                    <DistributionRulesPanel
+                        rules={distributionRules}
+                        onCreate={() => setRuleFormOpen(true)}
+                        onCreateVersion={setVersioningRule}
+                    />
+                </div>
 
-                <TransactionHistory
-                    transactions={transactions}
-                    wallets={wallets}
-                    filters={filters}
-                    movementTypes={movementTypes}
-                    outflowTypes={outflowTypes}
-                    categories={outflowCategories}
-                    onReverse={setReversing}
-                />
+                <div
+                    hidden={activeSection !== 'movements'}
+                    data-testid="management-movements-group"
+                >
+                    <TransactionHistory
+                        key={`${filters.history_from}:${filters.history_to}:${filters.wallet_id}:${filters.type}:${filters.category_id}`}
+                        transactions={transactions}
+                        wallets={wallets}
+                        filters={filters}
+                        movementTypes={movementTypes}
+                        outflowTypes={outflowTypes}
+                        categories={outflowCategories}
+                        onReverse={setReversing}
+                    />
+                </div>
             </section>
 
             {walletFormOpen && (
@@ -278,6 +429,7 @@ export default function Management({
             )}
             {movementFormOpen && (
                 <MovementFormDialog
+                    businessToday={businessToday}
                     open={movementFormOpen}
                     onOpenChange={setMovementFormOpen}
                     wallets={activeWallets}
@@ -286,17 +438,21 @@ export default function Management({
             )}
             {outflowType && (
                 <OutflowFormDialog
+                    businessToday={businessToday}
                     key={outflowType}
                     open
                     onOpenChange={(open) => !open && setOutflowType(null)}
                     initialType={outflowType}
                     wallets={activeWallets}
-                    outflowTypes={outflowTypes}
+                    outflowTypes={outflowTypes.filter(
+                        (type) => type.value !== 'purchase',
+                    )}
                     categories={outflowCategories}
                 />
             )}
             {transferFormOpen && (
                 <TransferFormDialog
+                    businessToday={businessToday}
                     open={transferFormOpen}
                     onOpenChange={setTransferFormOpen}
                     wallets={activeWallets}
@@ -304,6 +460,7 @@ export default function Management({
             )}
             {distributionFormOpen && (
                 <DistributionFormDialog
+                    businessToday={businessToday}
                     open={distributionFormOpen}
                     onOpenChange={setDistributionFormOpen}
                     rules={distributionRules}
@@ -326,6 +483,7 @@ export default function Management({
             )}
             {reversing && (
                 <ReversalDialog
+                    businessToday={businessToday}
                     transaction={reversing}
                     onOpenChange={(open) => !open && setReversing(null)}
                 />

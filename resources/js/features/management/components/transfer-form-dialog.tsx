@@ -1,6 +1,3 @@
-import { useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import type { FormEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,23 +16,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import type { FormEvent, ReactNode } from 'react';
+import { managementBusinessToday } from '../presentation';
 import { formatManagementMoney } from '../presentation';
 import type { ManagementWallet } from '../types';
 
-const localToday = () => {
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-
-    return new Date(date.getTime() - offset * 60_000)
-        .toISOString()
-        .slice(0, 10);
-};
-
 export function TransferFormDialog({
+    businessToday,
     open,
     onOpenChange,
     wallets,
 }: {
+    businessToday?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     wallets: ManagementWallet[];
@@ -49,7 +43,7 @@ export function TransferFormDialog({
         source_wallet_id: initialSource,
         destination_wallet_id: initialDestination,
         amount: '',
-        effective_date: localToday(),
+        effective_date: businessToday ?? managementBusinessToday(),
         description: '',
     });
     const destinationWallets = wallets.filter(

@@ -1,6 +1,3 @@
-import { useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -12,26 +9,23 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { managementBusinessToday } from '../presentation';
 import type { ManagementTransaction } from '../types';
 
-const localToday = () => {
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-
-    return new Date(date.getTime() - offset * 60_000)
-        .toISOString()
-        .slice(0, 10);
-};
-
 export function ReversalDialog({
+    businessToday,
     transaction,
     onOpenChange,
 }: {
+    businessToday?: string;
     transaction: ManagementTransaction | null;
     onOpenChange: (open: boolean) => void;
 }) {
     const form = useForm({
-        effective_date: localToday(),
+        effective_date: businessToday ?? managementBusinessToday(),
         description: '',
     });
     const submit = (event: FormEvent<HTMLFormElement>) => {

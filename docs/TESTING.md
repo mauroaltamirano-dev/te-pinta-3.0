@@ -268,3 +268,9 @@ missing-cost explanations and policy removal are asserted. Complete Vite writes
 before requests. Compare actual global lint baseline and final JSON, preserving
 unrelated inherited findings. Tooling/harness failures are not behavioral RED or
 native review approval.
+
+## AOB-7 operational Management
+
+Run `php artisan test tests/Feature/Management/OperationalManagementTest.php` in a private PostgreSQL testing database, followed by the existing Management, Inventory/Purchases, Products, Orders and Identity suites and the complete backend. The focused HTTP tests cover business-period boundaries, signed manual/rich/legacy reversals, ledger balances (including archived wallets), transfers/distributions, shipping separation, staff denial and legacy paid Orders with no financial evidence.
+
+`npx playwright test tests/e2e/operational-management.spec.ts --workers=1` covers desktop/mobile URL navigation, reload/back/forward, independently persistent summary/history filters, canonical purchase/audit routes, purchase-entry-point exclusivity and operational dialogs. Existing AdjustmentRecovery and ProductUnitEconomics tests explicitly snapshot financial tables for waste, COGS and costing isolation. Run builds before HTTP/browser suites, and never run simultaneous suites against the same database. A host without GD cannot supply complete attachment/image regression proof; use the existing local verification runtime with GD and PostgreSQL support, not a dependency change or a skipped test.

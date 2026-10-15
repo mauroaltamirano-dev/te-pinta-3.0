@@ -71,3 +71,11 @@ export const transactionLabel = (transaction: ManagementTransaction) => {
 
 export const administratorName = (administrator: { name: string } | string) =>
     typeof administrator === 'string' ? administrator : administrator.name;
+
+export const managementBusinessToday = () =>
+    new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date());

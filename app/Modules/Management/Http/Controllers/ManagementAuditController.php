@@ -34,7 +34,7 @@ final class ManagementAuditController
             'from' => [Rule::requiredIf($period === 'custom'), 'nullable', 'date_format:Y-m-d'],
             'to' => [Rule::requiredIf($period === 'custom'), 'nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
         ]);
-        $today = CarbonImmutable::today();
+        $today = CarbonImmutable::today(config('orders.timezone'));
         [$from, $to] = match ($period) {
             'today' => [$today->toDateString(), $today->toDateString()],
             '7_days' => [$today->subDays(6)->toDateString(), $today->toDateString()],

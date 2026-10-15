@@ -168,6 +168,7 @@ export interface ManagementAttachment {
 }
 
 export interface ManagementTransaction {
+    purchase_id?: number | null;
     id: number;
     type: ManagementTransactionType;
     description: string | null;
@@ -202,6 +203,18 @@ export interface PaginatedManagementTransactions {
 }
 
 export interface ManagementMetrics {
+    period_opening_balance: number;
+    period_closing_balance: number;
+    period_balance_change: number;
+    period_purchases: number;
+    period_purchase_shipping: number;
+    period_purchase_subtotal: number;
+    period_expenses: number;
+    period_operating_result: number;
+    period_other_movements: number;
+    period_distribution_applied: number;
+    period_distribution_reversed: number;
+    reconciliation_difference: number;
     total_balance: number;
     period_income: number;
     period_operating_outflow: number;
@@ -211,6 +224,16 @@ export interface ManagementMetrics {
 }
 
 export interface ManagementFilters {
+    period:
+        | 'today'
+        | '7_days'
+        | '30_days'
+        | 'this_month'
+        | 'previous_month'
+        | 'custom';
+    history_period: string;
+    history_from: string;
+    history_to: string;
     wallet_id: string | number | null;
     type: ManagementTransactionType | ManagementOutflowType | null;
     category_id: string | number | null;
@@ -229,6 +252,7 @@ export interface ManagementOutflowTypeOption {
 }
 
 export interface ManagementPageProps {
+    business_today: string;
     wallets: ManagementWallet[];
     transactions: PaginatedManagementTransactions;
     summary: ManagementMetrics;

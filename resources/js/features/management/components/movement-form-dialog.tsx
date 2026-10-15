@@ -1,6 +1,3 @@
-import { useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import type { FormEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,23 +16,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import type { FormEvent, ReactNode } from 'react';
+import { managementBusinessToday } from '../presentation';
 import type { ManagementMovementTypeOption, ManagementWallet } from '../types';
 
-const today = () => {
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-
-    return new Date(date.getTime() - offset * 60_000)
-        .toISOString()
-        .slice(0, 10);
-};
-
 export function MovementFormDialog({
+    businessToday,
     open,
     onOpenChange,
     wallets,
     movementTypes,
 }: {
+    businessToday?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     wallets: ManagementWallet[];
@@ -51,7 +45,7 @@ export function MovementFormDialog({
         wallet_id: wallets[0]?.id.toString() ?? '',
         type: movementTypes[0]?.value ?? 'manual_income',
         amount: '',
-        effective_date: today(),
+        effective_date: businessToday ?? managementBusinessToday(),
         description: '',
     });
     const submit = (event: FormEvent<HTMLFormElement>) => {

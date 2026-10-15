@@ -118,7 +118,7 @@ final class BuildManagementAudit
     /** @return array{wallet_id: ?int, type: ?string, severity: ?string, status: ?string, from: string, to: string} */
     public static function defaultFilters(): array
     {
-        $today = CarbonImmutable::today();
+        $today = CarbonImmutable::today(config('orders.timezone'));
 
         return [
             'wallet_id' => null,
@@ -629,7 +629,7 @@ final class BuildManagementAudit
             'description' => $row->message,
             'entity_label' => $row->reference,
             'effective_date' => $row->effectiveDate,
-            'age_days' => $row->effectiveDate === null ? null : (int) CarbonImmutable::parse($row->effectiveDate)->startOfDay()->diffInDays(CarbonImmutable::today()),
+            'age_days' => $row->effectiveDate === null ? null : (int) CarbonImmutable::parse($row->effectiveDate)->startOfDay()->diffInDays(CarbonImmutable::today(config('orders.timezone'))),
             'management_order_payment_id' => $row->entityType === 'order_payment' ? $row->entityId : null,
             'financial_transaction_id' => $row->financialTransactionId,
             'order_public_id' => $row->entityType === 'order_payment' && str_starts_with($row->reference, 'Pedido #')

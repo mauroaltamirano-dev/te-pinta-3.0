@@ -1,6 +1,3 @@
-import { useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,6 +16,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { managementBusinessToday } from '../presentation';
 import { outflowTypeLabels } from '../presentation';
 import type {
     ManagementOutflowCategory,
@@ -27,16 +28,8 @@ import type {
     ManagementWallet,
 } from '../types';
 
-const localToday = () => {
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-
-    return new Date(date.getTime() - offset * 60_000)
-        .toISOString()
-        .slice(0, 10);
-};
-
 export function OutflowFormDialog({
+    businessToday,
     open,
     onOpenChange,
     initialType,
@@ -44,6 +37,7 @@ export function OutflowFormDialog({
     outflowTypes,
     categories,
 }: {
+    businessToday?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     initialType: ManagementOutflowType;
@@ -61,7 +55,7 @@ export function OutflowFormDialog({
         description: '',
         counterparty: '',
         amount: '',
-        effective_date: localToday(),
+        effective_date: businessToday ?? managementBusinessToday(),
     });
     const availableCategories = categories.filter(
         (category) => category.is_active && category.type === form.data.type,

@@ -1,6 +1,3 @@
-import { useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,6 +16,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { managementBusinessToday } from '../presentation';
 import { formatManagementMoney } from '../presentation';
 import type {
     DistributionRule,
@@ -26,21 +27,14 @@ import type {
     ManagementWallet,
 } from '../types';
 
-const localToday = () => {
-    const date = new Date();
-    const offset = date.getTimezoneOffset();
-
-    return new Date(date.getTime() - offset * 60_000)
-        .toISOString()
-        .slice(0, 10);
-};
-
 export function DistributionFormDialog({
+    businessToday,
     open,
     onOpenChange,
     rules,
     wallets,
 }: {
+    businessToday?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     rules: DistributionRule[];
@@ -53,7 +47,7 @@ export function DistributionFormDialog({
         source_wallet_id: '',
         rule_version_id: availableRules[0]?.versions[0]?.id.toString() ?? '',
         amount: '',
-        effective_date: localToday(),
+        effective_date: businessToday ?? managementBusinessToday(),
         description: '',
     });
     const selection = findVersion(availableRules, form.data.rule_version_id);

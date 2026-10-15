@@ -43,6 +43,7 @@ final class AdminFinancialTransactionResource extends JsonResource
         }
 
         return [
+            'purchase_id' => $this->when($this->relationLoaded('purchase'), fn () => $this->purchase->id ?? $this->reversalOf?->purchase?->id),
             'id' => $this->id,
             'type' => $this->type->value,
             'description' => $this->description,
