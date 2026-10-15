@@ -1,3 +1,7 @@
+import { router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { AdminPageShell } from '@/components/shared/admin-page-shell';
+import { AdminSectionNavigation } from '@/components/shared/admin-section-navigation';
 import { Button } from '@/components/ui/button';
 import { CategoryDialog } from '@/features/inventory/components/category-dialog';
 import {
@@ -15,8 +19,6 @@ import type {
     PurchasePresentation,
 } from '@/features/inventory/types';
 import { formatOrderMoney } from '@/features/orders/presentation';
-import { Link, router } from '@inertiajs/react';
-import { useState } from 'react';
 
 interface Props {
     categories: InventoryCategory[];
@@ -59,6 +61,7 @@ export default function Inventory({
     filters,
     valuation,
 }: Props) {
+    const { url } = usePage();
     const [categoryEditor, setCategoryEditor] = useState<
         InventoryCategory | 'new' | null
     >(null);
@@ -82,34 +85,15 @@ export default function Inventory({
         );
 
     return (
-        <section className="grid gap-6 font-orders text-admin-text-primary">
-            <header className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-semibold">
-                        Inventario físico
-                    </h1>
-                    <p className="mt-2 text-sm text-admin-text-secondary">
-                        Insumos, presentaciones de compra, stock e historial
-                        físico. Configurar datos no registra movimientos.
-                    </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button asChild variant="outline">
-                        <Link
-                            href="/admin/inventory/adjustments"
-                            className="underline"
-                        >
-                            Ajustes
-                        </Link>
-                    </Button>
-                    <Button asChild variant="outline">
-                        <Link href="/admin/inventory/recipes">Recetas</Link>
-                    </Button>
-                    <Button asChild variant="outline">
-                        <Link href="/admin/inventory/production">
-                            Producción
-                        </Link>
-                    </Button>
+        <AdminPageShell
+            title="Inventario físico"
+            description="Insumos, presentaciones de compra, stock e historial físico. Configurar datos no registra movimientos."
+            breadcrumbs={[
+                { title: 'Administración', href: '/admin' },
+                { title: 'Inventario', href: '/admin/inventory' },
+            ]}
+            actions={
+                <>
                     <Button
                         variant="outline"
                         onClick={() => setCategoryEditor('new')}
@@ -124,8 +108,31 @@ export default function Inventory({
                     >
                         Nuevo insumo
                     </Button>
-                </div>
-            </header>
+                </>
+            }
+            navigation={
+                <AdminSectionNavigation
+                    label="Secciones de Inventario"
+                    currentUrl={url}
+                    items={[
+                        { label: 'Insumos', href: '/admin/inventory' },
+                        { label: 'Recetas', href: '/admin/inventory/recipes' },
+                        {
+                            label: 'Producción',
+                            href: '/admin/inventory/production',
+                        },
+                        {
+                            label: 'Ajustes',
+                            href: '/admin/inventory/adjustments',
+                        },
+                        {
+                            label: 'Costos de productos',
+                            href: '/admin/inventory/costing',
+                        },
+                    ]}
+                />
+            }
+        >
             <section className="rounded-xl border border-admin-border bg-admin-surface p-4">
                 <h2 className="text-lg font-semibold">Valoración actual</h2>
                 <p className="mt-2 text-xl font-semibold tabular-nums">
@@ -391,6 +398,6 @@ export default function Inventory({
                     onClose={() => setPresentationEditor(null)}
                 />
             )}
-        </section>
+        </AdminPageShell>
     );
 }

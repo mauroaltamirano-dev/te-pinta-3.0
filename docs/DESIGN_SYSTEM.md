@@ -183,7 +183,7 @@ Desde `sm`, los indicadores usan tres columnas y las billeteras se distribuyen e
 
 Marketing e Instagram son destinos hermanos independientes. `/admin/marketing` debe usar coincidencia activa exacta para que la URL heredada `/admin/marketing/instagram` no marque ambas entradas como activas; la ruta anidada heredada no implica una jerarquía visual ni de dominio.
 
-El destino visible **Gestión** enlaza a `/admin/management`. La URL anterior `/admin/inventory` no se conserva como alias porque sólo era un placeholder sin comportamiento; Inventory queda reservado para un futuro dominio de stock.
+El destino visible **Gestión** enlaza a `/admin/management`. `/admin/inventory` es el destino independiente del dominio de stock físico reconstruido; no es un alias de Gestión.
 
 `resources/js/components/brand-logo.tsx` centraliza `public/icons/te-pinta-logo.svg`, el monograma vectorial canónico y autosuficiente utilizado por el panel administrativo de escritorio, el layout simple de autenticación y el favicon. El SVG conserva los trazados originales blancos, incorpora el fondo `admin-accent` y un margen vectorial uniforme; no contiene raster, scripts ni referencias externas. Los wrappers administrativos y de autenticación mantienen `bg-admin-accent`, coherente con el fondo del propio icono. Apple touch y la instalación PWA conservan los derivados PNG versionados de `public/icons/te-pinta-logo-*.png`, incluidos los tamaños y la variante maskable que requieren esas plataformas.
 
@@ -207,3 +207,55 @@ disables geometry changes but retains selection for future consumers.
 Explicit save and dirty feedback replace autosave. Version conflicts preserve
 the draft and explain reconciliation before intentional reload. Obstacles are
 subtle operational geometry, not decorative textures.
+
+## Shared operational Admin compositions (AUX-1)
+
+The approved contract is [ADMIN_OPERATIONAL_UX_AUDIT.md](design/ADMIN_OPERATIONAL_UX_AUDIT.md).
+AUX-1 adopts only the Management and Inventory index headers/navigation; it does
+not normalize their financial tables, forms, dialogs or other operational pages.
+
+- `AdminPageShell` owns the shared 80rem maximum, centered exterior and 24px
+  vertical rhythm. **AdminLayout alone owns the gutters** (20px mobile, 24px from
+  640px). Never add another outer padded/narrow container. Internal simple forms
+  use `admin-form-content` (48rem maximum) without narrowing the shell.
+- Order: optional existing `Breadcrumbs`, `AdminPageHeader`, optional navigation,
+  content. Supply real canonical destinations and preserve relevant query context.
+  A shell provides one H1: Barlow, 24/32px mobile and 28/36px desktop. Section/panel
+  headings use semantic H2/H3 elements with `admin-section-title` (18/24px).
+- `AdminSectionNavigation` uses real Inertia links, `aria-current="page"`, and the
+  caller's URL (including relevant parameters), never local selection state.
+  Management retains its existing URL-to-section and query-preservation contract.
+  On narrow screens the navigation scrolls within its own container; it does not
+  hide destinations or enlarge the document. Keyboard focus remains visible.
+- `admin-ui` is an **explicit local opt-in**, not an AdminLayout/global theme
+  change. The shell deliberately does not apply it to all legacy content. It
+  adapts existing Button/Input/Select/Textarea controls to 44px targets and local
+  focus/boundary tokens. Portalled Dialog/Sheet content must opt in separately
+  when a later slice migrates it; no portal or form migration is included here.
+- Reuse `Button`: default is primary coral with dark surface text (5.98:1);
+  secondary is raised, outline uses the accessible control boundary, ghost is
+  subordinate navigation, destructive is dark red with white text. Existing
+  non-opted-in variants/defaults remain unchanged. Loading callers retain the
+  existing contract: `disabled` plus `aria-busy`, with meaningful visible text.
+- Prefer a simple semantic section for related content without a separate
+  surface. Use existing `Card className="admin-ui admin-panel"` for a grouped
+  surface, `CardHeader` for a semantic heading, and `CardContent` for body/forms.
+  Radius is 12px; padding is 16px mobile / 24px desktop. A table's CardContent can
+  use `admin-panel-table` for edge-to-edge content and local horizontal scrolling.
+  Do not nest panels by default. There is no decorative accent-panel variant.
+- `AdminEmptyState` provides a compact H2/explanation, optional small decorative
+  icon, and optional caller-supplied primary/secondary actions with real routes.
+  It does not manufacture navigation or require a surrounding Card.
+- Spacing tokens are 4/8/12/16/20/24/32px. Existing dark identity remains intact.
+  Decorative borders stay `#393C49`; interactive boundaries use `#7A7F91` for
+  at least 3:1 contrast on the three Admin surfaces. Focus uses coral with offset.
+
+Inventory remains the physical-stock domain at `/admin/inventory`; its section
+links use the existing recipes, production, adjustments and costing routes.
+The desktop sidebar remains the existing 104px rail; mobile retains its More
+sheet. AUX-1 does not introduce a desktop collapse control.
+
+The nine overflow observations documented in AUX-0 remain the baseline for later
+slices; shared primitives alone do not resolve all purchase-page debt. Browser
+coverage lives in `tests/e2e/admin-visual-primitives.spec.ts`, including real page
+navigation/actions and a rendered-component fixture without a production demo route.

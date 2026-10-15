@@ -1,3 +1,19 @@
+import { Head, Link, usePage } from '@inertiajs/react';
+import {
+    ArrowDown,
+    ArrowLeftRight,
+    ArrowUp,
+    HandCoins,
+    Plus,
+    PieChart,
+    ReceiptText,
+    ShoppingBasket,
+    ShieldCheck,
+    WalletCards,
+} from 'lucide-react';
+import { useState } from 'react';
+import { AdminPageShell } from '@/components/shared/admin-page-shell';
+import { AdminSectionNavigation } from '@/components/shared/admin-section-navigation';
 import { Button } from '@/components/ui/button';
 import { DistributionFormDialog } from '@/features/management/components/distribution-form-dialog';
 import { DistributionRuleDialog } from '@/features/management/components/distribution-rule-dialog';
@@ -18,20 +34,6 @@ import type {
     ManagementTransaction,
     ManagementWallet,
 } from '@/features/management/types';
-import { Head, Link, usePage } from '@inertiajs/react';
-import {
-    ArrowDown,
-    ArrowLeftRight,
-    ArrowUp,
-    HandCoins,
-    Plus,
-    PieChart,
-    ReceiptText,
-    ShoppingBasket,
-    ShieldCheck,
-    WalletCards,
-} from 'lucide-react';
-import { useState } from 'react';
 
 const sections = [
     { id: 'panorama', label: 'Panorama' },
@@ -44,7 +46,7 @@ function requestedSection(url: string) {
     const query = new URL(url, 'http://localhost').searchParams;
     const section = query.get('section');
 
-    if (sections.some((candidate) => candidate.id === section)) {
+    if (section && sections.some((candidate) => candidate.id === section)) {
         return section;
     }
 
@@ -117,74 +119,49 @@ export default function Management({
     return (
         <>
             <Head title="Gestión" />
-            <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 font-orders">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-admin-accent">
-                            Operación financiera
-                        </p>
-                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
-                            Gestión
-                        </h1>
-                        <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">
-                            Registrá operaciones y consultá saldos derivados del
-                            historial financiero. Los pedidos confirmados como
-                            pagados ingresan en su billetera receptora.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 sm:flex">
-                        <Button asChild variant="outline">
-                            <Link href="/admin/management/purchases">
-                                Compras
-                            </Link>
-                        </Button>
-                        <Button
-                            asChild
-                            variant="outline"
-                            className="h-11 rounded-lg px-4"
+            <AdminPageShell
+                title="Gestión"
+                description="Registrá operaciones y consultá saldos derivados del historial financiero. Los pedidos confirmados como pagados ingresan en su billetera receptora."
+                breadcrumbs={[
+                    { title: 'Administración', href: '/admin' },
+                    { title: 'Gestión', href: '/admin/management' },
+                ]}
+                actions={
+                    <>
+                        <nav
+                            aria-label="Áreas relacionadas de Gestión"
+                            className="admin-page-actions"
                         >
-                            <Link href="/admin/management/audit">
-                                <ShieldCheck /> Auditoría
-                            </Link>
-                        </Button>
+                            <Button asChild variant="ghost">
+                                <Link href="/admin/management/purchases">
+                                    Compras
+                                </Link>
+                            </Button>
+                            <Button asChild variant="ghost">
+                                <Link href="/admin/management/audit">
+                                    <ShieldCheck /> Auditoría
+                                </Link>
+                            </Button>
+                        </nav>
                         <Button
                             type="button"
-                            variant="outline"
                             onClick={() => setWalletFormOpen(true)}
-                            className="h-11 rounded-lg px-4"
                         >
                             <Plus /> Nueva billetera
                         </Button>
-                    </div>
-                </header>
-
-                <nav
-                    aria-label="Secciones de Gestión"
-                    className="flex flex-wrap gap-2"
-                >
-                    {sections.map((section) => (
-                        <Button
-                            key={section.id}
-                            asChild
-                            variant={
-                                activeSection === section.id
-                                    ? 'default'
-                                    : 'outline'
-                            }
-                        >
-                            <Link
-                                href={sectionHref(section.id)}
-                                aria-current={
-                                    activeSection === section.id
-                                        ? 'page'
-                                        : undefined
-                                }
-                            >
-                                {section.label}
-                            </Link>
-                        </Button>
-                    ))}
-                </nav>
+                    </>
+                }
+                navigation={
+                    <AdminSectionNavigation
+                        label="Secciones de Gestión"
+                        currentUrl={sectionHref(activeSection)}
+                        items={sections.map((section) => ({
+                            label: section.label,
+                            href: sectionHref(section.id),
+                        }))}
+                    />
+                }
+            >
                 <div
                     hidden={activeSection !== 'panorama'}
                     data-testid="management-summary-group"
@@ -418,7 +395,7 @@ export default function Management({
                         onReverse={setReversing}
                     />
                 </div>
-            </section>
+            </AdminPageShell>
 
             {walletFormOpen && (
                 <WalletFormDialog
