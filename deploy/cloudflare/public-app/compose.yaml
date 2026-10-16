@@ -6,9 +6,9 @@ services:
         env_file:
             - ${PUBLIC_APP_ENV_FILE:-../../tailscale/.env}
         ports:
-            - 127.0.0.1:8084:80
+            - 127.0.0.1:${PUBLIC_APP_PORT:-8084}:80
         volumes:
-            - ../../../storage/app/public:/var/www/html/storage/app/public:ro
+            - ${APP_STORAGE_ROOT:-../../../storage}/app/public:/var/www/html/storage/app/public:ro
             - public-app-logs:/var/www/html/storage/logs
         networks:
             - database
