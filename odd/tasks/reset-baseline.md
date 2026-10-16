@@ -22,7 +22,7 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 | T3 | S3 | inline (explorer mapped schema) | done | `9660ced`, `a81db4e`, `25aebb4`: RED→GREEN, 737 tests pass, pint/phpstan clean, rollback round-trip exact. Independent verifier: PASS, no blockers. RDD review (risk+reliability, range `694abea..a81db4e`): approved and acknowledged (lineage review-de2cbe66d440dbbd); critical reconnect claim refuted, now pinned by test. |
 | T4 | S4 | inline | done | `7319c2e`, `4013b5b`, current HEAD: rehearsal on restored prod copy PASSED (43 tables count+hash, wallet balances, stock, order totals reconciled; second import refused unchanged; broken source rolled back). Independent verifier: no data defects; blockers B1 (report lacked balances/stock) and B2 (no repeatable test) fixed in `4013b5b`, recheck by lead (rehearsal). RDD review (risk+resilience+reliability, `a81db4e..4013b5b`): approved and acknowledged; advisories addressed in follow-up commit. |
 | T5 | S5 | inline | done | RED 2/2 (returned 2026-10-16 at 23:30 ART) → GREEN; Inventory suite 176 pass; pint/phpstan clean. Commit below. |
-| T6 | S6 | delegated (bounded writer) | pending | |
+| T6 | S6 | delegated (bounded writer; trigger: context backstop, ~13k lines of docs to read) | done | 10 active docs (1,144 lines) + ADR 0012; 17 docs, design refs and 10 logbooks archived under docs/archive; links resolve; diff within declared surfaces; parent spot check UpdateOrder.php:68-71 confirmed; Makefile doc links fixed by parent. |
 
 ## Log
 
@@ -38,3 +38,4 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 - L10: Prod data finding: 3 paid orders (2026-08-13/14) without payment_method; `orders_payment_matches_total` is NOT VALID in prod and the import keeps the same exemption. Packaging costing policy in prod is named "Test" (possible test data; imported as-is).
 - L11: Open before cutover: trigger re-validation is not automated (one-off replay on 2026-10-16 accepted all rows); README documents it. `/admin/marketing/instagram` returns 500 when the Instagram media base URL env is missing — should degrade gracefully (follow-up).
 - L12 (lead decision): S5 narrowed. Porting the 400+ line reconciliation and economic-performance read models now would be rewritten by Phase 4 (consumption moment and payments change); they stay in the archive tag with their tests as scenario sources.
+- L13: Docs writer confirmed extra boundary violations: Products↔Orders cycle (`NormalizesHomogeneousSurcharge` reads `OrderSetting`), Inventory uses Orders' pricing engine and tables. Derived pricing classes still have no production caller (wired in O-05).
