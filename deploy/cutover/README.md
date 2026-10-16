@@ -33,8 +33,11 @@ Row triggers and FK checks are disabled only during the bulk copy
 (`session_replication_role = replica`). The import does not re-run this
 release's validation triggers; on 2026-10-16 a replay with triggers enabled
 accepted every imported row (except append-only guards, which reject any
-replay by design). New production data written before cutover is covered
-only by the rehearsal below, so run it right before the cutover.
+replay by design). The rehearsal uses the same replica-mode load, so it does
+not re-validate production rows written after that date: before the cutover,
+repeat the trigger replay on the rehearsal target, or accept that those rows
+passed only the legacy triggers. The orphan check covers single-column
+foreign keys; the import refuses to run if a composite one is ever added.
 
 Sequences are not rolled back by PostgreSQL: after a failed import, use a
 freshly migrated target again (the import sets every sequence explicitly).

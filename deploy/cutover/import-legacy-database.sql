@@ -242,7 +242,15 @@ begin
     select 'inventory_costing_policy_packaging_components',
            (select count(*) from legacy.inventory_costing_policy_packaging_components),
            (select count(*) from public.inventory_costing_policy_packaging_components),
-           null, null;
+           (select md5(string_agg(r::text, ',' order by r::text)) from (
+               select id, costing_policy_id, commercial_quantity, inventory_item_id, quantity, unit_id, base_quantity
+               from legacy.inventory_costing_policy_packaging_components
+           ) r),
+           (select md5(string_agg(r::text, ',' order by r::text)) from (
+               select c.id, p.costing_policy_id, p.commercial_quantity, c.inventory_item_id, c.quantity, c.unit_id, c.base_quantity
+               from public.inventory_costing_policy_packaging_components c
+               join public.inventory_costing_policy_presentations p on p.id = c.presentation_id
+           ) r);
 
     if exists (select 1 from import_report r where r.legacy_rows <> r.imported_rows or r.legacy_hash is distinct from r.imported_hash) then
         raise exception 'import verification failed: %', (
@@ -259,6 +267,13 @@ declare
     fk record;
     orphans bigint;
 begin
+    if exists (
+        select 1 from pg_constraint c join pg_namespace n on n.oid = c.connamespace
+        where c.contype = 'f' and n.nspname = 'public' and cardinality(c.conkey) > 1
+    ) then
+        raise exception 'composite foreign keys exist; extend the orphan check before importing';
+    end if;
+
     for fk in
         select c.conrelid::regclass as child, a.attname as child_column,
                c.confrelid::regclass as parent, pa.attname as parent_column
