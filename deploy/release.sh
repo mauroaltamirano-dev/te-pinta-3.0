@@ -8,7 +8,8 @@
 #                     healthy -> smoke test. A failed smoke test switches the
 #                     application back to the previous release.
 #   rollback          Switch the application back to the previous release.
-#                     Database migrations are not reverted.
+#                     Database migrations are not reverted. It swaps current
+#                     and previous: running it twice returns to the newer one.
 #   status            Show the current and previous releases and running images.
 #
 # deploy and rollback require RELEASE_CONFIRM=yes.
@@ -20,7 +21,7 @@
 #   OPERATIONAL_PROJECT     Compose project of app + scheduler (tailscale)
 #   PUBLIC_PROJECT          Compose project of the public app  (public-app)
 #   APP_PORT / PUBLIC_APP_PORT  loopback ports                  (8082 / 8084)
-#   DATABASE_DOCKER_NETWORK database network                    (tepinta30_sail)
+#   DATABASE_DOCKER_NETWORK database network                    (tepinta-production)
 #   BACKUP_COMMAND          run before migrating   (~/tepinta-ops/backup-db.sh)
 #   SAIL_IMAGE              build base image                    (sail-8.5/app)
 set -euo pipefail
@@ -31,7 +32,7 @@ operational_project=${OPERATIONAL_PROJECT:-tailscale}
 public_project=${PUBLIC_PROJECT:-public-app}
 export APP_PORT=${APP_PORT:-8082}
 export PUBLIC_APP_PORT=${PUBLIC_APP_PORT:-8084}
-export DATABASE_DOCKER_NETWORK=${DATABASE_DOCKER_NETWORK:-tepinta30_sail}
+export DATABASE_DOCKER_NETWORK=${DATABASE_DOCKER_NETWORK:-tepinta-production}
 backup_command=${BACKUP_COMMAND:-$HOME/tepinta-ops/backup-db.sh}
 state_file="$release_home/state"
 log_file="$release_home/releases.log"
@@ -132,6 +133,7 @@ build() {
     mkdir -p "$release_home"
 
     if [[ ! -d $directory ]]; then
+        rm -rf "$directory.partial"
         mkdir "$directory.partial"
         git -C "$repository" archive "$commit" | tar -x -C "$directory.partial"
         mv "$directory.partial" "$directory"

@@ -8,7 +8,7 @@ Laravel Sail (Docker) provides PHP 8.5, PostgreSQL 18 and Node; PHP, Composer an
 
 ```bash
 cp .env.example .env
-# Set a non-empty local DB_PASSWORD in .env.
+# Set a non-empty local DB_PASSWORD and DB_HOST=pgsql-dev (the Sail database service) in .env.
 make setup    # composer install (container), sail up, APP_KEY if empty, migrate, npm ci
 make admin    # interactive `artisan admin:create`
 make dev      # sail up, migrate, Vite dev server
