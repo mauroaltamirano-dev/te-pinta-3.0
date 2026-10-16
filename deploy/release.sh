@@ -176,10 +176,10 @@ deploy() {
     fi
 
     if [[ -n $current ]]; then
-        log "deploy $release: smoke test failed, switching back to $current"
+        log "deploy $release: switch or smoke test failed, switching back to $current"
         switch_to "$current" || log "rollback to $current did not become healthy"
     else
-        log "deploy $release: smoke test failed and there is no previous release to switch back to"
+        log "deploy $release: switch or smoke test failed and there is no previous release to switch back to"
     fi
     exit 1
 }
