@@ -25,7 +25,7 @@ final class InventoryAdjustmentController
     {
         Gate::authorize('viewAny', InventoryItem::class);
 
-        return Inertia::render('admin/inventory/adjustments/index', ['adjustments' => InventoryAdjustment::query()->with('item.baseUnit', 'unit', 'reversal', 'creator')->latest('id')->paginate(20), 'items' => InventoryItem::query()->where('tracks_stock', true)->where('is_active', true)->with('baseUnit', 'category')->orderBy('name')->get(), 'units' => InventoryUnit::query()->get(), 'business_today' => now()->toDateString()]);
+        return Inertia::render('admin/inventory/adjustments/index', ['adjustments' => InventoryAdjustment::query()->with('item.baseUnit', 'unit', 'reversal', 'creator')->latest('id')->paginate(20), 'items' => InventoryItem::query()->where('tracks_stock', true)->where('is_active', true)->with('baseUnit', 'category')->orderBy('name')->get(), 'units' => InventoryUnit::query()->get(), 'business_today' => CarbonImmutable::today(config('orders.timezone'))->toDateString()]);
     }
 
     public function preview(StoreInventoryAdjustmentRequest $r, PreviewInventoryAdjustment $action): JsonResponse
@@ -44,7 +44,7 @@ final class InventoryAdjustmentController
     {
         Gate::authorize('viewAny', InventoryItem::class);
 
-        return Inertia::render('admin/inventory/adjustments/show', ['adjustment' => $inventoryAdjustment->load('item.baseUnit', 'unit', 'creator', 'transaction.movements.costLayer', 'reversal', 'reversalOf'), 'business_today' => now()->toDateString()]);
+        return Inertia::render('admin/inventory/adjustments/show', ['adjustment' => $inventoryAdjustment->load('item.baseUnit', 'unit', 'creator', 'transaction.movements.costLayer', 'reversal', 'reversalOf'), 'business_today' => CarbonImmutable::today(config('orders.timezone'))->toDateString()]);
     }
 
     public function reverse(ReverseInventoryAdjustmentRequest $r, InventoryAdjustment $inventoryAdjustment, ReverseInventoryAdjustment $action): RedirectResponse

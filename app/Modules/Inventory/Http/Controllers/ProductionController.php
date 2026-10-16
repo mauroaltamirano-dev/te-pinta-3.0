@@ -40,7 +40,7 @@ final class ProductionController
             $v->setAttribute('current_cost', $estimates[$v->id]);
         }
 
-        return Inertia::render('admin/inventory/production/create', ['versions' => $versions, 'units' => InventoryUnit::query()->get(), 'business_today' => now()->toDateString()]);
+        return Inertia::render('admin/inventory/production/create', ['versions' => $versions, 'units' => InventoryUnit::query()->get(), 'business_today' => CarbonImmutable::today(config('orders.timezone'))->toDateString()]);
     }
 
     public function store(StoreProductionBatchRequest $request, CreateProductionBatch $action): RedirectResponse
@@ -58,7 +58,7 @@ final class ProductionController
         $productionBatch->setAttribute('historical_cost_per_output_unit', $productionBatch->total_cost === null ? null : DecimalMath::roundIntegerTimesRatio($productionBatch->total_cost, '1', $productionBatch->actual_output_quantity));
         $productionBatch->setAttribute('output_unit', InventoryUnit::query()->findOrFail($productionBatch->output_unit_id));
 
-        return Inertia::render('admin/inventory/production/show', ['batch' => $productionBatch, 'business_today' => now()->toDateString()]);
+        return Inertia::render('admin/inventory/production/show', ['batch' => $productionBatch, 'business_today' => CarbonImmutable::today(config('orders.timezone'))->toDateString()]);
     }
 
     public function reverse(ReverseProductionBatchRequest $request, ProductionBatch $productionBatch, ReverseProductionBatch $action): RedirectResponse
