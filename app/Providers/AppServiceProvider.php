@@ -48,6 +48,7 @@ use App\Modules\Products\Pricing\DatabaseProductPriceProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Events\ConnectionEstablished;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -88,6 +89,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
         $this->configureRestaurantContext();
+
+        // The /up health check must fail when the database is unreachable.
+        Event::listen(DiagnosingHealth::class, fn () => DB::select('select 1'));
 
         Event::listen(OrderPaymentConfirmed::class, RecordConfirmedOrderPayment::class);
         Event::listen(OrderDelivered::class, RecordDeliveredOrderConsumption::class);
