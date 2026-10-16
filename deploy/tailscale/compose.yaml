@@ -21,7 +21,8 @@ services:
         networks:
             database:
                 aliases:
-                    - tepinta-operational
+                    # n8n calls the app by this name; staging must use another one.
+                    - ${OPERATIONAL_ALIAS:-tepinta-operational}
         healthcheck:
             test: [CMD, curl, --fail, --silent, http://127.0.0.1/up]
             interval: 15s

@@ -94,10 +94,11 @@ switch_to() {
     APP_IMAGE=$(image "$release")
     PUBLIC_APP_IMAGE=$APP_IMAGE
 
+    # Called as an `if` condition, where `set -e` does not apply: check each step.
     compose "$operational_project" "$directory/deploy/tailscale/compose.yaml" \
-        up --detach --no-build --pull never --wait --wait-timeout 90 app scheduler
+        up --detach --no-build --pull never --wait --wait-timeout 90 app scheduler || return 1
     compose "$public_project" "$directory/deploy/cloudflare/public-app/compose.yaml" \
-        up --detach --no-build --pull never --wait --wait-timeout 90 public-app
+        up --detach --no-build --pull never --wait --wait-timeout 90 public-app || return 1
 }
 
 expect_status() {
@@ -153,6 +154,12 @@ deploy() {
     require_runtime_settings
     require_release "$release"
     current=$(state current)
+    if [[ $release == "$current" ]]; then
+        echo "Release $release is already current." >&2
+        exit 1
+    fi
+    exec 9> "$release_home/.lock"
+    flock --nonblock 9 || { echo "Another release operation is running." >&2; exit 1; }
 
     log "deploy $release (current: ${current:-none}): backup"
     "$backup_command"
@@ -186,8 +193,11 @@ rollback() {
     [[ -n $previous ]] || { echo "There is no previous release." >&2; exit 1; }
     require_release "$previous"
 
+    exec 9> "$release_home/.lock"
+    flock --nonblock 9 || { echo "Another release operation is running." >&2; exit 1; }
+
     log "rollback $current -> $previous (database migrations are not reverted)"
-    switch_to "$previous"
+    switch_to "$previous" || { log "rollback: $previous did not become healthy; the stack may be partly switched"; exit 1; }
     smoke_test || { log "rollback: smoke test failed on $previous"; exit 1; }
     write_state "$previous" "$current"
     log "rollback: $previous live"

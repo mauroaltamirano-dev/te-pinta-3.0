@@ -1,11 +1,16 @@
 # Production PostgreSQL, owned by deploy instead of the development Sail stack.
-# It reuses the existing data volume and lives on its own network, so neither
+# It uses a volume copied from the Sail one during the cutover (never shared
+# with it) and lives on its own network, so neither
 # `sail down` nor a changed development compose file can stop or recreate it.
 # Started only during the cutover (deploy/cutover/README.md).
 services:
     postgres:
         image: postgres:18-alpine
         restart: unless-stopped
+        environment:
+            # Role used by backup and import scripts (`-U "$POSTGRES_USER"`); the
+            # existing data directory keeps its own roles and passwords.
+            POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER to the existing database superuser}
         volumes:
             - data:/var/lib/postgresql
         networks:
@@ -22,7 +27,7 @@ services:
 volumes:
     data:
         external: true
-        name: ${DATABASE_VOLUME:-tepinta30_sail-pgsql}
+        name: ${DATABASE_VOLUME:-tepinta-production-pgsql}
 
 networks:
     production:

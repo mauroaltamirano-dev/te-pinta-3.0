@@ -59,23 +59,32 @@ MIGRATE_COMMAND='DB_DATABASE=$TARGET_DB php artisan migrate --force' \
 ## Production cutover runbook
 
 Run in order; every step names how to undo it. Expect 10–15 minutes without
-service. Requires the owner's explicit go.
+service. Requires the owner's explicit go. `<sha>` is the release built in
+step 1; `<checkout>` is the directory the current production runs from.
 
 | # | Step | Undo |
 |---|---|---|
 | 1 | Build the release: `deploy/release.sh build <commit>`. | Delete the image. |
 | 2 | Backup `tepinta` (`~/tepinta-ops/backup-db.sh`), confirm the off-site copy, restore it into a scratch database and run `rehearse-import.sh` against it. | — |
-| 3 | Pause n8n story publishing; stop writers: `docker compose -p tailscale stop app scheduler`, `docker compose -p public-app stop public-app`. | Start them again. |
-| 4 | `docker network create tepinta-production`; stop the Sail-owned database container `tepinta30-pgsql-1` (do not `down -v`). | `docker start tepinta30-pgsql-1`. |
-| 5 | Start the deploy-owned database on the same volume: `docker compose -p tepinta-database -f deploy/database/compose.yaml up -d --wait`. | Stop it, then step 4 undo. |
+| 3 | Pause the n8n story workflow; stop writers: `docker compose -p tailscale stop app scheduler`, `docker compose -p public-app stop public-app`. | Start them again. |
+| 4 | Stop and remove the Sail-owned database container (the volume stays): `docker stop tepinta30-pgsql-1 && docker rm tepinta30-pgsql-1`. Copy the stopped data into a volume no development compose file references: `docker volume create tepinta-production-pgsql` and `docker run --rm -v tepinta30_sail-pgsql:/from:ro -v tepinta-production-pgsql:/to alpine cp -a /from/. /to/`. `tepinta30_sail-pgsql` is now a frozen copy of production; start a server on it only for the undo, and never while `tepinta-database` is running. | `docker compose -p tepinta30 -f <checkout>/compose.yaml up -d pgsql` (old compose) brings the old server back on the untouched volume. |
+| 5 | `docker network create tepinta-production`; start the deploy-owned database: `POSTGRES_USER=<existing superuser> docker compose -p tepinta-database -f deploy/database/compose.yaml up -d --wait`. | Stop it, then the step 4 undo. |
 | 6 | `createdb tepinta_v2`; migrate it with the release image (`docker run --rm --env-file <env with DB_DATABASE=tepinta_v2, DB_HOST=tepinta-db> --network tepinta-production --entrypoint php tepinta3:<sha> /var/www/html/artisan migrate --force`); run `import-legacy-database.sh tepinta-database-postgres-1 tepinta tepinta_v2` and keep the report. | Drop `tepinta_v2`. |
-| 7 | Production environment file outside the repo (`~/tepinta-ops/production.env`) with `DB_HOST=tepinta-db`, `DB_DATABASE=tepinta_v2`; point `backup-db.sh` at `CONTAINER=tepinta-database-postgres-1 DATABASE=tepinta_v2`, including the `Environment=` lines of the `tepinta-db-backup` systemd unit, and run it once by hand. | Keep the old file and unit. |
-| 8 | `RELEASE_CONFIRM=yes RELEASE_ENV_FILE=~/tepinta-ops/production.env APP_STORAGE_ROOT=<absolute path of the current storage directory> DATABASE_DOCKER_NETWORK=tepinta-production deploy/release.sh deploy <sha>`. This also redeploys the public storefront from the same image. | `release.sh rollback` is not available for the first release: start the old containers (step 3 undo) against the old database (step 4/5 undo). |
-| 9 | Check admin login, a test order end to end, Instagram media URL from outside, Tailscale Serve (8082) and the Cloudflare gateway (8084). Resume n8n. | — |
-| 10 | Keep database `tepinta` and the old images untouched until the release is accepted. | — |
+| 7 | Production environment file outside the repo (`~/tepinta-ops/production.env`) with `DB_HOST=tepinta-db`, `DB_DATABASE=tepinta_v2`. Change the defaults in `~/tepinta-ops/backup-db.sh` to `CONTAINER=tepinta-database-postgres-1 DATABASE=tepinta_v2` (release.sh calls it without the systemd environment) and run it once by hand. | Keep the old file and script copy. |
+| 8 | `RELEASE_CONFIRM=yes RELEASE_ENV_FILE=~/tepinta-ops/production.env APP_STORAGE_ROOT=<checkout>/storage DATABASE_DOCKER_NETWORK=tepinta-production deploy/release.sh deploy <sha>`. This also redeploys the public storefront from the same image. | No previous release exists for `release.sh rollback`. Recreate the old runtime from the old checkout: step 5 and 4 undo, then `docker compose -p tailscale -f <checkout>/deploy/tailscale/compose.yaml up -d --no-build app scheduler` (image `tepinta3-operational:local`) and `PUBLIC_APP_IMAGE=tepinta3-public-app:release-9a4dac2 docker compose -p public-app -f <checkout>/deploy/cloudflare/public-app/compose.yaml up -d --no-build public-app`. |
+| 9 | Reconnect n8n to the app, which now lives on `tepinta-production`: `docker network connect tepinta-production n8n-n8n-1` (and set `POS_DOCKER_NETWORK=tepinta-production` in its compose environment so it survives recreation), then `docker network disconnect tepinta30_sail n8n-n8n-1` so it no longer sees any database. Check `docker exec n8n-n8n-1 wget -qO- http://tepinta-operational/up`. | Reverse the connect/disconnect. |
+| 10 | Check admin login, a test order end to end, the Instagram media URL from outside, Tailscale Serve (127.0.0.1:8082) and the Cloudflare gateway (127.0.0.1:8083 → public app 8084). Resume the n8n workflow and watch one execution. | — |
+| 11 | Keep database `tepinta`, volume `tepinta30_sail-pgsql` and the old images untouched until the release is accepted. | — |
 
 After the cutover the development Sail stack uses its own `pgsql-dev`
-service and volume and can no longer reach or recreate production.
+service and volume. Older checkouts still define `pgsql` on
+`tepinta30_sail-pgsql`; starting it only revives the frozen copy, never the
+production volume.
+
+Never rehearse on the `tepinta30_sail` network with the default
+`OPERATIONAL_ALIAS`: n8n resolves `tepinta-operational` by DNS and would
+round-robin between production and staging. Use a private network, or set
+`OPERATIONAL_ALIAS` to another name.
 
 Files under `storage/app` (Instagram assets, management attachments, product
 images) are not in the database and stay where they are.
