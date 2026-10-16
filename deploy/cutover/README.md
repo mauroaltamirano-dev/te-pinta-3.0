@@ -56,18 +56,26 @@ MIGRATE_COMMAND='DB_DATABASE=$TARGET_DB php artisan migrate --force' \
     deploy/cutover/rehearse-import.sh <container> tepinta_dev
 ```
 
-## Production cutover checklist
+## Production cutover runbook
 
-1. Fresh backup of `tepinta` (`~/tepinta-ops/backup-db.sh`) and its off-site copy;
-   restore it into a scratch database and run the rehearsal.
-2. Stop writers: operational app, scheduler and the **public storefront**
-   (the import reads `order_public_id_seq` outside its transaction).
-   The deployed public image predates `restaurant_id`; it must be redeployed
-   from this release before it writes to the new database.
-3. Create and migrate `tepinta_v2`, run the import from `tepinta`.
-4. Point the operational and public runtimes at `tepinta_v2`, deploy images
-   built from this release, run smoke checks.
-5. Keep `tepinta` untouched for rollback until the new release is accepted.
+Run in order; every step names how to undo it. Expect 10–15 minutes without
+service. Requires the owner's explicit go.
+
+| # | Step | Undo |
+|---|---|---|
+| 1 | Build the release: `deploy/release.sh build <commit>`. | Delete the image. |
+| 2 | Backup `tepinta` (`~/tepinta-ops/backup-db.sh`), confirm the off-site copy, restore it into a scratch database and run `rehearse-import.sh` against it. | — |
+| 3 | Pause n8n story publishing; stop writers: `docker compose -p tailscale stop app scheduler`, `docker compose -p public-app stop public-app`. | Start them again. |
+| 4 | `docker network create tepinta-production`; stop the Sail-owned database container `tepinta30-pgsql-1` (do not `down -v`). | `docker start tepinta30-pgsql-1`. |
+| 5 | Start the deploy-owned database on the same volume: `docker compose -p tepinta-database -f deploy/database/compose.yaml up -d --wait`. | Stop it, then step 4 undo. |
+| 6 | `createdb tepinta_v2`; migrate it with the release image (`docker run --rm --env-file <env with DB_DATABASE=tepinta_v2, DB_HOST=tepinta-db> --network tepinta-production --entrypoint php tepinta3:<sha> /var/www/html/artisan migrate --force`); run `import-legacy-database.sh tepinta-database-postgres-1 tepinta tepinta_v2` and keep the report. | Drop `tepinta_v2`. |
+| 7 | Production environment file outside the repo (`~/tepinta-ops/production.env`) with `DB_HOST=tepinta-db`, `DB_DATABASE=tepinta_v2`; point `backup-db.sh` at `CONTAINER=tepinta-database-postgres-1 DATABASE=tepinta_v2`. | Keep the old file. |
+| 8 | `RELEASE_CONFIRM=yes RELEASE_ENV_FILE=~/tepinta-ops/production.env APP_STORAGE_ROOT=<absolute path of the current storage directory> DATABASE_DOCKER_NETWORK=tepinta-production deploy/release.sh deploy <sha>`. This also redeploys the public storefront from the same image. | `release.sh rollback` is not available for the first release: start the old containers (step 3 undo) against the old database (step 4/5 undo). |
+| 9 | Check admin login, a test order end to end, Instagram media URL from outside, Tailscale Serve (8082) and the Cloudflare gateway (8084). Resume n8n. | — |
+| 10 | Keep database `tepinta` and the old images untouched until the release is accepted. | — |
+
+After the cutover the development Sail stack uses its own `pgsql-dev`
+service and volume and can no longer reach or recreate production.
 
 Files under `storage/app` (Instagram assets, management attachments, product
 images) are not in the database and stay where they are.

@@ -52,7 +52,7 @@ Local test database (once):
 
 ```bash
 cp .env.testing.example .env.testing   # set DB_PASSWORD to the Sail PostgreSQL password
-./vendor/bin/sail exec -T pgsql sh -lc 'psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''testing'\''" | grep -qx 1 || createdb -U "$POSTGRES_USER" testing'
+./vendor/bin/sail exec -T pgsql-dev sh -lc 'psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''testing'\''" | grep -qx 1 || createdb -U "$POSTGRES_USER" testing'
 make artisan ARGS="migrate:fresh --env=testing"   # from-scratch migration check
 ```
 
