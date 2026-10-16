@@ -50,7 +50,7 @@ help:
 		'  make composer ARGS="audit"' \
 		'' \
 		'Los objetivos operativos mutables conservan las confirmaciones de los scripts.' \
-		'Consultá docs/COMMANDS.md para configuración, controles focalizados y confirmaciones.'
+		'Consultá docs/OPERATIONS.md para configuración, controles focalizados y confirmaciones.'
 
 setup:
 	@if [[ ! -f .env ]]; then \
@@ -73,7 +73,7 @@ setup:
 guard:
 	@if [[ ! -x "$(SAIL)" ]]; then \
 		printf 'Falta %s. Instalá primero las dependencias de Composer.\n' "$(SAIL)" >&2; \
-		printf 'Consultá docs/COMMANDS.md#configuración-inicial para iniciar sólo con Docker.\n' >&2; \
+		printf 'Consultá docs/OPERATIONS.md#local-development para iniciar sólo con Docker.\n' >&2; \
 		exit 1; \
 	fi
 

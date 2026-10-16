@@ -1,45 +1,36 @@
-# Índice de documentación
+# Documentation index
 
-Comience por el documento más acotado que sea responsable del cambio.
+The documents below describe the system as implemented. When code and documentation disagree, the code is the truth; fix the document in the same change.
 
-| Necesidad                                                                   | Documento                                                  |
-| --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Comprender los límites y la dirección de las dependencias                   | [ARCHITECTURE.md](ARCHITECTURE.md)                         |
-| Encontrar al responsable exacto de una ruta, regla, página o configuración  | [PROJECT_MAP.md](PROJECT_MAP.md)                           |
-| Agregar o modificar una capacidad del backend                               | [MODULES.md](MODULES.md)                                   |
-| Modificar la agrupación o los totales de pedidos                            | [ORDER_PRICING.md](ORDER_PRICING.md)                       |
-| Modificar estados, pagos o integración financiera de pedidos                | [ORDERS.md](ORDERS.md)                                     |
-| Modificar tablas, restricciones, identificadores o ciclos de vida           | [DATABASE.md](DATABASE.md)                                 |
-| Modificar autorización, checkout público o manejo de datos privados         | [SECURITY.md](SECURITY.md)                                 |
-| Modificar métricas, períodos o reglas de alertas operativas del Dashboard   | [DASHBOARD.md](DASHBOARD.md)                               |
-| Modificar billeteras, ledger, egresos, saldos o auditoría de Gestión        | [MANAGEMENT.md](MANAGEMENT.md)                             |
-| Modificar la programación de Featured Product o Marketing público           | [MARKETING.md](MARKETING.md)                               |
-| Operar o ampliar la automatización de Instagram Story                       | [instagram-automation.md](instagram-automation.md)         |
-| Modificar tokens, layouts o UI reutilizable                                 | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)                       |
-| Ejecutar comandos habituales locales, de Docker, calidad u operación        | [COMMANDS.md](COMMANDS.md)                                 |
-| Configurar, migrar, ejecutar o exponer la aplicación                        | [DEVELOPMENT.md](DEVELOPMENT.md)                           |
-| Agregar un evento o diagnosticar una falla                                  | [LOGGING.md](LOGGING.md)                                   |
-| Agregar o ejecutar verificaciones automatizadas                             | [TESTING.md](TESTING.md)                                   |
-| Comprender las compensaciones registradas                                   | [decisions/README.md](decisions/README.md)                 |
-| Ver qué está completo y qué se pospuso intencionalmente                     | [CURRENT_STATE.md](CURRENT_STATE.md)                       |
-| Implementar el próximo slice de Inicio para pedidos rápidos administrativos | [design/ADMIN_QUICK_ORDER.md](design/ADMIN_QUICK_ORDER.md) |
+## Reading order
 
-Inventory foundation: [INVENTORY.md](INVENTORY.md) documents physical quantities, integer-peso cost, current valuation and the staged reconstruction boundary.
+1. [ARCHITECTURE.md](ARCHITECTURE.md) — modules, dependency rules and known violations, request flows, tenancy, durable decisions.
+2. [DATABASE.md](DATABASE.md) — money and identifier conventions, tenancy, constraint philosophy, deletion, business dates, settings, migrations.
+3. The domain document for the area you will change.
+4. [OPERATIONS.md](OPERATIONS.md) — how to run, test, log and deploy it.
 
-## Lista de verificación para cambios
+## Documents
 
-1. Identifique el módulo responsable y lea su guía específica.
-2. Mantenga la autorización, la validación, los precios y los totales en el backend.
-3. Preserve los snapshots de pedidos; nunca recalcule el historial a partir del catálogo o la configuración actuales.
-4. Ejecute las verificaciones específicas y luego el control de calidad completo que corresponda.
-5. Actualice esta documentación cuando cambie un límite o una regla duradera.
+| Need | Document |
+| --- | --- |
+| Module boundaries, dependencies, multi-tenancy | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Tables, constraints, migrations, time zones | [DATABASE.md](DATABASE.md) |
+| Order lifecycle, sources, snapshots, payments, pricing engine, derived pricing foundation | [ORDERS_AND_PRICING.md](ORDERS_AND_PRICING.md) |
+| Stock, cost layers, valuation, recipes, production, adjustments, order consumption, costing | [INVENTORY.md](INVENTORY.md) |
+| Wallets, ledger, outflows, transfers, distributions, order payments, purchases, audit, dashboard KPIs | [FINANCE.md](FINANCE.md) |
+| Public site, checkout, featured products, Instagram automation runbook | [STOREFRONT_AND_MARKETING.md](STOREFRONT_AND_MARKETING.md) |
+| Local setup, commands, testing, logging, deployment, backups | [OPERATIONS.md](OPERATIONS.md) |
+| Authorization, public checkout controls, private data, production checklist | [SECURITY.md](SECURITY.md) |
+| Tokens, primitives, shared compositions | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) |
+| Recorded trade-offs | [decisions/README.md](decisions/README.md) |
+| Superseded documents and old task logbooks (not maintained) | [archive/README.md](archive/README.md) |
 
-Para la instalación móvil y el runtime de Tailscale, comience por [DEVELOPMENT.md](DEVELOPMENT.md#operational-runtime-and-mobile-installation). El servicio operativo se ejecuta en el puerto loopback `8082`; use `deploy/tailscale/route.sh status` en lugar de inferir el estado de la ruta a partir de un contenedor en ejecución.
+Active feature logbooks live in `odd/tasks/`.
 
-Rich purchases: [PURCHASES.md](PURCHASES.md) describes coordinated money/stock receipts, historical snapshots and reversal integrity.
+## Change checklist
 
-Recipes and production: [RECIPES_AND_PRODUCTION.md](RECIPES_AND_PRODUCTION.md) describes immutable formulas, current estimates and actual-output historical production/reversal.
-
-Inventory adjustments: [INVENTORY_ADJUSTMENTS.md](INVENTORY_ADJUSTMENTS.md) describes locked physical counts, loss semantics, preview and historical exact reversals.
-
-Derived pricing preparation: [DERIVED_PRICING_FOUNDATION.md](DERIVED_PRICING_FOUNDATION.md) describes the inactive P0-A foundation, exact surcharges, raw conflicts and the P0-B activation boundary.
+1. Identify the owning module and read its document.
+2. Keep authorization, validation, prices, totals and state transitions in the backend.
+3. Preserve order and financial snapshots; never recompute history from current catalog or settings.
+4. Run the focused tests, then `make check` (and `make e2e` for UI changes); report anything not run.
+5. Update the affected document when a boundary, table, rule or command changes; add an ADR for a durable trade-off.
