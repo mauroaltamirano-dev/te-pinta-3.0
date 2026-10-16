@@ -12,6 +12,12 @@ services:
             - public-app-logs:/var/www/html/storage/logs
         networks:
             - database
+        healthcheck:
+            test: [CMD, curl, --fail, --silent, http://127.0.0.1/up]
+            interval: 15s
+            timeout: 5s
+            retries: 5
+            start_period: 20s
 
 networks:
     database:

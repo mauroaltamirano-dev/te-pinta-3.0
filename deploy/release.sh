@@ -101,8 +101,12 @@ switch_to() {
 }
 
 expect_status() {
-    local url=$1 expected=$2 status
-    status=$(curl --silent --output /dev/null --max-time 10 --write-out '%{http_code}' "$url" || true)
+    local url=$1 expected=$2 status attempt
+    for attempt in 1 2 3 4 5; do
+        status=$(curl --silent --output /dev/null --max-time 10 --write-out '%{http_code}' "$url" || true)
+        [[ $status == "$expected" ]] && return 0
+        sleep "$attempt"
+    done
     if [[ $status != "$expected" ]]; then
         echo "smoke: $url answered $status, expected $expected" >&2
         return 1
