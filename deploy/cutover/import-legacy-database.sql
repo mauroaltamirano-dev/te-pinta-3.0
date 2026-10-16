@@ -27,10 +27,24 @@ import foreign schema public from server legacy_source into legacy;
 -- Guards -------------------------------------------------------------------
 
 do $$
+declare
+    target record;
+    populated boolean;
 begin
-    if exists (select 1 from public.orders) or exists (select 1 from public.customers) then
-        raise exception 'target database already holds business data; import only into a freshly migrated database';
-    end if;
+    -- Only rows seeded by this release's migrations may exist in the target.
+    for target in
+        select tablename from pg_tables
+        where schemaname = 'public'
+          and tablename not in (
+              'migrations', 'restaurants', 'inventory_units', 'order_settings', 'order_addons',
+              'management_outflow_categories', 'instagram_automation_settings', 'cache', 'cache_locks', 'sessions'
+          )
+    loop
+        execute format('select exists (select 1 from public.%I)', target.tablename) into populated;
+        if populated then
+            raise exception 'target database already holds data in %; import only into a freshly migrated database', target.tablename;
+        end if;
+    end loop;
 
     if exists (
         select 1 from legacy.products
@@ -266,13 +280,54 @@ begin
 end
 $$;
 
+-- Business reconciliation: money, stock and orders must match exactly.
+create temporary table import_reconciliation (
+    metric text not null,
+    subject text not null,
+    legacy_value numeric,
+    imported_value numeric
+) on commit drop;
+
+insert into import_reconciliation
+select 'wallet balance', coalesce(l.wallet_id, i.wallet_id)::text, l.balance, i.balance
+from (select wallet_id, sum(amount) as balance from legacy.ledger_entries group by wallet_id) l
+full join (select wallet_id, sum(amount) as balance from public.ledger_entries group by wallet_id) i using (wallet_id);
+
+insert into import_reconciliation
+select 'stock', format('item %s unit %s', coalesce(l.inventory_item_id, i.inventory_item_id), coalesce(l.unit_id, i.unit_id)), l.quantity, i.quantity
+from (select inventory_item_id, unit_id, sum(quantity) as quantity from legacy.inventory_stock_movements group by 1, 2) l
+full join (select inventory_item_id, unit_id, sum(quantity) as quantity from public.inventory_stock_movements group by 1, 2) i
+  using (inventory_item_id, unit_id);
+
+insert into import_reconciliation
+select 'orders total', coalesce(l.status, i.status) || ' / ' || coalesce(l.payment_status, i.payment_status), l.total, i.total
+from (select status, payment_status, sum(total) as total from legacy.orders group by 1, 2) l
+full join (select status, payment_status, sum(total) as total from public.orders group by 1, 2) i
+  using (status, payment_status);
+
+do $$
+begin
+    if exists (select 1 from import_reconciliation where legacy_value is distinct from imported_value) then
+        raise exception 'reconciliation failed: %', (
+            select string_agg(metric || ' ' || subject, ', ') from import_reconciliation
+            where legacy_value is distinct from imported_value
+        );
+    end if;
+end
+$$;
+
 select table_name, legacy_rows, imported_rows
 from import_report
 where legacy_rows > 0
 order by table_name;
 
+select metric, subject, legacy_value, imported_value
+from import_reconciliation
+order by metric, subject;
+
 drop schema legacy cascade;
 drop user mapping for current_user server legacy_source;
 drop server legacy_source;
+drop extension postgres_fdw;
 
 commit;
