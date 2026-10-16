@@ -10,7 +10,7 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 - S2 — Clean installs and CI must pass: lock files in sync with manifests; backend suite runs on PostgreSQL in CI.
 - S3 — Tenant-ready schema (decision D2): `restaurants` table; NOT NULL `restaurant_id` on every business table; per-tenant unique keys, settings and sequences; existing single-restaurant behavior unchanged (all data belongs to restaurant 1).
 - S4 — Data migration: an idempotent, tested procedure that moves the current production database (dirty-checkout migration history) onto this schema, verified on a restored copy with a reconciliation report (row counts, ledger balances, stock).
-- S5 — Port unique work from `archive/2026-10-15/dirty-checkout`: economic performance, inventory reconciliation, order consumption preview, `BusinessDate`.
+- S5 — Fix the business-date bug the dirty checkout's `BusinessDate` addressed (inventory forms defaulted to the UTC date). Economic performance and inventory reconciliation are deferred until after the Ordering rework (Phase 4), ported from `archive/2026-10-15/dirty-checkout`; the order consumption preview is dropped (superseded by non-blocking consumption, O-07).
 - S6 — Docs reset (decision D3): ~9 current docs + ADRs; stale claims fixed; old `odd/tasks` logbooks archived.
 
 ## Tasks
@@ -21,7 +21,7 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 | T2 | S2 | inline | done | `db3eda9` lock sync, `f322db3` eslint autofix, `694abea` CI Postgres; local: 730 tests pass, pint/phpstan/eslint/prettier/tsc clean. CI run not yet observed (not pushed). |
 | T3 | S3 | inline (explorer mapped schema) | done | `9660ced`, `a81db4e`, `25aebb4`: RED→GREEN, 737 tests pass, pint/phpstan clean, rollback round-trip exact. Independent verifier: PASS, no blockers. RDD review (risk+reliability, range `694abea..a81db4e`): approved and acknowledged (lineage review-de2cbe66d440dbbd); critical reconnect claim refuted, now pinned by test. |
 | T4 | S4 | inline | done | `7319c2e`, `4013b5b`, current HEAD: rehearsal on restored prod copy PASSED (43 tables count+hash, wallet balances, stock, order totals reconciled; second import refused unchanged; broken source rolled back). Independent verifier: no data defects; blockers B1 (report lacked balances/stock) and B2 (no repeatable test) fixed in `4013b5b`, recheck by lead (rehearsal). RDD review (risk+resilience+reliability, `a81db4e..4013b5b`): approved and acknowledged; advisories addressed in follow-up commit. |
-| T5 | S5 | inline | pending | |
+| T5 | S5 | inline | done | RED 2/2 (returned 2026-10-16 at 23:30 ART) → GREEN; Inventory suite 176 pass; pint/phpstan clean. Commit below. |
 | T6 | S6 | delegated (bounded writer) | pending | |
 
 ## Log
@@ -37,3 +37,4 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 - L9: Reviewer advisories left open: backfill test on populated tables (covered by T4 ETL reconciliation), `down()` cannot restore global uniques once two restaurants share keys (acceptable, transactional failure).
 - L10: Prod data finding: 3 paid orders (2026-08-13/14) without payment_method; `orders_payment_matches_total` is NOT VALID in prod and the import keeps the same exemption. Packaging costing policy in prod is named "Test" (possible test data; imported as-is).
 - L11: Open before cutover: trigger re-validation is not automated (one-off replay on 2026-10-16 accepted all rows); README documents it. `/admin/marketing/instagram` returns 500 when the Instagram media base URL env is missing — should degrade gracefully (follow-up).
+- L12 (lead decision): S5 narrowed. Porting the 400+ line reconciliation and economic-performance read models now would be rewritten by Phase 4 (consumption moment and payments change); they stay in the archive tag with their tests as scenario sources.
