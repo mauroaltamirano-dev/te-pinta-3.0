@@ -20,7 +20,7 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 | T1 | S1 | inline | done | `03eb3db` (cherry-pick, no conflicts) |
 | T2 | S2 | inline | done | `db3eda9` lock sync, `f322db3` eslint autofix, `694abea` CI Postgres; local: 730 tests pass, pint/phpstan/eslint/prettier/tsc clean. CI run not yet observed (not pushed). |
 | T3 | S3 | inline (explorer mapped schema) | done | `9660ced`, `a81db4e`, `25aebb4`: RED→GREEN, 737 tests pass, pint/phpstan clean, rollback round-trip exact. Independent verifier: PASS, no blockers. RDD review (risk+reliability, range `694abea..a81db4e`): approved and acknowledged (lineage review-de2cbe66d440dbbd); critical reconnect claim refuted, now pinned by test. |
-| T4 | S4 | inline | pending | |
+| T4 | S4 | inline | done | `7319c2e`, `4013b5b`, current HEAD: rehearsal on restored prod copy PASSED (43 tables count+hash, wallet balances, stock, order totals reconciled; second import refused unchanged; broken source rolled back). Independent verifier: no data defects; blockers B1 (report lacked balances/stock) and B2 (no repeatable test) fixed in `4013b5b`, recheck by lead (rehearsal). RDD review (risk+resilience+reliability, `a81db4e..4013b5b`): approved and acknowledged; advisories addressed in follow-up commit. |
 | T5 | S5 | inline | pending | |
 | T6 | S6 | delegated (bounded writer) | pending | |
 
@@ -35,3 +35,5 @@ Audit: `~/tepinta-handoffs/global-architecture-audit-2026-10/`.
 - L7: Native review of the full branch range refused with `lens_context_budget_exceeded` (lock file + P0-A); reviewed the high-risk tenancy range only. P0-A was already reviewed in its own Codex task; lock/CI/style commits are low risk.
 - L8: Verifier advisory A1 (blocker for cutover, owned by T4): the deployed public image `release-9a4dac2` shares the production DB and predates tenancy; once prod is migrated its inserts fail NOT NULL. Cutover must redeploy the public app from this line (or a transitional DB-level default).
 - L9: Reviewer advisories left open: backfill test on populated tables (covered by T4 ETL reconciliation), `down()` cannot restore global uniques once two restaurants share keys (acceptable, transactional failure).
+- L10: Prod data finding: 3 paid orders (2026-08-13/14) without payment_method; `orders_payment_matches_total` is NOT VALID in prod and the import keeps the same exemption. Packaging costing policy in prod is named "Test" (possible test data; imported as-is).
+- L11: Open before cutover: trigger re-validation is not automated (one-off replay on 2026-10-16 accepted all rows); README documents it. `/admin/marketing/instagram` returns 500 when the Instagram media base URL env is missing — should degrade gracefully (follow-up).
