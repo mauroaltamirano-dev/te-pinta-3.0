@@ -76,6 +76,17 @@ final class RestaurantTenancySchemaTest extends TestCase
         $this->assertSame(1, (int) DB::table('categories')->where('id', $category->id)->value('restaurant_id'));
     }
 
+    public function test_reconnected_and_new_connections_receive_the_restaurant_context(): void
+    {
+        $setting = fn (): ?string => DB::selectOne("select current_setting('app.current_restaurant_id', true) as value")->value;
+
+        DB::reconnect();
+        $this->assertSame('1', $setting());
+
+        DB::purge();
+        $this->assertSame('1', $setting());
+    }
+
     public function test_rows_cannot_be_written_without_a_restaurant_context(): void
     {
         DB::statement("select set_config('app.current_restaurant_id', '', false)");
