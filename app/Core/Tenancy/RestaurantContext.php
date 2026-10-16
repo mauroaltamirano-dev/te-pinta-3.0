@@ -26,9 +26,13 @@ final class RestaurantContext
             return;
         }
 
-        $connection->statement('select set_config(?, ?, false)', [
+        // Straight on PDO: Connection::statement() treats a refused connection as
+        // "lost" and reconnects, which fires ConnectionEstablished again and
+        // would recurse forever while the database is unreachable.
+        $connection->getPdo()->exec(sprintf(
+            "select set_config('%s', '%d', false)",
             self::SESSION_SETTING,
-            (string) $this->restaurantId,
-        ]);
+            $this->restaurantId,
+        ));
     }
 }
