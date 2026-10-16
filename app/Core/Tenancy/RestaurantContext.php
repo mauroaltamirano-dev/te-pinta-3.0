@@ -2,7 +2,9 @@
 
 namespace App\Core\Tenancy;
 
+use Closure;
 use Illuminate\Database\Connection;
+use PDO;
 
 /**
  * Holds the restaurant the current process acts for and exposes it to
@@ -20,19 +22,44 @@ final class RestaurantContext
         return $this->restaurantId;
     }
 
+    /**
+     * Applies the setting when the connection actually connects. Connecting
+     * eagerly here would make the application fail to boot (for example
+     * `artisan serve` after a host reboot) while PostgreSQL is still down.
+     */
     public function applyTo(Connection $connection): void
     {
         if ($connection->getDriverName() !== 'pgsql') {
             return;
         }
 
-        // Straight on PDO: Connection::statement() treats a refused connection as
-        // "lost" and reconnects, which fires ConnectionEstablished again and
-        // would recurse forever while the database is unreachable.
-        $connection->getPdo()->exec(sprintf(
-            "select set_config('%s', '%d', false)",
-            self::SESSION_SETTING,
-            $this->restaurantId,
-        ));
+        $connection->setPdo($this->withSetting($connection->getRawPdo()));
+        $connection->setReadPdo($this->withSetting($connection->getRawReadPdo()));
+    }
+
+    private function withSetting(PDO|Closure|null $pdo): PDO|Closure|null
+    {
+        if ($pdo instanceof PDO) {
+            $this->configure($pdo);
+
+            return $pdo;
+        }
+
+        if ($pdo === null) {
+            return null;
+        }
+
+        return function () use ($pdo): PDO {
+            return $this->configure($pdo());
+        };
+    }
+
+    private function configure(PDO $pdo): PDO
+    {
+        // Straight on PDO: Connection::statement() treats a refused connection
+        // as lost and reconnects, which would fire ConnectionEstablished again.
+        $pdo->exec(sprintf("select set_config('%s', '%d', false)", self::SESSION_SETTING, $this->restaurantId));
+
+        return $pdo;
     }
 }

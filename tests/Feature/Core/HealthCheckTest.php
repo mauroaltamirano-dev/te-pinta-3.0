@@ -29,6 +29,22 @@ final class HealthCheckTest extends TestCase
         }
     }
 
+    public function test_resolving_a_connection_does_not_connect_until_the_first_query(): void
+    {
+        $port = Config::get('database.connections.pgsql.port');
+        Config::set('database.connections.pgsql.port', 1);
+        DB::purge('pgsql');
+
+        try {
+            // The application boots (e.g. `artisan serve` after a host reboot)
+            // before PostgreSQL is up; resolving the connection must not fail.
+            $this->assertSame('pgsql', DB::connection('pgsql')->getName());
+        } finally {
+            Config::set('database.connections.pgsql.port', $port);
+            DB::purge('pgsql');
+        }
+    }
+
     public function test_an_unreachable_database_fails_once_instead_of_reconnecting_forever(): void
     {
         $port = Config::get('database.connections.pgsql.port');
