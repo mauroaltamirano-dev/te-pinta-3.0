@@ -34,6 +34,8 @@ Roles and permissions are code-defined ([ADR 0013](decisions/0013-code-defined-r
 
 GET pages of a module require its `*.view` permission; every mutating route (and the create/edit form pages) requires `*.manage`. `/admin` (quick order) redirects members without `orders.manage` to `/admin/orders`. `RoleRouteMatrixTest` proves the matrix for representative routes of every module.
 
+Updating the restaurant accent uses `catalog.manage`, matching General settings. Both the branding route and `UpdateBrandingRequest` enforce the active membership permission; UI visibility is not an authorization boundary.
+
 | Capability gate | Granted to | Use |
 | --- | --- | --- |
 | `use-pos` | `orders.manage` holders | `CreateOrder` for the internal `pos` source |
