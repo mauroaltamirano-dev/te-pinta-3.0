@@ -4,17 +4,44 @@ Laravel is the authority for authentication, authorization, validation, catalog 
 
 ## Administrative boundary
 
-- Every route under `/admin` is registered in one group with `auth`, `verified`, `admin` (`EnsureUserIsAdministrator`: `users.is_admin = true`) and `admin.request.log`. Web middleware keeps CSRF protection.
-- Form Requests authorize through policies (`Gate::policy` registrations in `AppServiceProvider`) and validate allow-listed payloads. Actions re-resolve and lock rows before deciding.
+- Every route under `/admin` is registered in one group with `auth`, `verified`, `restaurant.member` (`EnsureActiveMembership`: an active `restaurant_user` row for the current restaurant) and `admin.request.log`, and each route adds its own `can:<permission>` middleware. `AdminRoutePermissionCoverageTest` fails when an admin route has no permission. Web middleware keeps CSRF protection.
+- Form Requests authorize through policies (`Gate::policy` registrations in `AppServiceProvider`) that check the same permissions, and validate allow-listed payloads. Actions re-resolve and lock rows before deciding.
 - Write path: resolve the resource on the backend → authorize → validate → run the transactional action → return an explicit resource or redirect.
-- Staff profiles (`waiter`, `cashier`) give `use-pos` / `operate-cashier` capabilities only; they never grant `/admin` access and are not mass-assignable. Future staff endpoints must take the actor from the session, never from the body.
+- Password login accepts only users with an active membership in the current restaurant; anyone else receives the same failure as a wrong password. Passkey login applies the same rule (`Passkeys::authorizeLoginUsing`). A deactivated member is rejected on the next request.
+- `users.is_admin` and `users.staff_profile` are legacy columns kept one release for rollback; no code reads them, and they are not mass-assignable or serialized.
 
-| Identity | `administrator` | `use-pos` | `operate-cashier` |
-| --- | --- | --- | --- |
-| `is_admin = true` | yes | yes | yes |
-| `cashier`, not admin | no | yes | yes |
-| `waiter`, not admin | no | yes | no |
-| no profile, not admin | no | no | no |
+### Roles and permissions
+
+Roles and permissions are code-defined ([ADR 0013](decisions/0013-code-defined-roles-and-permissions.md)); `Identity\Enums\Role::permissions()` is the only mapping. Each permission is a Gate ability of the same name.
+
+| Permission | owner (Dueño) | manager (Encargado) | cashier (Cajero) | waiter (Mozo) | kitchen (Cocina) | accountant (Contador) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `dashboard.view` (dashboard, analytics) | ✓ | ✓ | ✓ | | | ✓ |
+| `orders.view` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `orders.manage` (create, edit, status, payment, restaurant floor reading) | ✓ | ✓ | ✓ | ✓ | | |
+| `customers.view` | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| `customers.manage` | ✓ | ✓ | ✓ | | | |
+| `catalog.view` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `catalog.manage` (products, categories, tags, ordering settings) | ✓ | ✓ | | | | |
+| `inventory.view` | ✓ | ✓ | | | ✓ | ✓ |
+| `inventory.manage` | ✓ | ✓ | | | | |
+| `finance.view` (management overview, audit, purchases, attachments) | ✓ | ✓ | | | | ✓ |
+| `finance.manage` | ✓ | ✓ | | | | |
+| `marketing.manage` (featured products, Instagram) | ✓ | ✓ | | | | |
+| `floor.manage` (restaurant floor layout) | ✓ | ✓ | | | | |
+| `settings.manage` (reserved; no route uses it yet) | ✓ | | | | | |
+| `users.manage` | ✓ | | | | | |
+
+GET pages of a module require its `*.view` permission; every mutating route (and the create/edit form pages) requires `*.manage`. `/admin` (quick order) redirects members without `orders.manage` to `/admin/orders`. `RoleRouteMatrixTest` proves the matrix for representative routes of every module.
+
+| Capability gate | Granted to | Use |
+| --- | --- | --- |
+| `use-pos` | `orders.manage` holders | `CreateOrder` for the internal `pos` source |
+| `operate-cashier` | owner, manager, cashier | Required to create a POS order already marked paid |
+
+### User management
+
+`/admin/users` (`users.manage`) lists the restaurant's members, creates a user (name, email, temporary password, role; the email is marked verified), changes a role and deactivates or reactivates a membership. Nobody can change their own role or deactivate themselves, and the last active owner cannot be demoted or deactivated; `MembershipGuard` locks the target and the active owner rows in one ordered statement so concurrent changes cannot bypass it. Inertia shares `auth.role` and `auth.permissions`; the sidebar shows only modules the user can open, but the routes are the control. `php artisan admin:create` creates a verified user with an `owner` membership.
 
 ## Orders
 
@@ -63,7 +90,7 @@ Admin input is plain text only (headline ≤ 80, copy ≤ 240), product selectio
 
 ## Restaurant floor and Inventory
 
-All floor, inventory and costing reads and writes require `administrator`. Floor saves must reference all and only the existing tables of the locked area; unknown keys and malformed geometry are rejected; positions and bounds are enforced by the backend and PostgreSQL. Inventory physical commands are internal actions, not public stock-edit endpoints.
+Floor reads require `orders.manage` and floor writes `floor.manage`; inventory and costing reads require `inventory.view` and writes `inventory.manage`. Floor saves must reference all and only the existing tables of the locked area; unknown keys and malformed geometry are rejected; positions and bounds are enforced by the backend and PostgreSQL. Inventory physical commands are internal actions, not public stock-edit endpoints.
 
 ## Origin, sessions and mobile install
 

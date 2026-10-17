@@ -18,12 +18,19 @@ Domain-specific tables are described in their own documents: [ORDERS_AND_PRICING
 
 ## Tenancy
 
-- Every business row belongs to a restaurant: `restaurant_id bigint not null`, foreign key to `restaurants` (`on delete restrict`), indexed. Excluded: framework tables, `users` (future membership-based ownership) and `inventory_units` (system units).
+- Every business row belongs to a restaurant: `restaurant_id bigint not null`, foreign key to `restaurants` (`on delete restrict`), indexed. Excluded: framework tables, `users` (global identities; access comes from memberships) and `inventory_units` (system units).
 - The column default is the PostgreSQL session setting `app.current_restaurant_id`, set on every connection by `App\Core\Tenancy\RestaurantContext`. A write without context fails with a NOT NULL violation. Manual PDO connections (concurrency tests, scripts) must run `SET app.current_restaurant_id = '<id>'`. Because it is a session setting, do not put a transaction-mode pooler (for example PgBouncer `transaction`) in front of the app without setting it per transaction.
 - Every process currently runs as `tenancy.default_restaurant_id` (`1`, "Te Pinta"). Business unique keys are unique per restaurant: category/product/tag/add-on slugs, order setting keys, raw-price discount tiers, outflow category codes, active customer phone, inventory category/item/recipe/costing-policy names, the single active distribution rule, the single order-payment default wallet and the featured-product window exclusion.
 - Pending before a second restaurant: read isolation with row-level security (it also covers `DB::table` reads), per-restaurant order numbering (`order_public_id_seq` is global), same-restaurant validation in cross-table triggers, and per-restaurant seed settings (`order_settings`, `order_addons`, outflow categories, Instagram).
 
 Decision record: [ADR 0012](decisions/0012-tenant-ready-schema.md). Migration: `2026_10_16_000000_prepare_restaurant_tenancy.php`.
+
+## Staff memberships
+
+- `restaurant_user` (`restaurant_id`, `user_id`, `role`, `is_active`, timestamps) gives a user access to one restaurant. Unique per restaurant and user; `role` is checked against the code-defined roles (`owner`, `manager`, `cashier`, `waiter`, `kitchen`, `accountant`). Login and every admin request require an active membership in the current restaurant.
+- `users.is_admin` and `users.staff_profile` are legacy columns kept for one release so a rollback still works. No code reads them; every membership save mirrors them (active owner → `is_admin`; active waiter/cashier → `staff_profile`; any other role or an inactive member → neither). Drop them in the release after the one that introduced memberships.
+
+Decision record: [ADR 0013](decisions/0013-code-defined-roles-and-permissions.md). Migration: `2026_10_17_000000_create_restaurant_memberships.php`.
 
 ## Constraint and trigger philosophy
 

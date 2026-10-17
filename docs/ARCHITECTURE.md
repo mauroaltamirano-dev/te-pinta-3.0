@@ -28,7 +28,7 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 | --- | --- |
 | `Core` | `ProductPriceProvider` contract + `SellableProductPrice`, `PublicIdentifier`, `RestaurantContext` (tenancy), `TestingDatabaseGuard` |
 | `Shared` | `AssignRequestId` (request ID in log context) and `LogAdminRequest` (`admin.request.completed`) middleware |
-| `Identity` | Users, administrator flag, fixed staff profiles (`waiter`, `cashier`), `admin` middleware, `admin:create` console command |
+| `Identity` | Users, per-restaurant memberships (`restaurant_user`), code-defined roles and permissions, `restaurant.member` middleware, user management (`/admin/users`), `admin:create` console command |
 | `Products` | Categories, products, tags, availability, pricing family (`empanada`/`unit`), cooked base prices, raw-price discounts, public catalog and product detail |
 | `Customers` | Customer profiles, phone normalization, search, history, soft delete and restore |
 | `Orders` | Order creation (admin, public checkout, POS command), editing, snapshots, revisions, status and payment transitions, pricing engine, WhatsApp link |
@@ -48,8 +48,8 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 
 ```text
 Admin browser
-  -> web middleware (AssignRequestId, Inertia) -> auth + verified + admin + admin.request.log
-  -> module controller -> Form Request (authorize + validate) -> policy
+  -> web middleware (AssignRequestId, Inertia) -> auth + verified + restaurant.member + admin.request.log
+  -> can:<permission> (route) -> module controller -> Form Request (authorize + validate) -> policy
   -> Action (DB transaction, row locks) -> PostgreSQL constraints/triggers
   -> Inertia page, redirect or JSON preview
 
@@ -62,7 +62,7 @@ n8n automation
   -> /api/automation/instagram/stories/* (throttle 30/min, then bearer token) -> Instagram actions
 ```
 
-Every admin route is registered inside one group in `routes/web.php` with `auth`, `verified`, `admin` and `admin.request.log` and the `/admin` prefix.
+Every admin route is registered inside one group in `routes/web.php` with `auth`, `verified`, `restaurant.member` and `admin.request.log` and the `/admin` prefix, and declares its own `can:<permission>` middleware in its module `routes.php`.
 
 ## Cross-module integration
 
@@ -103,9 +103,9 @@ Every business row carries a NOT NULL `restaurant_id` whose column default is th
 
 ## Access model
 
-- `users.is_admin` is the administrative authority (`administrator` gate). Every HTTP route under `/admin` requires it.
-- `users.staff_profile` (`waiter`, `cashier`, or null) grants the `use-pos` and `operate-cashier` gates. No HTTP route uses these gates yet; `CreateOrder` checks `canUsePos()` for the internal `pos` source command and forbids non-admins from creating paid orders.
-- There is no configurable RBAC.
+- A user reaches `/admin` only through an active membership (`restaurant_user`) in the current restaurant. The membership's role is one of six code-defined roles (`owner`, `manager`, `cashier`, `waiter`, `kitchen`, `accountant`); `Identity\Enums\Role::permissions()` maps each to code-defined permissions (`Identity\Enums\Permission`), registered as Gate abilities of the same name.
+- Routes use `can:<permission>`; policies and Form Requests check the same permissions. `use-pos` (`orders.manage`) and `operate-cashier` (owner, manager, cashier) remain for the internal POS order command.
+- `users.is_admin` and `users.staff_profile` are kept one release for rollback and are not read. There is no runtime role editor. Details: [SECURITY.md](SECURITY.md#roles-and-permissions), [ADR 0013](decisions/0013-code-defined-roles-and-permissions.md).
 
 ## Durable decisions
 
@@ -121,6 +121,7 @@ Every business row carries a NOT NULL `restaurant_id` whose column default is th
 | Order payment as a financial fact | `paid` is a mutable operational state; `ManagementOrderPayment` is unique per order | [ADR 0009](decisions/0009-idempotent-order-payments-in-management.md) |
 | Marketing and Instagram are siblings | No cross-module automation without an explicit contract | [ADR 0005](decisions/0005-marketing-and-instagram-are-separate-domains.md) |
 | Tenant-ready schema | `restaurant_id` everywhere; RLS deferred | [ADR 0012](decisions/0012-tenant-ready-schema.md) |
+| Code-defined roles on a restaurant membership | Permissions change only in code; every admin route names one | [ADR 0013](decisions/0013-code-defined-roles-and-permissions.md) |
 
 ## Not implemented
 
