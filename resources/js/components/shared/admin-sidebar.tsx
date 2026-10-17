@@ -10,9 +10,11 @@ import {
     Settings,
     ShoppingBasket,
     Store,
+    UserCog,
     Users,
     WalletCards,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BrandLogo } from '@/components/brand-logo';
@@ -24,49 +26,125 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import type { Permission } from '@/types/auth';
 
-const navigation = [
-    { label: 'Inicio', href: '/admin', icon: Store },
+const navigation: {
+    label: string;
+    href: string;
+    icon: LucideIcon;
+    permission: Permission;
+}[] = [
+    { label: 'Inicio', href: '/admin', icon: Store, permission: 'orders.view' },
     {
         label: 'Panel operativo',
         href: '/admin/dashboard',
         icon: LayoutDashboard,
+        permission: 'dashboard.view',
     },
-    { label: 'Pedidos', href: '/admin/orders', icon: ShoppingBasket },
-    { label: 'Clientes', href: '/admin/customers', icon: Users },
-    { label: 'Analíticas', href: '/admin/analytics', icon: BarChart3 },
-    { label: 'Gestión', href: '/admin/management', icon: WalletCards },
-    { label: 'Inventario', href: '/admin/inventory', icon: Package },
-    { label: 'Costo actual', href: '/admin/inventory/costing', icon: Package },
+    {
+        label: 'Pedidos',
+        href: '/admin/orders',
+        icon: ShoppingBasket,
+        permission: 'orders.view',
+    },
+    {
+        label: 'Clientes',
+        href: '/admin/customers',
+        icon: Users,
+        permission: 'customers.view',
+    },
+    {
+        label: 'Analíticas',
+        href: '/admin/analytics',
+        icon: BarChart3,
+        permission: 'dashboard.view',
+    },
+    {
+        label: 'Gestión',
+        href: '/admin/management',
+        icon: WalletCards,
+        permission: 'finance.view',
+    },
+    {
+        label: 'Inventario',
+        href: '/admin/inventory',
+        icon: Package,
+        permission: 'inventory.view',
+    },
+    {
+        label: 'Costo actual',
+        href: '/admin/inventory/costing',
+        icon: Package,
+        permission: 'inventory.view',
+    },
     {
         label: 'Políticas de costo',
         href: '/admin/inventory/costing-policies',
         icon: Package,
+        permission: 'inventory.view',
     },
-    { label: 'Recetas', href: '/admin/inventory/recipes', icon: Package },
-    { label: 'Ajustes', href: '/admin/inventory/adjustments', icon: Package },
-    { label: 'Producción', href: '/admin/inventory/production', icon: Package },
+    {
+        label: 'Recetas',
+        href: '/admin/inventory/recipes',
+        icon: Package,
+        permission: 'inventory.view',
+    },
+    {
+        label: 'Ajustes',
+        href: '/admin/inventory/adjustments',
+        icon: Package,
+        permission: 'inventory.view',
+    },
+    {
+        label: 'Producción',
+        href: '/admin/inventory/production',
+        icon: Package,
+        permission: 'inventory.view',
+    },
     {
         label: 'Plano del restaurante',
         href: '/admin/restaurant/floor',
         icon: Store,
+        permission: 'orders.manage',
     },
-    { label: 'Marketing', href: '/admin/marketing', icon: Megaphone },
+    {
+        label: 'Marketing',
+        href: '/admin/marketing',
+        icon: Megaphone,
+        permission: 'marketing.manage',
+    },
     {
         label: 'Instagram',
         href: '/admin/marketing/instagram',
         icon: Instagram,
+        permission: 'marketing.manage',
     },
-    { label: 'Configuración', href: '/admin/settings', icon: Settings },
-] as const;
+    {
+        label: 'Configuración',
+        href: '/admin/settings',
+        icon: Settings,
+        permission: 'catalog.view',
+    },
+    {
+        label: 'Usuarios',
+        href: '/admin/users',
+        icon: UserCog,
+        permission: 'users.manage',
+    },
+];
 
 export function AdminSidebar() {
-    const { url } = usePage();
+    const { url, props } = usePage();
     const [moreOpen, setMoreOpen] = useState(false);
-    const primaryNavigation = navigation.filter(({ href }) =>
+    const permissions = props.auth?.permissions ?? [];
+    // Only modules the backend lets this user open; the routes enforce it.
+    const allowedNavigation = navigation.filter(({ permission }) =>
+        permissions.includes(permission),
+    );
+    const primaryNavigation = allowedNavigation.filter(({ href }) =>
         ['/admin', '/admin/orders', '/admin/customers'].includes(href),
     );
-    const secondaryNavigation = navigation.filter(
+    const secondaryNavigation = allowedNavigation.filter(
         ({ href }) => !primaryNavigation.some((item) => item.href === href),
     );
     const isActive = (href: string) =>
@@ -197,7 +275,7 @@ export function AdminSidebar() {
                     aria-label="Navegación de administración"
                     className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:min-h-0 md:w-[5.75rem] md:flex-col md:overflow-visible"
                 >
-                    {navigation.map(({ label, href, icon: Icon }) => {
+                    {allowedNavigation.map(({ label, href, icon: Icon }) => {
                         const active = isActive(href);
 
                         return (

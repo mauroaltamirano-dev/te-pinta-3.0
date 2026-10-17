@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     cloneElement,
     isValidElement,
@@ -54,6 +54,12 @@ export default function FloorEditor({
     const [errors, setErrors] = useState<Record<string, string[]>>({});
     const [conflict, setConflict] = useState(false);
     const [preview, setPreview] = useState(false);
+    // Roles without floor.manage (e.g. waiters) only read the floor; the
+    // backend rejects their saves anyway.
+    const canManage = (usePage().props.auth?.permissions ?? []).includes(
+        'floor.manage',
+    );
+    const readOnly = preview || !canManage;
     const intentionalReload = useRef(false);
     const original = areas.find((area) => area.id === draft?.id);
     const dirty = !!draft && JSON.stringify(draft) !== JSON.stringify(original);
@@ -358,64 +364,71 @@ export default function FloorEditor({
                             Plano del restaurante
                         </h1>
                         <p className="mt-1 text-sm text-pretty text-admin-text-secondary">
-                            Configuración física del salón. Selecciona una mesa
-                            para editarla.
+                            {canManage
+                                ? 'Configuración física del salón. Selecciona una mesa para editarla.'
+                                : 'Distribución del salón en modo lectura.'}
                         </p>
                     </div>
-                    <Button
-                        className="min-h-11 bg-admin-accent text-admin-surface"
-                        disabled={!dirty || saving || conflict}
-                        onClick={() => void submit()}
-                    >
-                        {saving ? 'Guardando…' : 'Guardar cambios'}
-                    </Button>
+                    {canManage && (
+                        <Button
+                            className="min-h-11 bg-admin-accent text-admin-surface"
+                            disabled={!dirty || saving || conflict}
+                            onClick={() => void submit()}
+                        >
+                            {saving ? 'Guardando…' : 'Guardar cambios'}
+                        </Button>
+                    )}
                 </header>
-                <div className="grid grid-cols-1 items-end gap-3 rounded-xl border border-admin-border bg-admin-surface p-4 sm:grid-cols-[1fr_1fr_auto]">
-                    <div className="min-w-0 flex-1">
-                        <Field label="Área">
-                            <select
-                                className={selectClass}
-                                value={draft?.id || ''}
-                                disabled={saving}
-                                onChange={(event) =>
-                                    pickArea(Number(event.target.value))
-                                }
-                            >
-                                <option value="" disabled>
-                                    Seleccionar área
-                                </option>
-                                {areas.map((area) => (
-                                    <option key={area.id} value={area.id}>
-                                        {area.name}
-                                        {!area.is_active ? ' (inactiva)' : ''}
+                {canManage && (
+                    <div className="grid grid-cols-1 items-end gap-3 rounded-xl border border-admin-border bg-admin-surface p-4 sm:grid-cols-[1fr_1fr_auto]">
+                        <div className="min-w-0 flex-1">
+                            <Field label="Área">
+                                <select
+                                    className={selectClass}
+                                    value={draft?.id || ''}
+                                    disabled={saving}
+                                    onChange={(event) =>
+                                        pickArea(Number(event.target.value))
+                                    }
+                                >
+                                    <option value="" disabled>
+                                        Seleccionar área
                                     </option>
-                                ))}
-                            </select>
-                        </Field>
+                                    {areas.map((area) => (
+                                        <option key={area.id} value={area.id}>
+                                            {area.name}
+                                            {!area.is_active
+                                                ? ' (inactiva)'
+                                                : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <Field label="Nueva área">
+                                <Input
+                                    className="min-h-11"
+                                    value={newName}
+                                    maxLength={100}
+                                    onChange={(event) =>
+                                        setNewName(event.target.value)
+                                    }
+                                    placeholder="Nombre del área"
+                                    disabled={saving}
+                                />
+                            </Field>
+                        </div>
+                        <Button
+                            className="min-h-11"
+                            variant="outline"
+                            disabled={!newName.trim() || saving}
+                            onClick={() => void submit(true)}
+                        >
+                            Crear área
+                        </Button>
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <Field label="Nueva área">
-                            <Input
-                                className="min-h-11"
-                                value={newName}
-                                maxLength={100}
-                                onChange={(event) =>
-                                    setNewName(event.target.value)
-                                }
-                                placeholder="Nombre del área"
-                                disabled={saving}
-                            />
-                        </Field>
-                    </div>
-                    <Button
-                        className="min-h-11"
-                        variant="outline"
-                        disabled={!newName.trim() || saving}
-                        onClick={() => void submit(true)}
-                    >
-                        Crear área
-                    </Button>
-                </div>
+                )}
                 {message && (
                     <div
                         role={
@@ -461,32 +474,36 @@ export default function FloorEditor({
                                 {dirty ? 'Cambios sin guardar' : 'Guardado'}
                                 {!draft.is_active ? ' · Área inactiva' : ''}
                             </span>
-                            <Button
-                                className="min-h-11"
-                                variant="outline"
-                                disabled={saving || preview}
-                                onClick={() => add('table')}
-                            >
-                                Agregar mesa
-                            </Button>
-                            <Button
-                                className="min-h-11"
-                                variant="outline"
-                                disabled={saving || preview}
-                                onClick={() => add('obstacle')}
-                            >
-                                Agregar obstáculo
-                            </Button>
-                            <Button
-                                className="min-h-11"
-                                variant="outline"
-                                onClick={() => setPreview(!preview)}
-                                aria-pressed={preview}
-                            >
-                                {preview
-                                    ? 'Volver al editor'
-                                    : 'Vista de lectura'}
-                            </Button>
+                            {canManage && (
+                                <>
+                                    <Button
+                                        className="min-h-11"
+                                        variant="outline"
+                                        disabled={saving || preview}
+                                        onClick={() => add('table')}
+                                    >
+                                        Agregar mesa
+                                    </Button>
+                                    <Button
+                                        className="min-h-11"
+                                        variant="outline"
+                                        disabled={saving || preview}
+                                        onClick={() => add('obstacle')}
+                                    >
+                                        Agregar obstáculo
+                                    </Button>
+                                    <Button
+                                        className="min-h-11"
+                                        variant="outline"
+                                        onClick={() => setPreview(!preview)}
+                                        aria-pressed={preview}
+                                    >
+                                        {preview
+                                            ? 'Volver al editor'
+                                            : 'Vista de lectura'}
+                                    </Button>
+                                </>
+                            )}
                         </div>
                         <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
                             <section
@@ -495,17 +512,19 @@ export default function FloorEditor({
                             >
                                 <FloorPlan
                                     area={draft}
-                                    editable={!preview && !saving}
+                                    editable={!readOnly && !saving}
                                     selected={selection}
                                     onSelect={setSelection}
                                     onGeometryChange={geometryChange}
                                 />
-                                <p className="text-xs text-pretty text-admin-text-secondary">
-                                    Arrastra en escritorio o selecciona y ajusta
-                                    los campos. Las superposiciones están
-                                    permitidas; los límites del área se validan
-                                    al guardar.
-                                </p>
+                                {canManage && (
+                                    <p className="text-xs text-pretty text-admin-text-secondary">
+                                        Arrastra en escritorio o selecciona y
+                                        ajusta los campos. Las superposiciones
+                                        están permitidas; los límites del área
+                                        se validan al guardar.
+                                    </p>
+                                )}
                                 <Field label="Seleccionar elemento">
                                     <select
                                         className={selectClass}
@@ -554,7 +573,7 @@ export default function FloorEditor({
                                 </Field>
                             </section>
                             <fieldset
-                                disabled={saving || preview}
+                                disabled={saving || readOnly}
                                 className="grid min-w-0 gap-4 rounded-xl border border-admin-border bg-admin-surface p-4"
                             >
                                 <legend className="sr-only">
