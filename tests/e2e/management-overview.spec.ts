@@ -1,10 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { formatManagementMoney } from '@/features/management/presentation';
 import type { ManagementPageProps } from '@/features/management/types';
+import { expect, test } from './support/test';
 
-test.beforeAll(() => {
+test.beforeEach(() => {
     execFileSync(
         'php',
         [

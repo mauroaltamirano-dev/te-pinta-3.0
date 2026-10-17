@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { expect, test } from './support/test';
 
 declare global {
     interface Window {
@@ -80,11 +80,10 @@ async function releaseBody(page: Page, index: number) {
     }, index);
 }
 
-test.beforeAll(async ({ browser }, info) => {
+test.beforeEach(async ({ page }, info) => {
     category = `AUX preview ${info.project.name} ${info.workerIndex}`;
     firstItem = `${category} first`;
     secondItem = `${category} second`;
-    const page = await browser.newPage();
     await login(page);
     await page.goto('/admin/inventory');
     await page
@@ -117,12 +116,9 @@ test.beforeAll(async ({ browser }, info) => {
         await item.getByRole('button', { name: 'Guardar insumo' }).click();
         await expect(item).toBeHidden();
     }
-
-    await page.close();
 });
 
 test.beforeEach(async ({ page }) => {
-    await login(page);
     await openForm(page);
 });
 

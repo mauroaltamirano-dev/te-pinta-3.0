@@ -1,10 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { assertSafeTestingDatabaseName } from './support/database-safety';
+import type { FullConfig } from '@playwright/test';
+import { assertSafeSerialDatabaseReset } from './support/database-safety';
+import { resetPlaywrightDatabase } from './support/test-database';
 
-export default function globalSetup(): void {
+export default function globalSetup(config: FullConfig): void {
     const database = process.env.PLAYWRIGHT_DB_DATABASE ?? 'testing_playwright';
 
-    assertSafeTestingDatabaseName(database);
+    assertSafeSerialDatabaseReset(database, config.workers);
 
     execFileSync(
         'php',
@@ -17,28 +19,5 @@ export default function globalSetup(): void {
         { stdio: 'inherit' },
     );
 
-    const env = {
-        ...process.env,
-        APP_ENV: 'testing',
-        APP_DEBUG: 'false',
-        DB_DATABASE: database,
-        DB_URL: '',
-        CACHE_STORE: 'array',
-        SESSION_DRIVER: 'database',
-    };
-
-    execFileSync('php', ['artisan', 'migrate:fresh', '--force'], {
-        env,
-        stdio: 'inherit',
-    });
-    execFileSync(
-        'php',
-        [
-            'artisan',
-            'db:seed',
-            '--class=Tests\\Support\\PlaywrightDatabaseSeeder',
-            '--force',
-        ],
-        { env, stdio: 'inherit' },
-    );
+    resetPlaywrightDatabase(database, config.workers);
 }

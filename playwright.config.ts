@@ -11,6 +11,7 @@ assertSafeTestingDatabaseName(playwrightDatabase);
 
 export default defineConfig({
     testDir: './tests/e2e',
+    workers: 1,
     outputDir: './storage/app/playwright-results',
     globalSetup: './tests/e2e/global-setup.ts',
     forbidOnly: Boolean(process.env.CI),

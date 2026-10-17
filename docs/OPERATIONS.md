@@ -74,6 +74,12 @@ Strategy:
 
 Rules: frontend validation never counts as security or pricing coverage; tests go through the public interface and assert every observable effect (response, persisted rows, logs without private values); mutable browser scenarios create their own namespaced records instead of relying on a first global row; never call a check passed if it did not run.
 
+### Browser data isolation
+
+Browser scenarios import `test` and `expect` from `tests/e2e/support/test.ts`; type-only Playwright imports stay in `@playwright/test`. The automatic fixture recreates the explicitly test-named PostgreSQL database schema and runs `PlaywrightDatabaseSeeder` before each scenario, including retries and mobile/desktop projects. A scenario must not depend on another scenario's writes. Pure database-safety checks deliberately use the base Playwright test without the reset fixture.
+
+The current browser harness has one application server and one database, so `workers: 1` is intentional. A parallel `--workers` override is rejected before global setup can reset data; the per-scenario reset repeats that guard. Separate servers/databases would be required before enabling parallel execution. Run only one suite per database; simultaneous runs or other worktrees need distinct database names and server ports. Per-scenario reseeding costs runtime but prevents global totals, settings and catalog edits from leaking between files. Database names must contain a standalone `test`/`testing` segment, use lowercase letters/digits/underscores and fit PostgreSQL's 63-character identifier limit. No reset uses `DB_URL` or a development/production database name.
+
 Focused runs:
 
 ```bash
