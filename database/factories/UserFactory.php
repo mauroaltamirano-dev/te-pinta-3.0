@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -61,10 +62,24 @@ class UserFactory extends Factory
         ]);
     }
 
+    /**
+     * Give the user a membership with this role in the current restaurant.
+     */
+    public function withRole(Role $role, bool $active = true): static
+    {
+        return $this->afterCreating(function (User $user) use ($role, $active): void {
+            $membership = $user->memberships()->make()->forceFill(['role' => $role, 'is_active' => $active]);
+            $membership->save();
+            // Like a freshly authenticated request: the membership is already known.
+            $user->setRelation('currentMembership', $membership->fresh());
+        });
+    }
+
+    /**
+     * An active owner of the current restaurant (full access).
+     */
     public function administrator(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'is_admin' => true,
-        ]);
+        return $this->withRole(Role::Owner);
     }
 }

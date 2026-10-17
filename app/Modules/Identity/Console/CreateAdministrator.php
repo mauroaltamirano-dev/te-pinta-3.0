@@ -2,18 +2,18 @@
 
 namespace App\Modules\Identity\Console;
 
-use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Actions\CreateMember;
+use App\Modules\Identity\Enums\Role;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
 final class CreateAdministrator extends Command
 {
     protected $signature = 'admin:create {email?}';
 
-    protected $description = 'Crear un administrador sin habilitar el registro público';
+    protected $description = 'Crear un usuario Dueño del restaurante actual sin habilitar el registro público';
 
-    public function handle(): int
+    public function handle(CreateMember $members): int
     {
         $email = (string) ($this->argument('email') ?: $this->ask('Email'));
         $name = (string) $this->ask('Nombre');
@@ -24,13 +24,9 @@ final class CreateAdministrator extends Command
             ['email' => ['required', 'email', 'unique:users,email'], 'name' => ['required', 'string', 'max:255'], 'password' => ['required', Password::defaults()]],
         )->validate();
 
-        User::query()->create([
-            'email' => $email,
-            'name' => $name,
-            'password' => Hash::make($password),
-        ])->forceFill(['is_admin' => true, 'email_verified_at' => now()])->save();
+        $members->execute($name, $email, $password, Role::Owner);
 
-        $this->info('Administrador creado.');
+        $this->info('Administrador creado con rol Dueño.');
 
         return self::SUCCESS;
     }
