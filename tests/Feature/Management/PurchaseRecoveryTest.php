@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Management;
 
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Actions\CreateInventoryCategory;
 use App\Modules\Inventory\Actions\CreateInventoryItem;
@@ -374,7 +375,7 @@ final class PurchaseRecoveryTest extends TestCase
         $item = $this->item('Rice', UnitFamily::Weight, 'g', 'kg', 3);
         $p = $this->create($admin, $wallet, [new PurchaseLineData($item->id, null, $this->unit('kg')->id, '1', PurchasePriceMode::Total, 300)]);
         foreach ([null, 'waiter', 'cashier'] as $profile) {
-            $user = User::factory()->create(['staff_profile' => $profile]);
+            $user = ($profile === null ? User::factory() : User::factory()->withRole(Role::from($profile)))->create();
             $this->actingAs($user)->get('/admin/management/purchases')->assertForbidden();
             $this->get('/admin/management/purchases/create')->assertForbidden();
             $this->get('/admin/management/purchases/'.$p->id)->assertForbidden();

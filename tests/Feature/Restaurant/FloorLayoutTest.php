@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Restaurant;
 
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Restaurant\Models\DiningArea;
 use App\Modules\Restaurant\Models\DiningTable;
@@ -181,17 +182,24 @@ final class FloorLayoutTest extends TestCase
     }
 
     #[DataProvider('staff')]
-    public function test_only_administrators_can_read_or_modify_floor(?string $profile): void
+    public function test_only_floor_managers_can_modify_floor_and_only_order_takers_can_read_it(?string $role, bool $reads): void
     {
-        $user = User::factory()->create(['staff_profile' => $profile]);
+        $user = $role === null ? User::factory()->create() : User::factory()->withRole(Role::from($role))->create();
         $area = $this->area();
-        $this->actingAs($user)->get('/admin/restaurant/floor')->assertForbidden();
+        $response = $this->actingAs($user)->get('/admin/restaurant/floor');
+        $reads ? $response->assertOk() : $response->assertForbidden();
         $this->postJson('/admin/restaurant/areas', ['name' => 'Forbidden', 'width' => 1600, 'height' => 1000, 'is_active' => true])->assertForbidden();
         $this->putJson("/admin/restaurant/areas/{$area->id}/layout", $this->layout($area))->assertForbidden();
     }
 
     public static function staff(): array
     {
-        return ['waiter' => ['waiter'], 'cashier' => ['cashier'], 'no profile' => [null]];
+        return [
+            'waiter' => ['waiter', true],
+            'cashier' => ['cashier', true],
+            'kitchen' => ['kitchen', false],
+            'accountant' => ['accountant', false],
+            'no membership' => [null, false],
+        ];
     }
 }

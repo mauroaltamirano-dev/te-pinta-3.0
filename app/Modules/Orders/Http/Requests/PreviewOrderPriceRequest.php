@@ -2,6 +2,7 @@
 
 namespace App\Modules\Orders\Http\Requests;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Enums\OrderCondition;
@@ -13,7 +14,7 @@ final class PreviewOrderPriceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->routeIs('public.*') || $this->user()?->is_admin === true;
+        return $this->routeIs('public.*') || $this->user()?->can(Permission::OrdersManage->value) === true;
     }
 
     /** @return array<string, array<int, mixed>> */

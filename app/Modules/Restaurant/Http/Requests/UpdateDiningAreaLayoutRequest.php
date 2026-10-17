@@ -2,6 +2,7 @@
 
 namespace App\Modules\Restaurant\Http\Requests;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Restaurant\Support\FloorGeometry;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,7 @@ final class UpdateDiningAreaLayoutRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('administrator') === true;
+        return $this->user()?->can(Permission::FloorManage->value) === true;
     }
 
     /** @return array<string, mixed> */

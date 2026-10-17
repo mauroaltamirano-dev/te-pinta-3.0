@@ -14,6 +14,7 @@ use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Passkeys\Passkeys;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -41,10 +42,14 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::authenticateUsing(function (Request $request): ?User {
             $user = User::query()->where('email', $request->string('email'))->first();
 
-            return $user?->is_admin && Hash::check((string) $request->input('password'), $user->password)
+            // No active membership in this restaurant fails exactly like a wrong password.
+            return $user !== null && Hash::check((string) $request->input('password'), $user->password) && $user->role() !== null
                 ? $user
                 : null;
         });
+
+        // Passkey sign-in skips authenticateUsing; it must meet the same membership rule.
+        Passkeys::authorizeLoginUsing(fn (Request $request, mixed $user): bool => $user instanceof User && $user->role() !== null);
     }
 
     /**

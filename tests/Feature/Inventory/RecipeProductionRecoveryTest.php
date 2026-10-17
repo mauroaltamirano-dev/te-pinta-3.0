@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Actions\CreateProductionBatch;
 use App\Modules\Inventory\Actions\CreateRecipe;
@@ -242,7 +243,7 @@ final class RecipeProductionRecoveryTest extends TestCase
     {
         [$admin,$onion,$beef,$output,$recipe,$v] = $this->fixture();
         $b = $this->produce($admin, $v);
-        foreach ([User::factory()->create(['staff_profile' => 'waiter']), User::factory()->create(['staff_profile' => 'cashier'])] as $staff) {
+        foreach ([User::factory()->withRole(Role::Waiter)->create(), User::factory()->withRole(Role::Cashier)->create()] as $staff) {
             $this->actingAs($staff);
             foreach (['/admin/inventory/recipes', '/admin/inventory/recipes/create', '/admin/inventory/recipes/'.$recipe->id, '/admin/inventory/production', '/admin/inventory/production/create', '/admin/inventory/production/'.$b->id] as $path) {
                 $this->get($path)->assertForbidden();

@@ -3,4 +3,4 @@
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/dashboard', DashboardController::class)->name('dashboard');
+Route::get('/dashboard', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');

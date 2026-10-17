@@ -3,6 +3,7 @@
 namespace Tests\Feature\Inventory;
 
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Actions\ConfigureProductInventoryConsumption;
 use App\Modules\Inventory\Actions\ConsumeDeliveredOrder;
@@ -148,7 +149,7 @@ final class OrderConsumptionRecoveryTest extends TestCase
         $this->get($url)->assertOk();
         $this->post($url, ['mode' => 'no_inventory', 'components' => []])->assertRedirect();
         foreach (['waiter', 'cashier'] as $role) {
-            $user = User::factory()->create(['staff_profile' => $role]);
+            $user = User::factory()->withRole(Role::from($role))->create();
             $this->actingAs($user)->get($url)->assertForbidden();
             $this->post($url, ['mode' => 'no_inventory', 'components' => []])->assertForbidden();
         }

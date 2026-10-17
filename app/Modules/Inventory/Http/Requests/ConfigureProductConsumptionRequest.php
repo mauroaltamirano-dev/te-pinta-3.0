@@ -2,6 +2,7 @@
 
 namespace App\Modules\Inventory\Http\Requests;
 
+use App\Modules\Identity\Enums\Permission;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -9,7 +10,7 @@ final class ConfigureProductConsumptionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('administrator') ?? false;
+        return $this->user()?->can(Permission::InventoryManage->value) ?? false;
     }
 
     /** @return array<string,list<mixed>> */

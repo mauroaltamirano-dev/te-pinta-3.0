@@ -3,6 +3,7 @@
 namespace Tests\Feature\Orders;
 
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Management\Http\Resources\AdminFinancialTransactionResource;
 use App\Modules\Management\Models\ManagementOrderPayment;
@@ -232,7 +233,7 @@ final class OrderContextTest extends TestCase
     public function test_staff_can_create_unpaid_pos_context_but_ordinary_users_cannot(): void
     {
         foreach (['waiter', 'cashier'] as $profile) {
-            $staff = User::factory()->create(['staff_profile' => $profile]);
+            $staff = User::factory()->withRole(Role::from($profile))->create();
             $order = app(CreateOrder::class)->execute($this->dineInData(), OrderSource::Pos, $staff->id);
             $this->assertNull($order->customer_id);
             $this->assertSame('unpaid', $order->payment_status->value);
@@ -256,7 +257,7 @@ final class OrderContextTest extends TestCase
 
     public function test_staff_cannot_confirm_payment_through_pos_creation(): void
     {
-        $waiter = User::factory()->create(['staff_profile' => 'waiter']);
+        $waiter = User::factory()->withRole(Role::Waiter)->create();
         $this->expectException(AuthorizationException::class);
         app(CreateOrder::class)->execute($this->dineInData(['paymentStatus' => PaymentStatus::Paid]), OrderSource::Pos, $waiter->id);
     }

@@ -26,9 +26,11 @@ use Inertia\Response;
 
 final class OrderManagementController
 {
-    public function home(BuildAdminOrderFormOptions $options): Response
+    public function home(Request $request, BuildAdminOrderFormOptions $options): Response|RedirectResponse
     {
-        Gate::authorize('create', Order::class);
+        if ($request->user()?->can('create', Order::class) !== true) {
+            return to_route('admin.orders.index');
+        }
 
         return Inertia::render('admin/home', $options->execute());
     }

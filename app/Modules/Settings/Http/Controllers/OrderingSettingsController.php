@@ -2,6 +2,7 @@
 
 namespace App\Modules\Settings\Http\Controllers;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
@@ -21,7 +22,7 @@ final class OrderingSettingsController
 {
     public function index(Request $request): Response
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::CatalogManage->value) === true, 403);
 
         /** @var Collection<string, int> $discounts */
         $discounts = RawPriceDiscount::query()->pluck('amount', 'pricing_mode');

@@ -3,7 +3,7 @@
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Modules\Identity\Console\CreateAdministrator;
-use App\Modules\Identity\Http\Middleware\EnsureUserIsAdministrator;
+use App\Modules\Identity\Http\Middleware\EnsureActiveMembership;
 use App\Modules\Instagram\Console\FailStaleInstagramStoryPublicationsCommand;
 use App\Modules\Instagram\Console\GenerateInstagramStoryPublications;
 use App\Modules\Instagram\Http\Middleware\AuthenticateN8nAutomation;
@@ -37,7 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'admin' => EnsureUserIsAdministrator::class,
+            'restaurant.member' => EnsureActiveMembership::class,
             'admin.request.log' => LogAdminRequest::class,
             'n8n.automation' => AuthenticateN8nAutomation::class,
         ]);

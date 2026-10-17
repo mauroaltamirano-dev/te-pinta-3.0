@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Actions\ConfigureCostingPolicy;
 use App\Modules\Inventory\Models\CostingPolicy;
@@ -115,7 +116,7 @@ final class CostingPolicyTest extends TestCase
     public function test_waiter_cashier_and_guest_cannot_read_or_mutate_costing(?string $profile): void
     {
         if ($profile !== null) {
-            $this->actingAs(User::factory()->create(['staff_profile' => $profile]));
+            $this->actingAs(User::factory()->withRole(Role::from($profile))->create());
         }
         foreach (['/admin/inventory/costing', '/admin/inventory/costing-policies'] as $url) {
             $r = $this->getJson($url);

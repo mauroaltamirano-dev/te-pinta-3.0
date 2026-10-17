@@ -2,6 +2,7 @@
 
 namespace App\Modules\Inventory\Http\Controllers;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Inventory\Models\CostingPolicy;
 use App\Modules\Inventory\Queries\BuildProductUnitEconomics;
 use App\Modules\Products\Models\Product;
@@ -14,7 +15,7 @@ final class ProductCostingController
 {
     public function index(Request $request, BuildProductUnitEconomics $builder): Response
     {
-        Gate::authorize('administrator');
+        Gate::authorize(Permission::InventoryView->value);
         $v = $request->validate(['product_id' => ['nullable', 'integer'], 'quantity' => ['nullable', 'integer', 'between:1,120']]);
         $product = isset($v['product_id']) ? Product::query()->whereKey((int) $v['product_id'])->firstOrFail() : null;
 

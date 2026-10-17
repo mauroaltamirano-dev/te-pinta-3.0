@@ -2,13 +2,14 @@
 
 namespace App\Modules\Instagram\Http\Requests;
 
+use App\Modules\Identity\Enums\Permission;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreInstagramStoryAssetRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->is_admin === true;
+        return $this->user()?->can(Permission::MarketingManage->value) === true;
     }
 
     /** @return array<string, array<int, mixed>> */

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Inventory\Http\Controllers;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Inventory\Actions\ConfigureProductInventoryConsumption;
 use App\Modules\Inventory\Http\Requests\ConfigureProductConsumptionRequest;
 use App\Modules\Inventory\Models\InventoryItem;
@@ -17,7 +18,7 @@ final class ProductInventoryConsumptionController
 {
     public function show(int $product): Response
     {
-        Gate::authorize('administrator');
+        Gate::authorize(Permission::InventoryView->value);
         $p = DB::table('products')->where('id', $product)->whereNull('deleted_at')->first();
         abort_if($p === null, 404);
 

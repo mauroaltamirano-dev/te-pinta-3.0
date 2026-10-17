@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Actions\CreateInventoryAdjustment;
 use App\Modules\Inventory\Actions\PreviewInventoryAdjustment;
@@ -209,7 +210,7 @@ final class AdjustmentRecoveryTest extends TestCase
         $this->get('/admin/inventory/adjustments/'.$b->id)->assertOk();
         $this->post('/admin/inventory/adjustments/'.$b->id.'/reverse', ['effective_date' => '2026-10-12', 'note' => 'Duplicate'])->assertRedirect();
         foreach (['waiter', 'cashier'] as $profile) {
-            $this->actingAs(User::factory()->create(['staff_profile' => $profile]));
+            $this->actingAs(User::factory()->withRole(Role::from($profile))->create());
             foreach (['/admin/inventory/adjustments', '/admin/inventory/adjustments/'.$b->id] as $path) {
                 $this->get($path)->assertForbidden();
             }

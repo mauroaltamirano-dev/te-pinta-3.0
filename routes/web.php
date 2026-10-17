@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 require base_path('app/Modules/PublicSite/routes.php');
 require base_path('app/Modules/Instagram/public-routes.php');
 
-Route::middleware(['auth', 'verified', 'admin', 'admin.request.log'])
+Route::middleware(['auth', 'verified', 'restaurant.member', 'admin.request.log'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function (): void {
@@ -20,4 +20,5 @@ Route::middleware(['auth', 'verified', 'admin', 'admin.request.log'])
         require base_path('app/Modules/Restaurant/routes.php');
         require base_path('app/Modules/Marketing/routes.php');
         require base_path('app/Modules/Instagram/routes.php');
+        require base_path('app/Modules/Identity/routes.php');
     });

@@ -2,13 +2,14 @@
 
 namespace App\Modules\Restaurant\Http\Requests;
 
+use App\Modules\Identity\Enums\Permission;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class CreateDiningAreaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('administrator') === true;
+        return $this->user()?->can(Permission::FloorManage->value) === true;
     }
 
     /** @return array<string, mixed> */

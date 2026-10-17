@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Inventory;
 
-use App\Modules\Identity\Enums\StaffProfile;
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Actions\CreateInventoryCategory;
 use App\Modules\Inventory\Actions\CreateInventoryItem;
@@ -108,8 +108,8 @@ final class InventoryFoundationRecoveryTest extends TestCase
     public function test_foundation_admin_does_not_grant_waiter_or_cashier_access(): void
     {
         $this->withoutVite();
-        foreach ([StaffProfile::Waiter, StaffProfile::Cashier] as $profile) {
-            $staff = User::factory()->create(['is_admin' => false, 'staff_profile' => $profile]);
+        foreach ([Role::Waiter, Role::Cashier] as $role) {
+            $staff = User::factory()->withRole($role)->create();
             $this->actingAs($staff)->get('/admin/inventory')->assertForbidden();
             $this->actingAs($staff)->post('/admin/inventory/categories', ['name' => 'Denied'])->assertForbidden();
         }

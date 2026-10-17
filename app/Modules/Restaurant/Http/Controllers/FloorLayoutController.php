@@ -2,6 +2,7 @@
 
 namespace App\Modules\Restaurant\Http\Controllers;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Restaurant\Actions\CreateDiningArea;
 use App\Modules\Restaurant\Actions\UpdateDiningAreaLayout;
 use App\Modules\Restaurant\Http\Requests\CreateDiningAreaRequest;
@@ -18,7 +19,7 @@ final class FloorLayoutController
 {
     public function index(FloorLayoutQuery $query): Response
     {
-        Gate::authorize('administrator');
+        Gate::authorize(Permission::OrdersManage->value);
 
         return Inertia::render('admin/restaurant/floor', ['areas' => $query->areas()]);
     }

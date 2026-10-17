@@ -2,6 +2,7 @@
 
 namespace App\Modules\Instagram\Http\Controllers;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Instagram\Actions\ArchiveInstagramStoryPublication;
 use App\Modules\Instagram\Actions\ArchiveOldInstagramStoryPublications;
 use App\Modules\Instagram\Actions\CancelInstagramStoryPublication;
@@ -32,7 +33,7 @@ final class InstagramManagementController
 {
     public function index(Request $request, InstagramStoryMediaUrl $mediaUrl): Response
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $validated = $request->validate([
             'status' => ['sometimes', 'string', Rule::in(['all', ...array_column(InstagramStoryPublicationStatus::cases(), 'value')])],
             'period' => ['sometimes', 'string', Rule::in(['today', '7_days', '30_days', 'all'])],
@@ -146,7 +147,7 @@ final class InstagramManagementController
 
     public function updateAutomation(Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $validated = $request->validate(['enabled' => ['required', 'boolean']]);
         InstagramAutomationSetting::current()->update(['enabled' => $validated['enabled']]);
 
@@ -191,7 +192,7 @@ final class InstagramManagementController
 
     public function destroyAsset(Request $request, InstagramStoryAsset $asset): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $path = DB::transaction(function () use ($asset): string {
             $locked = InstagramStoryAsset::query()->lockForUpdate()->findOrFail($asset->id);
             $scheduleNames = $locked->schedules()->orderBy('name')->pluck('name');
@@ -238,7 +239,7 @@ final class InstagramManagementController
 
     public function destroySchedule(Request $request, InstagramStorySchedule $schedule): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         DB::transaction(function () use ($schedule): void {
             $locked = InstagramStorySchedule::query()->lockForUpdate()->findOrFail($schedule->id);
             if ($locked->publications()->exists()) {
@@ -252,7 +253,7 @@ final class InstagramManagementController
 
     public function storePublication(Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $data = $request->validate(['asset_id' => ['required', 'integer', 'exists:instagram_story_assets,id']]);
         DB::transaction(function () use ($data): void {
             $asset = InstagramStoryAsset::query()->lockForUpdate()->whereKey($data['asset_id'])->where('is_active', true)->first();
@@ -272,7 +273,7 @@ final class InstagramManagementController
 
     public function archivePublication(Request $request, InstagramStoryPublication $publication, ArchiveInstagramStoryPublication $archive): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $archive->execute($publication);
 
         return back()->with('success', 'Publicación archivada.');
@@ -280,7 +281,7 @@ final class InstagramManagementController
 
     public function archiveOldPublications(Request $request, ArchiveOldInstagramStoryPublications $archive): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $validated = $request->validate(['days' => ['required', 'integer', Rule::in([30])]]);
         $count = $archive->execute($validated['days']);
 
@@ -289,7 +290,7 @@ final class InstagramManagementController
 
     public function retryPublication(Request $request, InstagramStoryPublication $publication, RetryInstagramStoryPublication $retry): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $retry->execute($publication);
 
         return back()->with('success', 'Publicación devuelta a la cola.');
@@ -297,7 +298,7 @@ final class InstagramManagementController
 
     public function cancelPublication(Request $request, InstagramStoryPublication $publication, CancelInstagramStoryPublication $cancel): RedirectResponse
     {
-        abort_unless($request->user()?->is_admin === true, 403);
+        abort_unless($request->user()?->can(Permission::MarketingManage->value) === true, 403);
         $cancel->execute($publication);
 
         return back()->with('success', 'Publicación cancelada.');

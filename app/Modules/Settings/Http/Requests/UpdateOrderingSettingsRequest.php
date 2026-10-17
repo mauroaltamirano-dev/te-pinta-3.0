@@ -2,6 +2,7 @@
 
 namespace App\Modules\Settings\Http\Requests;
 
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Identity\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,7 +13,7 @@ final class UpdateOrderingSettingsRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user instanceof User && $user->is_admin;
+        return $user instanceof User && $user->hasPermission(Permission::CatalogManage);
     }
 
     /** @return array<string, array<int, mixed>> */

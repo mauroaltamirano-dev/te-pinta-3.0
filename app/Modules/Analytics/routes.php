@@ -2,4 +2,4 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/analytics', 'admin/analytics/index')->name('analytics.index');
+Route::inertia('/analytics', 'admin/analytics/index')->middleware('can:dashboard.view')->name('analytics.index');

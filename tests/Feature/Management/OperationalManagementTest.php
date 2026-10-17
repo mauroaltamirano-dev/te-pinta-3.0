@@ -3,6 +3,7 @@
 namespace Tests\Feature\Management;
 
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Identity\Enums\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Management\Models\DistributionRuleVersion;
 use App\Modules\Management\Models\FinancialTransaction;
@@ -153,7 +154,7 @@ final class OperationalManagementTest extends TestCase
     public function test_management_reads_reject_fixed_staff_roles(): void
     {
         foreach (['waiter', 'cashier'] as $role) {
-            $user = User::factory()->create(['staff_profile' => $role]);
+            $user = User::factory()->withRole(Role::from($role))->create();
             foreach (['/admin/management', '/admin/management?section=wallets', '/admin/management/audit', '/admin/management/purchases'] as $url) {
                 $this->actingAs($user)->get($url)->assertForbidden();
             }

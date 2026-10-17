@@ -7,6 +7,7 @@ use App\Core\Support\TestingDatabaseGuard;
 use App\Core\Tenancy\RestaurantContext;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Policies\CustomerPolicy;
+use App\Modules\Identity\Enums\Permission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Inventory\Listeners\RecordDeliveredOrderConsumption;
 use App\Modules\Inventory\Listeners\ReverseCancelledOrderConsumption;
@@ -136,7 +137,9 @@ class AppServiceProvider extends ServiceProvider
             : null,
         );
 
-        Gate::define('administrator', fn (User $user): bool => $user->isAdministrator());
+        foreach (Permission::cases() as $permission) {
+            Gate::define($permission->value, fn (User $user): bool => $user->hasPermission($permission));
+        }
         Gate::define('use-pos', fn (User $user): bool => $user->canUsePos());
         Gate::define('operate-cashier', fn (User $user): bool => $user->canOperateCashier());
 

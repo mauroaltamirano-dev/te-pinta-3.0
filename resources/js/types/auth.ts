@@ -10,8 +10,30 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type Permission =
+    | 'dashboard.view'
+    | 'orders.view'
+    | 'orders.manage'
+    | 'customers.view'
+    | 'customers.manage'
+    | 'catalog.view'
+    | 'catalog.manage'
+    | 'inventory.view'
+    | 'inventory.manage'
+    | 'finance.view'
+    | 'finance.manage'
+    | 'marketing.manage'
+    | 'floor.manage'
+    | 'settings.manage'
+    | 'users.manage';
+
+export type Role =
+    'owner' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'accountant';
+
 export type Auth = {
     user: User;
+    role: Role | null;
+    permissions: Permission[];
 };
 
 /* @chisel-passkeys */
