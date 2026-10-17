@@ -23,6 +23,8 @@ Domain-specific tables are described in their own documents: [ORDERS_AND_PRICING
 - Every process currently runs as `tenancy.default_restaurant_id` (`1`, "Te Pinta"). Business unique keys are unique per restaurant: category/product/tag/add-on slugs, order setting keys, raw-price discount tiers, outflow category codes, active customer phone, inventory category/item/recipe/costing-policy names, the single active distribution rule, the single order-payment default wallet and the featured-product window exclusion.
 - Pending before a second restaurant: read isolation with row-level security (it also covers `DB::table` reads), per-restaurant order numbering (`order_public_id_seq` is global), same-restaurant validation in cross-table triggers, and per-restaurant seed settings (`order_settings`, `order_addons`, outflow categories, Instagram).
 
+- Restaurant branding is stored in `restaurants.accent_color varchar(7) not null default '#b84f3f'`. The `restaurants_accent_color_hex` check requires lowercase six-digit hex; backend validation also enforces contrast. Migration `2026_10_16_020000_add_restaurant_accent_color.php` adds only this configuration column and preserves existing restaurant rows. Rolling it back discards customized accents; it does not affect order or financial history.
+
 Decision record: [ADR 0012](decisions/0012-tenant-ready-schema.md). Migration: `2026_10_16_000000_prepare_restaurant_tenancy.php`.
 
 ## Staff memberships

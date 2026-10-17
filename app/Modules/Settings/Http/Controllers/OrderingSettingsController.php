@@ -2,6 +2,7 @@
 
 namespace App\Modules\Settings\Http\Controllers;
 
+use App\Core\Branding\RestaurantBranding;
 use App\Modules\Identity\Enums\Permission;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
@@ -20,7 +21,7 @@ use LogicException;
 
 final class OrderingSettingsController
 {
-    public function index(Request $request): Response
+    public function index(Request $request, RestaurantBranding $branding): Response
     {
         abort_unless($request->user()?->can(Permission::CatalogManage->value) === true, 403);
 
@@ -28,6 +29,7 @@ final class OrderingSettingsController
         $discounts = RawPriceDiscount::query()->pluck('amount', 'pricing_mode');
 
         return Inertia::render('admin/settings/general', [
+            'branding' => ['accent_color' => $branding->palette()->accent],
             'orderingSettings' => [
                 'combined_dozen_raw_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice),
                 'combined_dozen_cooked_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice),

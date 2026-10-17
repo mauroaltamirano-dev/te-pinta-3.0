@@ -26,13 +26,13 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 
 | Module | Responsibility |
 | --- | --- |
-| `Core` | `ProductPriceProvider` contract + `SellableProductPrice`, `PublicIdentifier`, `RestaurantContext` (tenancy), `TestingDatabaseGuard` |
+| `Core` | `ProductPriceProvider` contract + `SellableProductPrice`, `PublicIdentifier`, `RestaurantContext` (tenancy), `TestingDatabaseGuard`, `Branding` (validated restaurant accent palette) |
 | `Shared` | `AssignRequestId` (request ID in log context) and `LogAdminRequest` (`admin.request.completed`) middleware |
 | `Identity` | Users, per-restaurant memberships (`restaurant_user`), code-defined roles and permissions, `restaurant.member` middleware, user management (`/admin/users`), `admin:create` console command |
 | `Products` | Categories, products, tags, availability, pricing family (`empanada`/`unit`), cooked base prices, raw-price discounts, public catalog and product detail |
 | `Customers` | Customer profiles, phone normalization, search, history, soft delete and restore |
 | `Orders` | Order creation (admin, public checkout, POS command), editing, snapshots, revisions, status and payment transitions, pricing engine, WhatsApp link |
-| `Settings` | Admin write surface for ordering settings, raw-price discounts and add-ons (`/admin/settings/general`) |
+| `Settings` | Admin write surface for restaurant branding, ordering settings, raw-price discounts and add-ons (`/admin/settings/general`) |
 | `Inventory` | Items, units, categories, purchase presentations, stock movements, cost layers, valuation, recipes, production, adjustments, order consumption, current product costing |
 | `Management` | Wallets, immutable ledger, outflows, transfers, distributions, order payments, rich purchases, attachments, financial summary and audit (UI label: **Gestión**) |
 | `Dashboard` | Read-only operational dashboard over order snapshots (`/admin/dashboard`) |
@@ -100,6 +100,10 @@ Do not add new violations; remove these when the owning area is reworked.
 ## Multi-tenancy
 
 Every business row carries a NOT NULL `restaurant_id` whose column default is the PostgreSQL session setting `app.current_restaurant_id`. `RestaurantContext` (a singleton built from `config('tenancy.default_restaurant_id')`, default `1`) applies it on every new connection. Business unique keys are scoped per restaurant. Read isolation is **not** implemented: it is planned as PostgreSQL row-level security (not Eloquent scopes) because many read models use `DB::table`. See [DATABASE.md](DATABASE.md#tenancy) and [ADR 0012](decisions/0012-tenant-ready-schema.md).
+
+## Branding
+
+`Core/Branding/RestaurantBranding` reads and updates only the restaurant selected by `RestaurantContext`; it has no business-module dependencies. Settings owns its administrative HTTP write surface, under the same authorization as existing general settings. `BrandingServiceProvider` lazily supplies the root view; Inertia shares validated palette values for subsequent navigation. The provider performs no database access during console boot or migrations. See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) and [ADR 0014](decisions/0014-light-theme-restaurant-branding.md).
 
 ## Access model
 

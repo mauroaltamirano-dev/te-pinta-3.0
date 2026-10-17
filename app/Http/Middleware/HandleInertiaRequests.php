@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Core\Branding\RestaurantBranding;
 use App\Modules\Identity\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -42,6 +43,11 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'brand' => function (): array {
+                $palette = app(RestaurantBranding::class)->palette();
+
+                return ['accent' => $palette->accent, 'variables' => $palette->cssVariables()];
+            },
             'auth' => [
                 'user' => $user,
                 'role' => $user?->role()?->value,
