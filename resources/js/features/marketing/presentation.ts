@@ -17,10 +17,12 @@ export const featuredProductStatusStyles: Record<
     FeaturedProductStatus,
     string
 > = {
-    inactive: 'border-white/10 bg-white/5 text-admin-text-secondary',
-    scheduled: 'border-sky-400/20 bg-sky-400/10 text-sky-200',
-    active: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
-    finished: 'border-white/10 bg-white/5 text-admin-text-tertiary',
+    inactive:
+        'border-admin-border bg-admin-surface-raised text-admin-text-secondary',
+    scheduled: 'border-info/40 bg-info-subtle text-info',
+    active: 'border-success/40 bg-success-subtle text-success',
+    finished:
+        'border-admin-border bg-admin-surface-raised text-admin-text-tertiary',
 };
 
 export const visibilityReasonLabels: Record<

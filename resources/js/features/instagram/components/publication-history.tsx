@@ -245,7 +245,7 @@ export function PublicationHistory({
                 {actionError && (
                     <p
                         role="alert"
-                        className="border-b border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-red-200"
+                        className="border-b border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-danger"
                     >
                         {actionError}
                     </p>
@@ -322,7 +322,7 @@ export function PublicationHistory({
                         className="grid min-h-40 place-items-center p-6 text-center"
                     >
                         <div>
-                            <p className="font-semibold text-white">
+                            <p className="font-semibold text-admin-text-primary">
                                 No hay publicaciones para estos filtros
                             </p>
                             <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -383,11 +383,11 @@ export function PublicationHistory({
                 open={Boolean(selected)}
                 onOpenChange={(open) => !open && setSelected(null)}
             >
-                <SheetContent className="admin-shell dark w-full overflow-y-auto border-admin-border bg-admin-surface sm:max-w-lg">
+                <SheetContent className="admin-shell w-full overflow-y-auto border-admin-border bg-admin-surface sm:max-w-lg">
                     {selected && (
                         <>
                             <SheetHeader className="border-b border-admin-border pr-12">
-                                <SheetTitle className="text-xl text-white">
+                                <SheetTitle className="text-xl text-admin-text-primary">
                                     Detalle de publicación
                                 </SheetTitle>
                                 <SheetDescription>
@@ -403,7 +403,7 @@ export function PublicationHistory({
                                         className="aspect-[9/16] w-20 rounded-lg object-cover"
                                     />
                                     <div className="min-w-0">
-                                        <h3 className="font-semibold text-balance text-white">
+                                        <h3 className="font-semibold text-balance text-admin-text-primary">
                                             {selected.asset.name}
                                         </h3>
                                         <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -492,7 +492,7 @@ export function PublicationHistory({
                 open={Boolean(archiveTarget)}
                 onOpenChange={(open) => !open && setArchiveTarget(null)}
             >
-                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface">
+                <DialogContent className="admin-shell border-admin-border bg-admin-surface">
                     <DialogHeader>
                         <DialogTitle>Archivar publicación</DialogTitle>
                         <DialogDescription>
@@ -530,7 +530,7 @@ export function PublicationHistory({
                 </DialogContent>
             </Dialog>
             <Dialog open={clearOpen} onOpenChange={setClearOpen}>
-                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface">
+                <DialogContent className="admin-shell border-admin-border bg-admin-surface">
                     <DialogHeader>
                         <DialogTitle>Limpiar historial</DialogTitle>
                         <DialogDescription>
@@ -656,10 +656,10 @@ function PublicationRow(props: PublicationItemProps) {
                     <img
                         src={publication.asset.preview_url}
                         alt=""
-                        className="aspect-[9/16] h-12 rounded object-cover ring-1 ring-white/10"
+                        className="aspect-[9/16] h-12 rounded object-cover ring-1 ring-admin-border"
                     />
                     <span className="min-w-0">
-                        <span className="block truncate font-semibold text-white">
+                        <span className="block truncate font-semibold text-admin-text-primary">
                             {publication.asset.name}
                         </span>
                         <span className="mt-0.5 block truncate text-xs text-admin-text-tertiary">
@@ -676,7 +676,7 @@ function PublicationRow(props: PublicationItemProps) {
                     variant="outline"
                     className={
                         publication.requires_manual_review
-                            ? 'border-amber-400/30 bg-amber-400/10 text-amber-100'
+                            ? 'border-warning/40 bg-warning-subtle text-warning'
                             : status.className
                     }
                 >
@@ -708,7 +708,7 @@ function PublicationCard(props: PublicationItemProps) {
                     className="aspect-[9/16] h-16 rounded object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold text-white">
+                    <h3 className="truncate font-semibold text-admin-text-primary">
                         {publication.asset.name}
                     </h3>
                     <p className="mt-1 text-xs text-admin-text-tertiary tabular-nums">
@@ -716,7 +716,7 @@ function PublicationCard(props: PublicationItemProps) {
                     </p>
                     <Badge
                         variant="outline"
-                        className={`mt-2 ${publication.requires_manual_review ? 'border-amber-400/30 bg-amber-400/10 text-amber-100' : status.className}`}
+                        className={`mt-2 ${publication.requires_manual_review ? 'border-warning/40 bg-warning-subtle text-warning' : status.className}`}
                     >
                         {publication.requires_manual_review
                             ? 'Revisión necesaria'
@@ -726,7 +726,7 @@ function PublicationCard(props: PublicationItemProps) {
                 <PublicationMenu {...props} />
             </div>
             {publication.requires_manual_review && (
-                <p className="mt-3 text-xs text-amber-100">
+                <p className="mt-3 text-xs text-warning">
                     Meta pudo haber recibido esta publicación. Revisala antes de
                     volver a enviarla para evitar duplicados.
                 </p>
@@ -737,7 +737,7 @@ function PublicationCard(props: PublicationItemProps) {
 
 function ReviewWarning() {
     return (
-        <div className="flex gap-3 rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-sm text-amber-100">
+        <div className="flex gap-3 rounded-xl border border-warning/40 bg-warning-subtle p-3 text-sm text-warning">
             <ShieldAlert className="mt-0.5 size-4 shrink-0" />
             <p>
                 <strong>Revisión necesaria.</strong> Meta pudo haber recibido
@@ -756,11 +756,11 @@ function ErrorPanel({
     return (
         <section
             aria-labelledby="publication-error-title"
-            className="rounded-xl border border-red-400/20 bg-red-400/10 p-4"
+            className="rounded-xl border border-danger/40 bg-danger-subtle p-4"
         >
             <h3
                 id="publication-error-title"
-                className="font-semibold text-red-100"
+                className="font-semibold text-danger"
             >
                 {publication.requires_manual_review
                     ? 'Resultado incierto'
@@ -770,10 +770,10 @@ function ErrorPanel({
                       ? 'Error reintentable'
                       : 'Error no reintentable'}
             </h3>
-            <p className="mt-2 text-sm text-pretty text-red-100">
+            <p className="mt-2 text-sm text-pretty text-danger">
                 {readableError(publication)}
             </p>
-            <p className="mt-2 text-xs text-red-200/80">
+            <p className="mt-2 text-xs text-danger">
                 {publication.requires_manual_review
                     ? 'No reintentes sin comprobar primero Instagram.'
                     : publication.can_retry
@@ -835,7 +835,7 @@ function Fact({ label, value }: { label: string; value: string }) {
     return (
         <div className="min-w-0">
             <dt className="text-xs text-admin-text-tertiary">{label}</dt>
-            <dd className="mt-0.5 text-sm break-words text-white tabular-nums">
+            <dd className="mt-0.5 text-sm break-words text-admin-text-primary tabular-nums">
                 {value}
             </dd>
         </div>
@@ -899,7 +899,7 @@ function OperationalSummary({
                     <dt className="text-xs text-admin-text-tertiary">
                         {label}
                     </dt>
-                    <dd className="mt-1 font-semibold text-white tabular-nums">
+                    <dd className="mt-1 font-semibold text-admin-text-primary tabular-nums">
                         {value}
                     </dd>
                 </div>

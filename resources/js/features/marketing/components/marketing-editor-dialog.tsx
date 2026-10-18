@@ -117,7 +117,7 @@ export function MarketingEditorDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden border-admin-border bg-admin-surface sm:top-1/2 sm:h-auto sm:max-w-5xl">
+            <DialogContent className="admin-shell top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden border-admin-border bg-admin-surface sm:top-1/2 sm:h-auto sm:max-w-5xl">
                 <DialogHeader className="relative z-10 shrink-0">
                     <DialogTitle>
                         {featured
@@ -299,7 +299,7 @@ export function MarketingEditorDialog({
 
                             <label className="flex min-h-16 cursor-pointer items-center justify-between gap-4 rounded-xl border border-admin-border bg-admin-surface-raised px-4">
                                 <span>
-                                    <span className="block text-sm font-semibold text-white">
+                                    <span className="block text-sm font-semibold text-admin-text-primary">
                                         Recomendación habilitada
                                     </span>
                                     <span className="mt-0.5 block text-xs text-admin-text-tertiary">
@@ -323,7 +323,7 @@ export function MarketingEditorDialog({
                             data-testid="marketing-editor-preview"
                             className="min-w-0 rounded-2xl border border-admin-border bg-admin-canvas p-3 sm:p-4"
                         >
-                            <p className="mb-3 text-xs font-semibold tracking-[0.16em] text-admin-accent uppercase">
+                            <p className="mb-3 text-xs font-semibold tracking-[0.16em] text-admin-accent-text uppercase">
                                 Vista previa pública
                             </p>
                             {preview ? (

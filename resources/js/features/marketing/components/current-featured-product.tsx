@@ -28,10 +28,10 @@ export function CurrentFeaturedProduct({
             className="min-w-0 rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5"
         >
             <header>
-                <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent uppercase">
+                <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent-text uppercase">
                     Recomendación actual
                 </p>
-                <h2 className="mt-2 text-xl font-semibold text-white">
+                <h2 className="mt-2 text-xl font-semibold text-admin-text-primary">
                     Qué destacamos ahora
                 </h2>
             </header>
@@ -39,10 +39,10 @@ export function CurrentFeaturedProduct({
             {!featured ? (
                 <div className="mt-5 grid min-h-64 place-items-center rounded-xl border border-dashed border-admin-border bg-admin-canvas px-5 py-10 text-center">
                     <div>
-                        <div className="mx-auto grid size-12 place-items-center rounded-xl bg-admin-selection text-admin-accent">
+                        <div className="mx-auto grid size-12 place-items-center rounded-xl bg-admin-selection text-admin-accent-text">
                             <ImageIcon className="size-6" aria-hidden="true" />
                         </div>
-                        <h3 className="mt-4 text-lg font-semibold text-white">
+                        <h3 className="mt-4 text-lg font-semibold text-admin-text-primary">
                             No hay una recomendación activa
                         </h3>
                         <p className="mx-auto mt-2 max-w-sm text-sm text-admin-text-secondary">
@@ -70,12 +70,12 @@ export function CurrentFeaturedProduct({
                                 {featuredProductStatusLabels[featured.status]}
                             </span>
                             {!featured.is_publicly_visible && (
-                                <span className="inline-flex rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                                <span className="inline-flex rounded-full border border-warning/40 bg-warning-subtle px-2.5 py-1 text-xs font-semibold text-warning">
                                     No visible en la tienda
                                 </span>
                             )}
                         </div>
-                        <h3 className="mt-3 truncate text-2xl font-semibold text-white">
+                        <h3 className="mt-3 truncate text-2xl font-semibold text-admin-text-primary">
                             {featured.public_view.product.name}
                         </h3>
                         {featured.headline && (
@@ -108,7 +108,7 @@ export function CurrentFeaturedProduct({
                             </div>
                         </dl>
                         {featured.visibility_reason && (
-                            <p className="mt-4 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+                            <p className="mt-4 rounded-lg border border-warning/40 bg-warning-subtle px-3 py-2 text-sm text-warning">
                                 {
                                     visibilityReasonLabels[
                                         featured.visibility_reason
@@ -128,7 +128,7 @@ export function CurrentFeaturedProduct({
                             <Button
                                 type="button"
                                 variant="ghost"
-                                className="text-admin-text-secondary hover:text-white"
+                                className="text-admin-text-secondary hover:text-admin-text-primary"
                                 onClick={() => onDisable(featured)}
                             >
                                 <Power aria-hidden="true" /> Desactivar

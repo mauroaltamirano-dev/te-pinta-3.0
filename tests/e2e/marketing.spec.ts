@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
 import type { MarketingPageProps } from '@/features/marketing/types';
+import { expect, test } from './support/test';
 
 const businessTimezone = 'America/Argentina/Buenos_Aires';
 

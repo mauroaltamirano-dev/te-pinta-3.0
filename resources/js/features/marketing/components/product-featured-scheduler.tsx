@@ -68,10 +68,10 @@ export function ProductFeaturedScheduler({
         >
             <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                    <p className="text-xs font-semibold tracking-[0.14em] text-admin-accent uppercase">
+                    <p className="text-xs font-semibold tracking-[0.14em] text-admin-accent-text uppercase">
                         Inicio público
                     </p>
-                    <h2 className="mt-1 text-xl font-semibold text-white">
+                    <h2 className="mt-1 text-xl font-semibold text-admin-text-primary">
                         Destacar {product.name}
                     </h2>
                     <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">

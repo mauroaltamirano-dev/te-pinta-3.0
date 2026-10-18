@@ -29,7 +29,7 @@ export function InstagramSwitch({
             <span
                 aria-hidden="true"
                 className={cn(
-                    'size-5 rounded-full bg-white shadow-sm transition-transform',
+                    'size-5 rounded-full bg-admin-surface shadow-sm transition-transform',
                     checked ? 'translate-x-6' : 'translate-x-1',
                 )}
             />

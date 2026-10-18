@@ -33,7 +33,9 @@ export function FeaturedScheduleList({
             className="h-full min-w-0 rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5"
         >
             <header>
-                <h2 className="text-xl font-semibold text-white">{title}</h2>
+                <h2 className="text-xl font-semibold text-admin-text-primary">
+                    {title}
+                </h2>
                 <p className="mt-1 text-sm text-admin-text-tertiary">
                     {description}
                 </p>
@@ -50,7 +52,7 @@ export function FeaturedScheduleList({
                             className="grid min-w-0 gap-3 rounded-xl border border-admin-border bg-admin-surface-raised p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                         >
                             <div className="flex min-w-0 items-start gap-3">
-                                <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-admin-canvas text-admin-accent">
+                                <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-admin-canvas text-admin-accent-text">
                                     <CalendarClock
                                         className="size-5"
                                         aria-hidden="true"
@@ -58,7 +60,7 @@ export function FeaturedScheduleList({
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="truncate text-sm font-semibold text-white">
+                                        <h3 className="truncate text-sm font-semibold text-admin-text-primary">
                                             {featured.public_view.product.name}
                                         </h3>
                                         <span

@@ -48,10 +48,10 @@ export default function Marketing({
             <section className="grid min-w-0 gap-5 font-orders sm:gap-6">
                 <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent uppercase">
+                        <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent-text uppercase">
                             Producto destacado
                         </p>
-                        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Marketing
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">
@@ -142,7 +142,9 @@ function ComingSoon() {
 
     return (
         <section className="min-w-0 rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5 xl:col-span-12">
-            <h2 className="text-lg font-semibold text-white">Próximamente</h2>
+            <h2 className="text-lg font-semibold text-admin-text-primary">
+                Próximamente
+            </h2>
             <p className="mt-1 text-sm text-admin-text-tertiary">
                 Estas herramientas todavía no forman parte de Marketing v1.
             </p>

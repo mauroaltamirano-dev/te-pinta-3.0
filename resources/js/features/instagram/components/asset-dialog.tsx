@@ -99,7 +99,7 @@ export function AssetDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100vh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-2xl">
+            <DialogContent className="admin-shell max-h-[calc(100vh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
                         {asset ? 'Editar historia' : 'Subir historia'}
@@ -130,13 +130,13 @@ export function AssetDialog({
                                         alt="Vista previa de la historia"
                                         className="size-full object-cover"
                                     />
-                                    <span className="absolute inset-x-2 bottom-2 flex min-h-9 items-center justify-center gap-2 rounded-lg bg-black/70 px-2 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                                    <span className="absolute inset-x-2 bottom-2 flex min-h-9 items-center justify-center gap-2 rounded-lg bg-overlay/70 px-2 text-xs font-semibold text-on-overlay opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                                         <Upload className="size-4" /> Reemplazar
                                     </span>
                                 </>
                             ) : (
                                 <span className="grid justify-items-center gap-2 px-4 text-center text-sm text-admin-text-secondary">
-                                    <ImagePlus className="size-8 text-admin-accent" />
+                                    <ImagePlus className="size-8 text-admin-accent-text" />
                                     Seleccionar imagen
                                 </span>
                             )}
@@ -208,7 +208,7 @@ export function AssetDialog({
                         </Field>
 
                         {ratioWarning && (
-                            <div className="flex gap-3 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-100">
+                            <div className="flex gap-3 rounded-xl border border-warning/40 bg-warning-subtle p-3 text-sm text-warning">
                                 <TriangleAlert className="mt-0.5 size-4 shrink-0" />
                                 <p>
                                     La imagen no tiene una proporción cercana a
@@ -225,7 +225,7 @@ export function AssetDialog({
 
                         <div className="flex min-h-16 items-center justify-between gap-4 rounded-xl border border-admin-border bg-admin-surface-raised px-4">
                             <div>
-                                <p className="text-sm font-semibold text-white">
+                                <p className="text-sm font-semibold text-admin-text-primary">
                                     Disponible para publicar
                                 </p>
                                 <p className="mt-0.5 text-xs text-admin-text-tertiary">

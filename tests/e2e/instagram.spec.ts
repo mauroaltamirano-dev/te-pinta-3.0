@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { createInstagramFixture } from './support/instagram-fixtures';
 import type { InstagramFixture } from './support/instagram-fixtures';
+import { expect, test } from './support/test';
 
 async function logIn(page: Page) {
     await page.goto('/login');

@@ -25,23 +25,24 @@ export const statusPresentation: Record<
 > = {
     pending: {
         label: 'Pendiente',
-        className: 'border-amber-400/20 bg-amber-400/10 text-amber-200',
+        className: 'border-warning/40 bg-warning-subtle text-warning',
     },
     processing: {
         label: 'Procesando',
-        className: 'border-sky-400/20 bg-sky-400/10 text-sky-200',
+        className: 'border-info/40 bg-info-subtle text-info',
     },
     published: {
         label: 'Publicada',
-        className: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+        className: 'border-success/40 bg-success-subtle text-success',
     },
     failed: {
         label: 'Error',
-        className: 'border-red-400/20 bg-red-400/10 text-red-200',
+        className: 'border-danger/40 bg-danger-subtle text-danger',
     },
     cancelled: {
         label: 'Cancelada',
-        className: 'border-white/10 bg-white/5 text-admin-text-secondary',
+        className:
+            'border-admin-border bg-admin-surface-raised text-admin-text-secondary',
     },
 };
 

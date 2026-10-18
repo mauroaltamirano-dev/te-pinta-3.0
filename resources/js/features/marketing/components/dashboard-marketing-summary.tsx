@@ -16,7 +16,7 @@ export function DashboardMarketingSummary({
             description="Recomendación de la casa."
             data-testid="dashboard-marketing-summary"
             action={
-                <div className="grid size-9 place-items-center rounded-lg bg-admin-selection text-admin-accent">
+                <div className="grid size-9 place-items-center rounded-lg bg-admin-selection text-admin-accent-text">
                     <Megaphone className="size-4" aria-hidden="true" />
                 </div>
             }
@@ -28,7 +28,7 @@ export function DashboardMarketingSummary({
                 asChild
                 variant="ghost"
                 size="sm"
-                className="mt-3 w-full justify-between text-admin-accent hover:text-white"
+                className="mt-3 w-full justify-between text-admin-accent-text hover:text-admin-text-primary"
             >
                 <Link href="/admin/marketing">
                     Gestionar marketing
@@ -47,7 +47,7 @@ function MarketingSummaryContent({
     if (summary.state === 'none') {
         return (
             <>
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-admin-text-primary">
                     Sin recomendación activa
                 </p>
                 <p className="mt-1 text-xs text-admin-text-tertiary">
@@ -63,7 +63,7 @@ function MarketingSummaryContent({
                 <p className="text-xs font-medium text-admin-text-tertiary">
                     Próxima recomendación
                 </p>
-                <p className="mt-1 truncate text-sm font-semibold text-white">
+                <p className="mt-1 truncate text-sm font-semibold text-admin-text-primary">
                     {summary.product_name}
                 </p>
                 <p className="mt-1 text-xs text-admin-text-secondary">
@@ -80,11 +80,11 @@ function MarketingSummaryContent({
     if (summary.state === 'active_hidden') {
         return (
             <>
-                <p className="flex items-center gap-1.5 text-xs font-medium text-amber-200">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-warning">
                     <TriangleAlert className="size-3.5" aria-hidden="true" />
                     Recomendación no visible
                 </p>
-                <p className="mt-1 truncate text-sm font-semibold text-white">
+                <p className="mt-1 truncate text-sm font-semibold text-admin-text-primary">
                     {summary.product_name}
                 </p>
                 <p className="mt-1 text-xs text-admin-text-secondary">
@@ -98,10 +98,10 @@ function MarketingSummaryContent({
 
     return (
         <>
-            <p className="text-xs font-medium text-emerald-200">
+            <p className="text-xs font-medium text-success">
                 Recomendación activa
             </p>
-            <p className="mt-1 truncate text-sm font-semibold text-white">
+            <p className="mt-1 truncate text-sm font-semibold text-admin-text-primary">
                 {summary.product_name}
             </p>
             <p className="mt-1 text-xs text-admin-text-secondary">

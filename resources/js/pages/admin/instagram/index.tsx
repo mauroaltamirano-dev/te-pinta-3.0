@@ -149,10 +149,10 @@ export default function InstagramAutomation({
             <section className="grid gap-6 font-orders">
                 <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent uppercase">
+                        <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent-text uppercase">
                             Marketing
                         </p>
-                        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Instagram
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">
@@ -163,7 +163,7 @@ export default function InstagramAutomation({
                     <Button
                         type="button"
                         variant="outline"
-                        className="h-11 rounded-xl border-admin-border bg-admin-surface text-white hover:bg-admin-surface-raised"
+                        className="h-11 rounded-xl border-admin-border bg-admin-surface text-admin-text-primary hover:bg-admin-surface-raised"
                         disabled={activeAssets.length === 0}
                         onClick={() => setManualQueueOpen(true)}
                     >
@@ -180,7 +180,7 @@ export default function InstagramAutomation({
                             className={cn(
                                 'flex size-11 shrink-0 items-center justify-center rounded-xl',
                                 automation.effective_enabled
-                                    ? 'bg-admin-action text-admin-accent'
+                                    ? 'bg-admin-action text-admin-accent-text'
                                     : 'bg-admin-surface-raised text-admin-text-tertiary',
                             )}
                         >
@@ -190,7 +190,7 @@ export default function InstagramAutomation({
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2
                                     id="automation-title"
-                                    className="text-lg font-semibold text-white"
+                                    className="text-lg font-semibold text-admin-text-primary"
                                 >
                                     Automatización de Instagram
                                 </h2>
@@ -198,8 +198,8 @@ export default function InstagramAutomation({
                                     variant="outline"
                                     className={cn(
                                         automation.effective_enabled
-                                            ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
-                                            : 'border-white/10 bg-white/5 text-admin-text-secondary',
+                                            ? 'border-success/40 bg-success-subtle text-success'
+                                            : 'border-admin-border bg-admin-surface-raised text-admin-text-secondary',
                                     )}
                                 >
                                     {automation.effective_enabled
@@ -229,7 +229,7 @@ export default function InstagramAutomation({
                         </div>
                     </div>
                     <div className="flex items-center justify-between gap-4 border-t border-admin-border pt-4 lg:border-t-0 lg:pt-0">
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-semibold text-admin-text-primary">
                             {automation.effective_enabled ? 'ON' : 'OFF'}
                         </span>
                         <InstagramSwitch
@@ -254,7 +254,7 @@ export default function InstagramAutomation({
                             <Button
                                 type="button"
                                 variant="ghost"
-                                className="text-admin-accent hover:bg-admin-action hover:text-admin-accent"
+                                className="text-admin-accent-text hover:bg-admin-action hover:text-admin-accent-text"
                                 onClick={() => setScheduleDialog(null)}
                             >
                                 <Plus /> Agregar
@@ -268,7 +268,7 @@ export default function InstagramAutomation({
                                 key={time}
                                 className="rounded-lg border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text-secondary"
                             >
-                                <strong className="font-semibold text-white">
+                                <strong className="font-semibold text-admin-text-primary">
                                     {sameTime.length} historias programadas a
                                     las {time}.
                                 </strong>{' '}
@@ -289,7 +289,7 @@ export default function InstagramAutomation({
                                         <img
                                             src={schedule.asset.preview_url}
                                             alt=""
-                                            className="aspect-[9/16] h-24 rounded-lg object-cover ring-1 ring-white/10"
+                                            className="aspect-[9/16] h-24 rounded-lg object-cover ring-1 ring-admin-border"
                                         />
                                     ) : (
                                         <span className="flex aspect-[9/16] h-24 items-center justify-center rounded-lg bg-admin-surface-raised text-admin-text-tertiary">
@@ -298,15 +298,15 @@ export default function InstagramAutomation({
                                     )}
                                     <span className="min-w-0">
                                         <span className="flex items-center gap-2">
-                                            <span className="text-2xl font-semibold text-white tabular-nums">
+                                            <span className="text-2xl font-semibold text-admin-text-primary tabular-nums">
                                                 {schedule.time}
                                             </span>
                                             <Badge
                                                 variant="outline"
                                                 className={cn(
                                                     schedule.is_active
-                                                        ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
-                                                        : 'border-white/10 bg-white/5 text-admin-text-secondary',
+                                                        ? 'border-success/40 bg-success-subtle text-success'
+                                                        : 'border-admin-border bg-admin-surface-raised text-admin-text-secondary',
                                                 )}
                                             >
                                                 {schedule.is_active
@@ -344,13 +344,13 @@ export default function InstagramAutomation({
                                                 }`}
                                         </span>
                                         {!schedule.asset && (
-                                            <span className="mt-2 flex items-center gap-1 text-xs text-amber-200">
+                                            <span className="mt-2 flex items-center gap-1 text-xs text-warning">
                                                 <TriangleAlert className="size-3.5" />
                                                 Necesita una imagen
                                             </span>
                                         )}
                                     </span>
-                                    <Pencil className="size-4 text-admin-text-tertiary group-hover:text-admin-accent" />
+                                    <Pencil className="size-4 text-admin-text-tertiary group-hover:text-admin-accent-text" />
                                 </button>
                             ))}
                         </div>
@@ -406,7 +406,7 @@ export default function InstagramAutomation({
                                                         variant="secondary"
                                                         size="icon"
                                                         aria-label={`Acciones para ${asset.name}`}
-                                                        className="size-9 rounded-lg border border-white/10 bg-black/65 text-white hover:bg-black/80"
+                                                        className="size-9 rounded-lg border border-admin-border bg-overlay/65 text-on-overlay hover:bg-overlay/80"
                                                     >
                                                         <EllipsisVertical />
                                                     </Button>
@@ -460,7 +460,7 @@ export default function InstagramAutomation({
                                             asset.width,
                                             asset.height,
                                         ) && (
-                                            <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-amber-950/90 px-2 py-1 text-[0.6875rem] font-medium text-amber-100">
+                                            <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-warning-subtle px-2 py-1 text-[0.6875rem] font-medium text-warning">
                                                 <TriangleAlert className="size-3" />{' '}
                                                 No es 9:16
                                             </span>
@@ -468,7 +468,7 @@ export default function InstagramAutomation({
                                     </div>
                                     <div className="grid gap-3 p-3">
                                         <div className="min-w-0">
-                                            <h3 className="truncate text-sm font-semibold text-white">
+                                            <h3 className="truncate text-sm font-semibold text-admin-text-primary">
                                                 {asset.name}
                                             </h3>
                                             <p className="mt-1 truncate text-xs text-admin-text-tertiary">
@@ -477,7 +477,7 @@ export default function InstagramAutomation({
                                             </p>
                                             {(asset.active_schedules_count ??
                                                 0) > 0 && (
-                                                <p className="mt-1 truncate text-xs text-amber-200">
+                                                <p className="mt-1 truncate text-xs text-warning">
                                                     En uso por{' '}
                                                     {
                                                         asset.active_schedules_count
@@ -554,7 +554,7 @@ export default function InstagramAutomation({
                 />
             )}
             <Dialog open={manualQueueOpen} onOpenChange={setManualQueueOpen}>
-                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface sm:max-w-md">
+                <DialogContent className="admin-shell border-admin-border bg-admin-surface sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Enviar historia a la cola</DialogTitle>
                         <DialogDescription>
@@ -591,7 +591,7 @@ export default function InstagramAutomation({
                                 className="aspect-[9/16] h-24 rounded-lg object-cover"
                             />
                             <div>
-                                <p className="font-semibold text-white">
+                                <p className="font-semibold text-admin-text-primary">
                                     {manualAsset.name}
                                 </p>
                                 <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -631,7 +631,7 @@ export default function InstagramAutomation({
                 open={Boolean(assetPreview)}
                 onOpenChange={(open) => !open && setAssetPreview(null)}
             >
-                <DialogContent className="admin-shell dark max-h-[calc(100dvh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-md">
+                <DialogContent className="admin-shell max-h-[calc(100dvh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>{assetPreview?.name}</DialogTitle>
                         <DialogDescription>
@@ -651,7 +651,7 @@ export default function InstagramAutomation({
                 open={Boolean(assetDeleteTarget)}
                 onOpenChange={(open) => !open && setAssetDeleteTarget(null)}
             >
-                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface">
+                <DialogContent className="admin-shell border-admin-border bg-admin-surface">
                     <DialogHeader>
                         <DialogTitle>Eliminar historia</DialogTitle>
                         <DialogDescription>
@@ -664,7 +664,7 @@ export default function InstagramAutomation({
                         </DialogDescription>
                     </DialogHeader>
                     {!assetDeleteTarget?.can_delete && (
-                        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+                        <div className="rounded-xl border border-warning/40 bg-warning-subtle p-4 text-sm text-warning">
                             {(assetDeleteTarget?.active_schedule_references
                                 ?.length ?? 0) > 0 && (
                                 <ul className="list-disc space-y-1 pl-5">
@@ -725,10 +725,13 @@ function SectionHeader({
     return (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-admin-accent uppercase">
+                <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-admin-accent-text uppercase">
                     {eyebrow}
                 </p>
-                <h2 className="mt-1 text-xl font-semibold text-white" id={id}>
+                <h2
+                    className="mt-1 text-xl font-semibold text-admin-text-primary"
+                    id={id}
+                >
                     {title}
                 </h2>
                 <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -756,10 +759,12 @@ function EmptyState({
     return (
         <div className="grid min-h-52 place-items-center rounded-xl border border-dashed border-admin-border bg-admin-surface p-6 text-center">
             <div className="max-w-sm">
-                <span className="mx-auto flex size-11 items-center justify-center rounded-xl bg-admin-action text-admin-accent">
+                <span className="mx-auto flex size-11 items-center justify-center rounded-xl bg-admin-action text-admin-accent-text">
                     <Icon className="size-5" />
                 </span>
-                <h3 className="mt-4 font-semibold text-white">{title}</h3>
+                <h3 className="mt-4 font-semibold text-admin-text-primary">
+                    {title}
+                </h3>
                 <p className="mt-1 text-sm text-admin-text-tertiary">
                     {description}
                 </p>

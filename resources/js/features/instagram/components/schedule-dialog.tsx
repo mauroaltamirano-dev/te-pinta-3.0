@@ -79,7 +79,7 @@ export function ScheduleDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100vh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-xl">
+            <DialogContent className="admin-shell max-h-[calc(100vh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>
                         {schedule
@@ -226,7 +226,7 @@ export function ScheduleDialog({
 
                     <div className="flex min-h-16 items-center justify-between gap-4 rounded-xl border border-admin-border bg-admin-surface-raised px-4">
                         <div>
-                            <p className="text-sm font-semibold text-white">
+                            <p className="text-sm font-semibold text-admin-text-primary">
                                 Programación activa
                             </p>
                             <p className="mt-0.5 text-xs text-admin-text-tertiary">
