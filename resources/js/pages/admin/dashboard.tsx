@@ -61,10 +61,10 @@ export default function Dashboard({
             <section className="grid gap-5 font-orders sm:gap-6">
                 <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent uppercase">
+                        <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent-text uppercase">
                             Operación diaria
                         </p>
-                        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Panel operativo
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">

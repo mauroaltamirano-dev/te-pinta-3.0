@@ -35,7 +35,7 @@ function DistributionBlock({
             <div className="flex items-baseline justify-between gap-3">
                 <h3
                     id={`distribution-${items[0]?.key ?? title}`}
-                    className="text-sm font-semibold text-white"
+                    className="text-sm font-semibold text-admin-text-primary"
                 >
                     {title}
                 </h3>
@@ -74,7 +74,7 @@ function DistributionBlock({
                                     />
                                     {item.label}
                                 </dt>
-                                <dd className="font-medium text-white tabular-nums">
+                                <dd className="font-medium text-admin-text-primary tabular-nums">
                                     {formatDashboardNumber.format(item.value)} ·{' '}
                                     {formatDashboardPercentage.format(
                                         item.value / total,
@@ -99,7 +99,7 @@ export function OrderDistributions({
             key: item.type,
             label: deliveryTypeLabels[item.type],
             value: item.orders_count,
-            color: item.type === 'delivery' ? 'bg-[#65b0f6]' : 'bg-[#ffb572]',
+            color: item.type === 'delivery' ? 'bg-info' : 'bg-warning',
         }));
     const conditionItems: DistributionItem[] = [
         ...dashboard.condition_distribution,
@@ -113,7 +113,7 @@ export function OrderDistributions({
             key: item.condition,
             label: orderConditionLabels[item.condition],
             value: item.units_count,
-            color: item.condition === 'raw' ? 'bg-[#9288e0]' : 'bg-[#50d1aa]',
+            color: item.condition === 'raw' ? 'bg-prepared' : 'bg-success',
         }));
 
     return (

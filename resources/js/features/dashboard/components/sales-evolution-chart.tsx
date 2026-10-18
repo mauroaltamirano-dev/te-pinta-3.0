@@ -67,13 +67,13 @@ export function SalesEvolutionChart({
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-admin-text-tertiary">
                         <span>
                             Total:{' '}
-                            <strong className="font-semibold text-white tabular-nums">
+                            <strong className="font-semibold text-admin-text-primary tabular-nums">
                                 {formatOrderMoney.format(total)}
                             </strong>
                         </span>
                         <span>
                             Máximo por tramo:{' '}
-                            <strong className="font-semibold text-white tabular-nums">
+                            <strong className="font-semibold text-admin-text-primary tabular-nums">
                                 {formatOrderMoney.format(maximum)}
                             </strong>
                         </span>
@@ -101,12 +101,12 @@ export function SalesEvolutionChart({
                             >
                                 <stop
                                     offset="0%"
-                                    stopColor="#ea7c69"
+                                    stopColor="var(--brand-accent)"
                                     stopOpacity="0.38"
                                 />
                                 <stop
                                     offset="100%"
-                                    stopColor="#ea7c69"
+                                    stopColor="var(--brand-accent)"
                                     stopOpacity="0"
                                 />
                             </linearGradient>
@@ -120,7 +120,7 @@ export function SalesEvolutionChart({
                                     <text
                                         x="0"
                                         y={y + 4}
-                                        fill="#889898"
+                                        fill="var(--admin-text-tertiary)"
                                         fontSize="11"
                                     >
                                         {formatOrderMoney.format(value)}
@@ -130,7 +130,7 @@ export function SalesEvolutionChart({
                                         x2={width - insetRight}
                                         y1={y}
                                         y2={y}
-                                        stroke="#393c49"
+                                        stroke="var(--admin-border)"
                                         strokeWidth="1"
                                     />
                                 </g>
@@ -140,7 +140,7 @@ export function SalesEvolutionChart({
                         <path
                             d={linePath}
                             fill="none"
-                            stroke="#ea7c69"
+                            stroke="var(--brand-accent)"
                             strokeWidth="3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -152,8 +152,8 @@ export function SalesEvolutionChart({
                                 cx={point.x}
                                 cy={point.y}
                                 r="4"
-                                fill="#ea7c69"
-                                stroke="#1f1d2b"
+                                fill="var(--brand-accent)"
+                                stroke="var(--admin-surface)"
                                 strokeWidth="2"
                                 vectorEffect="non-scaling-stroke"
                             >

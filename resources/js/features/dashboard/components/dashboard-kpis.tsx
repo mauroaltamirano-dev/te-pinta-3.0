@@ -30,21 +30,21 @@ function KpiCard({
         <article
             className={cn(
                 'grid min-h-36 content-between gap-5 rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5',
-                attention && 'border-[#ffb572]/60 bg-[rgba(255,181,114,0.08)]',
+                attention && 'border-warning/40 bg-warning-subtle',
             )}
         >
             <div className="flex items-start justify-between gap-4">
-                <div className="grid size-10 place-items-center rounded-lg bg-admin-canvas text-admin-accent">
+                <div className="grid size-10 place-items-center rounded-lg bg-admin-canvas text-admin-accent-text">
                     {icon}
                 </div>
                 {attention && (
-                    <span className="rounded-full bg-[rgba(255,181,114,0.18)] px-2.5 py-1 text-xs font-semibold text-[#ffb572]">
+                    <span className="rounded-full bg-warning-subtle px-2.5 py-1 text-xs font-semibold text-warning">
                         Requiere atención
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-2xl font-semibold text-white tabular-nums sm:text-3xl">
+                <p className="text-2xl font-semibold text-admin-text-primary tabular-nums sm:text-3xl">
                     {value}
                 </p>
                 <h2 className="mt-1 text-sm font-medium text-admin-text-secondary">

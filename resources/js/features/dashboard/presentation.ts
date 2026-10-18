@@ -1,6 +1,7 @@
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import {
     deliveryPeriodLabels,
+    orderStatusLabels,
     formatOrderDate,
 } from '@/features/orders/presentation';
 import type { OrderStatus } from '@/features/orders/types';
@@ -12,13 +13,8 @@ export const dashboardPeriodLabels: Record<DashboardPeriod, string> = {
     all: 'Desde siempre',
 };
 
-export const dashboardStatusLabels: Record<OrderStatus, string> = {
-    pending_confirmation: 'Por confirmar',
-    waiting: 'En espera',
-    prepared: 'Preparado',
-    delivered: 'Entregado',
-    cancelled: 'Cancelado',
-};
+export const dashboardStatusLabels: Record<OrderStatus, string> =
+    orderStatusLabels;
 
 export function dashboardSalesLabel(period: DashboardPeriod): string {
     if (period === 'today') {

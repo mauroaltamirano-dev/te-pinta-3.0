@@ -25,7 +25,7 @@ function OrderIdButton({
         <button
             type="button"
             onClick={() => onOpenOrder(id)}
-            className="font-semibold text-admin-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent"
+            className="font-semibold text-admin-accent-text underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent"
         >
             {id}
         </button>
@@ -50,7 +50,7 @@ export function TodayOrders({
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="text-admin-accent hover:text-white"
+                    className="text-admin-accent-text hover:text-admin-text-primary"
                 >
                     <Link href="/admin/orders">
                         Ver todos <ArrowUpRight aria-hidden="true" />
@@ -98,7 +98,7 @@ export function TodayOrders({
                                                 onOpenOrder={onOpenOrder}
                                             />
                                         </td>
-                                        <td className="truncate px-3 py-3 font-medium text-white">
+                                        <td className="truncate px-3 py-3 font-medium text-admin-text-primary">
                                             {order.customer_name}
                                         </td>
                                         <td className="px-3 py-3 text-admin-text-secondary">
@@ -132,7 +132,7 @@ export function TodayOrders({
                                                 ]
                                             }
                                         </td>
-                                        <td className="px-3 py-3 text-right font-semibold text-white tabular-nums">
+                                        <td className="px-3 py-3 text-right font-semibold text-admin-text-primary tabular-nums">
                                             {formatOrderMoney.format(
                                                 order.total,
                                             )}
@@ -155,7 +155,7 @@ export function TodayOrders({
                                             id={order.id}
                                             onOpenOrder={onOpenOrder}
                                         />
-                                        <p className="mt-1 truncate text-sm font-medium text-white">
+                                        <p className="mt-1 truncate text-sm font-medium text-admin-text-primary">
                                             {order.customer_name}
                                         </p>
                                     </div>
@@ -185,7 +185,7 @@ export function TodayOrders({
                                             ]
                                         }
                                     </p>
-                                    <p className="col-span-2 text-right text-base font-semibold text-white tabular-nums">
+                                    <p className="col-span-2 text-right text-base font-semibold text-admin-text-primary tabular-nums">
                                         {formatOrderMoney.format(order.total)}
                                     </p>
                                 </div>

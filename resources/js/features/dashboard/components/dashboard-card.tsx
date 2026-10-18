@@ -27,7 +27,7 @@ export function DashboardCard({
         >
             <header className="flex min-w-0 items-start justify-between gap-4">
                 <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-white sm:text-xl">
+                    <h2 className="text-lg font-semibold text-admin-text-primary sm:text-xl">
                         {title}
                     </h2>
                     {description && (

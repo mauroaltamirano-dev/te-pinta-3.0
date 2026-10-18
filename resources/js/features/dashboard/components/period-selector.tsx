@@ -28,7 +28,7 @@ export function PeriodSelector({
                     key={period}
                     value={period}
                     aria-label={`Mostrar período: ${dashboardPeriodLabels[period]}`}
-                    className="h-10 w-full rounded-lg px-3 text-sm text-admin-text-secondary hover:bg-admin-selection hover:text-white data-[state=on]:bg-admin-accent data-[state=on]:text-white sm:w-auto sm:min-w-20"
+                    className="h-10 w-full rounded-lg px-3 text-sm text-admin-text-secondary hover:bg-admin-selection hover:text-admin-text-primary data-[state=on]:bg-admin-accent data-[state=on]:text-admin-on-accent sm:w-auto sm:min-w-20"
                 >
                     {dashboardPeriodLabels[period]}
                 </ToggleGroupItem>

@@ -25,10 +25,10 @@ export function TopProducts({
                             key={product.product_id}
                             className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg bg-admin-surface-raised px-3 py-3"
                         >
-                            <span className="grid size-8 place-items-center rounded-lg bg-admin-canvas text-sm font-semibold text-admin-accent tabular-nums">
+                            <span className="grid size-8 place-items-center rounded-lg bg-admin-canvas text-sm font-semibold text-admin-accent-text tabular-nums">
                                 {index + 1}
                             </span>
-                            <span className="min-w-0 truncate text-sm font-medium text-white">
+                            <span className="min-w-0 truncate text-sm font-medium text-admin-text-primary">
                                 {product.name}
                             </span>
                             <span className="text-right text-sm font-semibold text-admin-text-secondary tabular-nums">

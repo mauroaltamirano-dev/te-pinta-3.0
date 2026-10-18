@@ -36,7 +36,7 @@ export function OperationalStatus({
                                 {dashboardStatusLabels[item.status]}
                             </span>
                         </dt>
-                        <dd className="text-lg font-semibold text-white tabular-nums">
+                        <dd className="text-lg font-semibold text-admin-text-primary tabular-nums">
                             {item.orders_count}
                         </dd>
                     </div>
@@ -47,7 +47,7 @@ export function OperationalStatus({
                     <dt className="text-xs text-admin-text-tertiary">
                         Unidades de productos vendidas
                     </dt>
-                    <dd className="mt-1 text-lg font-semibold text-white tabular-nums">
+                    <dd className="mt-1 text-lg font-semibold text-admin-text-primary tabular-nums">
                         {formatDashboardNumber.format(empanadasCount)}
                     </dd>
                 </div>

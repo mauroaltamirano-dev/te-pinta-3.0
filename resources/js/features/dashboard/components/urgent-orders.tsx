@@ -25,7 +25,7 @@ export function UrgentOrders({
             data-testid="dashboard-urgent-orders"
             className="h-full"
             action={
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-admin-selection px-2.5 py-1 text-xs font-semibold text-admin-accent">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-admin-selection px-2.5 py-1 text-xs font-semibold text-admin-accent-text">
                     <AlertTriangle className="size-3.5" aria-hidden="true" />
                     Hoy
                 </span>
@@ -52,11 +52,11 @@ export function UrgentOrders({
                                     <button
                                         type="button"
                                         onClick={() => onOpenOrder(order.id)}
-                                        className="font-semibold text-admin-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent"
+                                        className="font-semibold text-admin-accent-text underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent"
                                     >
                                         {order.id}
                                     </button>
-                                    <p className="mt-1 truncate text-sm font-medium text-white">
+                                    <p className="mt-1 truncate text-sm font-medium text-admin-text-primary">
                                         {order.customer_name}
                                     </p>
                                     <p className="mt-1 text-xs text-admin-text-tertiary">
@@ -73,7 +73,7 @@ export function UrgentOrders({
                                     </p>
                                 </div>
                             </div>
-                            <p className="text-right text-base font-semibold text-white tabular-nums">
+                            <p className="text-right text-base font-semibold text-admin-text-primary tabular-nums">
                                 {formatOrderMoney.format(order.total)}
                             </p>
                         </li>
