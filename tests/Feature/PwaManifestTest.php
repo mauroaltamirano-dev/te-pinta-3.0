@@ -43,13 +43,13 @@ final class PwaManifestTest extends TestCase
         $this->assertStringContainsString('rel="manifest" href="/manifest.webmanifest"', $layout);
         $this->assertStringContainsString('rel="icon" href="/icons/te-pinta-logo.svg" type="image/svg+xml" sizes="any"', $layout);
         $this->assertStringContainsString('rel="apple-touch-icon" href="/icons/te-pinta-logo-192.png"', $layout);
-        $this->assertStringContainsString('name="theme-color" content="#1f1d2b"', $layout);
+        $this->assertStringContainsString('name="theme-color" content="{{ $brandPalette->accent }}"', $layout);
         $this->assertStringContainsString('name="apple-mobile-web-app-capable" content="yes"', $layout);
 
         $favicon = file_get_contents(public_path('icons/te-pinta-logo.svg'));
 
         $this->assertStringContainsString('<title id="te-pinta-title">Te Pinta</title>', $favicon);
-        $this->assertStringContainsString('fill="#ea7c69"', $favicon);
+        $this->assertStringContainsString('fill="#b84f3f"', $favicon);
         $this->assertStringNotContainsString('<image', $favicon);
         $this->assertStringNotContainsString('<script', $favicon);
     }

@@ -48,7 +48,7 @@ export default function AdminHome({
             >
                 <ShoppingBasket /> Pedido
                 {totalUnits > 0 && (
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 tabular-nums">
+                    <span className="rounded-full bg-admin-surface/20 px-2 py-0.5 tabular-nums">
                         {totalUnits}
                     </span>
                 )}
@@ -56,8 +56,8 @@ export default function AdminHome({
             <Sheet open={mobileCartOpen} onOpenChange={setMobileCartOpen}>
                 <SheetContent
                     side="bottom"
-                    overlayClassName="bg-black/70"
-                    className="admin-shell dark max-h-[90vh] gap-0 overflow-y-auto border-admin-border bg-admin-canvas p-3 lg:hidden"
+                    overlayClassName="bg-overlay/70"
+                    className="admin-shell max-h-[90vh] gap-0 overflow-y-auto border-admin-border bg-admin-canvas p-3 lg:hidden"
                 >
                     <QuickOrderDraftPanel
                         products={products}

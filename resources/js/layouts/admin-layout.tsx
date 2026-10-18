@@ -1,9 +1,11 @@
 import { usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { AdminSidebar } from '@/components/shared/admin-sidebar';
+import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout({ children }: PropsWithChildren) {
+    useRestaurantBranding();
     const { component } = usePage();
     const isQuickOrderHome = component === 'admin/home';
     const usesDashboardComposition = component === 'admin/dashboard';
@@ -13,7 +15,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
         component === 'admin/settings/general';
 
     return (
-        <div className="dark admin-shell relative isolate z-0 min-h-screen bg-background pb-24 text-foreground md:grid md:grid-cols-[6.5rem_1fr] md:pb-0">
+        <div className="admin-shell relative isolate z-0 min-h-screen bg-background pb-24 text-foreground md:grid md:grid-cols-[6.5rem_1fr] md:pb-0">
             <div
                 className={cn(
                     'min-w-0 md:col-start-2 md:row-start-1',

@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
 import type { Locator } from '@playwright/test';
 import { adminPrimitivesMarkup } from './support/admin-primitives';
+import { expect, test } from './support/test';
 
 test.beforeEach(async ({ page }) => {
     await page.goto('/login');
@@ -188,7 +188,7 @@ test('section navigation follows URL, preserves context, history and keyboard fo
     ).toHaveAttribute('aria-current', 'page');
     await page.goForward();
     await expect(wallets).toHaveAttribute('aria-current', 'page');
-    expect((await colors(wallets)).background).not.toBe('rgb(234, 124, 105)');
+    expect((await colors(wallets)).background).not.toBe('rgb(184, 79, 63)');
     await page
         .getByRole('button', { name: 'Nueva billetera', exact: true })
         .click();
@@ -219,8 +219,8 @@ test('header actions keep Inventory operable and primary contrast accessible', a
         exact: true,
     });
     const style = await colors(primary);
-    expect(style.background).toBe('rgb(234, 124, 105)');
-    expect(style.foreground).toBe('rgb(31, 29, 43)');
+    expect(style.background).toBe('rgb(184, 79, 63)');
+    expect(style.foreground).toBe('rgb(255, 255, 255)');
     expect(style.contrast).toBeGreaterThanOrEqual(4.5);
     expect(style.height).toBeGreaterThanOrEqual(44);
     await primary.click();
@@ -252,7 +252,7 @@ test('real primitives compose panels, forms, empty states and scoped button vari
 }) => {
     await page.goto('/admin/inventory');
     const styles = await page
-        .locator('link[rel=stylesheet]')
+        .locator('link[rel=stylesheet], head > style')
         .evaluateAll((links) => links.map((link) => link.outerHTML).join(''));
     await page.setContent(`${styles}${await adminPrimitivesMarkup()}`);
     await page.evaluate(() => document.fonts.ready);
@@ -365,4 +365,63 @@ test('real primitives compose panels, forms, empty states and scoped button vari
 
     await page.getByRole('link', { name: 'Ver recetas', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/inventory\/recipes$/);
+});
+
+test('desktop sidebar keeps Marketing and later destinations reachable on short screens', async ({
+    page,
+}, info) => {
+    test.skip(info.project.name !== 'chromium');
+
+    for (const height of [720, 480]) {
+        await page.setViewportSize({ width: 1280, height });
+        await page.goto('/admin/dashboard');
+        const navigation = page.getByRole('navigation', {
+            name: 'Navegación de administración',
+            exact: true,
+        });
+        const marketing = navigation.getByRole('link', {
+            name: 'Marketing',
+            exact: true,
+        });
+        await marketing.click({ timeout: 5_000 });
+        await expect(page).toHaveURL(/\/admin\/marketing$/);
+        await expect(marketing).toBeInViewport();
+        await expect(marketing).toHaveAttribute('aria-current', 'page');
+        await expect(
+            page.getByRole('link', { name: 'Te Pinta POS', exact: true }),
+        ).toBeInViewport();
+        await expect(
+            page.getByRole('button', { name: 'Cerrar sesión', exact: true }),
+        ).toBeInViewport();
+
+        const settings = navigation.getByRole('link', {
+            name: 'Configuración',
+            exact: true,
+        });
+        await settings.focus();
+        await expect(settings).toBeFocused();
+        await expect(settings).toBeInViewport();
+        await settings.press('Shift+Tab');
+        const instagram = navigation.getByRole('link', {
+            name: 'Instagram',
+            exact: true,
+        });
+        await expect(instagram).toBeFocused();
+        await expect(instagram).toBeInViewport();
+
+        await navigation
+            .getByRole('link', { name: 'Inicio', exact: true })
+            .click();
+        await expect(page).toHaveURL(/\/admin$/);
+        await expect(
+            navigation.getByRole('link', { name: 'Inicio', exact: true }),
+        ).toBeInViewport();
+        expect(
+            await page.evaluate(
+                () =>
+                    document.documentElement.scrollWidth -
+                    document.documentElement.clientWidth,
+            ),
+        ).toBeLessThanOrEqual(1);
+    }
 });

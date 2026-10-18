@@ -160,7 +160,7 @@ export function AdminSidebar() {
                   <>
                       <nav
                           aria-label="Navegación principal"
-                          className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-4 rounded-2xl border border-white/10 bg-admin-surface px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden"
+                          className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-4 rounded-2xl border border-admin-border bg-admin-surface px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden"
                       >
                           {primaryNavigation.map(
                               ({ label, href, icon: Icon }) => {
@@ -176,7 +176,7 @@ export function AdminSidebar() {
                                           className={cn(
                                               'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.6875rem] font-medium text-admin-text-tertiary transition-[color,background-color,transform] active:scale-[0.97]',
                                               active &&
-                                                  'bg-admin-accent/15 text-admin-accent',
+                                                  'bg-admin-accent/15 text-admin-accent-text',
                                           )}
                                       >
                                           <Icon
@@ -197,7 +197,8 @@ export function AdminSidebar() {
                                   'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.6875rem] font-medium text-admin-text-tertiary transition-[color,background-color,transform] active:scale-[0.97]',
                                   secondaryNavigation.some(({ href }) =>
                                       isActive(href),
-                                  ) && 'bg-admin-accent/15 text-admin-accent',
+                                  ) &&
+                                      'bg-admin-accent/15 text-admin-accent-text',
                               )}
                           >
                               <Menu className="size-5" strokeWidth={1.8} />
@@ -207,10 +208,10 @@ export function AdminSidebar() {
                       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
                           <SheetContent
                               side="bottom"
-                              overlayClassName="bg-black/70"
-                              className="admin-shell dark gap-0 rounded-t-3xl border-admin-border bg-admin-surface px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
+                              overlayClassName="bg-overlay/70"
+                              className="admin-shell gap-0 rounded-t-3xl border-admin-border bg-admin-surface px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
                           >
-                              <SheetTitle className="px-2 pb-4 text-lg text-white">
+                              <SheetTitle className="px-2 pb-4 text-lg text-admin-text-primary">
                                   Más opciones
                               </SheetTitle>
                               <div className="grid grid-cols-2 gap-2">
@@ -228,7 +229,7 @@ export function AdminSidebar() {
                                               className={cn(
                                                   'flex min-h-14 items-center gap-3 rounded-xl bg-admin-surface-raised px-4 text-sm font-medium text-admin-text-secondary active:scale-[0.98]',
                                                   isActive(href) &&
-                                                      'text-admin-accent ring-1 ring-admin-accent/30',
+                                                      'text-admin-accent-text ring-1 ring-admin-accent/30',
                                               )}
                                           >
                                               <Icon
@@ -263,7 +264,7 @@ export function AdminSidebar() {
                         <Link
                             href="/admin"
                             aria-label="Te Pinta POS"
-                            className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-admin-accent ring-1 ring-black/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none md:mt-6 md:ml-6 md:size-14"
+                            className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-admin-accent ring-1 ring-admin-border focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none md:mt-6 md:ml-6 md:size-14"
                         >
                             <BrandLogo alt="" className="size-full" />
                         </Link>
@@ -273,7 +274,7 @@ export function AdminSidebar() {
 
                 <nav
                     aria-label="Navegación de administración"
-                    className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:min-h-0 md:w-[5.75rem] md:flex-col md:overflow-visible"
+                    className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:min-h-0 md:w-[5.75rem] md:flex-col md:overflow-x-hidden md:overflow-y-auto"
                 >
                     {allowedNavigation.map(({ label, href, icon: Icon }) => {
                         const active = isActive(href);
@@ -293,9 +294,9 @@ export function AdminSidebar() {
                                                 active ? 'page' : undefined
                                             }
                                             className={cn(
-                                                'relative flex size-11 items-center justify-center rounded-[0.5rem] text-admin-accent transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none md:size-14',
+                                                'relative flex size-11 items-center justify-center rounded-[0.5rem] text-admin-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none md:size-14',
                                                 active &&
-                                                    'bg-admin-accent text-admin-text-primary shadow-admin-nav-active',
+                                                    'bg-admin-accent text-admin-on-accent shadow-admin-nav-active',
                                             )}
                                         >
                                             <Icon
@@ -321,7 +322,7 @@ export function AdminSidebar() {
                             size="icon"
                             aria-label="Cerrar sesión"
                             onClick={() => router.post('/logout')}
-                            className="size-11 shrink-0 rounded-[0.5rem] text-admin-accent hover:bg-transparent hover:text-admin-accent md:mt-auto md:mb-6 md:ml-6 md:size-14"
+                            className="size-11 shrink-0 rounded-[0.5rem] text-admin-accent-text hover:bg-transparent hover:text-admin-accent-text md:mt-auto md:mb-6 md:ml-6 md:size-14"
                         >
                             <LogOut className="size-6" strokeWidth={1.6} />
                         </Button>

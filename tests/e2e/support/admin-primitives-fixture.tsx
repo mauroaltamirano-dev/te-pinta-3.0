@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 export default function AdminPrimitivesFixture() {
     return (
         <div
-            className="admin-shell dark"
+            className="admin-shell"
             style={{
                 display: 'grid',
                 gridTemplateColumns: 'var(--rail-width, 0px) minmax(0, 1fr)',
