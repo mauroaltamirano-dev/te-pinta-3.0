@@ -35,6 +35,8 @@ Audit reference: `~/tepinta-handoffs/global-architecture-audit-2026-10/raw/ui-pu
 
 - S17 — Owner authorization, verbatim: "autorizo", in response to normalizing remaining stale E2E selectors, copy and fixtures without production changes, weakened business assertions or additional omissions. Actual application defects are not covered by this test-only authorization.
 
+- S18 — Owner authorization, verbatim: "Autorizo corregir el contraste en auth-split-layout.tsx: el panel bg-zinc-900 es oscuro en ambos temas, así que el logo y el nombre deben usar un color claro fijo (text-white o equivalente), no text-foreground. Agregá una aserción de contraste para ese panel en light y dark. Como es local y sin push, podés sumarlo como un commit fix sobre U07." The auth split panel remains dark across color schemes; its logo and name use fixed white, with an E2E contrast assertion in light and dark contexts.
+
 Out of scope: admin navigation restructure (A-03, after RBAC merges), users/permissions (parallel task `feat/rbac`), public SEO.
 
 ## Tasks
@@ -181,3 +183,9 @@ Out of scope: admin navigation restructure (A-03, after RBAC merges), users/perm
 - L67 (2026-10-18, U05 complete): Commit `1504bad` defines semantic light-theme variables and documents the shared token contract (`resources/css/app.css`, `docs/DESIGN_SYSTEM.md`). Prettier, ESLint, TypeScript, and Vite build passed. Focused `light-theme.spec.ts`: desktop 5/5 passed; mobile 4 passed / 1 existing hover skip. The first browser attempt timed out because the runner used its generic default DB and returned HTTP 500; reran against the isolated `testing_light_theme_integrated_e2e` DB and passed. Mobile rerun initially found the previous test-owned server still listening; inspected and stopped only its `tepinta.light-theme.test-runtime=true` container, then the focused mobile run passed. Native committed-range assessment from `92c6e54`: medium / under_budget, review not due; keep `92c6e54` as pending reviewed boundary until a later slice crosses the budget. Engram mirror remains pending because no authoritative runtime session ID is available.
 
 - L68 (2026-10-18, U06 complete): Commit `7513f7c` adds the accent-aware mask logo, default accent SVG, app progress accent and branding decision record. `admin-sidebar.spec.ts` passed desktop/mobile (2/2); Prettier, ESLint, TypeScript, Vite build and final diff checks passed. The first staged diff check caught trailing whitespace in the new SVG; removed the whitespace and reran both staged and worktree diff checks successfully. Native committed-range assessment from `92c6e54`: medium / under_budget at 353 lines, review not due; pending boundary remains `92c6e54`.
+
+- L69 (2026-10-18, owner): "Autorizo corregir el contraste en auth-split-layout.tsx: el panel bg-zinc-900 es oscuro en ambos temas, así que el logo y el nombre deben usar un color claro fijo (text-white o equivalente), no text-foreground. Agregá una aserción de contraste para ese panel en light y dark. Como es local y sin push, podés sumarlo como un commit fix sobre U07.
+
+Para el preflight: compará git status --short --untracked-files=all entre el STATUS y el START y decime qué rutas sin trackear cambian. Si son artefactos de tests o del build, frená su generación durante el review o proponé agregarlos a .gitignore, pero no los borres sin mostrarme cuáles son. No fuerces ni saltees el review.
+
+Después seguí con la cadena como te indiqué: sin detenerte entre bloques salvo falla o decisión mía."

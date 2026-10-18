@@ -81,6 +81,7 @@ Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL 
 - **Quick order** (`pages/admin/home.tsx`): catalog column plus a current-order panel; continue opens a Sheet with the shared order detail fields. Phones get a two-column catalog with 44 px quantity targets and a bottom sheet for the order.
 - **Floor editor** (`features/restaurant/`): proportional renderer that keeps logical aspect ratio, pointer drag and resize on desktop, labeled numeric geometry controls on mobile, explicit save with dirty and conflict feedback, and an `editable=false` read-only mode.
 - **Brand mark.** `components/brand-logo.tsx` applies restaurant colors to the monochrome `public/icons/te-pinta-mark.svg` mask (sidebar and auth). The favicon uses the default-accent `te-pinta-logo.svg`; PWA and Apple touch PNG assets remain static.
+- The split-auth brand panel intentionally remains `bg-zinc-900` in both color schemes; its logo and restaurant name use fixed white text for readable contrast.
 
 ## Public compositions
 
