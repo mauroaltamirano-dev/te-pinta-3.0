@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 test('administrator previews a physical count, records loss and reverses exact history', async ({
     page,
 }) => {

@@ -122,7 +122,7 @@ export function PriceSummary({
                         </dd>
                     </div>
                     {(quote.raw_discount ?? 0) > 0 && (
-                        <div className="flex justify-between text-emerald-600">
+                        <div className="flex justify-between text-success">
                             <dt>Descuento por preparación en crudo</dt>
                             <dd>
                                 −
@@ -155,7 +155,7 @@ export function PriceSummary({
                             </div>
                         )}
                     {(quote.discount_amount ?? 0) > 0 && (
-                        <div className="flex justify-between text-emerald-600">
+                        <div className="flex justify-between text-success">
                             <dt>Descuento</dt>
                             <dd>
                                 −
@@ -173,7 +173,7 @@ export function PriceSummary({
                     </div>
                     {(quote.savings ?? quote.combined_dozen_savings ?? 0) >
                         0 && (
-                        <div className="flex justify-between text-emerald-600">
+                        <div className="flex justify-between text-success">
                             <dt>Ahorro por docena combinada</dt>
                             <dd>
                                 {formatOrderMoney.format(

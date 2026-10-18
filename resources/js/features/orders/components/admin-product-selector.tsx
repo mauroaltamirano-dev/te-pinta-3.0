@@ -29,7 +29,7 @@ export function AdminProductSelector({
                                 Cantidad: {quantity}
                             </p>
                             {product.is_sellable === false && (
-                                <p className="mt-1 text-xs font-medium text-amber-400">
+                                <p className="mt-1 text-xs font-medium text-warning">
                                     Producto actualmente no disponible
                                 </p>
                             )}

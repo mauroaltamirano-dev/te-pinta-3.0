@@ -48,7 +48,9 @@ function DetailSection({
 }) {
     return (
         <section className="rounded-lg bg-admin-surface-raised p-4 text-admin-text-secondary sm:p-5">
-            <h2 className="mb-4 text-sm font-semibold text-white">{title}</h2>
+            <h2 className="mb-4 text-sm font-semibold text-admin-text-primary">
+                {title}
+            </h2>
             {children}
         </section>
     );
@@ -92,11 +94,11 @@ export function OrderDetailContent({
             >
                 <div className="flex items-start justify-between gap-5">
                     <div className="min-w-0">
-                        <p className="flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-admin-accent uppercase">
+                        <p className="flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-admin-accent-text uppercase">
                             <ReceiptText className="size-4" /> Orden de
                             producción
                         </p>
-                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-admin-text-primary sm:text-3xl">
                             {order.id}
                         </h2>
                     </div>
@@ -104,22 +106,22 @@ export function OrderDetailContent({
                         <p className="text-xs text-admin-text-tertiary">
                             Total
                         </p>
-                        <p className="mt-1 text-xl font-semibold text-white tabular-nums sm:text-2xl">
+                        <p className="mt-1 text-xl font-semibold text-admin-text-primary tabular-nums sm:text-2xl">
                             {formatOrderMoney.format(order.total)}
                         </p>
                     </div>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border pt-4">
-                    <Badge className="border-admin-accent/30 bg-admin-accent/10 text-admin-accent">
+                    <Badge className="border-admin-accent/30 bg-admin-accent/10 text-admin-accent-text">
                         {orderStatusLabels[order.status]}
                     </Badge>
                     <Badge
                         variant="outline"
                         className={
                             order.payment_status === 'paid'
-                                ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400'
+                                ? 'border-success/40 bg-success-subtle text-success'
                                 : order.payment_status === 'not_required'
-                                  ? 'border-sky-400/40 bg-sky-400/10 text-sky-300'
+                                  ? 'border-info/40 bg-info-subtle text-info'
                                   : undefined
                         }
                     >
@@ -141,7 +143,7 @@ export function OrderDetailContent({
                         <Button
                             asChild
                             variant="ghost"
-                            className="text-admin-text-secondary hover:text-white"
+                            className="text-admin-text-secondary hover:text-admin-text-primary"
                         >
                             <Link href={`/admin/orders/${order.id}`}>
                                 Ver detalle completo <ExternalLink />
@@ -161,12 +163,12 @@ export function OrderDetailContent({
                 {order.customer !== null ? (
                     <Link
                         href={`/admin/customers/${order.customer.id}`}
-                        className="font-medium text-white underline-offset-4 hover:text-admin-accent hover:underline"
+                        className="font-medium text-admin-text-primary underline-offset-4 hover:text-admin-accent-text hover:underline"
                     >
                         {formatOrderCustomer(order)}
                     </Link>
                 ) : (
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-admin-text-primary">
                         {formatOrderCustomer(order)}
                     </p>
                 )}
@@ -180,7 +182,7 @@ export function OrderDetailContent({
                             className="flex items-start justify-between gap-4 border-b border-border/70 pb-4 last:border-0 last:pb-0"
                         >
                             <div className="min-w-0">
-                                <p className="font-medium text-white">
+                                <p className="font-medium text-admin-text-primary">
                                     {item.quantity} ×{' '}
                                     {pricingModeLabels[item.pricing_mode] ??
                                         item.pricing_mode}
@@ -205,13 +207,13 @@ export function OrderDetailContent({
                                     </ul>
                                 )}
                                 {item.savings > 0 && (
-                                    <p className="mt-2 text-xs text-emerald-400">
+                                    <p className="mt-2 text-xs text-success">
                                         Ahorro:{' '}
                                         {formatOrderMoney.format(item.savings)}
                                     </p>
                                 )}
                             </div>
-                            <span className="shrink-0 font-medium text-white tabular-nums">
+                            <span className="shrink-0 font-medium text-admin-text-primary tabular-nums">
                                 {formatOrderMoney.format(item.subtotal)}
                             </span>
                         </div>
@@ -241,7 +243,7 @@ export function OrderDetailContent({
 
             <DetailSection title="Entrega">
                 <div className="grid gap-2 text-sm">
-                    <p className="font-medium text-white">
+                    <p className="font-medium text-admin-text-primary">
                         {deliveryTypeLabels[order.delivery_type]}
                     </p>
                     <p className="text-admin-text-secondary">
@@ -281,7 +283,7 @@ export function OrderDetailContent({
                         </span>
                     </div>
                     {(order.raw_discount ?? 0) > 0 && (
-                        <div className="flex justify-between gap-4 text-emerald-400">
+                        <div className="flex justify-between gap-4 text-success">
                             <span>Descuento por preparación en crudo</span>
                             <span className="tabular-nums">
                                 −
@@ -304,7 +306,7 @@ export function OrderDetailContent({
                         </span>
                     </div>
                     {order.combined_dozen_savings > 0 && (
-                        <div className="flex justify-between gap-4 text-emerald-400">
+                        <div className="flex justify-between gap-4 text-success">
                             <span>Ahorro</span>
                             <span className="tabular-nums">
                                 −
@@ -315,7 +317,7 @@ export function OrderDetailContent({
                         </div>
                     )}
                     {(order.discount_amount ?? 0) > 0 && (
-                        <div className="flex justify-between gap-4 text-emerald-400">
+                        <div className="flex justify-between gap-4 text-success">
                             <span>Descuento</span>
                             <span className="tabular-nums">
                                 −
@@ -325,7 +327,7 @@ export function OrderDetailContent({
                             </span>
                         </div>
                     )}
-                    <div className="mt-2 flex justify-between border-t border-border pt-4 text-lg font-semibold text-white">
+                    <div className="mt-2 flex justify-between border-t border-border pt-4 text-lg font-semibold text-admin-text-primary">
                         <span>Total</span>
                         <span className="tabular-nums">
                             {formatOrderMoney.format(order.total)}
@@ -430,7 +432,7 @@ export function OrderDetailContent({
                     />
                 </div>
                 {closed && (
-                    <p className="mt-3 text-sm font-medium text-amber-400">
+                    <p className="mt-3 text-sm font-medium text-warning">
                         Pedido cerrado — edición bloqueada
                     </p>
                 )}

@@ -209,7 +209,7 @@ export function AdminOrderDetailsFields({
                                 <span>
                                     {addon.name}
                                     {addon.is_sellable === false && (
-                                        <span className="mt-1 block text-xs font-medium text-amber-400">
+                                        <span className="mt-1 block text-xs font-medium text-warning">
                                             Adicional actualmente no disponible
                                         </span>
                                     )}
@@ -314,22 +314,22 @@ export function AdminOrderDetailsFields({
                                     >
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                    <SelectContent className="admin-shell border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
                                         <SelectItem
                                             value="midday"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Mediodía
                                         </SelectItem>
                                         <SelectItem
                                             value="afternoon"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Tarde
                                         </SelectItem>
                                         <SelectItem
                                             value="night"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Noche
                                         </SelectItem>
@@ -408,16 +408,16 @@ export function AdminOrderDetailsFields({
                                     >
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                    <SelectContent className="admin-shell border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
                                         <SelectItem
                                             value="percentage"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Porcentaje
                                         </SelectItem>
                                         <SelectItem
                                             value="fixed_amount"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Monto fijo
                                         </SelectItem>
@@ -530,22 +530,22 @@ export function AdminOrderDetailsFields({
                                     >
                                         <SelectValue placeholder="Seleccioná un medio" />
                                     </SelectTrigger>
-                                    <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                    <SelectContent className="admin-shell border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
                                         <SelectItem
                                             value="cash"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Efectivo
                                         </SelectItem>
                                         <SelectItem
                                             value="bank_transfer"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Transferencia
                                         </SelectItem>
                                         <SelectItem
                                             value="debit_card"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             Débito
                                         </SelectItem>
@@ -601,7 +601,7 @@ function DeliveryDatePicker({
                 </PopoverTrigger>
 
                 <PopoverContent
-                    className="admin-shell dark w-auto border-admin-border !bg-admin-surface-raised p-0 !text-admin-text-primary shadow-xl"
+                    className="admin-shell w-auto border-admin-border !bg-admin-surface-raised p-0 !text-admin-text-primary shadow-xl"
                     align="start"
                 >
                     <Calendar
@@ -615,7 +615,7 @@ function DeliveryDatePicker({
                             outside:
                                 'text-admin-text-tertiary aria-selected:text-admin-text-tertiary',
                             disabled: 'text-admin-text-tertiary opacity-40',
-                            today: 'rounded-md bg-admin-selection text-admin-accent data-[selected=true]:bg-admin-accent data-[selected=true]:text-white',
+                            today: 'rounded-md bg-admin-selection text-admin-accent-text data-[selected=true]:bg-admin-accent data-[selected=true]:text-admin-on-accent',
                         }}
                         disabled={
                             minimumDate

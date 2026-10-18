@@ -66,7 +66,7 @@ export default function EditOrder({
                 <Head title={`Edición bloqueada · ${order.id}`} />
                 <Card>
                     <CardHeader>
-                        <LockKeyhole className="size-8 text-amber-400" />
+                        <LockKeyhole className="size-8 text-warning" />
                         <CardTitle>
                             Pedido cerrado — edición bloqueada
                         </CardTitle>
@@ -94,14 +94,14 @@ export default function EditOrder({
                         <button
                             type="button"
                             onClick={cancel}
-                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-white"
+                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-admin-text-primary"
                         >
                             <ArrowLeft className="size-4" /> Volver al detalle
                         </button>
-                        <p className="text-sm font-medium text-admin-accent">
+                        <p className="text-sm font-medium text-admin-accent-text">
                             Editando {order.id}
                         </p>
-                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Corregir pedido
                         </h1>
                     </div>
@@ -283,7 +283,7 @@ function SummaryRow({
 }) {
     return (
         <div
-            className={`flex justify-between gap-4 ${emphasized ? 'border-t pt-3 font-semibold text-admin-accent' : ''}`}
+            className={`flex justify-between gap-4 ${emphasized ? 'border-t pt-3 font-semibold text-admin-accent-text' : ''}`}
         >
             <span>{label}</span>
             <span className="text-right tabular-nums">{value}</span>

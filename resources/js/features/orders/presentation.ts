@@ -17,11 +17,11 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
 };
 
 export const orderStatusStyles: Record<OrderStatus, string> = {
-    pending_confirmation: 'bg-[rgba(255,181,114,0.20)] text-[#ffb572]',
-    waiting: 'bg-[rgba(255,218,7,0.20)] text-[#fff000]',
-    prepared: 'bg-[rgba(146,144,254,0.20)] text-[#9290fe]',
-    delivered: 'bg-[rgba(107,226,190,0.24)] text-[#50d1aa]',
-    cancelled: 'bg-[rgba(255,124,163,0.20)] text-[#ff7ca3]',
+    pending_confirmation: 'bg-warning-subtle text-warning',
+    waiting: 'bg-info-subtle text-info',
+    prepared: 'bg-prepared-subtle text-prepared',
+    delivered: 'bg-success-subtle text-success',
+    cancelled: 'bg-danger-subtle text-danger',
 };
 
 export const paymentStatusLabels: Record<PaymentStatus, string> = {

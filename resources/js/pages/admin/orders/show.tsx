@@ -29,11 +29,11 @@ export default function OrderDetail({
                     <div>
                         <Link
                             href="/admin/orders"
-                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-white"
+                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-admin-text-primary"
                         >
                             <ArrowLeft className="size-4" /> Volver a pedidos
                         </Link>
-                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Detalle del pedido
                         </h1>
                         <p className="mt-1 text-sm text-admin-text-tertiary">

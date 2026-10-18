@@ -42,13 +42,13 @@ export function OrderContinuationPanel({
         >
             <SheetContent
                 side="right"
-                overlayClassName="bg-black/70"
-                className="admin-shell dark w-full max-w-none gap-0 overflow-hidden border-admin-border bg-admin-surface p-0 text-admin-text-primary sm:max-w-[51rem]"
+                overlayClassName="bg-overlay/70"
+                className="admin-shell w-full max-w-none gap-0 overflow-hidden border-admin-border bg-admin-surface p-0 text-admin-text-primary sm:max-w-[51rem]"
             >
                 {draft.createdOrder ? (
                     <div className="grid h-full place-items-center p-5 sm:p-8">
                         <div className="w-full max-w-md text-center">
-                            <CheckCircle2 className="mx-auto size-14 text-emerald-400" />
+                            <CheckCircle2 className="mx-auto size-14 text-success" />
                             <p className="mt-5 text-sm text-admin-text-secondary">
                                 Pedido confirmado
                             </p>
@@ -56,7 +56,7 @@ export function OrderContinuationPanel({
                                 data-testid="quick-order-success-ticket"
                                 className="mt-5 border-y border-dashed border-admin-border bg-admin-surface-raised px-5 py-6 text-left"
                             >
-                                <p className="text-xs font-medium tracking-[0.14em] text-admin-accent uppercase">
+                                <p className="text-xs font-medium tracking-[0.14em] text-admin-accent-text uppercase">
                                     Orden de producción
                                 </p>
                                 <div className="mt-2 flex items-end justify-between gap-4">
@@ -67,7 +67,7 @@ export function OrderContinuationPanel({
                                         <p className="text-xs text-admin-text-tertiary">
                                             Total
                                         </p>
-                                        <p className="text-xl font-semibold text-white tabular-nums">
+                                        <p className="text-xl font-semibold text-admin-text-primary tabular-nums">
                                             {formatOrderMoney.format(
                                                 draft.createdOrder.total,
                                             )}
@@ -110,7 +110,7 @@ export function OrderContinuationPanel({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="mb-2 inline-flex items-center gap-2 text-sm text-admin-text-secondary hover:text-white"
+                                className="mb-2 inline-flex items-center gap-2 text-sm text-admin-text-secondary hover:text-admin-text-primary"
                             >
                                 <ArrowLeft className="size-4" /> Volver al
                                 catálogo
@@ -136,7 +136,7 @@ export function OrderContinuationPanel({
                             {Object.keys(draft.form.errors).length > 0 && (
                                 <p
                                     role="alert"
-                                    className="mt-4 text-sm text-red-300"
+                                    className="mt-4 text-sm text-danger"
                                 >
                                     {draft.form.errors.items ??
                                         'Revisá los datos del pedido e intentá nuevamente.'}

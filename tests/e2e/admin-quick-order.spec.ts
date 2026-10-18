@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './support/test';
 
 async function logIn(page: Page) {
     await page.goto('/login');
@@ -136,10 +136,7 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
     await expect(dozen).toHaveText('12');
     await expect(halfDozen).toHaveText('6');
     await expect(unit).toHaveText('1');
-    await expect(dozen).toHaveCSS(
-        'background-color',
-        'rgba(234, 124, 105, 0.24)',
-    );
+    await expect(dozen).toHaveCSS('background-color', 'rgb(244, 229, 226)');
     expect(
         await dozen.evaluate((button) => {
             const card = button.closest('article');
@@ -197,10 +194,10 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
     });
     await dateTrigger.click();
     const calendar = page.locator('[data-slot="popover-content"]');
-    await expect(calendar).toHaveCSS('background-color', 'rgb(45, 48, 62)');
+    await expect(calendar).toHaveCSS('background-color', 'rgb(238, 241, 245)');
     await expect(calendar.locator('[data-selected-single="true"]')).toHaveCSS(
         'background-color',
-        'rgb(234, 124, 105)',
+        'rgb(184, 79, 63)',
     );
     await page.screenshot({
         path: 'storage/app/admin-order-calendar.png',
@@ -212,12 +209,12 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
     const deliveryPeriod = continuation.getByLabel('Franja');
     await expect(deliveryPeriod).toHaveCSS(
         'background-color',
-        'rgb(37, 40, 54)',
+        'rgb(247, 248, 250)',
     );
     await deliveryPeriod.click();
     await expect(page.getByRole('listbox')).toHaveCSS(
         'background-color',
-        'rgb(45, 48, 62)',
+        'rgb(238, 241, 245)',
     );
     await page.getByRole('option', { name: 'Noche', exact: true }).click();
 
@@ -314,7 +311,7 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
         await continuation.getByLabel('Tipo de descuento').click();
         await expect(page.getByRole('listbox')).toHaveCSS(
             'background-color',
-            'rgb(45, 48, 62)',
+            'rgb(238, 241, 245)',
         );
         await page
             .getByRole('option', { name: 'Monto fijo', exact: true })
@@ -343,7 +340,7 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
     await continuation.getByLabel('Medio de pago').click();
     await expect(page.getByRole('listbox')).toHaveCSS(
         'background-color',
-        'rgb(45, 48, 62)',
+        'rgb(238, 241, 245)',
     );
     await page.getByRole('option', { name: 'Efectivo', exact: true }).click();
     await expect(confirm).toBeEnabled();

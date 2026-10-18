@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
+import { expect, test } from './support/test';
 
 async function logIn(page: Page) {
     await page.goto('/login');
@@ -53,7 +53,7 @@ async function createOrder(page: Page, customerName: string) {
 }
 
 async function configureOrderPaymentWallet(page: Page, walletName: string) {
-    await page.goto('/admin/management');
+    await page.goto('/admin/management?section=wallets');
     await page
         .getByRole('button', { name: 'Nueva billetera', exact: true })
         .click();
@@ -568,7 +568,7 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
     await expect(paymentDialog).toContainText('Cobro del pedido');
     await expect(paymentDialog).toHaveCSS(
         'background-color',
-        'rgb(31, 29, 43)',
+        'rgb(255, 255, 255)',
     );
     await page.screenshot({
         path: 'storage/app/orders-payment-dialog.png',
@@ -578,7 +578,7 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
     await page.getByLabel(`Medio de pago de ${orderId}`).click();
     await expect(page.getByRole('listbox')).toHaveCSS(
         'background-color',
-        'rgb(45, 48, 62)',
+        'rgb(238, 241, 245)',
     );
     await page.getByRole('option', { name: 'Efectivo', exact: true }).click();
     await page.getByRole('button', { name: 'Confirmar pago' }).click();
@@ -772,6 +772,32 @@ test.describe('edición administrativa segura', () => {
     test('pedido entregado exige habilitación y motivo, y conserva su estado al editar', async ({
         page,
     }) => {
+        // This isolated scenario tests closed-order editing, not physical stock.
+        // Use the supported explicit mode instead of bypassing delivery validation.
+        await page.goto('/admin/settings/products');
+        await page
+            .getByRole('group', { name: 'Categorías de productos' })
+            .getByRole('button', { name: 'Especiales', exact: true })
+            .click();
+        const product = page.locator('[data-slot="card"]').filter({
+            has: page.getByRole('heading', { name: 'Salteña', exact: true }),
+        });
+        await product
+            .getByRole('link', { name: 'Configurar consumo físico' })
+            .click();
+        await page
+            .getByRole('combobox', { name: 'Estado', exact: true })
+            .selectOption('no_inventory');
+        await page
+            .getByRole('button', { name: 'Guardar configuración', exact: true })
+            .click();
+        await expect(
+            page.getByText(
+                'Sin inventario explícito: costo físico conocido igual a cero.',
+                { exact: true },
+            ),
+        ).toBeVisible();
+
         const orderId = await createOrder(page, 'Edición cerrada Playwright');
 
         await page.getByLabel('Estado del pedido').click();

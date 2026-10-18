@@ -25,7 +25,7 @@ export function QuickOrderDraftPanel({
         <aside className="flex min-h-[34rem] flex-col rounded-lg bg-admin-surface p-5 lg:sticky lg:top-0 lg:h-screen lg:min-h-0 lg:rounded-none lg:rounded-l-lg lg:p-6">
             <header className="flex items-start justify-between gap-4 border-b border-admin-border pb-5">
                 <div>
-                    <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent uppercase">
+                    <p className="text-xs font-semibold tracking-[0.16em] text-admin-accent-text uppercase">
                         Pedido actual
                     </p>
                     <h2 className="mt-1 text-xl font-semibold">Tu selección</h2>
@@ -124,7 +124,7 @@ export function QuickOrderDraftPanel({
                                         onClick={() =>
                                             draft.removeProduct(product.id)
                                         }
-                                        className="size-8 text-admin-accent"
+                                        className="size-8 text-admin-accent-text"
                                     >
                                         <Trash2 />
                                     </Button>
@@ -142,7 +142,7 @@ export function QuickOrderDraftPanel({
                     />
                 </div>
                 {draft.quoteError && (
-                    <p role="alert" className="mt-3 text-sm text-red-300">
+                    <p role="alert" className="mt-3 text-sm text-danger">
                         No pudimos calcular el precio. Intentá nuevamente.
                     </p>
                 )}

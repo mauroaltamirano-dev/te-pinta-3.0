@@ -62,7 +62,7 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                             <Link
                                 href={`/admin/customers/${order.customer.id}`}
                                 className={cn(
-                                    'block font-semibold text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent',
+                                    'block font-semibold text-admin-text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent',
                                     view === 'grid' && 'truncate text-lg',
                                     view === 'list' && 'text-base leading-snug',
                                 )}
@@ -70,14 +70,14 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                                 {formatOrderCustomer(order)}
                             </Link>
                         ) : (
-                            <p className="font-semibold text-white">
+                            <p className="font-semibold text-admin-text-primary">
                                 {formatOrderCustomer(order)}
                             </p>
                         )}
                         <button
                             type="button"
                             onClick={() => onOpen(order)}
-                            className="mt-1 text-sm font-medium text-admin-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent"
+                            className="mt-1 text-sm font-medium text-admin-accent-text underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-admin-accent"
                         >
                             {order.id}
                         </button>
@@ -101,7 +101,9 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                         'gap-2 p-3 md:border-r md:border-admin-border md:p-4',
                 )}
             >
-                <h3 className="text-sm font-semibold text-white">Pedido</h3>
+                <h3 className="text-sm font-semibold text-admin-text-primary">
+                    Pedido
+                </h3>
                 {order.items?.length ? (
                     <ul className="grid gap-3">
                         {order.items.map((item, index) => (
@@ -111,7 +113,7 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium text-[#e0e6e9]">
+                                        <p className="text-sm font-medium text-admin-text-secondary">
                                             {item.quantity} ×{' '}
                                             {item.pricing_mode ===
                                             'combined_dozen'
@@ -206,8 +208,10 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                 )}
             >
                 <div className="flex items-baseline justify-between gap-4">
-                    <span className="font-semibold text-white">Total</span>
-                    <span className="text-xl font-semibold text-admin-accent tabular-nums">
+                    <span className="font-semibold text-admin-text-primary">
+                        Total
+                    </span>
+                    <span className="text-xl font-semibold text-admin-accent-text tabular-nums">
                         {formatOrderMoney.format(order.total)}
                     </span>
                 </div>

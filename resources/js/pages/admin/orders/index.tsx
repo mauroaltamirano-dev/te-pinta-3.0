@@ -243,10 +243,10 @@ export default function Orders({
                     >
                         <header className="grid gap-4 lg:grid-cols-[minmax(12rem,1fr)_auto] lg:items-end">
                             <div>
-                                <p className="text-sm font-medium text-admin-accent">
+                                <p className="text-sm font-medium text-admin-accent-text">
                                     Gestión de pedidos
                                 </p>
-                                <h1 className="mt-1 text-3xl font-semibold text-white">
+                                <h1 className="mt-1 text-3xl font-semibold text-admin-text-primary">
                                     Pedidos
                                 </h1>
                                 <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -351,8 +351,8 @@ export default function Orders({
                                             }
                                             className={`min-h-11 rounded-md px-4 text-sm font-semibold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none ${
                                                 group === item.value
-                                                    ? 'bg-admin-accent text-white'
-                                                    : 'text-admin-text-secondary hover:text-white'
+                                                    ? 'bg-admin-accent text-admin-on-accent'
+                                                    : 'text-admin-text-secondary hover:text-admin-text-primary'
                                             }`}
                                         >
                                             {item.label}
@@ -385,11 +385,11 @@ export default function Orders({
                                         </TooltipContent>
                                     </Tooltip>
                                     <SheetContent
-                                        className="admin-shell dark border-admin-border bg-admin-surface"
-                                        overlayClassName="bg-black/70"
+                                        className="admin-shell border-admin-border bg-admin-surface"
+                                        overlayClassName="bg-overlay/70"
                                     >
                                         <SheetHeader>
-                                            <SheetTitle className="text-white">
+                                            <SheetTitle className="text-admin-text-primary">
                                                 Filtros y orden
                                             </SheetTitle>
                                             <SheetDescription className="text-admin-text-secondary">
@@ -402,7 +402,7 @@ export default function Orders({
                                             onSubmit={applyFilters}
                                             className="grid gap-5 px-4"
                                         >
-                                            <label className="grid gap-2 text-sm font-medium text-white">
+                                            <label className="grid gap-2 text-sm font-medium text-admin-text-primary">
                                                 Estado exacto
                                                 <Select
                                                     value={status}
@@ -444,7 +444,7 @@ export default function Orders({
                                                     </SelectContent>
                                                 </Select>
                                             </label>
-                                            <label className="grid gap-2 text-sm font-medium text-white">
+                                            <label className="grid gap-2 text-sm font-medium text-admin-text-primary">
                                                 Fecha de entrega
                                                 <div className="relative">
                                                     <CalendarDays className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-admin-text-tertiary" />
@@ -462,7 +462,7 @@ export default function Orders({
                                                     />
                                                 </div>
                                             </label>
-                                            <label className="grid gap-2 text-sm font-medium text-white">
+                                            <label className="grid gap-2 text-sm font-medium text-admin-text-primary">
                                                 Ordenar por
                                                 <Select
                                                     value={sort}
@@ -494,7 +494,7 @@ export default function Orders({
                                                     </SelectContent>
                                                 </Select>
                                             </label>
-                                            <label className="grid gap-2 text-sm font-medium text-white">
+                                            <label className="grid gap-2 text-sm font-medium text-admin-text-primary">
                                                 Dirección
                                                 <Select
                                                     value={direction}
@@ -555,14 +555,14 @@ export default function Orders({
                                     <ToggleGroupItem
                                         value="grid"
                                         aria-label="Vista en grilla"
-                                        className="size-11 p-0 data-[state=on]:bg-admin-accent data-[state=on]:text-white"
+                                        className="size-11 p-0 data-[state=on]:bg-admin-accent data-[state=on]:text-admin-on-accent"
                                     >
                                         <Grid2X2 />
                                     </ToggleGroupItem>
                                     <ToggleGroupItem
                                         value="list"
                                         aria-label="Vista en lista"
-                                        className="size-11 p-0 data-[state=on]:bg-admin-accent data-[state=on]:text-white"
+                                        className="size-11 p-0 data-[state=on]:bg-admin-accent data-[state=on]:text-admin-on-accent"
                                     >
                                         <List />
                                     </ToggleGroupItem>
@@ -686,9 +686,9 @@ function SummaryCard({
     trendDirection: 'up' | 'down';
 }) {
     const tones = {
-        accent: 'text-[#9288e0]',
-        warning: 'text-[#ffb572]',
-        info: 'text-[#65b0f6]',
+        accent: 'text-prepared',
+        warning: 'text-warning',
+        info: 'text-info',
     } as const;
     const positive = trendDirection === 'up';
     const TrendIcon = positive ? TrendingUp : TrendingDown;
@@ -702,11 +702,11 @@ function SummaryCard({
                 <Icon className={`size-5 ${tones[tone]}`} strokeWidth={1.7} />
             </div>
             <div className="flex min-w-0 items-center justify-between gap-2">
-                <p className="truncate text-xl font-semibold whitespace-nowrap text-white tabular-nums">
+                <p className="truncate text-xl font-semibold whitespace-nowrap text-admin-text-primary tabular-nums">
                     {value}
                 </p>
                 <span
-                    className={`flex items-center gap-1 text-xs font-medium ${positive ? 'text-[#50d1aa]' : 'text-[#ff7ca3]'}`}
+                    className={`flex items-center gap-1 text-xs font-medium ${positive ? 'text-success' : 'text-danger'}`}
                 >
                     {trend}
                     <TrendIcon className="size-3.5" strokeWidth={2} />

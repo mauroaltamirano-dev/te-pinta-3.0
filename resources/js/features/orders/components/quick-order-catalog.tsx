@@ -56,7 +56,7 @@ export function QuickOrderCatalog({
                     onClick={() => setActiveCategory('all')}
                     className={`shrink-0 border-b-2 px-0.5 pb-3 text-sm font-medium ${
                         activeCategory === 'all'
-                            ? 'border-admin-accent text-admin-accent'
+                            ? 'border-admin-accent text-admin-accent-text'
                             : 'border-transparent text-admin-text-secondary'
                     }`}
                 >
@@ -70,7 +70,7 @@ export function QuickOrderCatalog({
                         onClick={() => setActiveCategory(category.id)}
                         className={`shrink-0 border-b-2 px-0.5 pb-3 text-sm font-medium ${
                             activeCategory === category.id
-                                ? 'border-admin-accent text-admin-accent'
+                                ? 'border-admin-accent text-admin-accent-text'
                                 : 'border-transparent text-admin-text-secondary'
                         }`}
                     >
@@ -163,14 +163,14 @@ export function QuickOrderCatalog({
                                                     increment,
                                                 )
                                             }
-                                            className="h-11 rounded-lg border border-admin-accent/50 bg-admin-action text-xs font-semibold text-admin-accent transition-[border-color,background-color,transform] hover:border-admin-accent hover:bg-admin-accent/35 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none active:scale-[0.96] sm:text-sm"
+                                            className="h-11 rounded-lg border border-admin-accent/50 bg-admin-action text-xs font-semibold text-admin-accent-text transition-[border-color,background-color,transform] hover:border-admin-accent hover:bg-admin-accent/35 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none active:scale-[0.96] sm:text-sm"
                                         >
                                             {increment}
                                         </button>
                                     ))}
                                 </div>
                                 {quantity > 0 && (
-                                    <span className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-admin-accent text-sm font-semibold text-white shadow-admin-nav-active sm:top-3 sm:right-3 sm:size-8 sm:text-base">
+                                    <span className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-admin-accent text-sm font-semibold text-admin-on-accent shadow-admin-nav-active sm:top-3 sm:right-3 sm:size-8 sm:text-base">
                                         {quantity}
                                     </span>
                                 )}

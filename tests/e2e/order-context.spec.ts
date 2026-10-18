@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 // Exercise only existing admin surfaces, not a new POS or dining-table UI.
 test('existing admin surfaces handle an immediate dine-in order without a customer', async ({

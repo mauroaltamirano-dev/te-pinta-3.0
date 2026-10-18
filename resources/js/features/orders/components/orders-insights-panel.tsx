@@ -12,14 +12,14 @@ import type {
 } from '@/features/orders/types';
 
 const deliveryColors = {
-    pickup: '#FFB572',
-    dine_in: '#50D1AA',
-    delivery: '#65B0F6',
+    pickup: 'var(--warning)',
+    dine_in: 'var(--success)',
+    delivery: 'var(--info)',
 } as const;
 
 const conditionColors = {
-    raw: '#9288E0',
-    cooked: '#50D1AA',
+    raw: 'var(--prepared)',
+    cooked: 'var(--success)',
 } as const;
 
 const ringRadii = [44, 35] as const;
@@ -42,7 +42,7 @@ function PeriodControl() {
     return (
         <div
             aria-label="Período: hoy"
-            className="flex h-[45px] w-[95px] items-center justify-center gap-2.5 rounded-lg border border-admin-border text-sm font-medium text-white"
+            className="flex h-[45px] w-[95px] items-center justify-center gap-2.5 rounded-lg border border-admin-border text-sm font-medium text-admin-text-primary"
         >
             <ChevronDown aria-hidden="true" className="size-5" />
             <span>Hoy</span>
@@ -55,7 +55,7 @@ function ProductArtwork({ product }: { product: OrderInsightsProduct }) {
 
     if (!product.image_url || failed) {
         return (
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-admin-surface-raised text-admin-accent">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-admin-surface-raised text-admin-accent-text">
                 <Utensils
                     aria-hidden="true"
                     className="size-6"
@@ -89,7 +89,7 @@ function DistributionDonut({
 
     return (
         <section className="flex min-w-0 flex-col items-center">
-            <h3 className="text-sm leading-[1.3] font-medium text-white">
+            <h3 className="text-sm leading-[1.3] font-medium text-admin-text-primary">
                 {title}
             </h3>
             <svg
@@ -105,7 +105,7 @@ function DistributionDonut({
                         cy="56"
                         r={radius}
                         fill="none"
-                        stroke="#2D303E"
+                        stroke="var(--admin-surface-raised)"
                         strokeWidth="8"
                     />
                 ))}
@@ -144,7 +144,7 @@ function DistributionDonut({
                             style={{ backgroundColor: item.color }}
                         />
                         <span className="truncate text-xs text-admin-text-secondary">
-                            <span className="font-medium text-white">
+                            <span className="font-medium text-admin-text-primary">
                                 {item.label}
                             </span>{' '}
                             · {item.count}
@@ -195,7 +195,7 @@ export function OrdersInsightsPanel({
                 className="flex min-h-[429px] flex-col gap-5 rounded-lg bg-admin-surface p-6 xl:h-full xl:min-h-0 xl:overflow-hidden"
             >
                 <header className="flex h-[45px] shrink-0 items-center justify-between">
-                    <h2 className="text-xl leading-[1.4] font-semibold text-white">
+                    <h2 className="text-xl leading-[1.4] font-semibold text-admin-text-primary">
                         Más pedidos
                     </h2>
                     <PeriodControl />
@@ -213,7 +213,7 @@ export function OrdersInsightsPanel({
                                 >
                                     <ProductArtwork product={product} />
                                     <div className="min-w-0 space-y-1 pt-0.5">
-                                        <p className="truncate text-sm leading-[1.3] font-medium text-[#E0E6E9]">
+                                        <p className="truncate text-sm leading-[1.3] font-medium text-admin-text-secondary">
                                             {product.name}
                                         </p>
                                         <p className="text-xs leading-[1.4] text-admin-text-secondary">
@@ -236,7 +236,7 @@ export function OrdersInsightsPanel({
                         type="button"
                         aria-disabled={!onViewAll}
                         onClick={onViewAll}
-                        className="h-12 w-full shrink-0 rounded-lg border border-admin-accent text-sm leading-[1.4] font-semibold text-admin-accent focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:ring-offset-2 focus-visible:ring-offset-admin-surface focus-visible:outline-none"
+                        className="h-12 w-full shrink-0 rounded-lg border border-admin-accent text-sm leading-[1.4] font-semibold text-admin-accent-text focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:ring-offset-2 focus-visible:ring-offset-admin-surface focus-visible:outline-none"
                     >
                         Ver todos
                     </button>
@@ -248,7 +248,7 @@ export function OrdersInsightsPanel({
                 className="flex min-h-[333px] flex-col rounded-lg bg-admin-surface pb-10 xl:h-full xl:min-h-0 xl:overflow-hidden"
             >
                 <header className="flex h-[86px] shrink-0 items-start justify-between border-b border-admin-border px-6 pt-6">
-                    <h2 className="text-xl leading-[1.4] font-semibold text-white">
+                    <h2 className="text-xl leading-[1.4] font-semibold text-admin-text-primary">
                         Distribución de pedidos
                     </h2>
                     <PeriodControl />

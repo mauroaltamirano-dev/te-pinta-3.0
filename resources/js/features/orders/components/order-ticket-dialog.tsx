@@ -53,7 +53,7 @@ export function OrderTicketDialog({
                         </DialogDescription>
                         <div className="min-h-0 overflow-y-auto px-5 pt-7 pb-5 sm:px-8 sm:pt-8">
                             <header className="border-b border-dashed border-ticket-rule pb-5 text-center">
-                                <span className="mx-auto grid size-10 place-items-center rounded-full bg-admin-accent text-white">
+                                <span className="mx-auto grid size-10 place-items-center rounded-full bg-admin-accent text-admin-on-accent">
                                     <ReceiptText className="size-5" />
                                 </span>
                                 <p className="mt-3 text-[0.6875rem] font-semibold tracking-[0.18em] text-ticket-muted uppercase">
@@ -63,17 +63,17 @@ export function OrderTicketDialog({
                                     {order.id}
                                 </h2>
                                 <div className="mt-3 flex flex-wrap justify-center gap-2">
-                                    <Badge className="border-0 bg-admin-accent/15 text-[#a74534] shadow-none">
+                                    <Badge className="border-0 bg-admin-accent/15 text-admin-accent-text shadow-none">
                                         {orderStatusLabels[order.status]}
                                     </Badge>
                                     <Badge
                                         className={
                                             order.payment_status === 'paid'
-                                                ? 'border-0 bg-[#dceee5] text-[#287153] shadow-none'
+                                                ? 'border-0 bg-success-subtle text-success shadow-none'
                                                 : order.payment_status ===
                                                     'not_required'
-                                                  ? 'border-0 bg-[#dceaf2] text-[#28647a] shadow-none'
-                                                  : 'border-0 bg-[#f6e0dc] text-[#9b493c] shadow-none'
+                                                  ? 'border-0 bg-info-subtle text-info shadow-none'
+                                                  : 'border-0 bg-danger-subtle text-danger shadow-none'
                                         }
                                     >
                                         {
@@ -184,7 +184,7 @@ export function OrderTicketDialog({
                                 version={order.version}
                                 closed={closed}
                                 compactLabel
-                                className="h-11 border-admin-accent bg-admin-accent text-white hover:bg-[#d96d5b] hover:text-white"
+                                className="h-11 border-admin-accent bg-admin-accent text-admin-on-accent hover:bg-admin-accent-hover hover:text-admin-on-accent"
                             />
                         </footer>
                     </>

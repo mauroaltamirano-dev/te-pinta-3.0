@@ -98,7 +98,7 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
 
     if (order.total === 0) {
         return (
-            <span className="inline-flex min-h-11 items-center rounded-lg bg-sky-400/10 px-3 text-xs font-semibold text-sky-300">
+            <span className="inline-flex min-h-11 items-center rounded-lg bg-info-subtle px-3 text-xs font-semibold text-info">
                 No requiere pago
             </span>
         );
@@ -125,12 +125,12 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
                     aria-hidden="true"
                     className={cn(
                         'relative block h-6 w-11 rounded-full bg-admin-surface-raised ring-1 ring-admin-border transition-colors',
-                        paid && 'bg-emerald-500 ring-emerald-400',
+                        paid && 'bg-success ring-success',
                     )}
                 >
                     <span
                         className={cn(
-                            'absolute top-1 left-1 size-4 rounded-full bg-white shadow transition-transform',
+                            'absolute top-1 left-1 size-4 rounded-full bg-admin-surface shadow transition-transform',
                             paid && 'translate-x-5',
                         )}
                     />
@@ -139,12 +139,12 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
             </button>
 
             <Dialog open={methodOpen} onOpenChange={setMethodOpen}>
-                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface font-orders text-admin-text-primary shadow-2xl sm:max-w-md [&>button]:text-admin-text-secondary [&>button:hover]:text-white">
+                <DialogContent className="admin-shell border-admin-border bg-admin-surface font-orders text-admin-text-primary shadow-2xl sm:max-w-md [&>button]:text-admin-text-secondary [&>button:hover]:text-admin-text-primary">
                     <DialogHeader className="gap-3 border-b border-admin-border pb-4">
-                        <p className="text-xs font-semibold text-admin-accent uppercase">
+                        <p className="text-xs font-semibold text-admin-accent-text uppercase">
                             Cobro del pedido
                         </p>
-                        <DialogTitle className="text-xl text-white">
+                        <DialogTitle className="text-xl text-admin-text-primary">
                             Marcar {order.id} como pagado
                         </DialogTitle>
                         <DialogDescription className="text-admin-text-secondary">
@@ -169,13 +169,13 @@ export function OrderPaymentToggle({ order }: { order: AdminOrder }) {
                             >
                                 <SelectValue placeholder="Seleccioná un medio" />
                             </SelectTrigger>
-                            <SelectContent className="admin-shell dark border-admin-border !bg-admin-surface-raised !text-admin-text-primary">
+                            <SelectContent className="admin-shell border-admin-border !bg-admin-surface-raised !text-admin-text-primary">
                                 {Object.entries(paymentMethodLabels).map(
                                     ([value, label]) => (
                                         <SelectItem
                                             key={value}
                                             value={value}
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent"
+                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
                                         >
                                             {label}
                                         </SelectItem>

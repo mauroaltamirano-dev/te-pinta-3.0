@@ -24,8 +24,8 @@ export function OrderDetailSheet({
             <SheetContent
                 data-testid="order-detail-sheet"
                 side="right"
-                overlayClassName="bg-black/70"
-                className="dark admin-shell w-full max-w-none gap-0 overflow-y-auto border-admin-border bg-admin-canvas p-0 sm:max-w-2xl [&_[aria-live=polite]]:bg-transparent [&_[aria-live=polite]]:text-white [&_[aria-live=polite]]:hover:bg-admin-action [&_[aria-live=polite]]:hover:text-white [&>button]:text-white"
+                overlayClassName="bg-overlay/70"
+                className="admin-shell w-full max-w-none gap-0 overflow-y-auto border-admin-border bg-admin-canvas p-0 sm:max-w-2xl [&_[aria-live=polite]]:bg-transparent [&_[aria-live=polite]]:text-admin-text-primary [&_[aria-live=polite]]:hover:bg-admin-action [&_[aria-live=polite]]:hover:text-admin-text-primary [&>button]:text-admin-text-primary"
             >
                 <SheetTitle className="sr-only">
                     {order

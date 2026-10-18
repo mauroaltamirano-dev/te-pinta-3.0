@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('administrator versions physical consumption and fulfills an order once', async ({
     page,
