@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const destinations = [
     { label: 'Inicio', path: '/admin', expectedPath: '/admin' },
@@ -62,8 +62,10 @@ test('navegación administrativa global expone destinos y sección activa', asyn
 
     if (!mobile) {
         await expect(
-            page.getByRole('link', { name: 'Te Pinta POS' }).locator('img'),
-        ).toHaveAttribute('src', '/icons/te-pinta-logo.svg');
+            page
+                .getByRole('link', { name: 'Te Pinta POS' })
+                .locator('[style*="mask-image"]'),
+        ).toHaveCSS('mask-image', /te-pinta-mark\.svg/);
     }
 
     for (const destination of destinations) {

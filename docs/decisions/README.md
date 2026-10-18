@@ -48,3 +48,4 @@ Which credible alternative was rejected, and why?
 | [0011](0011-private-management-document-attachments.md) | Private, immutable document attachments on financial transactions |
 | [0012](0012-tenant-ready-schema.md) | Tenant-ready schema: `restaurant_id` from a session setting; RLS deferred |
 | [0013](0013-code-defined-roles-and-permissions.md) | Code-defined roles and permissions on a per-restaurant membership |
+| [0014](0014-light-theme-restaurant-branding.md) | Light-only UI with server-derived, restaurant-configurable branding |

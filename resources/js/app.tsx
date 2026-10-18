@@ -30,9 +30,9 @@ createInertiaApp({
         );
     },
     progress: {
-        color: '#4B5563',
+        color: 'var(--brand-accent)',
     },
 });
 
-// This will set light / dark mode on load...
+// Legacy browser preferences must not override the restaurant's light theme.
 initializeTheme();
