@@ -46,10 +46,10 @@ export function DistributionDetailSheet({
 
     return (
         <Sheet open onOpenChange={onOpenChange}>
-            <SheetContent className="admin-shell dark w-full overflow-y-auto border-admin-border bg-admin-surface sm:max-w-md [&>button:last-child]:z-10 [&>button:last-child]:flex [&>button:last-child]:size-11 [&>button:last-child]:items-center [&>button:last-child]:justify-center">
+            <SheetContent className="admin-shell w-full overflow-y-auto border-admin-border bg-admin-surface sm:max-w-md [&>button:last-child]:z-10 [&>button:last-child]:flex [&>button:last-child]:size-11 [&>button:last-child]:items-center [&>button:last-child]:justify-center">
                 <SheetHeader className="pointer-events-none border-b border-admin-border px-5 pt-6 pb-5">
                     <div className="flex flex-wrap items-center gap-2 pr-8">
-                        <SheetTitle className="text-xl text-white">
+                        <SheetTitle className="text-xl text-admin-text-primary">
                             {transactionLabel(transaction)}
                         </SheetTitle>
                         <Badge
@@ -82,7 +82,7 @@ export function DistributionDetailSheet({
                         <p className="text-xs font-medium tracking-wide text-admin-text-tertiary uppercase">
                             Regla aplicada
                         </p>
-                        <p className="mt-1.5 text-base font-medium text-white">
+                        <p className="mt-1.5 text-base font-medium text-admin-text-primary">
                             {ruleName}
                             {versionNumber ? ` v${versionNumber}` : ''}
                         </p>
@@ -104,7 +104,7 @@ export function DistributionDetailSheet({
                             >
                                 Origen del negocio
                             </h3>
-                            <p className="mt-2 text-sm font-medium text-white">
+                            <p className="mt-2 text-sm font-medium text-admin-text-primary">
                                 Pago de pedido{' '}
                                 {
                                     distribution.management_order_payment.order
@@ -186,7 +186,7 @@ export function DistributionDetailSheet({
                                         (sourceEntry?.amount ??
                                             -distribution.amount) < 0
                                             ? 'text-destructive'
-                                            : 'text-admin-accent',
+                                            : 'text-admin-accent-text',
                                     )}
                                 >
                                     {signedMoney(
@@ -227,7 +227,7 @@ export function DistributionDetailSheet({
                                                 'text-right tabular-nums',
                                                 amount < 0
                                                     ? 'text-destructive'
-                                                    : 'text-admin-accent',
+                                                    : 'text-admin-accent-text',
                                             )}
                                         >
                                             {signedMoney(amount)}
@@ -287,7 +287,7 @@ function Detail({
                 {label}
             </dt>
             <dd
-                className={`mt-1 text-sm text-white ${numeric ? 'font-semibold tabular-nums' : ''}`}
+                className={`mt-1 text-sm text-admin-text-primary ${numeric ? 'font-semibold tabular-nums' : ''}`}
             >
                 {value}
             </dd>

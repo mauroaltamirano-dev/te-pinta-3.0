@@ -96,7 +96,7 @@ export function WalletGrid({
                                         <p className="truncate font-medium text-admin-text-secondary">
                                             {wallet.name}
                                         </p>
-                                        <p className="mt-2 text-xl font-semibold text-white tabular-nums">
+                                        <p className="mt-2 text-xl font-semibold text-admin-text-primary tabular-nums">
                                             {formatManagementMoney.format(
                                                 wallet.balance,
                                             )}
@@ -125,7 +125,7 @@ export function WalletGrid({
                 open={Boolean(archiving)}
                 onOpenChange={(open) => !open && setArchiving(null)}
             >
-                <DialogContent className="admin-shell dark border-admin-border bg-admin-surface sm:max-w-md">
+                <DialogContent className="admin-shell border-admin-border bg-admin-surface sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Archivar billetera</DialogTitle>
                         <DialogDescription>
@@ -174,14 +174,14 @@ function WalletCard({
                     {wallet.name}
                 </p>
                 {wallet.is_order_payment_default && (
-                    <Badge className="shrink-0 bg-admin-accent/15 text-admin-accent hover:bg-admin-accent/15">
+                    <Badge className="shrink-0 bg-admin-accent/15 text-admin-accent-text hover:bg-admin-accent/15">
                         Recibe cobros
                     </Badge>
                 )}
             </div>
             <p
                 className={cn(
-                    'mt-2 text-2xl font-semibold text-white tabular-nums',
+                    'mt-2 text-2xl font-semibold text-admin-text-primary tabular-nums',
                     wallet.balance < 0 && 'text-destructive',
                 )}
             >

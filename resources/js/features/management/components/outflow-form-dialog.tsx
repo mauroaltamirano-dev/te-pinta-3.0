@@ -85,7 +85,7 @@ export function OutflowFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100dvh-1rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-xl">
+            <DialogContent className="admin-shell max-h-[calc(100dvh-1rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>
                         Registrar {typeLabel.toLowerCase()}

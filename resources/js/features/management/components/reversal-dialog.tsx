@@ -43,7 +43,7 @@ export function ReversalDialog({
 
     return (
         <Dialog open={Boolean(transaction)} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark border-admin-border bg-admin-surface sm:max-w-md">
+            <DialogContent className="admin-shell border-admin-border bg-admin-surface sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>
                         {transaction?.management_distribution

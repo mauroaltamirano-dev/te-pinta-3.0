@@ -101,7 +101,7 @@ export function DistributionFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100dvh-1rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-xl">
+            <DialogContent className="admin-shell max-h-[calc(100dvh-1rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>Distribuir dinero</DialogTitle>
                     <DialogDescription>
@@ -255,7 +255,7 @@ export function DistributionFormDialog({
                         <div className="flex items-baseline justify-between gap-3">
                             <h3
                                 id="distribution-preview-title"
-                                className="font-medium text-white"
+                                className="font-medium text-admin-text-primary"
                             >
                                 Vista previa
                             </h3>
@@ -299,7 +299,7 @@ export function DistributionFormDialog({
                                                 ({allocation.percentage}%)
                                             </span>
                                         </span>
-                                        <strong className="shrink-0 text-admin-accent tabular-nums">
+                                        <strong className="shrink-0 text-admin-accent-text tabular-nums">
                                             +
                                             {formatManagementMoney.format(
                                                 allocation.amount,

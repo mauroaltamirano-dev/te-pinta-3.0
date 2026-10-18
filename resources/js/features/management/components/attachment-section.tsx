@@ -258,11 +258,11 @@ function AttachmentCard({
     return (
         <li className="grid gap-3 rounded-lg border border-admin-border bg-admin-surface p-3">
             <div className="flex min-w-0 items-start gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-admin-action text-admin-accent">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-admin-action text-admin-accent-text">
                     <FileIcon aria-hidden="true" className="size-5" />
                 </span>
                 <div className="min-w-0">
-                    <p className="text-sm font-medium break-words text-white">
+                    <p className="text-sm font-medium break-words text-admin-text-primary">
                         {attachment.name}
                     </p>
                     <p className="mt-1 text-xs text-admin-text-tertiary">
@@ -355,12 +355,12 @@ function AttachmentDeleteDialog({
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark border-admin-border bg-admin-surface sm:max-w-md">
+            <DialogContent className="admin-shell border-admin-border bg-admin-surface sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Eliminar comprobante</DialogTitle>
                     <DialogDescription>
                         Esta acción queda auditada. Indicá por qué retirás{' '}
-                        <strong className="font-medium text-white">
+                        <strong className="font-medium text-admin-text-primary">
                             {attachment.name}
                         </strong>
                         .

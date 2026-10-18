@@ -156,7 +156,7 @@ export function TransactionHistory({
             className="overflow-hidden rounded-xl border border-admin-border bg-admin-surface"
         >
             <header className="border-b border-admin-border p-4 sm:p-5">
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-admin-text-primary">
                     Movimientos
                 </h2>
                 <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -342,7 +342,7 @@ export function TransactionHistory({
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <p className="truncate font-medium text-white">
+                                                <p className="truncate font-medium text-admin-text-primary">
                                                     {transactionDescription(
                                                         transaction,
                                                     )}
@@ -357,7 +357,7 @@ export function TransactionHistory({
                                                 </p>
                                                 {transaction.purchase_id && (
                                                     <Link
-                                                        className="text-admin-accent underline"
+                                                        className="text-admin-accent-text underline"
                                                         href={`/admin/management/purchases/${transaction.purchase_id}`}
                                                     >
                                                         Ver compra
@@ -444,7 +444,7 @@ export function TransactionHistory({
                                                     'px-4 py-3 text-right font-semibold tabular-nums',
                                                     row.amount < 0
                                                         ? 'text-destructive'
-                                                        : 'text-admin-accent',
+                                                        : 'text-admin-accent-text',
                                                 )}
                                             >
                                                 {row.semanticOperation
@@ -508,7 +508,7 @@ export function TransactionHistory({
                             <article key={transaction.id} className="p-4">
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className="font-medium text-white">
+                                        <p className="font-medium text-admin-text-primary">
                                             {transactionDescription(
                                                 transaction,
                                             )}
@@ -539,7 +539,7 @@ export function TransactionHistory({
                                                 <p>
                                                     {transferRoute(transaction)}
                                                 </p>
-                                                <p className="mt-1 font-semibold text-admin-accent tabular-nums">
+                                                <p className="mt-1 font-semibold text-admin-accent-text tabular-nums">
                                                     {formatManagementMoney.format(
                                                         transaction
                                                             .management_transfer
@@ -560,7 +560,7 @@ export function TransactionHistory({
                                                         transaction,
                                                     )}
                                                 </p>
-                                                <p className="mt-1 font-semibold text-admin-accent tabular-nums">
+                                                <p className="mt-1 font-semibold text-admin-accent-text tabular-nums">
                                                     {formatManagementMoney.format(
                                                         transaction
                                                             .management_distribution
@@ -590,7 +590,7 @@ export function TransactionHistory({
                                                         transaction,
                                                     )}
                                                 </p>
-                                                <p className="mt-1 font-semibold text-admin-accent tabular-nums">
+                                                <p className="mt-1 font-semibold text-admin-accent-text tabular-nums">
                                                     {formatManagementMoney.format(
                                                         transaction
                                                             .management_order_payment
@@ -601,7 +601,7 @@ export function TransactionHistory({
                                         )}
                                         {transaction.purchase_id && (
                                             <Link
-                                                className="mt-2 block text-admin-accent underline"
+                                                className="mt-2 block text-admin-accent-text underline"
                                                 href={`/admin/management/purchases/${transaction.purchase_id}`}
                                             >
                                                 Ver compra
@@ -690,7 +690,7 @@ export function TransactionHistory({
                                                     'shrink-0 text-sm font-semibold tabular-nums',
                                                     entry.amount < 0
                                                         ? 'text-destructive'
-                                                        : 'text-admin-accent',
+                                                        : 'text-admin-accent-text',
                                                 )}
                                             >
                                                 {signedMoney(entry.amount)}

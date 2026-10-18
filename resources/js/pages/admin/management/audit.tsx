@@ -11,14 +11,14 @@ export default function ManagementAudit({ audit }: ManagementAuditPageProps) {
             <section className="grid gap-6 font-orders">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="flex items-center gap-2 text-sm font-medium text-admin-accent">
+                        <p className="flex items-center gap-2 text-sm font-medium text-admin-accent-text">
                             <ShieldCheck
                                 className="size-4"
                                 aria-hidden="true"
                             />
                             Reconciliación financiera
                         </p>
-                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Auditoría
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">

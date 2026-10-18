@@ -120,7 +120,7 @@ export function DistributionRuleDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100dvh-1rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-2xl">
+            <DialogContent className="admin-shell max-h-[calc(100dvh-1rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
                         {rule ? `Nueva versión de ${rule.name}` : 'Crear regla'}
@@ -151,7 +151,7 @@ export function DistributionRuleDialog({
                     </div>
 
                     <fieldset className="grid gap-3">
-                        <legend className="text-sm font-medium text-white">
+                        <legend className="text-sm font-medium text-admin-text-primary">
                             Destinos
                         </legend>
                         {form.data.allocations.map((allocation, index) => (
@@ -339,7 +339,7 @@ export function DistributionRuleDialog({
                         <strong
                             className={
                                 totalBps === 10_000
-                                    ? 'text-admin-accent'
+                                    ? 'text-admin-accent-text'
                                     : 'text-destructive'
                             }
                         >

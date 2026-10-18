@@ -49,7 +49,7 @@ function AuditSummary({
             value: summary.ok,
             description: 'Sin findings detectados',
             icon: CheckCircle2,
-            className: 'text-admin-accent',
+            className: 'text-admin-accent-text',
             href: '/admin/management/audit?status=ok',
         },
         {
@@ -57,7 +57,7 @@ function AuditSummary({
             value: summary.pending,
             description: 'Situaciones operativas válidas',
             icon: Clock3,
-            className: 'text-amber-300',
+            className: 'text-warning',
             href: '/admin/management/audit?type=pending_distribution',
         },
         {
@@ -65,7 +65,7 @@ function AuditSummary({
             value: summary.warning,
             description: 'Requieren atención',
             icon: AlertTriangle,
-            className: 'text-amber-300',
+            className: 'text-warning',
             href: '/admin/management/audit?severity=warning',
         },
         {
@@ -175,7 +175,9 @@ function AuditFindings({ audit }: { audit: ManagementAuditData }) {
     return (
         <section className="overflow-hidden rounded-xl border border-admin-border bg-admin-surface">
             <header className="border-b border-admin-border p-4 sm:p-5">
-                <h2 className="text-xl font-semibold text-white">Findings</h2>
+                <h2 className="text-xl font-semibold text-admin-text-primary">
+                    Findings
+                </h2>
                 <p className="mt-1 text-sm text-admin-text-tertiary">
                     Situaciones derivadas del ledger y de sus entidades
                     semánticas. La auditoría no modifica movimientos.
@@ -331,7 +333,7 @@ function FindingCard({ finding }: { finding: ManagementAuditFinding }) {
                             finding.entity_type ??
                             'Auditoría financiera'}
                     </p>
-                    <h3 className="mt-1 text-base font-semibold text-white">
+                    <h3 className="mt-1 text-base font-semibold text-admin-text-primary">
                         {finding.title}
                     </h3>
                 </div>
@@ -406,7 +408,7 @@ function WalletBalanceAudit({
     return (
         <section className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5">
             <header>
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-admin-text-primary">
                     Saldos por billetera
                 </h2>
                 <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -438,7 +440,7 @@ function WalletBalanceAudit({
                                     </p>
                                     <p
                                         className={cn(
-                                            'mt-2 text-2xl font-semibold text-white tabular-nums',
+                                            'mt-2 text-2xl font-semibold text-admin-text-primary tabular-nums',
                                             wallet.derived_balance < 0 &&
                                                 'text-destructive',
                                         )}
@@ -520,8 +522,8 @@ function SeverityBadge({ severity }: { severity: ManagementAuditSeverity }) {
             className={cn(
                 severity !== 'critical' && 'border-admin-border',
                 severity === 'warning'
-                    ? 'text-amber-300'
-                    : severity === 'info' && 'text-admin-accent',
+                    ? 'text-warning'
+                    : severity === 'info' && 'text-admin-accent-text',
             )}
         >
             {labels[severity]}
@@ -540,8 +542,8 @@ function WalletStatusBadge({
             className={cn(
                 status !== 'critical' && 'border-admin-border',
                 status === 'ok'
-                    ? 'text-admin-accent'
-                    : status === 'warning' && 'text-amber-300',
+                    ? 'text-admin-accent-text'
+                    : status === 'warning' && 'text-warning',
             )}
         >
             {status === 'ok'
@@ -569,7 +571,7 @@ function AuditDetail({
             </dt>
             <dd
                 className={cn(
-                    'mt-1 text-sm break-words text-white',
+                    'mt-1 text-sm break-words text-admin-text-primary',
                     numeric && 'font-semibold tabular-nums',
                 )}
             >

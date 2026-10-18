@@ -1,6 +1,7 @@
 import { mkdir, rm, stat, utimes } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
 import type { Locator, Page, TestInfo } from '@playwright/test';
+import type { ManagementPageProps } from '../../resources/js/features/management/types';
+import { expect, test } from './support/test';
 
 async function logIn(page: Page) {
     await page.goto('/login');
@@ -19,15 +20,68 @@ function moneyPattern(amount: string) {
     return new RegExp(`\\$\\s*${amount}`);
 }
 
-function summaryCard(page: Page, label: string) {
+async function managementSection(page: Page, label: string) {
+    const link = page
+        .getByRole('navigation', { name: 'Secciones de Gestión', exact: true })
+        .getByRole('link', { name: label, exact: true });
+
+    if ((await link.getAttribute('aria-current')) === 'page') {
+        return;
+    }
+
+    const href = await link.getAttribute('href');
+    expect(href).not.toBeNull();
+    await Promise.all([
+        page.waitForResponse(
+            (response) =>
+                response.request().method() === 'GET' &&
+                new URL(response.url()).pathname === '/admin/management',
+        ),
+        link.click(),
+    ]);
+    const expected = new URL(href!, page.url());
+    expected.searchParams.sort();
+    await expect(page).toHaveURL((actual) => {
+        actual.searchParams.sort();
+
+        return actual.toString() === expected.toString();
+    });
+    await page.waitForLoadState('networkidle');
+}
+
+async function summaryCard(page: Page, label: string) {
+    await managementSection(page, 'Panorama');
+    const currentLabel =
+        label === 'Saldo total'
+            ? 'Saldo actual'
+            : label === 'Egresos operativos'
+              ? 'Gastos'
+              : label;
+    const overview = page.getByRole('region', {
+        name: 'Panorama financiero',
+        exact: true,
+    });
+
+    if (
+        [
+            'Saldo actual',
+            'Ingresos del período',
+            'Resultado operativo',
+        ].includes(currentLabel)
+    ) {
+        return overview.getByRole('group', { name: currentLabel, exact: true });
+    }
+
     return page
-        .getByRole('region', { name: 'Resumen financiero' })
-        .locator('article')
-        .filter({ hasText: label });
+        .getByRole('region', { name: 'Panorama financiero', exact: true })
+        .locator('dl > div')
+        .filter({
+            has: page.locator('dt').getByText(currentLabel, { exact: true }),
+        });
 }
 
 async function summaryAmount(page: Page, label: string) {
-    const text = (await summaryCard(page, label).textContent()) ?? '';
+    const text = (await (await summaryCard(page, label)).textContent()) ?? '';
     const amount = Number(text.match(/\$\s*([\d.]+)/)?.[1].replaceAll('.', ''));
 
     expect(Number.isFinite(amount)).toBe(true);
@@ -35,7 +89,13 @@ async function summaryAmount(page: Page, label: string) {
     return amount;
 }
 
-function historyRow(page: Page, testInfo: TestInfo, concept: string): Locator {
+async function historyRow(
+    page: Page,
+    testInfo: TestInfo,
+    concept: string,
+): Promise<Locator> {
+    await managementSection(page, 'Movimientos');
+
     return testInfo.project.name === 'mobile-chromium'
         ? page.locator('section article').filter({ hasText: concept })
         : page.locator('tbody tr').filter({ hasText: concept });
@@ -49,6 +109,7 @@ async function registerMovement(
     concept: string,
     effectiveDate?: string,
 ) {
+    await managementSection(page, 'Registrar operación');
     await page
         .getByRole('button', {
             name: 'Movimiento manual / Más acciones',
@@ -85,6 +146,56 @@ async function registerOutflow(
     concept: string,
     counterparty?: string,
 ) {
+    if (triggerName === 'Registrar compra') {
+        // These scenarios exercise legacy outflow history and attachments, not
+        // rich stock purchases. The old creation dialog no longer exists.
+        await page.reload();
+        const version = JSON.parse(
+            (await page.locator('script[data-page="app"]').textContent()) ??
+                '{}',
+        ).version as string;
+        const modelResponse = await page.request.get(page.url(), {
+            headers: { 'X-Inertia': 'true', 'X-Inertia-Version': version },
+        });
+        expect(modelResponse.status()).toBe(200);
+        const props = (await modelResponse.json()).props as ManagementPageProps;
+        const wallet = props.wallets.find(
+            (candidate) => candidate.name === walletName,
+        );
+        const category = props.outflow_categories.find(
+            (candidate) =>
+                candidate.type === 'purchase' &&
+                candidate.name === categoryName,
+        );
+        expect(wallet).toBeDefined();
+        expect(category).toBeDefined();
+        const csrf = (await page.context().cookies()).find(
+            (cookie) => cookie.name === 'XSRF-TOKEN',
+        );
+        expect(csrf).toBeDefined();
+        const response = await page.request.post('/admin/management/outflows', {
+            headers: {
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': decodeURIComponent(csrf!.value),
+            },
+            data: {
+                type: 'purchase',
+                category_id: category!.id,
+                wallet_id: wallet!.id,
+                description: concept,
+                counterparty,
+                amount: Number(amount),
+                effective_date: props.business_today,
+            },
+            maxRedirects: 0,
+        });
+        expect(response.status()).toBe(302);
+        await page.reload();
+
+        return;
+    }
+
+    await managementSection(page, 'Registrar operación');
     await page.getByRole('button', { name: triggerName, exact: true }).click();
     const dialog = page.getByRole('dialog');
 
@@ -108,6 +219,7 @@ async function createWallet(
     walletName: string,
     receivesOrderPayments = false,
 ) {
+    await managementSection(page, 'Billeteras');
     await page
         .getByRole('button', { name: 'Nueva billetera', exact: true })
         .click();
@@ -224,6 +336,7 @@ async function createDistributionRule(
     ruleName: string,
     allocations: Array<{ wallet: string; percentage: string }>,
 ) {
+    await managementSection(page, 'Registrar operación');
     await page
         .getByRole('button', { name: 'Crear regla', exact: true })
         .click();
@@ -249,7 +362,9 @@ async function createDistributionRule(
     await expect(dialog).toHaveCount(0);
 }
 
-function walletCard(page: Page, walletName: string) {
+async function walletCard(page: Page, walletName: string) {
+    await managementSection(page, 'Billeteras');
+
     return page.locator('article').filter({
         hasText: walletName,
         has: page.getByRole('button', { name: 'Editar', exact: true }),
@@ -287,10 +402,10 @@ test('Gestión conserva comprobantes privados al revertir una compra', async ({
         'Proveedor documentado E2E',
     );
 
-    await expect(walletCard(page, walletName)).toContainText(
+    await expect(await walletCard(page, walletName)).toContainText(
         moneyPattern('25\\.000'),
     );
-    const purchaseRow = historyRow(page, testInfo, purchaseConcept);
+    const purchaseRow = await historyRow(page, testInfo, purchaseConcept);
 
     await expect(purchaseRow).toHaveCount(1);
     await purchaseRow.getByRole('button', { name: /Ver detalle/ }).click();
@@ -340,15 +455,19 @@ test('Gestión conserva comprobantes privados al revertir una compra', async ({
 
     await detail.getByRole('button', { name: 'Cerrar' }).click();
     await expect(detail).toHaveCount(0);
-    await expect(historyRow(page, testInfo, purchaseConcept)).toHaveCount(1);
-    await expect(historyRow(page, testInfo, purchaseConcept)).toContainText(
-        '2 comprobantes',
+    await expect(await historyRow(page, testInfo, purchaseConcept)).toHaveCount(
+        1,
     );
-    await expect(walletCard(page, walletName)).toContainText(
+    await expect(
+        await historyRow(page, testInfo, purchaseConcept),
+    ).toContainText('2 comprobantes');
+    await expect(await walletCard(page, walletName)).toContainText(
         moneyPattern('25\\.000'),
     );
 
-    await historyRow(page, testInfo, purchaseConcept)
+    await (
+        await historyRow(page, testInfo, purchaseConcept)
+    )
         .getByRole('button', { name: /Revertir movimiento/ })
         .click();
     const reversalDialog = page.getByRole('dialog');
@@ -358,11 +477,11 @@ test('Gestión conserva comprobantes privados al revertir una compra', async ({
         .getByRole('button', { name: 'Crear reversión', exact: true })
         .click();
     await expect(reversalDialog).toHaveCount(0);
-    await expect(walletCard(page, walletName)).toContainText(
+    await expect(await walletCard(page, walletName)).toContainText(
         moneyPattern('30\\.000'),
     );
 
-    const reversedPurchase = historyRow(page, testInfo, purchaseConcept);
+    const reversedPurchase = await historyRow(page, testInfo, purchaseConcept);
 
     await expect(reversedPurchase).toHaveCount(1);
     await expect(reversedPurchase).toContainText('Revertido');
@@ -405,6 +524,7 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         page.getByRole('heading', { name: 'Gestión', exact: true }),
     ).toBeVisible();
 
+    await managementSection(page, 'Billeteras');
     await page
         .getByRole('button', { name: 'Nueva billetera', exact: true })
         .click();
@@ -419,7 +539,9 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         hasText: walletName,
         has: page.getByRole('button', { name: 'Editar', exact: true }),
     });
+    await managementSection(page, 'Billeteras');
     await expect(walletCard).toHaveCount(1);
+    await managementSection(page, 'Billeteras');
     await expect(walletCard).toContainText(moneyPattern('0'));
 
     await registerMovement(
@@ -429,6 +551,7 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         '50000',
         openingConcept,
     );
+    await managementSection(page, 'Billeteras');
     await expect(walletCard).toContainText(moneyPattern('50\\.000'));
 
     await registerMovement(
@@ -450,26 +573,27 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         hasText: walletName,
         has: page.getByRole('button', { name: 'Editar', exact: true }),
     });
+    await managementSection(page, 'Billeteras');
     await expect(walletCard).toContainText(moneyPattern('45\\.000'));
     // Desktop and mobile projects intentionally share the isolated Playwright
     // database, so period-wide metrics may include the sibling project's
     // namespaced movements. Exact aggregate semantics are covered in Feature.
-    await expect(summaryCard(page, 'Ingresos del período')).toContainText(
+    await expect(await summaryCard(page, 'Ingresos del período')).toContainText(
         /\$\s*\d/,
     );
-    await expect(summaryCard(page, 'Egresos operativos')).toContainText(
+    await expect(await summaryCard(page, 'Egresos operativos')).toContainText(
         /\$\s*\d/,
     );
 
-    await expect(historyRow(page, testInfo, openingConcept)).toContainText(
-        moneyPattern('50\\.000'),
-    );
-    await expect(historyRow(page, testInfo, incomeConcept)).toContainText(
+    await expect(
+        await historyRow(page, testInfo, openingConcept),
+    ).toContainText(moneyPattern('50\\.000'));
+    await expect(await historyRow(page, testInfo, incomeConcept)).toContainText(
         moneyPattern('7\\.000'),
     );
-    await expect(historyRow(page, testInfo, expenseConcept)).toContainText(
-        moneyPattern('12\\.000'),
-    );
+    await expect(
+        await historyRow(page, testInfo, expenseConcept),
+    ).toContainText(moneyPattern('12\\.000'));
 
     await registerOutflow(
         page,
@@ -505,19 +629,21 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         hasText: walletName,
         has: page.getByRole('button', { name: 'Editar', exact: true }),
     });
+    await managementSection(page, 'Billeteras');
     await expect(walletCard).toContainText(moneyPattern('35\\.000'));
 
-    const purchaseRow = historyRow(page, testInfo, purchaseConcept);
+    const purchaseRow = await historyRow(page, testInfo, purchaseConcept);
     await expect(purchaseRow).toContainText('Compra');
     await expect(purchaseRow).toContainText('Materia prima');
     await expect(purchaseRow).toContainText(moneyPattern('5\\.000'));
     await expect(
-        historyRow(page, testInfo, operatingExpenseConcept),
+        await historyRow(page, testInfo, operatingExpenseConcept),
     ).toContainText('Gasto');
-    await expect(historyRow(page, testInfo, withdrawalConcept)).toContainText(
-        'Retiro personal',
-    );
+    await expect(
+        await historyRow(page, testInfo, withdrawalConcept),
+    ).toContainText('Retiro personal');
 
+    await managementSection(page, 'Movimientos');
     await purchaseRow.getByRole('button', { name: /Ver detalle/ }).click();
     const detail = page.getByRole('dialog');
     await expect(detail).toContainText(purchaseConcept);
@@ -541,13 +667,14 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         hasText: walletName,
         has: page.getByRole('button', { name: 'Editar', exact: true }),
     });
+    await managementSection(page, 'Billeteras');
     await expect(walletCard).toContainText(moneyPattern('40\\.000'));
-    await expect(historyRow(page, testInfo, purchaseConcept)).toContainText(
-        'Revertido',
-    );
-    await expect(historyRow(page, testInfo, reversalConcept)).toContainText(
-        'Reversión',
-    );
+    await expect(
+        await historyRow(page, testInfo, purchaseConcept),
+    ).toContainText('Revertido');
+    await expect(
+        await historyRow(page, testInfo, reversalConcept),
+    ).toContainText('Reversión');
 
     if (testInfo.project.name === 'mobile-chromium') {
         await expect(page.locator('table')).toBeHidden();
@@ -568,6 +695,7 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
         animations: 'disabled',
     });
 
+    await managementSection(page, 'Billeteras');
     await walletCard
         .getByRole('button', { name: 'Archivar', exact: true })
         .click();
@@ -582,9 +710,9 @@ test('Gestión registra un ledger manual, deriva saldos y archiva la billetera',
             has: page.getByRole('button', { name: 'Reactivar', exact: true }),
         }),
     ).toHaveCount(1);
-    await expect(historyRow(page, testInfo, openingConcept)).toContainText(
-        `${walletName} (archivada)`,
-    );
+    await expect(
+        await historyRow(page, testInfo, openingConcept),
+    ).toContainText(`${walletName} (archivada)`);
 });
 
 test('Gestión transfiere entre billeteras sin alterar el saldo global ni las métricas', async ({
@@ -629,18 +757,16 @@ test('Gestión transfiere entre billeteras sin alterar el saldo global ni las m�
         `/admin/management?from=${effectiveDate}&to=${effectiveDate}`,
     );
 
-    const incomeBefore = await summaryCard(
-        page,
-        'Ingresos del período',
+    const incomeBefore = await (
+        await summaryCard(page, 'Ingresos del período')
     ).textContent();
-    const operatingBefore = await summaryCard(
-        page,
-        'Egresos operativos',
+    const operatingBefore = await (
+        await summaryCard(page, 'Egresos operativos')
     ).textContent();
-    const withdrawalsBefore = await summaryCard(
-        page,
-        'Retiros personales',
+    const withdrawalsBefore = await (
+        await summaryCard(page, 'Retiros personales')
     ).textContent();
+    await managementSection(page, 'Registrar operación');
     const transferButton = page.getByRole('button', {
         name: 'Transferir',
         exact: true,
@@ -671,23 +797,23 @@ test('Gestión transfiere entre billeteras sin alterar el saldo global ni las m�
         .click();
     await expect(dialog).toHaveCount(0);
 
-    await expect(walletCard(page, sourceName)).toContainText(
+    await expect(await walletCard(page, sourceName)).toContainText(
         moneyPattern('30\\.000'),
     );
-    await expect(walletCard(page, destinationName)).toContainText(
+    await expect(await walletCard(page, destinationName)).toContainText(
         moneyPattern('30\\.000'),
     );
-    await expect(summaryCard(page, 'Ingresos del período')).toHaveText(
+    await expect(await summaryCard(page, 'Ingresos del período')).toHaveText(
         incomeBefore ?? '',
     );
-    await expect(summaryCard(page, 'Egresos operativos')).toHaveText(
+    await expect(await summaryCard(page, 'Egresos operativos')).toHaveText(
         operatingBefore ?? '',
     );
-    await expect(summaryCard(page, 'Retiros personales')).toHaveText(
+    await expect(await summaryCard(page, 'Retiros personales')).toHaveText(
         withdrawalsBefore ?? '',
     );
 
-    const transferRow = historyRow(page, testInfo, transferConcept);
+    const transferRow = await historyRow(page, testInfo, transferConcept);
 
     await expect(transferRow).toHaveCount(1);
     await expect(transferRow).toContainText('Transferencia');
@@ -725,18 +851,18 @@ test('Gestión transfiere entre billeteras sin alterar el saldo global ni las m�
         .click();
     await expect(reversalDialog).toHaveCount(0);
 
-    await expect(walletCard(page, sourceName)).toContainText(
+    await expect(await walletCard(page, sourceName)).toContainText(
         moneyPattern('50\\.000'),
     );
-    await expect(walletCard(page, destinationName)).toContainText(
+    await expect(await walletCard(page, destinationName)).toContainText(
         moneyPattern('10\\.000'),
     );
-    await expect(historyRow(page, testInfo, transferConcept)).toContainText(
-        'Revertido',
-    );
-    await expect(historyRow(page, testInfo, reversalConcept)).toContainText(
-        'Reversión de transferencia',
-    );
+    await expect(
+        await historyRow(page, testInfo, transferConcept),
+    ).toContainText('Revertido');
+    await expect(
+        await historyRow(page, testInfo, reversalConcept),
+    ).toContainText('Reversión de transferencia');
 
     if (testInfo.project.name === 'mobile-chromium') {
         await expect(page.locator('table')).toBeHidden();
@@ -799,10 +925,13 @@ test('Gestión versiona una regla y conserva el snapshot de la distribución', a
 
         await expect(ruleCard).toContainText('Versión 1');
         await expect(ruleCard).toContainText('50%');
-        const totalBefore = await summaryCard(
-            page,
-            'Saldo total',
+        await page.goto(
+            `/admin/management?period=custom&from=${effectiveDate}&to=${effectiveDate}&history_period=custom&history_from=${effectiveDate}&history_to=${effectiveDate}`,
+        );
+        const totalBefore = await (
+            await summaryCard(page, 'Saldo total')
         ).textContent();
+        await managementSection(page, 'Registrar operación');
         await page
             .getByRole('button', { name: 'Distribuir dinero', exact: true })
             .click();
@@ -844,23 +973,23 @@ test('Gestión versiona una regla y conserva el snapshot de la distribución', a
             .click();
         await expect(distributionDialog).toHaveCount(0);
 
-        await expect(walletCard(page, sourceWallet)).toContainText(
+        await expect(await walletCard(page, sourceWallet)).toContainText(
             moneyPattern('40\\.000'),
         );
-        await expect(walletCard(page, operationWallet)).toContainText(
+        await expect(await walletCard(page, operationWallet)).toContainText(
             moneyPattern('5\\.000'),
         );
-        await expect(walletCard(page, profitWallet)).toContainText(
+        await expect(await walletCard(page, profitWallet)).toContainText(
             moneyPattern('3\\.000'),
         );
-        await expect(walletCard(page, reserveWallet)).toContainText(
+        await expect(await walletCard(page, reserveWallet)).toContainText(
             moneyPattern('2\\.000'),
         );
-        await expect(summaryCard(page, 'Saldo total')).toHaveText(
+        await expect(await summaryCard(page, 'Saldo total')).toHaveText(
             totalBefore ?? '',
         );
 
-        const distributionRow = historyRow(page, testInfo, concept);
+        const distributionRow = await historyRow(page, testInfo, concept);
 
         await expect(distributionRow).toHaveCount(1);
         await expect(distributionRow).toContainText('Distribución');
@@ -902,28 +1031,29 @@ test('Gestión versiona una regla y conserva el snapshot de la distribución', a
             .click();
         await expect(reversalDialog).toHaveCount(0);
 
-        await expect(walletCard(page, sourceWallet)).toContainText(
+        await expect(await walletCard(page, sourceWallet)).toContainText(
             moneyPattern('50\\.000'),
         );
-        await expect(walletCard(page, operationWallet)).toContainText(
+        await expect(await walletCard(page, operationWallet)).toContainText(
             moneyPattern('0'),
         );
-        await expect(walletCard(page, profitWallet)).toContainText(
+        await expect(await walletCard(page, profitWallet)).toContainText(
             moneyPattern('0'),
         );
-        await expect(walletCard(page, reserveWallet)).toContainText(
+        await expect(await walletCard(page, reserveWallet)).toContainText(
             moneyPattern('0'),
         );
-        await expect(summaryCard(page, 'Saldo total')).toHaveText(
+        await expect(await summaryCard(page, 'Saldo total')).toHaveText(
             totalBefore ?? '',
         );
-        await expect(historyRow(page, testInfo, concept)).toContainText(
+        await expect(await historyRow(page, testInfo, concept)).toContainText(
             'Revertido',
         );
-        await expect(historyRow(page, testInfo, reversalConcept)).toContainText(
-            'Reversión de distribución',
-        );
+        await expect(
+            await historyRow(page, testInfo, reversalConcept),
+        ).toContainText('Reversión de distribución');
 
+        await managementSection(page, 'Registrar operación');
         await ruleCard
             .getByRole('button', { name: 'Nueva versión', exact: true })
             .click();
@@ -949,11 +1079,12 @@ test('Gestión versiona una regla y conserva el snapshot de la distribución', a
 
         await expect(versionDialog).toHaveCount(0);
         await expect(ruleCard).toContainText('Versión 2');
+        await managementSection(page, 'Registrar operación');
         await ruleCard
             .getByText('Historial de versiones', { exact: true })
             .click();
         await expect(ruleCard).toContainText('Versión 1');
-        await expect(historyRow(page, testInfo, concept)).toContainText(
+        await expect(await historyRow(page, testInfo, concept)).toContainText(
             `${ruleName} v1`,
         );
 
@@ -1018,16 +1149,16 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
         await confirmOrderPayment(page, firstOrder.publicId);
         await page.goto('/admin/management');
 
-        await expect(walletCard(page, receivingWallet)).toContainText(
+        await expect(await walletCard(page, receivingWallet)).toContainText(
             moneyPattern('0'),
         );
-        await expect(walletCard(page, operationWallet)).toContainText(
+        await expect(await walletCard(page, operationWallet)).toContainText(
             moneyPattern(firstAllocation[0].toLocaleString('es-AR')),
         );
-        await expect(walletCard(page, profitWallet)).toContainText(
+        await expect(await walletCard(page, profitWallet)).toContainText(
             moneyPattern(firstAllocation[1].toLocaleString('es-AR')),
         );
-        await expect(walletCard(page, reserveWallet)).toContainText(
+        await expect(await walletCard(page, reserveWallet)).toContainText(
             moneyPattern(firstAllocation[2].toLocaleString('es-AR')),
         );
         expect(firstAllocation.reduce((sum, amount) => sum + amount, 0)).toBe(
@@ -1043,12 +1174,12 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
             .poll(() => summaryAmount(page, 'Egresos operativos'))
             .toBe(outflowsBefore);
 
-        let firstPaymentRow = historyRow(
+        let firstPaymentRow = await historyRow(
             page,
             testInfo,
             `Pago de pedido ${firstOrder.publicId}`,
         );
-        const firstDistributionRow = historyRow(
+        const firstDistributionRow = await historyRow(
             page,
             testInfo,
             `Distribución de pedido ${firstOrder.publicId}`,
@@ -1097,6 +1228,7 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
             .locator('article')
             .filter({ hasText: ruleName });
 
+        await managementSection(page, 'Registrar operación');
         await ruleCard
             .getByRole('button', { name: 'Nueva versión', exact: true })
             .click();
@@ -1122,12 +1254,12 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
         await confirmOrderPayment(page, secondOrder.publicId);
         await page.goto('/admin/management');
 
-        const secondPaymentRow = historyRow(
+        const secondPaymentRow = await historyRow(
             page,
             testInfo,
             `Pago de pedido ${secondOrder.publicId}`,
         );
-        const secondDistributionRow = historyRow(
+        const secondDistributionRow = await historyRow(
             page,
             testInfo,
             `Distribución de pedido ${secondOrder.publicId}`,
@@ -1137,24 +1269,24 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
         await expect(secondDistributionRow).toHaveCount(1);
         await expect(secondDistributionRow).toContainText(`${ruleName} v2`);
         await expect(firstDistributionRow).toContainText(`${ruleName} v1`);
-        await expect(walletCard(page, receivingWallet)).toContainText(
+        await expect(await walletCard(page, receivingWallet)).toContainText(
             moneyPattern('0'),
         );
-        await expect(walletCard(page, operationWallet)).toContainText(
+        await expect(await walletCard(page, operationWallet)).toContainText(
             moneyPattern(
                 (firstAllocation[0] + secondAllocation[0]).toLocaleString(
                     'es-AR',
                 ),
             ),
         );
-        await expect(walletCard(page, profitWallet)).toContainText(
+        await expect(await walletCard(page, profitWallet)).toContainText(
             moneyPattern(
                 (firstAllocation[1] + secondAllocation[1]).toLocaleString(
                     'es-AR',
                 ),
             ),
         );
-        await expect(walletCard(page, reserveWallet)).toContainText(
+        await expect(await walletCard(page, reserveWallet)).toContainText(
             moneyPattern(
                 (firstAllocation[2] + secondAllocation[2]).toLocaleString(
                     'es-AR',
@@ -1166,14 +1298,14 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
         await markOrderUnpaid(page, firstOrder.publicId);
         await confirmOrderPayment(page, firstOrder.publicId);
         await page.goto('/admin/management');
-        firstPaymentRow = historyRow(
+        firstPaymentRow = await historyRow(
             page,
             testInfo,
             `Pago de pedido ${firstOrder.publicId}`,
         );
         await expect(firstPaymentRow).toHaveCount(1);
         await expect(
-            historyRow(
+            await historyRow(
                 page,
                 testInfo,
                 `Distribución de pedido ${firstOrder.publicId}`,
@@ -1221,19 +1353,20 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
             .click();
         await expect(reversalDialog).toHaveCount(0);
 
-        await expect(walletCard(page, receivingWallet)).toContainText(
+        await expect(await walletCard(page, receivingWallet)).toContainText(
             moneyPattern('0'),
         );
-        await expect(walletCard(page, operationWallet)).toContainText(
+        await expect(await walletCard(page, operationWallet)).toContainText(
             moneyPattern(firstAllocation[0].toLocaleString('es-AR')),
         );
-        await expect(walletCard(page, profitWallet)).toContainText(
+        await expect(await walletCard(page, profitWallet)).toContainText(
             moneyPattern(firstAllocation[1].toLocaleString('es-AR')),
         );
-        await expect(walletCard(page, reserveWallet)).toContainText(
+        await expect(await walletCard(page, reserveWallet)).toContainText(
             moneyPattern(firstAllocation[2].toLocaleString('es-AR')),
         );
 
+        await managementSection(page, 'Registrar operación');
         await ruleCard
             .getByRole('button', { name: 'Desactivar', exact: true })
             .click();
@@ -1278,12 +1411,13 @@ test('los pagos de pedidos se distribuyen una vez y conservan su versión', asyn
         expect(distributeLinkBox?.height).toBeGreaterThanOrEqual(44);
         await distributeLink.click();
 
+        await managementSection(page, 'Registrar operación');
         await ruleCard
             .getByRole('button', { name: 'Activar', exact: true })
             .click();
         await expect(ruleCard).toContainText('Activa');
 
-        const pendingPaymentRow = historyRow(
+        const pendingPaymentRow = await historyRow(
             page,
             testInfo,
             `Pago de pedido ${pendingOrder.publicId}`,

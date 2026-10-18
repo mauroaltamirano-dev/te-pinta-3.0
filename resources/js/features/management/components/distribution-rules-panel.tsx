@@ -21,7 +21,7 @@ export function DistributionRulesPanel({
                 <div>
                     <h2
                         id="distribution-rules-title"
-                        className="text-xl font-semibold text-white"
+                        className="text-xl font-semibold text-admin-text-primary"
                     >
                         Reglas de distribución
                     </h2>
@@ -60,7 +60,7 @@ export function DistributionRulesPanel({
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                        <h3 className="truncate font-medium text-white">
+                                        <h3 className="truncate font-medium text-admin-text-primary">
                                             {rule.name}
                                         </h3>
                                         <p className="mt-1 text-xs text-admin-text-tertiary">
@@ -73,7 +73,7 @@ export function DistributionRulesPanel({
                                     <span
                                         className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                                             active
-                                                ? 'bg-admin-action text-admin-accent'
+                                                ? 'bg-admin-action text-admin-accent-text'
                                                 : 'bg-admin-canvas text-admin-text-tertiary'
                                         }`}
                                     >
@@ -95,7 +95,7 @@ export function DistributionRulesPanel({
                                                     <span className="min-w-0 truncate text-admin-text-secondary">
                                                         {allocation.wallet.name}
                                                     </span>
-                                                    <span className="shrink-0 font-semibold text-white tabular-nums">
+                                                    <span className="shrink-0 font-semibold text-admin-text-primary tabular-nums">
                                                         {(
                                                             allocation.percentage_bps /
                                                             100
@@ -127,7 +127,7 @@ export function DistributionRulesPanel({
                                                         }
                                                         className="rounded-md bg-admin-canvas px-3 py-2 text-xs"
                                                     >
-                                                        <p className="font-medium text-white">
+                                                        <p className="font-medium text-admin-text-primary">
                                                             Versión{' '}
                                                             {
                                                                 historicalVersion.version_number

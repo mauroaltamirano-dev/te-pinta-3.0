@@ -47,7 +47,7 @@ export function WalletFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark border-admin-border bg-admin-surface sm:max-w-md">
+            <DialogContent className="admin-shell border-admin-border bg-admin-surface sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>
                         {wallet ? 'Editar billetera' : 'Nueva billetera'}

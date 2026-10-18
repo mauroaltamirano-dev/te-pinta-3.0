@@ -180,7 +180,7 @@ export default function Management({
                     className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5"
                 >
                     <header>
-                        <h2 className="text-xl font-semibold text-white">
+                        <h2 className="text-xl font-semibold text-admin-text-primary">
                             Registrar operación
                         </h2>
                         <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -266,7 +266,7 @@ export default function Management({
                     className="rounded-xl border border-admin-border bg-admin-surface p-4 sm:p-5"
                 >
                     <header className="mb-4">
-                        <h2 className="text-xl font-semibold text-white">
+                        <h2 className="text-xl font-semibold text-admin-text-primary">
                             Billeteras
                         </h2>
                         <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -287,6 +287,7 @@ export default function Management({
                 <div
                     hidden={activeSection !== 'movements'}
                     data-testid="management-movements-group"
+                    className="min-w-0"
                 >
                     <TransactionHistory
                         key={`${filters.history_from}:${filters.history_to}:${filters.wallet_id}:${filters.type}:${filters.category_id}`}

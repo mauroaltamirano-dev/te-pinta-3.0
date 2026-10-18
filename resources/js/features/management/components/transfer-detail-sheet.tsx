@@ -38,10 +38,10 @@ export function TransferDetailSheet({
 
     return (
         <Sheet open onOpenChange={onOpenChange}>
-            <SheetContent className="admin-shell dark w-full overflow-y-auto border-admin-border bg-admin-surface sm:max-w-md">
+            <SheetContent className="admin-shell w-full overflow-y-auto border-admin-border bg-admin-surface sm:max-w-md">
                 <SheetHeader className="border-b border-admin-border px-5 pt-6 pb-5">
                     <div className="flex flex-wrap items-center gap-2 pr-8">
-                        <SheetTitle className="text-xl text-white">
+                        <SheetTitle className="text-xl text-admin-text-primary">
                             {transactionLabel(transaction)}
                         </SheetTitle>
                         <Badge
@@ -73,7 +73,7 @@ export function TransferDetailSheet({
                         <p className="text-xs font-medium tracking-wide text-admin-text-tertiary uppercase">
                             Descripción
                         </p>
-                        <p className="mt-1.5 text-base font-medium text-white">
+                        <p className="mt-1.5 text-base font-medium text-admin-text-primary">
                             {description}
                         </p>
                         {isReversal && transfer.description && (
@@ -144,7 +144,7 @@ export function TransferDetailSheet({
                                             'shrink-0 font-semibold tabular-nums',
                                             entry.amount < 0
                                                 ? 'text-destructive'
-                                                : 'text-admin-accent',
+                                                : 'text-admin-accent-text',
                                         )}
                                     >
                                         {signedMoney(entry.amount)}
@@ -190,7 +190,7 @@ function Detail({
                 {label}
             </dt>
             <dd
-                className={`mt-1 text-sm text-white ${numeric ? 'font-semibold tabular-nums' : ''}`}
+                className={`mt-1 text-sm text-admin-text-primary ${numeric ? 'font-semibold tabular-nums' : ''}`}
             >
                 {value}
             </dd>

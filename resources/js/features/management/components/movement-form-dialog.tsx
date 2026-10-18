@@ -58,7 +58,7 @@ export function MovementFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="admin-shell dark max-h-[calc(100dvh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-lg">
+            <DialogContent className="admin-shell max-h-[calc(100dvh-2rem)] overflow-y-auto border-admin-border bg-admin-surface sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Registrar movimiento</DialogTitle>
                     <DialogDescription>

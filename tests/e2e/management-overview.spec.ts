@@ -94,7 +94,7 @@ async function geometry(page: Page, width: number) {
         await page
             .getByRole('button', { name: 'Aplicar período', exact: true })
             .evaluate((el) => getComputedStyle(el).color),
-    ).toBe('rgb(31, 29, 43)');
+    ).toBe('rgb(255, 255, 255)');
     const controls = shell
         .locator('.admin-ui')
         .getByRole('button')
