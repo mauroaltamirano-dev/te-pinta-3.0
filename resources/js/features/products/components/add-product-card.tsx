@@ -7,7 +7,7 @@ export function AddProductCard({ onClick }: { onClick: () => void }) {
             type="button"
             variant="ghost"
             onClick={onClick}
-            className="h-full min-h-80 w-full flex-col gap-4 rounded-[0.5rem] border border-dashed border-admin-accent bg-transparent text-admin-accent hover:border-admin-accent hover:bg-transparent hover:text-admin-accent"
+            className="h-full min-h-80 w-full flex-col gap-4 rounded-[0.5rem] border border-dashed border-admin-accent bg-transparent text-admin-accent-text hover:border-admin-accent hover:bg-transparent hover:text-admin-accent-text"
         >
             <span className="flex size-12 items-center justify-center rounded-full border border-admin-accent/30 bg-admin-selection">
                 <Plus className="size-6" />

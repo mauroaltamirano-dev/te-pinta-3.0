@@ -51,14 +51,14 @@ export default function CustomerTrash({
                 <header>
                     <Link
                         href="/admin/customers"
-                        className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-white"
+                        className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-admin-text-primary"
                     >
                         <ArrowLeft className="size-4" /> Volver a clientes
                     </Link>
-                    <p className="text-sm font-medium text-admin-accent">
+                    <p className="text-sm font-medium text-admin-accent-text">
                         Registros eliminados
                     </p>
-                    <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                    <h1 className="mt-1 text-3xl font-semibold tracking-tight text-admin-text-primary">
                         Papelera de clientes
                     </h1>
                     <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -78,7 +78,7 @@ export default function CustomerTrash({
 
                 <div className="overflow-hidden rounded-lg bg-admin-surface">
                     <div className="border-b border-admin-border px-4 py-4 sm:px-5">
-                        <h2 className="font-semibold text-white">
+                        <h2 className="font-semibold text-admin-text-primary">
                             {customers.total}{' '}
                             {customers.total === 1
                                 ? 'cliente eliminado'
@@ -128,7 +128,7 @@ export default function CustomerTrash({
                                     <tbody className="divide-y divide-admin-border">
                                         {customers.data.map((customer) => (
                                             <tr key={customer.id}>
-                                                <td className="px-4 py-4 font-medium text-white">
+                                                <td className="px-4 py-4 font-medium text-admin-text-primary">
                                                     {customer.name}
                                                 </td>
                                                 <td className="px-4 py-4 text-admin-text-secondary tabular-nums">
@@ -168,7 +168,7 @@ export default function CustomerTrash({
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                                <h2 className="truncate font-semibold text-white">
+                                                <h2 className="truncate font-semibold text-admin-text-primary">
                                                     {customer.name}
                                                 </h2>
                                                 <p className="mt-1 text-xs text-admin-text-tertiary">

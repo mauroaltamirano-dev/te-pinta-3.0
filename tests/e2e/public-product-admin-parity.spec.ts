@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('Admin Product metadata reaches Home, menu, detail and cart through the real catalog', async ({
     page,

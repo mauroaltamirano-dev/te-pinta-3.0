@@ -53,12 +53,12 @@ export function CustomerSummary({ customer }: { customer: Customer }) {
                 >
                     <dt className="flex items-center gap-2 text-xs font-medium text-admin-text-tertiary">
                         <Icon
-                            className="size-4 text-admin-accent"
+                            className="size-4 text-admin-accent-text"
                             strokeWidth={1.8}
                         />
                         {label}
                     </dt>
-                    <dd className="mt-2 line-clamp-2 text-sm font-semibold whitespace-pre-wrap text-white">
+                    <dd className="mt-2 line-clamp-2 text-sm font-semibold whitespace-pre-wrap text-admin-text-primary">
                         {value}
                     </dd>
                 </div>

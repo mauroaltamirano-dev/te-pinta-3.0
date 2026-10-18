@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('administrator versions a recipe, transfers actual production cost and reverses history', async ({
     page,

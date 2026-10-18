@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 test('administrator records and reverses a rich purchase through its canonical route', async ({
     page,
 }) => {

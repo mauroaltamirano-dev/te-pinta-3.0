@@ -434,7 +434,7 @@ export default function CostingPolicies({
                     configurar, no costo cero.
                 </p>
                 {Object.keys(form.errors).length > 0 && (
-                    <ul role="alert" className="break-words text-red-400">
+                    <ul role="alert" className="break-words text-danger">
                         {Object.entries(form.errors).map(([key, error]) => (
                             <li key={key}>{error}</li>
                         ))}

@@ -371,7 +371,7 @@ export default function FloorEditor({
                     </div>
                     {canManage && (
                         <Button
-                            className="min-h-11 bg-admin-accent text-admin-surface"
+                            className="min-h-11 bg-admin-accent text-admin-on-accent"
                             disabled={!dirty || saving || conflict}
                             onClick={() => void submit()}
                         >

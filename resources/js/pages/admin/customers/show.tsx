@@ -59,11 +59,11 @@ export default function CustomerDetail({
                     <div className="min-w-0">
                         <Link
                             href="/admin/customers"
-                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-white"
+                            className="mb-3 inline-flex items-center gap-2 text-sm text-admin-text-tertiary hover:text-admin-text-primary"
                         >
                             <ArrowLeft className="size-4" /> Clientes
                         </Link>
-                        <h1 className="truncate text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="truncate text-3xl font-semibold tracking-tight text-admin-text-primary">
                             {customer.name}
                         </h1>
                         <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -94,7 +94,7 @@ export default function CustomerDetail({
                 <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
                     <section className="min-w-0 overflow-hidden rounded-lg bg-admin-surface">
                         <header className="border-b border-admin-border px-4 py-4 sm:px-5">
-                            <h2 className="text-lg font-semibold text-white">
+                            <h2 className="text-lg font-semibold text-admin-text-primary">
                                 Historial de pedidos
                             </h2>
                             <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -109,8 +109,8 @@ export default function CustomerDetail({
                     </section>
 
                     <aside className="self-start rounded-lg bg-admin-surface p-5">
-                        <h2 className="flex items-center gap-2 text-base font-semibold text-white">
-                            <StickyNote className="size-4 text-admin-accent" />{' '}
+                        <h2 className="flex items-center gap-2 text-base font-semibold text-admin-text-primary">
+                            <StickyNote className="size-4 text-admin-accent-text" />{' '}
                             Notas privadas
                         </h2>
                         <p className="mt-4 text-sm leading-6 whitespace-pre-wrap text-admin-text-secondary">

@@ -40,7 +40,7 @@ export function MemberList({
                         className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                     >
                         <div className="min-w-0">
-                            <p className="flex items-center gap-2 font-medium text-white">
+                            <p className="flex items-center gap-2 font-medium text-admin-text-primary">
                                 <span className="truncate">{member.name}</span>
                                 {isSelf && <Badge variant="outline">Vos</Badge>}
                                 {!member.is_active && (

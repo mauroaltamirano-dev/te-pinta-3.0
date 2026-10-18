@@ -76,7 +76,7 @@ export function CustomerOrderHistory({
                                 <td className="px-4 py-4">
                                     <button
                                         type="button"
-                                        className="font-semibold text-admin-accent underline-offset-4 hover:underline"
+                                        className="font-semibold text-admin-accent-text underline-offset-4 hover:underline"
                                         onClick={() => onOpenOrder(order.id)}
                                     >
                                         {order.id}
@@ -98,7 +98,7 @@ export function CustomerOrderHistory({
                                 <td className="px-4 py-4 text-admin-text-secondary">
                                     <PaymentLabel order={order} />
                                 </td>
-                                <td className="px-4 py-4 text-right font-semibold text-white tabular-nums">
+                                <td className="px-4 py-4 text-right font-semibold text-admin-text-primary tabular-nums">
                                     {formatCustomerMoney.format(order.total)}
                                 </td>
                             </tr>
@@ -114,7 +114,7 @@ export function CustomerOrderHistory({
                             <div>
                                 <button
                                     type="button"
-                                    className="font-semibold text-admin-accent underline-offset-4 hover:underline"
+                                    className="font-semibold text-admin-accent-text underline-offset-4 hover:underline"
                                     onClick={() => onOpenOrder(order.id)}
                                 >
                                     {order.id}
@@ -124,7 +124,7 @@ export function CustomerOrderHistory({
                                     {deliveryTypeLabels[order.delivery_type]}
                                 </p>
                             </div>
-                            <p className="font-semibold text-white tabular-nums">
+                            <p className="font-semibold text-admin-text-primary tabular-nums">
                                 {formatCustomerMoney.format(order.total)}
                             </p>
                         </div>

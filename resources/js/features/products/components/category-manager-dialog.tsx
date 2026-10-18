@@ -29,7 +29,7 @@ export function CategoryManagerDialog({
 }: CategoryManagerDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="dark admin-shell products-workspace max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogContent className="admin-shell products-workspace max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <SlidersHorizontal />

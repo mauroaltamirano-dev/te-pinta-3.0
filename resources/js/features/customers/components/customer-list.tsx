@@ -61,13 +61,13 @@ function SortableHeader({
                 type="button"
                 onClick={() => onSort(field)}
                 aria-label={`Ordenar por ${sortLabels[field]}, ${nextDirection}`}
-                className="inline-flex items-center gap-1.5 rounded-sm text-left hover:text-white focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
+                className="inline-flex items-center gap-1.5 rounded-sm text-left hover:text-admin-text-primary focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
             >
                 {sortLabels[field]}
                 <Icon
                     className={
                         active
-                            ? 'size-3.5 text-admin-accent'
+                            ? 'size-3.5 text-admin-accent-text'
                             : 'size-3.5 opacity-55'
                     }
                     aria-hidden="true"
@@ -131,9 +131,9 @@ export function CustomerList({
                     <tbody className="divide-y divide-admin-border">
                         {customers.map((customer) => (
                             <tr key={customer.id} className="group">
-                                <td className="px-4 py-4 font-medium text-white">
+                                <td className="px-4 py-4 font-medium text-admin-text-primary">
                                     <Link
-                                        className="underline-offset-4 group-hover:text-admin-accent hover:underline"
+                                        className="underline-offset-4 group-hover:text-admin-accent-text hover:underline"
                                         href={`/admin/customers/${customer.id}`}
                                     >
                                         {customer.name}
@@ -150,7 +150,7 @@ export function CustomerList({
                                 <td className="px-4 py-4 text-admin-text-secondary tabular-nums">
                                     {customer.orders_count}
                                 </td>
-                                <td className="px-4 py-4 font-medium text-white tabular-nums">
+                                <td className="px-4 py-4 font-medium text-admin-text-primary tabular-nums">
                                     {customer.orders_count === 0
                                         ? 'Sin compras'
                                         : formatCustomerMoney.format(
@@ -200,7 +200,7 @@ export function CustomerList({
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <h2 className="truncate font-semibold text-white">
+                                    <h2 className="truncate font-semibold text-admin-text-primary">
                                         {customer.name}
                                     </h2>
                                     <p className="mt-1 text-sm text-admin-text-tertiary">
@@ -213,7 +213,7 @@ export function CustomerList({
                                 <span>
                                     {formatCustomerCount(customer.orders_count)}
                                 </span>
-                                <span className="font-medium text-white tabular-nums">
+                                <span className="font-medium text-admin-text-primary tabular-nums">
                                     {customer.orders_count === 0
                                         ? 'Sin compras'
                                         : formatCustomerMoney.format(

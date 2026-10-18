@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('configures homogeneous surcharge with authoritative preview and ignores stale responses', async ({
     page,

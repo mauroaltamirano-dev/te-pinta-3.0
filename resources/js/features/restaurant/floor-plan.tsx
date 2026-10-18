@@ -180,7 +180,7 @@ export function FloorPlan({
                         onPointerUp={end}
                         onPointerCancel={end}
                         onLostPointerCapture={end}
-                        className="absolute -right-2 -bottom-2 z-10 hidden size-11 touch-none items-center justify-center rounded-lg border border-admin-accent bg-admin-surface text-admin-accent focus-visible:outline-2 focus-visible:outline-admin-accent md:flex"
+                        className="absolute -right-2 -bottom-2 z-10 hidden size-11 touch-none items-center justify-center rounded-lg border border-admin-accent bg-admin-surface text-admin-accent-text focus-visible:outline-2 focus-visible:outline-admin-accent md:flex"
                     >
                         ↘
                     </button>

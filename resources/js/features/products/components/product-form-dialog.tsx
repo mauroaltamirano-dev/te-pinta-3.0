@@ -213,7 +213,7 @@ export function ProductFormDialog({
                 nextOpen ? onOpenChange(true) : closeDialog()
             }
         >
-            <DialogContent className="admin-shell products-workspace dark top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[92vh] flex-col gap-0 overflow-hidden sm:top-1/2 sm:h-auto sm:max-w-3xl">
+            <DialogContent className="admin-shell products-workspace top-[50dvh] flex h-[calc(100dvh-2rem)] max-h-[92vh] flex-col gap-0 overflow-hidden sm:top-1/2 sm:h-auto sm:max-w-3xl">
                 <DialogHeader className="relative z-10 shrink-0">
                     <DialogTitle>
                         {product ? 'Editar producto' : 'Agregar producto'}

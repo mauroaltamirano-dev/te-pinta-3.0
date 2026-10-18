@@ -88,7 +88,7 @@ export function ProductCard({ product, onEdit, onFeature }: ProductCardProps) {
                 <Button
                     type="button"
                     variant="ghost"
-                    className="h-[3.25rem] w-full rounded-none bg-transparent text-admin-accent hover:bg-transparent hover:text-admin-accent"
+                    className="h-[3.25rem] w-full rounded-none bg-transparent text-admin-accent-text hover:bg-transparent hover:text-admin-accent-text"
                     onClick={() => onEdit(product)}
                 >
                     <Pencil data-icon="inline-start" />
@@ -97,7 +97,7 @@ export function ProductCard({ product, onEdit, onFeature }: ProductCardProps) {
                 <Button
                     type="button"
                     variant="ghost"
-                    className="h-[3.25rem] rounded-none text-admin-accent"
+                    className="h-[3.25rem] rounded-none text-admin-accent-text"
                     onClick={() => onFeature(product)}
                 >
                     <Megaphone className="size-4" aria-hidden="true" />

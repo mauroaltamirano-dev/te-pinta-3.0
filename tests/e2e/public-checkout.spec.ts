@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { expect, test } from './support/test';
 
 function contrastRatio(foreground: string, background: string) {
     const luminance = (color: string) => {
@@ -178,7 +178,7 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
         await inactiveFilter.hover();
         await expect(inactiveFilter).toHaveCSS(
             'background-color',
-            'rgb(125, 41, 31)',
+            'rgb(129, 55, 44)',
         );
         await expect(inactiveFilter).toHaveCSS('color', 'rgb(255, 255, 255)');
     }
@@ -191,7 +191,7 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
         await activeFilter.hover();
         await expect(activeFilter).toHaveCSS(
             'background-color',
-            'rgb(125, 41, 31)',
+            'rgb(129, 55, 44)',
         );
     }
 
@@ -203,7 +203,7 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
 
     if (supportsHover) {
         await unitCta.hover();
-        await expect(unitCta).toHaveCSS('background-color', 'rgb(125, 41, 31)');
+        await expect(unitCta).toHaveCSS('background-color', 'rgb(129, 55, 44)');
         await expect(unitCta).toHaveCSS('color', 'rgb(255, 255, 255)');
     }
 
@@ -232,7 +232,7 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
         await heroCart.hover();
         await expect(heroCart).toHaveCSS(
             'background-color',
-            'rgb(125, 41, 31)',
+            'rgb(129, 55, 44)',
         );
         await expect(heroCart).toHaveCSS('color', 'rgb(255, 255, 255)');
     }
@@ -296,7 +296,7 @@ test('checkout público usa cocinadas por defecto y crudas como alternativa más
 
     const raw = page.getByRole('checkbox', { name: 'Pedir crudas' });
     await expect(raw).not.toBeChecked();
-    await expect(page.getByText('Empanadas cocinadas')).toBeVisible();
+    await expect(page.getByText('Productos cocinados')).toBeVisible();
     await expect(
         page.getByText('Descuento por preparación en crudo'),
     ).toHaveCount(0);

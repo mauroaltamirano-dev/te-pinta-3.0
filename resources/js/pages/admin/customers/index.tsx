@@ -96,10 +96,10 @@ export default function Customers({
             <section className="grid gap-6 font-orders">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-sm font-medium text-admin-accent">
+                        <p className="text-sm font-medium text-admin-accent-text">
                             Gestión de clientes
                         </p>
-                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-admin-text-primary">
                             Clientes
                         </h1>
                         <p className="mt-1 text-sm text-admin-text-tertiary">

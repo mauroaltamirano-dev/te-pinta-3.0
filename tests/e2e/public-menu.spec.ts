@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 function contrastRatio(foreground: string, background: string) {
     const luminance = (color: string) => {

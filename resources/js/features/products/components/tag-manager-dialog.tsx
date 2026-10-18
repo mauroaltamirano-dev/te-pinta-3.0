@@ -29,7 +29,7 @@ export function TagManagerDialog({
 }: TagManagerDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="dark admin-shell products-workspace max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto p-4 text-foreground sm:max-w-2xl sm:p-6">
+            <DialogContent className="admin-shell products-workspace max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto p-4 text-foreground sm:max-w-2xl sm:p-6">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Tags /> Gestionar etiquetas

@@ -55,7 +55,7 @@ export function CustomerFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="dark admin-shell sm:max-w-lg">
+            <DialogContent className="admin-shell sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
                         {customer ? 'Editar cliente' : 'Crear cliente'}

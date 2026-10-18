@@ -59,7 +59,7 @@ export default function Products({
                 <header className="flex flex-col gap-5 border-b border-admin-border bg-transparent px-5 py-5 sm:px-7">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent uppercase">
+                            <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent-text uppercase">
                                 Configuración
                             </p>
                             <h1 className="mt-1 text-xl font-bold tracking-tight">
@@ -110,7 +110,7 @@ export default function Products({
                                     className={cn(
                                         'relative shrink-0 px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                                         selected
-                                            ? 'text-admin-accent after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-admin-accent'
+                                            ? 'text-admin-accent-text after:absolute after:right-3 after:bottom-0 after:left-3 after:h-0.5 after:rounded-full after:bg-admin-accent'
                                             : 'text-admin-text-secondary',
                                     )}
                                 >
