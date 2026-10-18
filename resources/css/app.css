@@ -55,6 +55,7 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-hover: var(--brand-accent-hover);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -87,62 +88,103 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    --color-admin-canvas: #252836;
-    --color-admin-surface: #1f1d2b;
-    --color-admin-surface-raised: #2d303e;
-    --color-admin-border: #393c49;
-    --color-admin-accent: #ea7c69;
-    --color-admin-selection: rgb(234 124 105 / 16%);
-    --color-admin-action: rgb(234 124 105 / 24%);
-    --color-admin-text-primary: #ffffff;
-    --color-admin-text-secondary: #abbcc2;
-    --color-admin-text-tertiary: #889898;
-    --color-ticket-paper: #fff8ed;
-    --color-ticket-ink: #2f2925;
-    --color-ticket-muted: #796e66;
-    --color-ticket-rule: #d9cbbd;
-    --shadow-admin-nav-active: 0 8px 12px rgb(234 124 105 / 32%);
+    --color-admin-canvas: var(--admin-canvas);
+    --color-admin-surface: var(--admin-surface);
+    --color-admin-surface-raised: var(--admin-surface-raised);
+    --color-admin-border: var(--admin-border);
+    --color-admin-control-border: var(--admin-control-border);
+    --color-admin-accent: var(--brand-accent);
+    --color-admin-accent-hover: var(--brand-accent-hover);
+    --color-admin-accent-text: var(--brand-accent-text);
+    --color-admin-on-accent: var(--brand-on-accent);
+    --color-admin-selection: var(--brand-accent-subtle);
+    --color-admin-action: var(--brand-accent-muted);
+    --color-admin-text-primary: var(--admin-text-primary);
+    --color-admin-text-secondary: var(--admin-text-secondary);
+    --color-admin-text-tertiary: var(--admin-text-tertiary);
+    --color-success: var(--success);
+    --color-success-subtle: var(--success-subtle);
+    --color-warning: var(--warning);
+    --color-warning-subtle: var(--warning-subtle);
+    --color-danger: var(--danger);
+    --color-danger-subtle: var(--danger-subtle);
+    --color-info: var(--info);
+    --color-info-subtle: var(--info-subtle);
+    --color-prepared: var(--prepared);
+    --color-prepared-subtle: var(--prepared-subtle);
+    --color-overlay: var(--overlay);
+    --color-on-overlay: var(--on-overlay);
+    --color-ticket-paper: var(--ticket-paper);
+    --color-ticket-ink: var(--ticket-ink);
+    --color-ticket-muted: var(--ticket-muted);
+    --color-ticket-rule: var(--ticket-rule);
+    --shadow-admin-nav-active: 0 4px 12px
+        color-mix(in srgb, var(--brand-accent) 20%, transparent);
     --color-public-ink: #1b1b1b;
-    --color-public-canvas: #b84f3f;
+    --color-public-canvas: var(--brand-accent);
     --color-public-earth: #f1f1f1;
-    /* Small red text on the light public cards needs more contrast than canvas. */
-    --color-public-earth-ink: #7d291f;
+    --color-public-earth-ink: var(--brand-accent-pressed);
 }
 
 :root {
-    --background: oklch(0.985 0.008 88);
-    --foreground: oklch(0.22 0.03 28);
-    --card: oklch(0.998 0.003 88);
-    --card-foreground: oklch(0.22 0.03 28);
-    --popover: oklch(0.998 0.003 88);
-    --popover-foreground: oklch(0.22 0.03 28);
-    --primary: oklch(0.54 0.18 31);
-    --primary-foreground: oklch(0.985 0.008 88);
-    --secondary: oklch(0.9 0.06 82);
-    --secondary-foreground: oklch(0.26 0.04 30);
-    --muted: oklch(0.94 0.018 85);
-    --muted-foreground: oklch(0.48 0.035 42);
-    --accent: oklch(0.76 0.1 126);
-    --accent-foreground: oklch(0.22 0.04 126);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.87 0.026 78);
-    --input: oklch(0.87 0.026 78);
-    --ring: oklch(0.54 0.18 31);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    color-scheme: light;
+    --admin-canvas: #f7f8fa;
+    --admin-surface: #ffffff;
+    --admin-surface-raised: #eef1f5;
+    --admin-border: #dce1e7;
+    --admin-control-border: #7a8594;
+    --admin-text-primary: #202936;
+    --admin-text-secondary: #4b5768;
+    --admin-text-tertiary: #596577;
+    --success: #166534;
+    --success-subtle: #e7f5ec;
+    --warning: #854d0e;
+    --warning-subtle: #fff4db;
+    --danger: #991b1b;
+    --danger-subtle: #fdecec;
+    --info: #075985;
+    --info-subtle: #e8f2fc;
+    --prepared: #5b21b6;
+    --prepared-subtle: #f0ecfc;
+    --overlay: #17212b;
+    --on-overlay: #ffffff;
+    --ticket-paper: #fff8ed;
+    --ticket-ink: #2f2925;
+    --ticket-muted: #6f6259;
+    --ticket-rule: #d9cbbd;
+    --background: var(--admin-canvas);
+    --foreground: var(--admin-text-primary);
+    --card: var(--admin-surface);
+    --card-foreground: var(--foreground);
+    --popover: var(--admin-surface);
+    --popover-foreground: var(--foreground);
+    --primary: var(--brand-accent);
+    --primary-foreground: var(--brand-on-accent);
+    --secondary: var(--admin-surface-raised);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--admin-surface-raised);
+    --muted-foreground: var(--admin-text-secondary);
+    --accent: var(--brand-accent-subtle);
+    --accent-foreground: var(--brand-accent-subtle-text);
+    --destructive: var(--danger);
+    --destructive-foreground: var(--on-overlay);
+    --border: var(--admin-border);
+    --input: var(--admin-control-border);
+    --ring: var(--brand-accent);
+    --chart-1: var(--brand-accent);
+    --chart-2: var(--info);
+    --chart-3: var(--prepared);
+    --chart-4: var(--warning);
+    --chart-5: var(--success);
     --radius: 0.875rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar: var(--admin-surface);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 }
 
 .public-theme {
@@ -153,7 +195,7 @@
     --popover: var(--card);
     --popover-foreground: var(--color-public-ink);
     --primary: var(--color-public-canvas);
-    --primary-foreground: #ffffff;
+    --primary-foreground: var(--brand-on-accent);
     --secondary: color-mix(
         in srgb,
         var(--color-public-canvas) 14%,
@@ -172,7 +214,7 @@
     --input: var(--border);
     --ring: var(--color-public-ink);
     --destructive: #9e3025;
-    --destructive-foreground: #ffffff;
+    --destructive-foreground: var(--on-overlay);
 
     /* Tailwind v4's theme color properties need local values in nested themes. */
     --color-background: var(--background);
@@ -196,8 +238,8 @@
     --color-destructive-foreground: var(--destructive-foreground);
 }
 
-.admin-shell,
-.dark.admin-shell {
+.admin-shell {
+    font-family: var(--font-orders);
     --background: var(--color-admin-canvas);
     --foreground: var(--color-admin-text-primary);
     --card: var(--color-admin-surface);
@@ -205,20 +247,20 @@
     --popover: var(--color-admin-surface);
     --popover-foreground: var(--color-admin-text-primary);
     --primary: var(--color-admin-accent);
-    --primary-foreground: var(--color-admin-text-primary);
+    --primary-foreground: var(--brand-on-accent);
     --secondary: var(--color-admin-surface);
     --secondary-foreground: var(--color-admin-text-primary);
-    --muted: var(--color-admin-border);
+    --muted: var(--color-admin-surface-raised);
     --muted-foreground: var(--color-admin-text-secondary);
     --accent: var(--color-admin-selection);
     --accent-foreground: var(--color-admin-text-primary);
     --border: var(--color-admin-border);
-    --input: var(--color-admin-border);
+    --input: var(--admin-control-border);
     --ring: var(--color-admin-accent);
     --sidebar: var(--color-admin-surface);
     --sidebar-foreground: var(--color-admin-text-primary);
     --sidebar-primary: var(--color-admin-accent);
-    --sidebar-primary-foreground: var(--color-admin-text-primary);
+    --sidebar-primary-foreground: var(--brand-on-accent);
     --sidebar-accent: var(--color-admin-selection);
     --sidebar-accent-foreground: var(--color-admin-text-primary);
     --sidebar-border: var(--color-admin-border);
@@ -254,7 +296,7 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* AUX-1 compositions are opt-in: legacy Admin, Public and POS retain their styles. */
+/* Shared admin compositions retain their existing spacing and layout contracts. */
 .admin-shell .admin-page-shell,
 .admin-shell .admin-ui {
     --admin-page-width: 80rem;
@@ -267,7 +309,6 @@
     --admin-space-6: 1.5rem;
     --admin-space-8: 2rem;
     --admin-panel-radius: 0.75rem;
-    --admin-control-border: #7a7f91;
     font-family: var(--font-orders);
     color: var(--color-admin-text-primary);
 }
@@ -284,13 +325,13 @@
 }
 
 .admin-shell .admin-ui {
-    --primary-foreground: var(--color-admin-surface);
+    --primary-foreground: var(--brand-on-accent);
     --secondary: var(--color-admin-surface-raised);
     --input: var(--admin-control-border);
     --accent: var(--color-admin-surface-raised);
     --accent-foreground: var(--color-admin-text-primary);
-    --destructive: #b42318;
-    --destructive-foreground: #ffffff;
+    --destructive: var(--danger);
+    --destructive-foreground: var(--on-overlay);
     --color-primary-foreground: var(--primary-foreground);
     --color-secondary: var(--secondary);
     --color-input: var(--input);
@@ -364,7 +405,7 @@
     color: var(--destructive-foreground);
 }
 .admin-ui [data-slot='button'][data-variant='destructive']:hover {
-    background: #912018;
+    background: color-mix(in srgb, var(--danger) 85%, black);
 }
 .admin-ui
     :is(a, button, input, textarea, select, [role='combobox']):focus-visible {
@@ -510,41 +551,6 @@
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
     --color-border: var(--border);
-}
-
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
 }
 
 @layer utilities {

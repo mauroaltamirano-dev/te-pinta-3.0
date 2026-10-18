@@ -1,6 +1,6 @@
 # Design system
 
-> **Decision 2026-10-15:** the dark admin theme and coral `#EA7C69` are superseded by a light theme with a tenant-configurable accent (Te Pinta: `#b84f3f`). Implementation pending (roadmap A-02). The admin tokens below describe the code as it is today; do not extend the dark palette in new work beyond what a change strictly needs.
+> **Current rule (2026-10-16):** the admin is light-only. Restaurant branding replaces the former dark/coral theme. Te Pinta defaults to `#b84f3f`; changing the restaurant accent does not require an asset rebuild.
 
 shadcn/ui is the accessible primitive layer, not the visual identity. Public and admin experiences share token mechanics but differ in composition and density: the public site is mobile-first; admin/POS is tablet/desktop-first and must remain usable on phones.
 
@@ -23,33 +23,50 @@ shadcn/ui is the accessible primitive layer, not the visual identity. Public and
 - Prices and totals displayed in React come from backend previews; components format, they never calculate.
 - Visible text is Spanish (Argentina); enums, identifiers and code are English.
 
-## Current tokens
+## Theme and branding contract
+
+`restaurants.accent_color` stores a lowercase six-digit hex color. `Core/Branding/AccentPalette` validates it and derives nine `--brand-*` variables. `BrandingServiceProvider` injects the current `RestaurantContext` palette into the root HTML; shared Inertia `brand` props and `useRestaurantBranding` update the same variables after SPA navigation. Neither cookies, local storage nor the OS can enable dark mode.
+
+Edit **Configuración → General → Color de acento** with `catalog.manage`, the same permission as General settings (active owners and managers). Both route middleware and the Form Request enforce it. The preview is local until saved; backend validation remains authoritative. Accents must contrast at least 3:1 against white for boundaries and 4.5:1 with white action labels. Text and hover shades mix 85% accent with black; pressed text uses 70%; subtle, muted and border shades mix 8%, 15% and 50% accent with white. The database checks shape; invalid direct-SQL colors fall back to the safe default when rendered.
+
+## Tokens
 
 Public palette (`.public-theme`, applied by `PublicLayout`):
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `public-canvas` | `#b84f3f` | Home and navigation canvas; product cards on the menu |
+| `public-canvas` | `--brand-accent` (default `#b84f3f`) | Home and navigation canvas; product cards on the menu |
 | `public-earth` | `#f1f1f1` | Menu canvas |
-| `public-earth-ink` | `#7d291f` | Small text on earth; actions on red cards |
+| `public-earth-ink` | `--brand-accent-pressed` (default `#81372c`) | Small text on earth; actions on red cards |
 | `public-ink` | `#1b1b1b` | Text on earth |
 
 White text on canvas reaches 4.97:1; ink on earth 15.25:1. Brand assets live in `public/images/brand/` (wordmark in the header, monogram in the footer).
 
-Admin palette (to be replaced by A-02):
+Admin roles are defined on `:root`; Tailwind v4 exposes them as semantic utilities. Shared primitives use `background`, `foreground`, `primary`, `primary-foreground`, `muted`, `border` and `ring`. Admin aliases consume the same source, including portalled dialogs and menus.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `admin-canvas` | `#252836` | Root admin workspace |
-| `admin-surface` | `#1F1D2B` | Sidebar, panels, dialogs, cards |
-| `admin-surface-raised` | `#2D303E` | Raised sections inside drawers and forms |
-| `admin-border` | `#393C49` | Decorative borders and dividers |
-| `admin-accent` | `#EA7C69` | Active controls, focus, emphasis |
-| `admin-selection` / `admin-action` | accent at 16 % / 24 % | Selected navigation / card actions |
-| `admin-text-primary` / `-secondary` / `-tertiary` | `#FFFFFF` / `#ABBBC2` / `#889898` | Text levels |
-| `ticket-paper` / `ticket-ink` / `ticket-muted` / `ticket-rule` | `#FFF8ED` / `#2F2925` / `#796E66` / `#D9CBBD` | Order receipt dialog |
+| `admin-canvas` | `#f7f8fa` | Workspace |
+| `admin-surface` | `#ffffff` | Sidebar, panels, dialogs and cards |
+| `admin-surface-raised` | `#eef1f5` | Nested sections and neutral controls |
+| `admin-border` / `admin-control-border` | `#dce1e7` / `#7a8594` | Decorative / interactive boundaries |
+| `admin-text-primary` / `-secondary` / `-tertiary` | `#202936` / `#4b5768` / `#596577` | Text hierarchy |
+| `admin-accent` / `admin-on-accent` | Restaurant accent / white | Filled action and contrasting label |
+| `admin-accent-text` / `admin-accent-hover` | Derived darker shade | Links / hovered filled actions |
+| `admin-selection` / `admin-action` | Derived subtle / muted shade | Selected rows and secondary emphasis |
+| `success` / `success-subtle` | `#166534` / `#e7f5ec` | Delivered, paid, active |
+| `warning` / `warning-subtle` | `#854d0e` / `#fff4db` | Awaiting confirmation, attention |
+| `info` / `info-subtle` | `#075985` / `#e8f2fc` | Confirmed, processing |
+| `prepared` / `prepared-subtle` | `#5b21b6` / `#f0ecfc` | Prepared |
+| `danger` / `danger-subtle` | `#991b1b` / `#fdecec` | Cancelled, error |
+| `overlay` / `on-overlay` | `#17212b` / white | Scrims and content over photographs |
+| `ticket-paper` / `ticket-ink` / `ticket-muted` / `ticket-rule` | `#fff8ed` / `#2f2925` / `#6f6259` / `#d9cbbd` | Receipt dialog |
 
-Interactive boundaries use `#7A7F91` for at least 3:1 contrast on admin surfaces. Admin typography is Barlow 400/500/600, bundled in `resources/fonts/` (OFL licence in `resources/fonts/OFL.txt`) and applied with `font-orders`.
+Measured WCAG contrast ratios: default white-on-accent **4.97:1**; accent text on white **6.42:1**; status text on its own tinted background: success **6.34**, warning **6.27**, info **6.68**, prepared **7.75**, danger **7.28**. Secondary text on white reaches **7.34:1**; tertiary text on canvas **5.56:1**. Re-measure the actual rendered pair when adding roles or opacity.
+
+`orderStatusLabels` and `orderStatusStyles` in `features/orders/presentation.ts` own the shared vocabulary: pending confirmation is **En espera**, waiting is **Confirmado**. Dashboard reuses these labels instead of maintaining another map. Chart fills, strokes and legend markers use the same semantic role colors.
+
+Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL licence in `resources/fonts/OFL.txt`). The root uses `font-orders`; the public shell explicitly keeps `font-sans`.
 
 ## Admin compositions
 
@@ -63,7 +80,7 @@ Interactive boundaries use `#7A7F91` for at least 3:1 contrast on admin surfaces
 - **Order detail reuse.** Dashboard and Customers open `features/orders/components/order-detail-sheet.tsx`, which renders the same `OrderDetailContent` as the full page; the orders list opens the compact `OrderTicketDialog`. Do not build another order detail.
 - **Quick order** (`pages/admin/home.tsx`): catalog column plus a current-order panel; continue opens a Sheet with the shared order detail fields. Phones get a two-column catalog with 44 px quantity targets and a bottom sheet for the order.
 - **Floor editor** (`features/restaurant/`): proportional renderer that keeps logical aspect ratio, pointer drag and resize on desktop, labeled numeric geometry controls on mobile, explicit save with dirty and conflict feedback, and an `editable=false` read-only mode.
-- **Brand mark.** `components/brand-logo.tsx` centralizes `public/icons/te-pinta-logo.svg` (sidebar, auth layout, favicon); PWA and Apple touch icons use the PNG derivatives in `public/icons/`.
+- **Brand mark.** `components/brand-logo.tsx` applies restaurant colors to the monochrome `public/icons/te-pinta-mark.svg` mask (sidebar and auth). The favicon uses the default-accent `te-pinta-logo.svg`; PWA and Apple touch PNG assets remain static.
 
 ## Public compositions
 
@@ -73,4 +90,4 @@ Interactive boundaries use `#7A7F91` for at least 3:1 contrast on admin surfaces
 
 ## Verification
 
-Browser specs capture desktop and mobile screenshots into `storage/app/` (not versioned). `tests/e2e/admin-visual-primitives.spec.ts` covers the shared admin primitives.
+Browser specs capture desktop and mobile screenshots into `storage/app/` (not versioned). `tests/e2e/admin-visual-primitives.spec.ts` covers the shared admin primitives. `tests/e2e/light-theme.spec.ts` checks legacy dark preferences, rendered status contrast, local preview, persistence across reload/public navigation and backend error feedback on desktop/mobile. PHP branding tests cover palette derivation, validation, current-restaurant isolation and root/Inertia variables.
