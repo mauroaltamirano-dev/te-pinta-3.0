@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, ShoppingBag } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { CartProvider, useCart } from '@/features/orders/cart-context';
+import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
 
 const navigation = [
     { label: 'Inicio', href: '/' },
@@ -9,6 +10,8 @@ const navigation = [
 ];
 
 export default function PublicLayout({ children }: PropsWithChildren) {
+    useRestaurantBranding();
+
     return (
         <CartProvider>
             <PublicShell>{children}</PublicShell>

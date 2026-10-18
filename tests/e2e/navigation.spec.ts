@@ -1,24 +1,32 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('navegación pública expone las páginas principales', async ({ page }) => {
     await page.goto('/');
     await expect(
         page
-            .getByRole('link', { name: 'Te Pinta', exact: true })
+            .getByRole('link', { name: 'Te Pinta, inicio', exact: true })
             .locator('img'),
-    ).toHaveAttribute('src', '/icons/te-pinta-logo.svg');
+    ).toHaveAttribute('src', '/images/brand/logo-completo-blanco.png');
     await expect(
-        page.getByRole('heading', { name: 'Tu próximo pedido empieza acá.' }),
+        page.getByRole('heading', {
+            name: 'Te pinta una empanada.',
+            exact: true,
+        }),
     ).toBeVisible();
 
-    await page.getByRole('link', { name: 'Menú' }).click();
+    await page
+        .getByRole('navigation', { name: 'Navegación pública' })
+        .getByRole('link', { name: 'Menú', exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/menu$/);
     await expect(
-        page.getByRole('heading', { name: 'Menú', exact: true }),
+        page.getByRole('heading', { name: 'Nuestro menú.', exact: true }),
     ).toBeVisible();
 
-    await page.getByRole('link', { name: 'Carrito', exact: true }).click();
+    await page.getByRole('link', { name: 'Mi carrito', exact: true }).click();
+    await expect(page).toHaveURL(/\/cart$/);
     await expect(
-        page.getByRole('heading', { name: 'Carrito', exact: true }),
+        page.getByRole('heading', { name: 'Tu carrito.', exact: true }),
     ).toBeVisible();
 });
 
@@ -31,6 +39,6 @@ test('admin redirige visitantes al inicio de sesión', async ({ page }) => {
     await expect(
         page
             .getByRole('link', { name: 'Ir al inicio de Te Pinta' })
-            .locator('img'),
-    ).toHaveAttribute('src', '/icons/te-pinta-logo.svg');
+            .locator('[style*="mask-image"]'),
+    ).toHaveCSS('mask-image', /te-pinta-mark\.svg/);
 });

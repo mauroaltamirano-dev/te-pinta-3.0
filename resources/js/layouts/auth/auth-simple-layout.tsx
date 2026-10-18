@@ -18,7 +18,7 @@ export default function AuthSimpleLayout({
                             aria-label="Ir al inicio de Te Pinta"
                             className="flex flex-col items-center gap-2 font-medium"
                         >
-                            <div className="mb-1 size-20 overflow-hidden rounded-2xl bg-admin-accent shadow-sm ring-1 ring-black/5">
+                            <div className="mb-1 size-20 overflow-hidden rounded-2xl bg-admin-accent shadow-sm ring-1 ring-admin-border">
                                 <BrandLogo alt="" className="size-full" />
                             </div>
                             <span className="sr-only">{title}</span>
