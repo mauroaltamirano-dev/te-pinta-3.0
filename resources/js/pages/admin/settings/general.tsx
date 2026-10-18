@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { BrandingForm } from '@/features/settings/components/branding-form';
 import SettingsLayout from '@/layouts/settings-layout';
 
 interface OrderingSettings {
@@ -24,8 +25,10 @@ interface OrderingSettings {
 }
 export default function GeneralSettings({
     orderingSettings,
+    branding,
 }: {
     orderingSettings: OrderingSettings;
+    branding: { accent_color: string };
 }) {
     const form = useForm(orderingSettings);
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -38,7 +41,7 @@ export default function GeneralSettings({
             <Head title="Configuración general" />
             <SettingsLayout>
                 <header className="border-b border-admin-border px-5 py-5 sm:px-7">
-                    <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent uppercase">
+                    <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent-text uppercase">
                         Configuración
                     </p>
                     <h1 className="mt-1 text-xl font-bold">
@@ -49,6 +52,7 @@ export default function GeneralSettings({
                         cálculo de precios y el proceso de compra.
                     </p>
                 </header>
+                <BrandingForm accentColor={branding.accent_color} />
                 <form onSubmit={submit} className="grid gap-6 p-5 sm:p-7">
                     <fieldset className="grid gap-4 rounded-lg border border-admin-border bg-admin-surface p-4">
                         <legend className="px-1 font-semibold">
