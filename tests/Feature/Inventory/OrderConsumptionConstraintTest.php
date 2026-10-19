@@ -33,11 +33,11 @@ final class OrderConsumptionConstraintTest extends TestCase
         app(ConfigureProductInventoryConsumption::class)->execute($p->id, 'no_inventory', [], $a->id);
         app(UpdateOrderStatus::class)->execute($o, OrderStatus::Delivered, $a->id);
         foreach (['total', 'cooking_surcharge', 'discount_amount', 'combined_dozen_savings', 'raw_discount', 'pricing_snapshot_version', 'product_exact_numerator_12', 'cooked_product_exact_numerator_12', 'raw_discount_exact_numerator_12', 'discount_exact_numerator_1200', 'net_pre_round_exact_numerator_1200', 'rounding_adjustment_numerator_1200'] as $field) {
-            $this->rejected(fn () => DB::table('orders')->where('id', $o->id)->update([$field => $field === 'pricing_snapshot_version' ? 2 : 1]), '55000');
+            $this->rejected(fn () => DB::table('orders')->where('id', $o->id)->update([$field => $field === 'pricing_snapshot_version' ? 3 : 1]), '55000');
         }
         $this->rejected(fn () => DB::table('order_items')->where('order_id', $o->id)->update(['units_count' => 9]), '55000');
         foreach (['pricing_snapshot_version', 'applied_exact_numerator_12', 'cooked_exact_numerator_12', 'raw_discount_exact_numerator_12', 'surcharge_exact_numerator_12'] as $field) {
-            $this->rejected(fn () => DB::table('order_items')->where('order_id', $o->id)->update([$field => $field === 'pricing_snapshot_version' ? 2 : 1]), '55000');
+            $this->rejected(fn () => DB::table('order_items')->where('order_id', $o->id)->update([$field => $field === 'pricing_snapshot_version' ? 3 : 1]), '55000');
         }
         $this->rejected(fn () => DB::table('order_items')->where('order_id', $o->id)->delete(), '55000');
         DB::statement('SET CONSTRAINTS ALL IMMEDIATE');

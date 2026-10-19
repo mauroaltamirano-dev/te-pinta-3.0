@@ -28,6 +28,10 @@ final readonly class OrderPriceQuote
         public ?int $discountValue,
         public int $discountAmount,
         public int $total,
+        public int $roundingAdjustment = 0,
+        public int $discountExactNumerator1200 = 0,
+        public int $netPreRoundExactNumerator1200 = 0,
+        public int $roundingAdjustmentNumerator1200 = 0,
     ) {}
 
     /** @return array<string, mixed> */
@@ -48,6 +52,7 @@ final readonly class OrderPriceQuote
             'discount_type' => $this->discountType?->value,
             'discount_value' => $this->discountValue,
             'discount_amount' => $this->discountAmount,
+            'rounding_adjustment' => $this->roundingAdjustment,
             'total' => $this->total,
         ];
     }

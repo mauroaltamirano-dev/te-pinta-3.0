@@ -327,6 +327,19 @@ export function OrderDetailContent({
                             </span>
                         </div>
                     )}
+                    {(order.rounding_adjustment ?? 0) !== 0 && (
+                        <div className="flex justify-between gap-4">
+                            <span>Redondeo</span>
+                            <span className="tabular-nums">
+                                {(order.rounding_adjustment ?? 0) > 0
+                                    ? '+'
+                                    : '−'}
+                                {formatOrderMoney.format(
+                                    Math.abs(order.rounding_adjustment ?? 0),
+                                )}
+                            </span>
+                        </div>
+                    )}
                     <div className="mt-2 flex justify-between border-t border-border pt-4 text-lg font-semibold text-admin-text-primary">
                         <span>Total</span>
                         <span className="tabular-nums">

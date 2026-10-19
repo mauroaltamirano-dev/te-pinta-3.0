@@ -75,9 +75,10 @@ final class AdminOrderEditingTest extends TestCase
             $order->refresh();
             $this->assertSame($status, $order->status);
             $this->assertSame($publicId, $order->public_id);
-            $this->assertSame(10600, (int) $order->total);
+            // Seven raw units at (18000 - 2000) / 12 × 1.1 → 1500; no half-dozen tier.
+            $this->assertSame(10500, (int) $order->total);
             $this->assertSame(2, $order->edit_version);
-            $this->assertSame(6, (int) $order->items->firstWhere('pricing_mode', PriceTier::HalfDozen)?->units_count);
+            $this->assertSame(7, (int) $order->items->sole()->units_count);
         }
         $this->assertCount(3, array_unique($publicIds));
         foreach ($publicIds as $publicId) {
@@ -126,14 +127,14 @@ final class AdminOrderEditingTest extends TestCase
         unset($payload['total']);
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame(11800, (int) $order->total);
+        $this->assertSame(7 * 1800, (int) $order->total);
         $this->assertSame('Other customer', $order->customer_name_snapshot);
         $this->assertSame('Order-only corrected address', $order->delivery_address_snapshot);
         $this->assertSame('Other private address', $other->fresh()->address);
         $this->assertSame('paid', $order->payment_status->value);
         $payment = ManagementOrderPayment::query()->sole();
         $this->assertSame($order->id, $payment->order_id);
-        $this->assertSame(11800, (int) $payment->amount);
+        $this->assertSame(7 * 1800, (int) $payment->amount);
         $revision = $order->revisions()->sole();
         $this->assertSame(['fields' => ['customer', 'items', 'condition', 'delivery_type', 'delivery_period', 'delivery_time', 'delivery_address', 'notes', 'payment_status', 'payment_method'], 'economic_change' => true], $revision->changed_fields);
         $this->assertStringNotContainsString('Order-only corrected address', json_encode($revision->changed_fields, JSON_THROW_ON_ERROR));
@@ -194,7 +195,7 @@ final class AdminOrderEditingTest extends TestCase
         $payload['delivery_address'] = 'Order delivery address';
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame([10000, 0, 1000, 2500, 13500], [
+        $this->assertSame([10800, 0, 1000, 2500, 14300], [
             (int) $order->items_cooked_subtotal, (int) $order->raw_discount,
             (int) $order->toppings_subtotal, (int) $order->shipping_fee_snapshot, (int) $order->total,
         ]);
@@ -205,7 +206,7 @@ final class AdminOrderEditingTest extends TestCase
         $payload['delivery_address'] = null;
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame([10000, 1000, 1000, 0, 10000], [
+        $this->assertSame([10800, 1800, 1000, 0, 10000], [
             (int) $order->items_cooked_subtotal, (int) $order->raw_discount,
             (int) $order->toppings_subtotal, (int) $order->shipping_fee_snapshot, (int) $order->total,
         ]);
@@ -263,8 +264,8 @@ final class AdminOrderEditingTest extends TestCase
     {
         $edited = $this->createOrder(OrderStatus::Waiting);
         $untouched = $this->createOrder(OrderStatus::Waiting);
-        $this->product->update(['half_dozen_price' => 12000]);
-        RawPriceDiscount::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 3000]);
+        // A new dozen price stores a new unit price (22000 / 12 × 1.1 → 2000).
+        $this->product->update(['dozen_price' => 22000, 'unit_price' => 2000]);
 
         $this->actingAs($this->admin)->get(route('admin.orders.show', $edited))->assertOk();
         $this->assertSame(9000, (int) $edited->fresh()->total);

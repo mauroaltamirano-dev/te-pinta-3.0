@@ -60,8 +60,8 @@ final class OrderCheckoutHttpTest extends TestCase
             ->assertJsonPath('data.payment_status', 'unpaid')
             ->assertJsonPath('data.items_base_subtotal', null)
             ->assertJsonPath('data.cooking_surcharge', null)
-            ->assertJsonPath('data.items_cooked_subtotal', 10000)
-            ->assertJsonPath('data.raw_discount', 1000)
+            ->assertJsonPath('data.items_cooked_subtotal', 10800)
+            ->assertJsonPath('data.raw_discount', 1800)
             ->assertJsonPath('data.total', 9000)
             ->assertJsonMissingPath('data.customer_id');
         $this->assertMatchesRegularExpression('/^TP-\d{6}$/', $response->json('data.order_id'));
@@ -184,20 +184,20 @@ final class OrderCheckoutHttpTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('data.items_base_subtotal', null)
             ->assertJsonPath('data.cooking_surcharge', null)
-            ->assertJsonPath('data.items_cooked_subtotal', 10000)
+            ->assertJsonPath('data.items_cooked_subtotal', 10800)
             ->assertJsonPath('data.raw_discount', 0)
-            ->assertJsonPath('data.total', 10000);
-        $this->assertStringContainsString('Productos cocinados: $10.000', $response->json('data.summary'));
+            ->assertJsonPath('data.total', 10800);
+        $this->assertStringContainsString('Productos cocinados: $10.800', $response->json('data.summary'));
         $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with(['items.compositions', 'toppings'])->firstOrFail();
         $item = $order->items->sole();
-        $this->assertSame([10000, 0, 10000], [
+        $this->assertSame([10800, 0, 10800], [
             (int) $order->items_cooked_subtotal,
             (int) $order->raw_discount,
             (int) $order->total,
         ]);
-        $this->assertSame([10000, 0, 10000], [
+        $this->assertSame([10800, 0, 10800], [
             (int) $item->cooked_line_total,
             (int) $item->raw_discount,
             (int) $item->line_total,
@@ -207,20 +207,20 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->product->update(['half_dozen_price' => 50000]);
 
         $summary = app(OrderSummaryFormatter::class)->format($order->fresh(['items.compositions', 'toppings']));
-        $this->assertStringContainsString('Productos cocinados: $10.000', $summary);
+        $this->assertStringContainsString('Productos cocinados: $10.800', $summary);
         $this->assertStringNotContainsString('Descuento por preparación cruda', $summary);
-        $this->assertStringContainsString('Total: $10.000', $summary);
+        $this->assertStringContainsString('Total: $10.800', $summary);
 
         $resource = (new AdminOrderResource($order->fresh(['items.compositions', 'toppings'])))->resolve();
         $this->assertNull($resource['items_base_subtotal']);
         $this->assertNull($resource['cooking_surcharge']);
-        $this->assertSame(10000, $resource['items_cooked_subtotal']);
+        $this->assertSame(10800, $resource['items_cooked_subtotal']);
         $this->assertSame(0, $resource['raw_discount']);
-        $this->assertSame(10000, $resource['items'][0]['cooked_subtotal']);
+        $this->assertSame(10800, $resource['items'][0]['cooked_subtotal']);
         $this->assertSame(0, $resource['items'][0]['raw_discount']);
     }
 
-    public function test_cooked_combined_dozen_uses_its_own_raw_equivalent(): void
+    public function test_cooked_mixed_flavors_sell_per_flavor_without_a_combined_dozen(): void
     {
         $secondProduct = Product::query()->create([
             'category_id' => $this->product->category_id,
@@ -241,13 +241,13 @@ final class OrderCheckoutHttpTest extends TestCase
 
         $response = $this->postJson(route('public.orders.store'), $payload);
         $response->assertCreated()
-            ->assertJsonPath('data.items_cooked_subtotal', 17500)
+            ->assertJsonPath('data.items_cooked_subtotal', 21600)
             ->assertJsonPath('data.raw_discount', 0)
-            ->assertJsonPath('data.total', 17500);
+            ->assertJsonPath('data.total', 21600);
         $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with('items')->firstOrFail();
-        $this->assertSame(0, (int) $order->items->sole()->raw_discount);
+        $this->assertSame([['unit', 0], ['unit', 0]], $order->items->map(fn ($item) => [$item->pricing_mode->value, (int) $item->raw_discount])->all());
     }
 
     public function test_admin_summary_formats_a_structured_combined_order_for_whatsapp_copy(): void

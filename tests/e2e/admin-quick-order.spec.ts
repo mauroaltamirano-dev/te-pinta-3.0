@@ -76,6 +76,7 @@ async function changeDraftPricing(
     discountable_subtotal: number;
     discount_amount: number;
     shipping_fee: number;
+    rounding_adjustment: number;
     total: number;
 }> {
     const preview = page.waitForResponse((response) => {
@@ -99,6 +100,7 @@ async function changeDraftPricing(
                 discountable_subtotal: number;
                 discount_amount: number;
                 shipping_fee: number;
+                rounding_adjustment: number;
                 total: number;
             };
         }
@@ -280,8 +282,10 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
     expect(percentageQuote.total).toBe(
         percentageQuote.discountable_subtotal -
             percentageQuote.discount_amount +
-            percentageQuote.shipping_fee,
+            percentageQuote.shipping_fee +
+            percentageQuote.rounding_adjustment,
     );
+    expect(percentageQuote.total % 100).toBe(0);
     await expect(
         continuation.getByText(
             'Se aplica a productos y adicionales. El envío no se descuenta.',
@@ -322,7 +326,10 @@ test('Quick Order edita el borrador, previsualiza pricing del backend y crea exa
     );
     expect(fixedQuote.discount_amount).toBe(1000);
     expect(fixedQuote.total).toBe(
-        fixedQuote.discountable_subtotal - 1000 + fixedQuote.shipping_fee,
+        fixedQuote.discountable_subtotal -
+            1000 +
+            fixedQuote.shipping_fee +
+            fixedQuote.rounding_adjustment,
     );
 
     await continuation

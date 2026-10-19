@@ -225,6 +225,8 @@ final readonly class BuildProductUnitEconomics
             return null;
         }
 
-        return count($quote->lines) === 1 && $quote->lines[0]->pricingMode === $mode ? $quote->lines[0]->lineTotal : null;
+        // A presentation has one quoted line of exactly its units: a dozen at D, or 1 and 6 units at the stored U.
+        return count($quote->lines) === 1 && $quote->lines[0]->unitsCount === $q
+            && in_array($quote->lines[0]->pricingMode, [$mode, 'unit'], true) ? $quote->lines[0]->lineTotal : null;
     }
 }

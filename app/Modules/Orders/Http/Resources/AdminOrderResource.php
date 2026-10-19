@@ -42,6 +42,7 @@ final class AdminOrderResource extends JsonResource
             'discount_type' => $this->discount_type?->value,
             'discount_value' => $this->discount_value,
             'discount_amount' => (int) $this->discount_amount,
+            'rounding_adjustment' => $this->resource->roundingAdjustment(),
             'total' => (int) $this->total,
             'version' => (int) $this->edit_version,
             'closed' => $this->status->isClosed(),

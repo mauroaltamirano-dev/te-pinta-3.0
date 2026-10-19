@@ -78,6 +78,13 @@ final class Order extends Model implements PublicIdentifier
         'public_checkout_idempotency_hash',
         'public_checkout_fingerprint',
         'edit_version',
+        'pricing_snapshot_version',
+        'product_exact_numerator_12',
+        'cooked_product_exact_numerator_12',
+        'raw_discount_exact_numerator_12',
+        'discount_exact_numerator_1200',
+        'net_pre_round_exact_numerator_1200',
+        'rounding_adjustment_numerator_1200',
     ];
 
     protected function casts(): array
@@ -104,7 +111,21 @@ final class Order extends Model implements PublicIdentifier
             'combined_dozen_savings' => 'integer',
             'total' => 'integer',
             'edit_version' => 'integer',
+            'pricing_snapshot_version' => 'integer',
+            'product_exact_numerator_12' => 'integer',
+            'cooked_product_exact_numerator_12' => 'integer',
+            'raw_discount_exact_numerator_12' => 'integer',
+            'discount_exact_numerator_1200' => 'integer',
+            'net_pre_round_exact_numerator_1200' => 'integer',
+            'rounding_adjustment_numerator_1200' => 'integer',
         ];
+    }
+
+    /** Commercial rounding applied to the final total; always 0 for version-1 history. */
+    public function roundingAdjustment(): int
+    {
+        return (int) $this->total - ((int) $this->items_subtotal + (int) $this->toppings_subtotal
+            + (int) $this->shipping_fee_snapshot - (int) $this->discount_amount);
     }
 
     public function publicIdentifier(): string

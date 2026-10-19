@@ -44,6 +44,9 @@ final readonly class OrderPricingEngine
         if ($quantities === []) {
             throw ValidationException::withMessages(['items' => 'Se requiere al menos un producto.']);
         }
+        if (count($quantities) > 50) {
+            throw ValidationException::withMessages(['items' => 'Un pedido admite como máximo 50 productos distintos.']);
+        }
 
         ksort($quantities);
         $products = $this->productPrices->productsForSale(
@@ -54,93 +57,22 @@ final readonly class OrderPricingEngine
             throw ValidationException::withMessages(['items' => 'Todos los productos deben estar disponibles.']);
         }
 
-        $empanadaQuantities = [];
-        $unitQuantities = [];
-        foreach ($quantities as $productId => $quantity) {
-            if ($products[$productId]->pricingFamily === 'empanada') {
-                $empanadaQuantities[$productId] = $quantity;
-            } else {
-                $unitQuantities[$productId] = $quantity;
-            }
-        }
-
         $lines = [];
 
-        // Product-specific dozens have priority because they retain the flavor's own commercial price.
-        foreach ($empanadaQuantities as $productId => &$quantity) {
-            $dozens = intdiv($quantity, 12);
-            if ($dozens > 0) {
-                $lines[] = $this->productLine(
-                    $products[$productId],
-                    'dozen',
-                    $dozens,
-                    12,
-                    $products[$productId]->dozenPrice,
-                    $products[$productId]->cookedDozenPrice,
-                );
+        // Fixed dozen pricing: every 12 units of one flavor sell at its dozen price; the rest at its
+        // stored unit price. There is no combined dozen and no cap: 11 units may cost more than a dozen.
+        foreach ($quantities as $productId => $quantity) {
+            $product = $products[$productId];
+            if ($product->pricingFamily === 'empanada') {
+                $dozens = intdiv($quantity, 12);
+                if ($dozens > 0) {
+                    $lines[] = $this->productLine($product, 'dozen', $dozens, 12, $product->dozenPrice, $product->cookedDozenPrice);
+                }
                 $quantity %= 12;
             }
-        }
-        unset($quantity);
-
-        // Mixed blocks are closed before half-dozens. Product-id order makes equivalent groupings stable.
-        $combinedCookedPrice = OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice);
-        $combinedPrice = OrderSetting::integer($condition === OrderCondition::Cooked
-            ? OrderSettingKey::CombinedDozenCookedPrice
-            : OrderSettingKey::CombinedDozenRawPrice);
-        while (array_sum($empanadaQuantities) >= 12 && count(array_filter($empanadaQuantities)) > 1) {
-            $composition = $this->takeCombinedDozen($empanadaQuantities, $products);
-            $regularPrice = 0;
-            foreach ($composition as $part) {
-                $regularPrice += $this->normalPrice($products[$part['product_id']], $part['quantity']);
+            if ($quantity > 0) {
+                $lines[] = $this->productLine($product, 'unit', $quantity, 1, $product->unitPrice, $product->cookedUnitPrice);
             }
-            $savings = max(0, $regularPrice - $combinedPrice);
-            $lines[] = new PricingLine(
-                pricingMode: 'combined_dozen', quantity: 1, unitsCount: 12,
-                unitPrice: $combinedPrice, lineTotal: $combinedPrice,
-                cookedUnitPrice: $combinedCookedPrice, cookedLineTotal: $combinedCookedPrice,
-                rawDiscount: $combinedCookedPrice - $combinedPrice,
-                regularPriceTotal: $regularPrice, savings: $savings,
-                composition: $composition,
-            );
-        }
-
-        foreach ($empanadaQuantities as $productId => $quantity) {
-            $product = $products[$productId];
-            $halves = intdiv($quantity, 6);
-            if ($halves > 0) {
-                $lines[] = $this->productLine(
-                    $product,
-                    'half_dozen',
-                    $halves,
-                    6,
-                    $product->halfDozenPrice,
-                    $product->cookedHalfDozenPrice,
-                );
-            }
-            $units = $quantity % 6;
-            if ($units > 0) {
-                $lines[] = $this->productLine(
-                    $product,
-                    'unit',
-                    $units,
-                    1,
-                    $product->unitPrice,
-                    $product->cookedUnitPrice,
-                );
-            }
-        }
-
-        foreach ($unitQuantities as $productId => $quantity) {
-            $product = $products[$productId];
-            $lines[] = $this->productLine(
-                $product,
-                'unit',
-                $quantity,
-                1,
-                $product->unitPrice,
-                $product->cookedUnitPrice,
-            );
         }
 
         $pricedAddons = $this->priceAddons($addons);
@@ -151,16 +83,22 @@ final readonly class OrderPricingEngine
         $shippingFee = $deliveryType === DeliveryType::Delivery
             ? OrderSetting::integer(OrderSettingKey::DeliveryFee)
             : 0;
-        $savings = array_sum(array_map(fn (PricingLine $line): int => $line->savings, $lines));
         $discountableSubtotal = $productsSubtotal + $addonsSubtotal;
-        $discountAmount = $this->discountAmount($discountType, $discountValue, $discountableSubtotal);
+        // Validates the discount pair with user-facing messages; the amount itself is exact below.
+        $this->discountAmount($discountType, $discountValue, $discountableSubtotal);
+        // Line prices are whole pesos; the only rounding is the final total, once, to ARS 100.
+        $totals = ExactOrderTotals::calculate($productsSubtotal * 12, $addonsSubtotal, $shippingFee, $discountType, $discountValue);
 
         return new OrderPriceQuote(
             $condition, $deliveryType, $lines, $pricedAddons,
             $productsCookedSubtotal, $rawDiscount,
-            $productsSubtotal, $addonsSubtotal, $shippingFee, $savings,
-            $discountableSubtotal, $discountType, $discountValue, $discountAmount,
-            $discountableSubtotal - $discountAmount + $shippingFee,
+            $productsSubtotal, $addonsSubtotal, $shippingFee, 0,
+            $discountableSubtotal, $discountType, $discountValue, $totals->discountAmount,
+            $totals->total,
+            roundingAdjustment: $totals->roundingAdjustment,
+            discountExactNumerator1200: $totals->discountNumerator1200,
+            netPreRoundExactNumerator1200: $totals->netNumerator1200,
+            roundingAdjustmentNumerator1200: $totals->roundingAdjustmentNumerator1200,
         );
     }
 
@@ -180,39 +118,6 @@ final readonly class OrderPricingEngine
             regularPriceTotal: $quantity * $price, savings: 0,
             productId: $product->id, productName: $product->name,
         );
-    }
-
-    /**
-     * @param  array<int, int>  $quantities
-     * @param  array<int, SellableProductPrice>  $products
-     * @return array<int, array{product_id: int, product_name: string, quantity: int}>
-     */
-    private function takeCombinedDozen(array &$quantities, array $products): array
-    {
-        $remaining = 12;
-        $composition = [];
-        foreach ($quantities as $productId => &$quantity) {
-            if ($quantity === 0 || $remaining === 0) {
-                continue;
-            }
-            $taken = min($quantity, $remaining);
-            $quantity -= $taken;
-            $remaining -= $taken;
-            $composition[] = ['product_id' => $productId, 'product_name' => $products[$productId]->name, 'quantity' => $taken];
-        }
-        unset($quantity);
-
-        return $composition;
-    }
-
-    private function normalPrice(SellableProductPrice $product, int $quantity): int
-    {
-        $dozens = intdiv($quantity, 12);
-        $remainder = $quantity % 12;
-        $halves = intdiv($remainder, 6);
-        $units = $remainder % 6;
-
-        return ($dozens * $product->dozenPrice) + ($halves * $product->halfDozenPrice) + ($units * $product->unitPrice);
     }
 
     private function discountAmount(?DiscountType $type, ?int $value, int $discountableSubtotal): int

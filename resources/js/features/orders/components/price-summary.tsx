@@ -184,6 +184,19 @@ export function PriceSummary({
                             </dd>
                         </div>
                     )}
+                    {(quote.rounding_adjustment ?? 0) !== 0 && (
+                        <div className="flex justify-between">
+                            <dt>Redondeo</dt>
+                            <dd data-testid="order-rounding">
+                                {(quote.rounding_adjustment ?? 0) > 0
+                                    ? '+'
+                                    : '−'}
+                                {formatOrderMoney.format(
+                                    Math.abs(quote.rounding_adjustment ?? 0),
+                                )}
+                            </dd>
+                        </div>
+                    )}
                     <div className="flex justify-between border-t pt-3 text-lg font-bold">
                         <dt>Total</dt>
                         <dd data-testid="order-total" aria-live="polite">

@@ -28,12 +28,22 @@ final class OrderItem extends Model
         'raw_discount',
         'regular_price_total',
         'savings',
+        'pricing_snapshot_version',
+        'applied_exact_numerator_12',
+        'cooked_exact_numerator_12',
+        'raw_discount_exact_numerator_12',
+        'surcharge_exact_numerator_12',
     ];
 
     protected function casts(): array
     {
         return [
             'pricing_mode' => PricingMode::class,
+            'pricing_snapshot_version' => 'integer',
+            'applied_exact_numerator_12' => 'integer',
+            'cooked_exact_numerator_12' => 'integer',
+            'raw_discount_exact_numerator_12' => 'integer',
+            'surcharge_exact_numerator_12' => 'integer',
             'quantity' => 'integer',
             'units_count' => 'integer',
             'unit_price' => 'integer',

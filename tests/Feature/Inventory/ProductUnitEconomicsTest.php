@@ -91,7 +91,8 @@ final class ProductUnitEconomicsTest extends TestCase
         $r = $this->estimate();
         $this->assertSame('empanada', $r['pricing_family']);
         $this->assertSame([1, 6, 12], array_column($r['presentations'], 'commercial_quantity'));
-        foreach ([[0, 1, 12000, 550, 0, 55, 605, 11395], [1, 6, 65000, 3300, 700, 400, 4400, 60600], [2, 12, 120000, 6600, 1400, 800, 8800, 111200]] as [$index,$q,$price,$direct,$packaging,$overhead,$total,$margin]) {
+        // Fixed dozen pricing: six empanadas are six units at the stored unit price.
+        foreach ([[0, 1, 12000, 550, 0, 55, 605, 11395], [1, 6, 72000, 3300, 700, 400, 4400, 67600], [2, 12, 120000, 6600, 1400, 800, 8800, 111200]] as [$index,$q,$price,$direct,$packaging,$overhead,$total,$margin]) {
             $p = $r['presentations'][$index];
             $quote = app(OrderPricingEngine::class)->quote([['product_id' => $this->product->id, 'quantity' => $q]], OrderCondition::Cooked);
             $this->assertSame($quote->total, $p['selling_price']);
@@ -249,7 +250,7 @@ final class ProductUnitEconomicsTest extends TestCase
             $this->assertSame(600, $half['direct_cost']);
             $this->assertSame(200, $half['packaging_cost']);
             $this->assertSame(800, $half['estimated_total_cost']);
-            $this->assertSame(64200, $half['estimated_margin']);
+            $this->assertSame(71200, $half['estimated_margin']);
         } else {
             $this->assertSame('insufficient_stock', $half['direct_components'][0]['warning']);
             $this->assertSame('insufficient_stock', $half['packaging_components'][0]['warning']);

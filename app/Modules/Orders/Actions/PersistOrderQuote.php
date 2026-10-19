@@ -29,6 +29,12 @@ final class PersistOrderQuote
                 'raw_discount' => $line->rawDiscount,
                 'regular_price_total' => $line->regularPriceTotal,
                 'savings' => $line->savings,
+                // Version 2 (fixed dozen): whole-peso lines, so exact numerators are twelve times the pesos.
+                'pricing_snapshot_version' => 2,
+                'applied_exact_numerator_12' => $line->lineTotal * 12,
+                'cooked_exact_numerator_12' => $line->cookedLineTotal * 12,
+                'raw_discount_exact_numerator_12' => $line->rawDiscount * 12,
+                'surcharge_exact_numerator_12' => 0,
             ]);
             foreach ($line->composition as $part) {
                 $item->compositions()->create($part);
@@ -62,6 +68,14 @@ final class PersistOrderQuote
             'discount_value' => $quote->discountValue,
             'discount_amount' => $quote->discountAmount,
             'total' => $quote->total,
+            // New quotes are always version 2; historical orders keep their own version.
+            'pricing_snapshot_version' => 2,
+            'product_exact_numerator_12' => $quote->productsSubtotal * 12,
+            'cooked_product_exact_numerator_12' => $quote->productsCookedSubtotal * 12,
+            'raw_discount_exact_numerator_12' => $quote->rawDiscount * 12,
+            'discount_exact_numerator_1200' => $quote->discountExactNumerator1200,
+            'net_pre_round_exact_numerator_1200' => $quote->netPreRoundExactNumerator1200,
+            'rounding_adjustment_numerator_1200' => $quote->roundingAdjustmentNumerator1200,
         ];
     }
 }

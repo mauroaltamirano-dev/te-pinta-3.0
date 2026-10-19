@@ -4,13 +4,15 @@ namespace App\Modules\Products\Pricing;
 
 use App\Core\Contracts\ProductPriceProvider;
 use App\Core\Data\SellableProductPrice;
+use App\Modules\Orders\Enums\OrderSettingKey;
+use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Actions\CalculateProductPrice;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Database\Eloquent\Collection;
-use LogicException;
+use Illuminate\Validation\ValidationException;
 
 final readonly class DatabaseProductPriceProvider implements ProductPriceProvider
 {
@@ -75,45 +77,35 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
     }
 
     /**
+     * Cooked empanadas charge their stored dozen and unit prices. Raw (cook at home) takes the dozen
+     * discount and applies the same unit formula: D_raw = D - discount, U_raw = EmpanadaUnitPrice(D_raw).
+     * Unit and half-dozen raw discounts are no longer used. Invalid configuration is a validation error.
+     *
      * @param  Collection<int, Product>  $products
      * @return array<int, SellableProductPrice>
      */
     private function pricesForProducts($products, bool $isCooked): array
     {
-        $empanadas = $products->filter(fn (Product $product): bool => $product->pricing_family === ProductPricingFamily::Empanada);
-        $discounts = $empanadas->isEmpty() ? [] : RawPriceDiscount::query()
-            ->pluck('amount', 'pricing_mode')
-            ->map(fn ($amount): int => (int) $amount)
-            ->all();
-
-        foreach (PriceTier::cases() as $tier) {
-            if (! $empanadas->isEmpty() && ! array_key_exists($tier->value, $discounts)) {
-                throw new LogicException("Falta el descuento de precio crudo para {$tier->value}.");
+        $needsRaw = ! $isCooked && $products->contains(fn (Product $product): bool => $product->pricing_family === ProductPricingFamily::Empanada);
+        $dozenDiscount = null;
+        $surchargePercent = null;
+        if ($needsRaw) {
+            $dozenDiscount = RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen->value)->value('amount');
+            if ($dozenDiscount === null) {
+                throw ValidationException::withMessages(['items' => 'Falta configurar el descuento de docena para cocinar en casa.']);
             }
+            $surchargePercent = OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent);
         }
 
-        return $products->map(function (Product $product) use ($discounts, $isCooked): SellableProductPrice {
-            if ($product->pricing_family === ProductPricingFamily::Unit) {
-                return new SellableProductPrice(
-                    id: $product->id,
-                    slug: $product->slug,
-                    name: $product->name,
-                    pricingFamily: $product->pricing_family->value,
-                    unitPrice: $product->unit_price,
-                    halfDozenPrice: $product->half_dozen_price,
-                    dozenPrice: $product->dozen_price,
-                    cookedUnitPrice: $product->unit_price,
-                    cookedHalfDozenPrice: $product->half_dozen_price,
-                    cookedDozenPrice: $product->dozen_price,
-                );
-            }
-
-            $rawUnitPrice = $product->unit_price - $discounts[PriceTier::Unit->value];
-            $rawHalfDozenPrice = $product->half_dozen_price - $discounts[PriceTier::HalfDozen->value];
-            $rawDozenPrice = $product->dozen_price - $discounts[PriceTier::Dozen->value];
-
-            if (min($rawUnitPrice, $rawHalfDozenPrice, $rawDozenPrice) < 0) {
-                throw new LogicException('Un descuento de precio crudo supera el precio cocinado de un producto.');
+        return $products->map(function (Product $product) use ($dozenDiscount, $surchargePercent, $needsRaw): SellableProductPrice {
+            $unitPrice = $product->unit_price;
+            $dozenPrice = $product->dozen_price;
+            if ($needsRaw && $product->pricing_family === ProductPricingFamily::Empanada) {
+                $dozenPrice -= (int) $dozenDiscount;
+                if ($dozenPrice < 0) {
+                    throw ValidationException::withMessages(['items' => "El descuento para cocinar en casa supera la docena de {$product->name}."]);
+                }
+                $unitPrice = EmpanadaUnitPrice::fromDozen($dozenPrice, (int) $surchargePercent);
             }
 
             return new SellableProductPrice(
@@ -121,9 +113,10 @@ final readonly class DatabaseProductPriceProvider implements ProductPriceProvide
                 slug: $product->slug,
                 name: $product->name,
                 pricingFamily: $product->pricing_family->value,
-                unitPrice: $isCooked ? $product->unit_price : $rawUnitPrice,
-                halfDozenPrice: $isCooked ? $product->half_dozen_price : $rawHalfDozenPrice,
-                dozenPrice: $isCooked ? $product->dozen_price : $rawDozenPrice,
+                unitPrice: $unitPrice,
+                // Half dozens do not price orders; the stored value is passed through unchanged.
+                halfDozenPrice: $product->half_dozen_price,
+                dozenPrice: $dozenPrice,
                 cookedUnitPrice: $product->unit_price,
                 cookedHalfDozenPrice: $product->half_dozen_price,
                 cookedDozenPrice: $product->dozen_price,

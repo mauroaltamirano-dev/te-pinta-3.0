@@ -67,6 +67,9 @@ final class OrderSummaryFormatter
         if ((int) $order->discount_amount > 0) {
             $lines[] = 'Descuento: -'.$this->money((int) $order->discount_amount);
         }
+        if ($order->roundingAdjustment() !== 0) {
+            $lines[] = 'Redondeo: '.$this->signedMoney($order->roundingAdjustment());
+        }
         $lines[] = '';
         $lines[] = '💰 *TOTAL: '.$this->money((int) $order->total).'*';
 
@@ -123,6 +126,9 @@ final class OrderSummaryFormatter
         }
         if ((int) $order->discount_amount > 0) {
             $lines[] = 'Descuento: -'.$this->money((int) $order->discount_amount);
+        }
+        if ($order->roundingAdjustment() !== 0) {
+            $lines[] = 'Redondeo: '.$this->signedMoney($order->roundingAdjustment());
         }
         $lines[] = 'Total: '.$this->money((int) $order->total);
         if ($order->notes !== null) {

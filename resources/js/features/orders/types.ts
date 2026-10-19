@@ -91,6 +91,7 @@ export interface PriceQuote {
     discount_type?: DiscountType | null;
     discount_value?: number | null;
     discount_amount?: number;
+    rounding_adjustment?: number;
     total: number;
 }
 export interface CreatedOrderResponse {
@@ -127,6 +128,7 @@ export interface AdminOrder {
     discount_type?: DiscountType | null;
     discount_value?: number | null;
     discount_amount?: number;
+    rounding_adjustment?: number;
     total: number;
     version?: number;
     items?: Array<{
