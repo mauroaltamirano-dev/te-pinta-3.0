@@ -12,6 +12,9 @@ final readonly class ExactOrderTotals
 
     private const SCALE = 1200;
 
+    /** Commercial rounding step for the final order total, in pesos. */
+    public const ROUNDING_STEP = 100;
+
     private function __construct(
         public int $eligibleNumerator1200,
         public int $discountNumerator1200,
@@ -56,7 +59,9 @@ final readonly class ExactOrderTotals
             throw new InvalidArgumentException('The net amount exceeds order storage.');
         }
 
-        $total = intdiv($net + 600, self::SCALE);
+        // The only commercial rounding: once, half-up, to the nearest ROUNDING_STEP pesos.
+        $step = self::SCALE * self::ROUNDING_STEP;
+        $total = intdiv($net + intdiv($step, 2), $step) * self::ROUNDING_STEP;
         if ($total > $limit) {
             throw new InvalidArgumentException('The rounded total exceeds order storage.');
         }

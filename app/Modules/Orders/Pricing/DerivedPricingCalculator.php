@@ -88,20 +88,21 @@ final class DerivedPricingCalculator
             }
         }
         $numerator = array_sum(array_column($lines, 'exact_numerator_12'));
-        $totals = ExactOrderTotals::calculate($numerator, 0, 0);
-        if ($grouped && $totals->total >= $baseline) {
+        // Products-only peso projection; the order total is rounded later, once, by ExactOrderTotals.
+        $productsSubtotal = intdiv($numerator + 6, 12);
+        if ($grouped && $productsSubtotal >= $baseline) {
             throw new InvalidArgumentException('Commercial savings disappear after peso rounding; review the participating prices and surcharges.');
         }
         // Largest-remainder projection affects display only; exact fractions remain authoritative.
         $priority = array_keys($lines);
         usort($priority, fn (int $a, int $b): int => ($lines[$b]['exact_numerator_12'] % 12 <=> $lines[$a]['exact_numerator_12'] % 12) ?: ($a <=> $b));
-        $left = $totals->productsSubtotal - array_sum(array_column($lines, 'line_total'));
+        $left = $productsSubtotal - array_sum(array_column($lines, 'line_total'));
         foreach (array_slice($priority, 0, $left) as $index) {
             $line = $lines[$index];
             $lines[$index] = [...$line, 'line_total' => $line['line_total'] + 1];
         }
 
-        return new DerivedPricingQuote($numerator, $baseline, $lines, $totals->productsSubtotal, $totals->total, $totals->roundingAdjustmentNumerator1200);
+        return new DerivedPricingQuote($numerator, $baseline, $lines, $productsSubtotal, $productsSubtotal, $productsSubtotal * 1200 - $numerator * 100);
     }
 
     private function integerInputs(mixed ...$values): bool

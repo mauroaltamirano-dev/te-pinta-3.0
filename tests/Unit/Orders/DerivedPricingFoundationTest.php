@@ -2,10 +2,8 @@
 
 namespace Tests\Unit\Orders;
 
-use App\Modules\Orders\Enums\DiscountType;
 use App\Modules\Orders\Pricing\DerivedPricingCalculator;
 use App\Modules\Orders\Pricing\DerivedTierAllocator;
-use App\Modules\Orders\Pricing\ExactOrderTotals;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
@@ -58,21 +56,13 @@ final class DerivedPricingFoundationTest extends TestCase
         self::assertSame([11000, 987, 1476], array_column($quote->lines, 'line_total'));
     }
 
-    public function test_rounding_is_half_up_once_at_peso_boundary_not_hundreds(): void
+    public function test_products_projection_is_half_up_once_at_peso_boundary(): void
     {
+        // Order totals round to hundreds in ExactOrderTotals; see OrderTotalRoundingTest.
         $quote = (new DerivedPricingCalculator)->quote([$this->product(1, 3), $this->product(2, 2, 2100, 12000, 20000), $this->product(3, 1, 1800, 10500, 18000)], 1500);
         self::assertSame(142000, $quote->productsNumerator12);
         self::assertSame(11833, $quote->total);
         self::assertSame(-400, $quote->roundingAdjustmentNumerator1200);
-        $totals = ExactOrderTotals::calculate(142000, 123, 987, DiscountType::Percentage, 10);
-        self::assertSame(11748, $totals->total);
-        self::assertSame($totals->total * 1200, $totals->netNumerator1200 + $totals->roundingAdjustmentNumerator1200);
-    }
-
-    public function test_half_up_tie_is_rounded_up_one_peso(): void
-    {
-        self::assertSame(101, ExactOrderTotals::calculate(1206, 0, 0)->total);
-        self::assertSame(123 + 987, ExactOrderTotals::calculate(123 * 12, 0, 987)->total);
     }
 
     public function test_raw_effective_rates_are_not_discounted_twice(): void
