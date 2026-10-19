@@ -44,7 +44,7 @@ final class FixedDozenRegressionTest extends TestCase
         foreach (['dulce' => 20000, 'jyq' => 22000, 'salteña' => 18000] as $key => $dozen) {
             $this->actingAs($this->admin)->post(route('admin.products.store'), [
                 'name' => "Empanada {$key}", 'category_id' => $this->category->id, 'tags' => [], 'pricing_family' => 'empanada',
-                'half_dozen_price' => intdiv($dozen, 2) + 1000, 'dozen_price' => $dozen, 'is_available' => true, 'sort_order' => 1,
+                'dozen_price' => $dozen, 'is_available' => true, 'sort_order' => 1,
             ])->assertSessionHasNoErrors()->assertRedirect();
             $this->p[$key] = Product::query()->latest('id')->firstOrFail();
         }
@@ -207,11 +207,11 @@ final class FixedDozenRegressionTest extends TestCase
         // Products: empanada unit price sent.
         $this->actingAs($this->admin)->postJson(route('admin.products.store'), [
             'name' => 'X', 'category_id' => $this->category->id, 'tags' => [], 'pricing_family' => 'empanada', 'unit_price' => 100,
-            'half_dozen_price' => 11000, 'dozen_price' => 20000, 'is_available' => true, 'sort_order' => 1,
+            'dozen_price' => 20000, 'is_available' => true, 'sort_order' => 1,
         ])->assertUnprocessable()->assertJsonValidationErrors('unit_price');
         $this->actingAs($this->admin)->putJson(route('admin.products.update', $this->p['dulce']), [
             'name' => 'Empanada dulce', 'category_id' => $this->category->id, 'tags' => [], 'pricing_family' => 'empanada', 'unit_price' => 100,
-            'half_dozen_price' => 11000, 'dozen_price' => 30000, 'is_available' => true, 'sort_order' => 1,
+            'dozen_price' => 30000, 'is_available' => true, 'sort_order' => 1,
         ])->assertUnprocessable()->assertJsonValidationErrors('unit_price');
         $this->assertSame($hash, $this->hash(), 'settings/products rejection changed the DB');
         // Orders: raw misconfiguration (discount above a dozen) through admin creation and public checkout.

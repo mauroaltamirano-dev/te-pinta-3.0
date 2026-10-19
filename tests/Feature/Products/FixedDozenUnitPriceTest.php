@@ -23,6 +23,8 @@ final class FixedDozenUnitPriceTest extends TestCase
 
     private const MIGRATION = 'migrations/2026_10_19_000000_activate_fixed_dozen_pricing.php';
 
+    private const HALF_DOZEN_MIGRATION = 'migrations/2026_10_19_000001_derive_empanada_half_dozen_prices.php';
+
     private Category $category;
 
     protected function setUp(): void
@@ -45,7 +47,24 @@ final class FixedDozenUnitPriceTest extends TestCase
         $this->post(route('admin.products.store'), $this->payload(['dozen_price' => 20000]))->assertRedirect();
 
         $product = Product::query()->sole();
-        self::assertSame([1800, 20000], [$product->unit_price, $product->dozen_price]);
+        // The half dozen is six units at the stored unit price, never entered.
+        self::assertSame([1800, 10800, 20000], [$product->unit_price, $product->half_dozen_price, $product->dozen_price]);
+    }
+
+    public function test_the_empanada_half_dozen_price_cannot_be_sent(): void
+    {
+        $this->post(route('admin.products.store'), $this->payload(['half_dozen_price' => 11000]))
+            ->assertSessionHasErrors(['half_dozen_price' => 'La media docena de las empanadas se calcula como 6 unidades.']);
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_the_retired_homogeneous_surcharge_cannot_be_sent(): void
+    {
+        $this->post(route('admin.products.store'), $this->payload(['homogeneous_half_dozen_surcharge' => '2000']))
+            ->assertSessionHasErrors(['homogeneous_half_dozen_surcharge' => 'El recargo de media docena ya no se usa; recargá la página.']);
+
+        $this->assertDatabaseCount('products', 0);
     }
 
     public function test_the_empanada_unit_price_cannot_be_sent(): void
@@ -62,7 +81,7 @@ final class FixedDozenUnitPriceTest extends TestCase
 
         $this->put(route('admin.products.update', $product), $this->payload(['dozen_price' => 22000]))->assertRedirect();
 
-        self::assertSame([2000, 22000], [$product->fresh()->unit_price, $product->fresh()->dozen_price]);
+        self::assertSame([2000, 12000, 22000], [$product->fresh()->unit_price, $product->fresh()->half_dozen_price, $product->fresh()->dozen_price]);
     }
 
     public function test_an_edit_that_keeps_the_dozen_keeps_the_stored_unit_price(): void
@@ -73,7 +92,7 @@ final class FixedDozenUnitPriceTest extends TestCase
 
         $this->put(route('admin.products.update', $product), $this->payload(['dozen_price' => 20000, 'name' => 'Dulce renombrada']))->assertRedirect();
 
-        self::assertSame(1800, $product->fresh()->unit_price);
+        self::assertSame([1800, 10800], [$product->fresh()->unit_price, $product->fresh()->half_dozen_price]);
         self::assertSame('Dulce renombrada', $product->fresh()->name);
     }
 
@@ -87,10 +106,10 @@ final class FixedDozenUnitPriceTest extends TestCase
         app(UpdateProduct::class)->execute($loadedBeforeRecalculation, new ProductData(
             name: 'Dulce renombrada', slug: null, description: null, longDescription: null, publicIngredients: null,
             categoryId: $this->category->id, tagIds: [], pricingFamily: ProductPricingFamily::Empanada, unitPrice: null,
-            halfDozenPrice: 11000, dozenPrice: 20000, isAvailable: true, sortOrder: 1, removeImage: false,
+            halfDozenPrice: null, dozenPrice: 20000, isAvailable: true, sortOrder: 1, removeImage: false,
         ), null);
 
-        self::assertSame(2000, $product->fresh()->unit_price);
+        self::assertSame([2000, 12000], [$product->fresh()->unit_price, $product->fresh()->half_dozen_price]);
         self::assertSame('Dulce renombrada', $product->fresh()->name);
     }
 
@@ -101,7 +120,7 @@ final class FixedDozenUnitPriceTest extends TestCase
             'dozen_price' => null, 'half_dozen_price' => null,
         ])->assertRedirect();
 
-        self::assertSame(7000, Product::query()->sole()->unit_price);
+        self::assertSame([7000, 7000], [Product::query()->sole()->unit_price, Product::query()->sole()->half_dozen_price]);
     }
 
     public function test_switching_a_unit_product_to_empanada_derives_its_unit_price(): void
@@ -113,7 +132,7 @@ final class FixedDozenUnitPriceTest extends TestCase
 
         $this->put(route('admin.products.update', $product), $this->payload(['dozen_price' => 18000]))->assertRedirect();
 
-        self::assertSame(1700, $product->fresh()->unit_price);
+        self::assertSame([1700, 10200], [$product->fresh()->unit_price, $product->fresh()->half_dozen_price]);
     }
 
     public function test_the_product_editor_receives_the_surcharge_percentage(): void
@@ -141,6 +160,23 @@ final class FixedDozenUnitPriceTest extends TestCase
         self::assertSame(10, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
     }
 
+    public function test_existing_empanada_half_dozens_become_six_stored_units_and_unit_products_stay(): void
+    {
+        $dulce = $this->empanada(20000);
+        $pizza = Product::query()->create([
+            'category_id' => $this->category->id, 'name' => 'Pizza', 'slug' => 'pizza', 'pricing_family' => 'unit',
+            'unit_price' => 7000, 'half_dozen_price' => 7000, 'dozen_price' => 7000, 'is_available' => true,
+        ]);
+        DB::table('products')->where('id', $dulce->id)->update(['half_dozen_price' => 11500]);
+        $dulce->delete();
+
+        (require database_path(self::HALF_DOZEN_MIGRATION))->up();
+
+        self::assertSame(10800, (int) DB::table('products')->where('id', $dulce->id)->value('half_dozen_price'));
+        $pizzaPrices = (array) DB::table('products')->where('id', $pizza->id)->first(['unit_price', 'half_dozen_price']);
+        self::assertSame([7000, 7000], array_values(array_map('intval', $pizzaPrices)));
+    }
+
     private function empanada(int $dozen): Product
     {
         $this->post(route('admin.products.store'), $this->payload(['dozen_price' => $dozen]))->assertRedirect();
@@ -156,7 +192,7 @@ final class FixedDozenUnitPriceTest extends TestCase
     {
         return [
             'name' => 'Dulce', 'category_id' => $this->category->id, 'tags' => [], 'pricing_family' => 'empanada',
-            'half_dozen_price' => 11000, 'dozen_price' => 20000, 'is_available' => true, 'sort_order' => 1,
+            'dozen_price' => 20000, 'is_available' => true, 'sort_order' => 1,
             ...$overrides,
         ];
     }

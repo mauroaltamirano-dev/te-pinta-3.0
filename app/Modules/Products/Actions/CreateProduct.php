@@ -4,6 +4,7 @@ namespace App\Modules\Products\Actions;
 
 use App\Modules\Products\Data\ProductData;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Pricing\EmpanadaUnitPrice;
 use App\Modules\Products\Support\UniqueSlug;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -38,8 +39,8 @@ final class CreateProduct
                     'public_ingredients' => $data->publicIngredients,
                     'image_path' => $imagePath ?: null,
                     'sort_order' => $data->sortOrder,
-                    'unit_price' => $data->unitPrice ?? $this->unitPrices->forDozen($data->dozenPrice),
-                    'half_dozen_price' => $data->halfDozenPrice,
+                    'unit_price' => $unitPrice = $data->unitPrice ?? $this->unitPrices->forDozen($data->dozenPrice),
+                    'half_dozen_price' => $data->halfDozenPrice ?? EmpanadaUnitPrice::halfDozen($unitPrice),
                     'dozen_price' => $data->dozenPrice,
                     'is_available' => $data->isAvailable,
                 ]);

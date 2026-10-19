@@ -34,8 +34,9 @@ final class RecalculateEmpanadaUnitPrices
             ->orderBy('id')
             ->lockForUpdate()
             ->get()
-            ->each(fn (Product $product) => $product->update([
-                'unit_price' => EmpanadaUnitPrice::fromDozen($product->dozen_price, $surchargePercent),
-            ]));
+            ->each(function (Product $product) use ($surchargePercent): void {
+                $unitPrice = EmpanadaUnitPrice::fromDozen($product->dozen_price, $surchargePercent);
+                $product->update(['unit_price' => $unitPrice, 'half_dozen_price' => EmpanadaUnitPrice::halfDozen($unitPrice)]);
+            });
     }
 }

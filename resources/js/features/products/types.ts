@@ -25,7 +25,6 @@ export interface Product {
     tags: ProductTag[];
     unit_price: number;
     half_dozen_price: number;
-    homogeneous_half_dozen_surcharge?: string | null;
     dozen_price: number;
     is_available: boolean;
     sort_order: number;

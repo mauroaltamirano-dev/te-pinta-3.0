@@ -19,7 +19,8 @@ final readonly class ProductData
         public ProductPricingFamily $pricingFamily,
         /** Null for empanadas: the stored unit price is derived from the dozen. */
         public ?int $unitPrice,
-        public int $halfDozenPrice,
+        /** Null for empanadas: the stored half dozen is six units at the derived unit price. */
+        public ?int $halfDozenPrice,
         public int $dozenPrice,
         public bool $isAvailable,
         public int $sortOrder,
@@ -45,7 +46,8 @@ final readonly class ProductData
             tagIds: $validated->collect('tags')->map(fn (mixed $id): int => (int) $id)->all(),
             pricingFamily: $pricingFamily,
             unitPrice: $unitPrice,
-            halfDozenPrice: $unitPrice ?? $validated->integer('half_dozen_price'),
+            // Null for empanadas: the stored half dozen is six derived units.
+            halfDozenPrice: $unitPrice,
             dozenPrice: $unitPrice ?? $validated->integer('dozen_price'),
             isAvailable: $validated->boolean('is_available'),
             sortOrder: $validated->integer('sort_order'),

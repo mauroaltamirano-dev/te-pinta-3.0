@@ -27,15 +27,15 @@ final class ProductCatalogSeederTest extends TestCase
         $this->assertDatabaseHas('categories', ['name' => 'Especiales', 'slug' => 'especiales']);
         $this->assertDatabaseHas('tags', ['name' => 'Vegetariana', 'slug' => 'vegetariana']);
 
-        // Unit prices are derived from the dozen: D / 12 × 1.1, rounded half-up to ARS 100.
+        // Unit prices are derived from the dozen: D / 12 × 1.1, rounded half-up to ARS 100; the half dozen is 6 units.
         $expected = [
-            'Salteña' => [1700, 10000, 18000, 'especiales', false],
-            'Humita Tucumana' => [1600, 9500, 17000, 'especiales', true],
-            'Hongos al puerro' => [1700, 10000, 18000, 'especiales', true],
-            'Pollo y portobellos' => [1700, 10000, 18000, 'especiales', false],
-            'Matambre y verduras asadas' => [1700, 10500, 19000, 'especiales', false],
-            'Criolla Salada' => [1700, 10000, 18000, 'clasicas', false],
-            'Criolla Dulce' => [1700, 10000, 18000, 'clasicas', false],
+            'Salteña' => [1700, 10200, 18000, 'especiales', false],
+            'Humita Tucumana' => [1600, 9600, 17000, 'especiales', true],
+            'Hongos al puerro' => [1700, 10200, 18000, 'especiales', true],
+            'Pollo y portobellos' => [1700, 10200, 18000, 'especiales', false],
+            'Matambre y verduras asadas' => [1700, 10200, 19000, 'especiales', false],
+            'Criolla Salada' => [1700, 10200, 18000, 'clasicas', false],
+            'Criolla Dulce' => [1700, 10200, 18000, 'clasicas', false],
             'Jamón y Queso' => [1500, 9000, 16000, 'clasicas', false],
             'Caprese' => [1500, 9000, 16000, 'clasicas', true],
         ];

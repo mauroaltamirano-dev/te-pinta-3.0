@@ -81,7 +81,7 @@ final class ProductManagementTest extends TestCase
 
         $product = Product::query()->sole();
         $this->assertSame('caprese', $product->slug);
-        // 16000 / 12 × 1.1 = 1466.67 → 1500, derived from the dozen.
+        // 16000 / 12 × 1.1 = 1466.67 → 1500, derived from the dozen; the half dozen is 6 × 1500.
         $this->assertSame([1500, 9000, 16000], [
             $product->unit_price,
             $product->half_dozen_price,
@@ -408,7 +408,7 @@ final class ProductManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->post(route('admin.products.store'), $this->validPayload($category, ['dozen_price' => 1999, 'half_dozen_price' => 1000]))
+            ->post(route('admin.products.store'), $this->validPayload($category, ['dozen_price' => 1999]))
             ->assertSessionHasErrors('dozen_price');
 
         $this->assertDatabaseCount('products', 0);
@@ -538,7 +538,6 @@ final class ProductManagementTest extends TestCase
             'category_id' => $category->id,
             'tags' => [],
             'pricing_family' => 'empanada',
-            'half_dozen_price' => 9000,
             'dozen_price' => 16000,
             'is_available' => true,
             'sort_order' => 1,

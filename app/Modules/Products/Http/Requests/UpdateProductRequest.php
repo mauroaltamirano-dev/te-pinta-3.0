@@ -10,8 +10,6 @@ use Illuminate\Validation\Rule;
 
 final class UpdateProductRequest extends FormRequest
 {
-    use NormalizesHomogeneousSurcharge;
-
     public function authorize(): bool
     {
         return $this->user()?->can('update', $this->route('product')) === true;
@@ -38,7 +36,10 @@ final class UpdateProductRequest extends FormRequest
             'pricing_family' => ['required', Rule::enum(ProductPricingFamily::class)],
             // The empanada unit price is derived from its dozen (EmpanadaUnitPrice) and never accepted from the client.
             'unit_price' => [Rule::requiredIf(! $isEmpanada), Rule::prohibitedIf($isEmpanada), 'nullable', ...$money],
-            'half_dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money],
+            // The empanada half dozen is six derived units; a unit product stores its unit price.
+            'half_dozen_price' => ['prohibited'],
+            // Retired P0 input that used to set the half dozen.
+            'homogeneous_half_dozen_surcharge' => ['prohibited'],
             'dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::Dozen)] : [])],
             'is_available' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:2147483647'],
@@ -48,12 +49,15 @@ final class UpdateProductRequest extends FormRequest
     /** @return array<string, string> */
     public function messages(): array
     {
-        return ['unit_price.prohibited' => 'El precio por unidad de las empanadas se calcula desde la docena.'];
+        return [
+            'unit_price.prohibited' => 'El precio por unidad de las empanadas se calcula desde la docena.',
+            'half_dozen_price.prohibited' => 'La media docena de las empanadas se calcula como 6 unidades.',
+            'homogeneous_half_dozen_surcharge.prohibited' => 'El recargo de media docena ya no se usa; recargá la página.',
+        ];
     }
 
     protected function prepareForValidation(): void
     {
-        $this->normalizeHomogeneousSurcharge();
         $this->merge([
             'description' => $this->input('description') ?: null,
             'long_description' => $this->input('long_description') ?: null,

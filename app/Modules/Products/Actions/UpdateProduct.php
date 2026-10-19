@@ -5,6 +5,7 @@ namespace App\Modules\Products\Actions;
 use App\Modules\Products\Data\ProductData;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Pricing\EmpanadaUnitPrice;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +45,7 @@ final class UpdateProduct
                     'image_path' => $newImagePath ?: ($removeImage ? null : $product->image_path),
                     'sort_order' => $data->sortOrder,
                     'unit_price' => $unitPrice,
-                    'half_dozen_price' => $data->halfDozenPrice,
+                    'half_dozen_price' => $data->halfDozenPrice ?? EmpanadaUnitPrice::halfDozen($unitPrice),
                     'dozen_price' => $data->dozenPrice,
                     'is_available' => $data->isAvailable,
                 ]);

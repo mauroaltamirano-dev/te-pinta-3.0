@@ -90,7 +90,7 @@ Orders reads product prices only through `Core\Contracts\ProductPriceProvider` (
 | --- | --- |
 | Orders imports Products models directly | `Orders/Models/OrderItem.php`, `Orders/Models/OrderItemComposition.php`, `Orders/Actions/BuildAdminOrderFormOptions.php`, `Orders/Actions/BuildOrderDashboardData.php` |
 | Customers ↔ Orders cycle | `Customers/Models/Customer.php` and `Customers/Http/Controllers/CustomerManagementController.php` import Orders; `Orders/Models/Order.php`, `Orders/Actions/ResolveOrderCustomer.php` import Customers |
-| Products ↔ Orders cycle | `Products/Http/Requests/NormalizesHomogeneousSurcharge.php` reads `Orders\Models\OrderSetting` |
+| Products ↔ Orders cycle | `Products/Pricing/DatabaseProductPriceProvider.php`, `Products/Http/Controllers/ProductManagementController.php` and `Products/Actions/RecalculateEmpanadaUnitPrices.php` read `Orders\Models\OrderSetting` |
 | Settings writes Orders and Products tables | `Settings/Actions/UpdateOrderingSettings.php` writes `OrderSetting`, `OrderAddon`, `RawPriceDiscount` |
 | Management depends heavily on Inventory | Rich purchases (`Management/Actions/CreatePurchase.php`, `ReversePurchase.php`, `Models/PurchaseLine.php`, `Http/Controllers/PurchaseController.php`) use Inventory models and actions directly (28 imports) |
 | Inventory reads Orders pricing and tables | `Inventory/Queries/BuildProductUnitEconomics.php` uses `OrderPricingEngine`; `Inventory/Actions/ConsumeDeliveredOrder.php` reads `orders`/`order_items` with `DB::table` |

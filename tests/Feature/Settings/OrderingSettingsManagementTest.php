@@ -185,7 +185,9 @@ final class OrderingSettingsManagementTest extends TestCase
         $this->assertSame(20, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
         // U = D / 12 × 1.20, rounded half-up to ARS 100.
         $this->assertSame(2000, $dulce->fresh()->unit_price);
+        $this->assertSame(12000, $dulce->fresh()->half_dozen_price);
         $this->assertSame(2200, Product::withTrashed()->findOrFail($deleted->id)->unit_price);
+        $this->assertSame(13200, Product::withTrashed()->findOrFail($deleted->id)->half_dozen_price);
         $this->assertSame(1550, $soda->fresh()->unit_price);
         $this->assertSame(20000, $dulce->fresh()->dozen_price);
     }

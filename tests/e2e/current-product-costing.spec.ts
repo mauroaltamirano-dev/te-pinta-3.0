@@ -40,9 +40,9 @@ async function createProduct(
                 category_id: categoryId,
                 is_available: true,
                 sort_order: 10,
-                // Empanada unit prices are derived from the dozen on the server.
+                // Empanada unit and half-dozen prices are derived from the dozen on the server.
                 ...(family === 'empanada'
-                    ? { half_dozen_price: 9800, dozen_price: 18000 }
+                    ? { dozen_price: 18000 }
                     : { unit_price: 2500 }),
             };
             const r = await fetch('/admin/settings/products', {

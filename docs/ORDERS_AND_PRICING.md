@@ -100,14 +100,15 @@ The engine receives final quantities per product, one condition for the whole or
 | --- | --- |
 | Empanada dozen `D` | `products.dozen_price`, the only empanada price an operator enters |
 | Empanada unit `U` | `products.unit_price`, **stored**: `U = D / 12 × (1 + p%)` rounded half-up to ARS 100, `p` = `order_settings.empanada_unit_surcharge_percent` (seed 10) |
+| Empanada half dozen | `products.half_dozen_price`, **stored** as `6 × U` and recalculated with `U`; never entered and never used to price orders (6 units are priced as 6 × `U`) |
 | Raw (cook at home) | `D_raw = D − raw_price_discounts.dozen`; `U_raw` = same formula on `D_raw`, at quote time |
 | `unit` product | `products.unit_price`, entered by the operator |
 | Add-on | Current `order_addons.price` of an available add-on |
 | Shipping | `delivery_fee` for `delivery`; 0 otherwise |
 
-`U` is recalculated only when `D` changes (product create/edit, or switching a product to `empanada`) or when `p` changes in Configuración (every empanada, soft-deleted included, `RecalculateEmpanadaUnitPrices`). It is never recalculated per order. Product requests reject `unit_price` for empanadas; the editor shows it read-only. `EmpanadaUnitPrice` (`app/Modules/Products/Pricing/`) is the single formula.
+`U` is recalculated only when `D` changes (product create/edit, or switching a product to `empanada`) or when `p` changes in Configuración (every empanada, soft-deleted included, `RecalculateEmpanadaUnitPrices`). It is never recalculated per order. Product requests reject `unit_price`, `half_dozen_price` and the retired `homogeneous_half_dozen_surcharge` for empanadas; the editor shows the unit and half dozen read-only. `EmpanadaUnitPrice` (`app/Modules/Products/Pricing/`) is the single formula.
 
-Retired inputs (rows kept, never read): `order_settings.combined_dozen_cooked_price` / `combined_dozen_raw_price`, `raw_price_discounts.unit` / `half_dozen`. `half_dozen_price` is still stored and edited but does not price orders.
+Retired inputs (rows kept, never read): `order_settings.combined_dozen_cooked_price` / `combined_dozen_raw_price`, `raw_price_discounts.unit` / `half_dozen`. The half-dozen surcharge preview endpoint and `HomogeneousHalfDozenPrice` were removed; migration `2026_10_19_000001` rewrote every stored empanada half dozen as `6 × U` (its `down` keeps them).
 
 ### Pricing families
 

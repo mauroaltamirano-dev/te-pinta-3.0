@@ -9,8 +9,9 @@ use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
-use App\Modules\Products\Pricing\HomogeneousHalfDozenPrice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 final class DerivedPricingConfigurationTest extends TestCase
@@ -25,38 +26,28 @@ final class DerivedPricingConfigurationTest extends TestCase
         }
     }
 
-    public function test_surcharge_is_derived_without_repricing_and_can_be_edited_through_products(): void
+    public function test_products_no_longer_accept_a_homogeneous_surcharge(): void
     {
         $this->actingAs(User::factory()->administrator()->create());
         $category = Category::query()->create(['name' => 'Fixture', 'slug' => 'fixture', 'is_active' => true]);
         $payload = ['name' => 'Fixture Matambre', 'category_id' => $category->id, 'pricing_family' => 'empanada', 'dozen_price' => 22000, 'homogeneous_half_dozen_surcharge' => '2000', 'is_available' => true, 'sort_order' => 1];
-        $this->postJson(route('admin.products.store'), $payload)->assertRedirect();
-        $product = Product::query()->sole();
-        self::assertSame(13000, $product->half_dozen_price);
-        self::assertSame('2000', HomogeneousHalfDozenPrice::surcharge($product->half_dozen_price, $product->dozen_price));
-        $this->putJson(route('admin.products.update', $product), [...$payload, 'homogeneous_half_dozen_surcharge' => '1500'])->assertRedirect();
-        self::assertSame(12500, $product->fresh()->half_dozen_price);
-        $this->assertDatabaseCount('products', 1);
-    }
-
-    public function test_legacy_half_price_writes_still_work_without_a_second_source_of_truth(): void
-    {
-        self::assertSame('1000', HomogeneousHalfDozenPrice::surcharge(10500, 19000));
-        self::assertSame('999.5', HomogeneousHalfDozenPrice::surcharge(10500, 19001));
-        self::assertSame(10500, HomogeneousHalfDozenPrice::fromSurcharge(19001, '999.5'));
-    }
-
-    public function test_preview_is_authorized_exact_and_read_only(): void
-    {
-        $url = '/admin/settings/products/half-dozen-preview';
-        $this->postJson($url, ['dozen_price' => 22000, 'homogeneous_half_dozen_surcharge' => '2000'])->assertUnauthorized();
-        $this->actingAs(User::factory()->create())->postJson($url, ['dozen_price' => 22000, 'homogeneous_half_dozen_surcharge' => '2000'])->assertForbidden();
-        $this->actingAs(User::factory()->administrator()->create())->postJson($url, ['dozen_price' => 22000, 'homogeneous_half_dozen_surcharge' => '2000'])->assertOk()->assertJsonPath('half_dozen_price', 13000);
-        $this->postJson($url, ['dozen_price' => 22001, 'homogeneous_half_dozen_surcharge' => '2000'])->assertUnprocessable();
+        // The empanada half dozen is six derived units, so the P0 surcharge input is retired.
+        $this->postJson(route('admin.products.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('homogeneous_half_dozen_surcharge');
         $this->assertDatabaseCount('products', 0);
-        $this->assertDatabaseCount('orders', 0);
-        $this->assertDatabaseCount('financial_transactions', 0);
-        $this->assertDatabaseCount('inventory_transactions', 0);
+    }
+
+    public function test_the_retired_half_dozen_preview_and_surcharge_field_are_gone(): void
+    {
+        $this->actingAs(User::factory()->administrator()->create());
+        self::assertFalse(Route::has('admin.products.half-dozen-preview'));
+        // The old path now only matches the product resource route, which accepts no POST.
+        $this->postJson('/admin/settings/products/half-dozen-preview', ['dozen_price' => 22000, 'homogeneous_half_dozen_surcharge' => '2000'])->assertMethodNotAllowed();
+        $category = Category::query()->create(['name' => 'Fixture', 'slug' => 'fixture', 'is_active' => true]);
+        Product::query()->create(['category_id' => $category->id, 'name' => 'Fixture Matambre', 'slug' => 'fixture-matambre', 'pricing_family' => 'empanada', 'unit_price' => 2000, 'half_dozen_price' => 12000, 'dozen_price' => 22000, 'is_available' => true]);
+
+        $this->get(route('admin.products.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('products.0.half_dozen_price', 12000)
+            ->missing('products.0.homogeneous_half_dozen_surcharge'));
     }
 
     public function test_settings_updates_the_surcharge_and_legacy_clients_preserve_it(): void
@@ -81,12 +72,12 @@ final class DerivedPricingConfigurationTest extends TestCase
         $this->actingAs(User::factory()->administrator()->create());
         $category = Category::query()->create(['name' => 'Legacy', 'slug' => 'legacy']);
         $product = Product::query()->create(['category_id' => $category->id, 'name' => 'Legacy', 'slug' => 'legacy', 'pricing_family' => 'empanada', 'unit_price' => 2200, 'half_dozen_price' => 14000, 'dozen_price' => 27000, 'is_available' => false]);
-        $payload = ['name' => 'Legacy renamed', 'category_id' => $category->id, 'pricing_family' => 'empanada', 'half_dozen_price' => 14000, 'dozen_price' => 27000, 'is_available' => false, 'sort_order' => 0];
-        $this->putJson(route('admin.products.update', $product), $payload)->assertRedirect();
-        // A half dozen below half the dozen would be a negative surcharge.
+        $payload = ['name' => 'Legacy renamed', 'category_id' => $category->id, 'pricing_family' => 'empanada', 'dozen_price' => 27000, 'is_available' => false, 'sort_order' => 0];
+        // The half dozen is never entered; an edit stores six units at the kept unit price.
         $this->putJson(route('admin.products.update', $product), [...$payload, 'half_dozen_price' => 13000])->assertUnprocessable()->assertJsonValidationErrors('half_dozen_price');
         self::assertSame(14000, $product->fresh()->half_dozen_price);
-        unset($payload['half_dozen_price']);
+        $this->putJson(route('admin.products.update', $product), $payload)->assertRedirect();
+        self::assertSame([2200, 13200], [$product->fresh()->unit_price, $product->fresh()->half_dozen_price]);
         $this->putJson(route('admin.products.update', $product), [...$payload, 'pricing_family' => 'unit', 'homogeneous_half_dozen_surcharge' => '1000'])->assertUnprocessable();
     }
 

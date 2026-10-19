@@ -9,6 +9,12 @@ final class EmpanadaUnitPrice
 {
     public const ROUNDING_STEP = 100;
 
+    /** The empanada half dozen is never entered: it is six units at the stored unit price. */
+    public static function halfDozen(int $unitPrice): int
+    {
+        return 6 * $unitPrice;
+    }
+
     public static function fromDozen(int $dozenPrice, int $surchargePercent): int
     {
         if ($dozenPrice < 0 || $surchargePercent < 0 || $surchargePercent > 100) {
