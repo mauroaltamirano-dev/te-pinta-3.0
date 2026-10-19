@@ -16,7 +16,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use LogicException;
 
 final class OrderingSettingsController
 {
@@ -24,11 +23,8 @@ final class OrderingSettingsController
     {
         abort_unless($request->user()?->can(Permission::CatalogManage->value) === true, 403);
 
+        // A missing row is shown empty; saving validates it like any other required value and creates it.
         $dozenRawDiscount = RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen->value)->value('amount');
-
-        if ($dozenRawDiscount === null) {
-            throw new LogicException('Falta el descuento de precio crudo dozen.');
-        }
 
         return Inertia::render('admin/settings/general', [
             'branding' => ['accent_color' => $branding->palette()->accent],
@@ -37,7 +33,7 @@ final class OrderingSettingsController
                 'delivery_fee' => OrderSetting::integer(OrderSettingKey::DeliveryFee),
                 'whatsapp_order_phone' => OrderSetting::string(OrderSettingKey::WhatsappOrderPhone),
                 // Only the dozen discount prices raw orders; unit and half-dozen rows are retired history.
-                'raw_price_discounts' => ['dozen' => (int) $dozenRawDiscount],
+                'raw_price_discounts' => ['dozen' => $dozenRawDiscount === null ? null : (int) $dozenRawDiscount],
                 'addons' => OrderAddon::query()
                     ->orderBy('sort_order')
                     ->orderBy('id')

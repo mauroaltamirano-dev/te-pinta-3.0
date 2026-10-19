@@ -13,7 +13,8 @@ interface OrderingSettings {
     empanada_unit_surcharge_percent: number | '';
     delivery_fee: number;
     whatsapp_order_phone: string;
-    raw_price_discounts: { dozen: number };
+    /** Null when the dozen discount row is missing; the backend requires it on save. */
+    raw_price_discounts: { dozen: number | null };
     addons: Array<{
         id: number;
         name: string;
@@ -165,7 +166,7 @@ export default function GeneralSettings({
                             id="raw-discount-dozen"
                             min={1}
                             label="Docena"
-                            value={form.data.raw_price_discounts.dozen}
+                            value={form.data.raw_price_discounts.dozen ?? ''}
                             error={form.errors['raw_price_discounts.dozen']}
                             onChange={(value) =>
                                 form.setData('raw_price_discounts', {
@@ -283,7 +284,7 @@ function MoneyField({
 }: {
     id: string;
     label: string;
-    value: number;
+    value: number | '';
     error?: string;
     min?: number;
     onChange: (value: number) => void;

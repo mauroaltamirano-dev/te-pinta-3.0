@@ -79,6 +79,41 @@ final class OrderingSettingsManagementTest extends TestCase
                 ->where('orderingSettings.addons.1.price', 200));
     }
 
+    public function test_missing_dozen_raw_discount_is_shown_empty_and_validated_normally(): void
+    {
+        RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen)->delete();
+        $admin = User::factory()->administrator()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.settings.general.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page): Assert => $page
+                ->component('admin/settings/general', false)
+                ->where('orderingSettings.raw_price_discounts.dozen', null));
+
+        $payload = $this->validPayload();
+        $payload['raw_price_discounts']['dozen'] = null;
+        $payload['delivery_fee'] = 900;
+
+        $this->actingAs($admin)
+            ->from(route('admin.settings.general.index'))
+            ->put(route('admin.settings.general.update'), $payload)
+            ->assertRedirect(route('admin.settings.general.index'))
+            ->assertSessionHasErrors('raw_price_discounts.dozen');
+
+        $this->assertSame(0, OrderSetting::integer(OrderSettingKey::DeliveryFee));
+        $this->assertDatabaseMissing('raw_price_discounts', ['pricing_mode' => PriceTier::Dozen->value]);
+
+        $payload['raw_price_discounts']['dozen'] = 2000;
+
+        $this->actingAs($admin)
+            ->put(route('admin.settings.general.update'), $payload)
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000]);
+        $this->assertSame(900, OrderSetting::integer(OrderSettingKey::DeliveryFee));
+    }
+
     public function test_admin_updates_all_ordering_configuration_atomically(): void
     {
         $admin = User::factory()->administrator()->create();
