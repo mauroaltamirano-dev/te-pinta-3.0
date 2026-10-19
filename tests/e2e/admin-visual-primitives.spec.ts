@@ -402,19 +402,19 @@ test('desktop sidebar keeps Marketing and later destinations reachable on short 
         await expect(settings).toBeFocused();
         await expect(settings).toBeInViewport();
         await settings.press('Shift+Tab');
-        const instagram = navigation.getByRole('link', {
-            name: 'Instagram',
+        const management = navigation.getByRole('link', {
+            name: 'Gestión',
             exact: true,
         });
-        await expect(instagram).toBeFocused();
-        await expect(instagram).toBeInViewport();
+        await expect(management).toBeFocused();
+        await expect(management).toBeInViewport();
 
         await navigation
-            .getByRole('link', { name: 'Inicio', exact: true })
+            .getByRole('link', { name: 'Vender', exact: true })
             .click();
         await expect(page).toHaveURL(/\/admin$/);
         await expect(
-            navigation.getByRole('link', { name: 'Inicio', exact: true }),
+            navigation.getByRole('link', { name: 'Vender', exact: true }),
         ).toBeInViewport();
         expect(
             await page.evaluate(

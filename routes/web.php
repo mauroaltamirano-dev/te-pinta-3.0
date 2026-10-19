@@ -13,7 +13,6 @@ Route::middleware(['auth', 'verified', 'restaurant.member', 'admin.request.log']
         require base_path('app/Modules/Orders/routes.php');
         require base_path('app/Modules/Customers/routes.php');
         require base_path('app/Modules/Products/routes.php');
-        require base_path('app/Modules/Analytics/routes.php');
         require base_path('app/Modules/Management/routes.php');
         require base_path('app/Modules/Inventory/routes.php');
         require base_path('app/Modules/Settings/routes.php');

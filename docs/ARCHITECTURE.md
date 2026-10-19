@@ -40,7 +40,7 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 | `Instagram` | Story assets, schedules, publication queue, n8n automation API, signed media |
 | `PublicSite` | Public routes (`/`, `/menu`, `/cart`, checkout endpoints) delegating to Products and Orders |
 | `Restaurant` | Physical floor configuration: dining areas and tables (`/admin/restaurant/floor`) |
-| `Analytics` | Placeholder only: a route rendering an empty page and an unused `AnalyticsReader` interface |
+| `Analytics` | Unused `AnalyticsReader` interface only; no route or page until metrics are defined |
 
 `Inventory\Contracts\InventoryAvailability` and `Dashboard\Contracts\PublicPromotionFeed` are declared but have no implementation or caller.
 

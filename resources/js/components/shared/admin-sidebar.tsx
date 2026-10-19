@@ -1,7 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    BarChart3,
-    Instagram,
     LayoutDashboard,
     LogOut,
     Megaphone,
@@ -10,12 +8,12 @@ import {
     Settings,
     ShoppingBasket,
     Store,
-    UserCog,
     Users,
+    UtensilsCrossed,
     WalletCards,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
@@ -25,134 +23,41 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+    activeAdminEntry,
+    adminMobilePrimaryEntries,
+    visibleAdminNavigation,
+} from '@/features/admin-navigation/model';
+import type { AdminNavigationIcon } from '@/features/admin-navigation/model';
 import { cn } from '@/lib/utils';
-import type { Permission } from '@/types/auth';
 
-const navigation: {
-    label: string;
-    href: string;
-    icon: LucideIcon;
-    permission: Permission;
-}[] = [
-    { label: 'Inicio', href: '/admin', icon: Store, permission: 'orders.view' },
-    {
-        label: 'Panel operativo',
-        href: '/admin/dashboard',
-        icon: LayoutDashboard,
-        permission: 'dashboard.view',
-    },
-    {
-        label: 'Pedidos',
-        href: '/admin/orders',
-        icon: ShoppingBasket,
-        permission: 'orders.view',
-    },
-    {
-        label: 'Clientes',
-        href: '/admin/customers',
-        icon: Users,
-        permission: 'customers.view',
-    },
-    {
-        label: 'Analíticas',
-        href: '/admin/analytics',
-        icon: BarChart3,
-        permission: 'dashboard.view',
-    },
-    {
-        label: 'Gestión',
-        href: '/admin/management',
-        icon: WalletCards,
-        permission: 'finance.view',
-    },
-    {
-        label: 'Inventario',
-        href: '/admin/inventory',
-        icon: Package,
-        permission: 'inventory.view',
-    },
-    {
-        label: 'Costo actual',
-        href: '/admin/inventory/costing',
-        icon: Package,
-        permission: 'inventory.view',
-    },
-    {
-        label: 'Políticas de costo',
-        href: '/admin/inventory/costing-policies',
-        icon: Package,
-        permission: 'inventory.view',
-    },
-    {
-        label: 'Recetas',
-        href: '/admin/inventory/recipes',
-        icon: Package,
-        permission: 'inventory.view',
-    },
-    {
-        label: 'Ajustes',
-        href: '/admin/inventory/adjustments',
-        icon: Package,
-        permission: 'inventory.view',
-    },
-    {
-        label: 'Producción',
-        href: '/admin/inventory/production',
-        icon: Package,
-        permission: 'inventory.view',
-    },
-    {
-        label: 'Plano del restaurante',
-        href: '/admin/restaurant/floor',
-        icon: Store,
-        permission: 'orders.manage',
-    },
-    {
-        label: 'Marketing',
-        href: '/admin/marketing',
-        icon: Megaphone,
-        permission: 'marketing.manage',
-    },
-    {
-        label: 'Instagram',
-        href: '/admin/marketing/instagram',
-        icon: Instagram,
-        permission: 'marketing.manage',
-    },
-    {
-        label: 'Configuración',
-        href: '/admin/settings',
-        icon: Settings,
-        permission: 'catalog.view',
-    },
-    {
-        label: 'Usuarios',
-        href: '/admin/users',
-        icon: UserCog,
-        permission: 'users.manage',
-    },
-];
+const icons: Record<AdminNavigationIcon, LucideIcon> = {
+    sell: Store,
+    orders: ShoppingBasket,
+    customers: Users,
+    dashboard: LayoutDashboard,
+    products: UtensilsCrossed,
+    marketing: Megaphone,
+    inventory: Package,
+    management: WalletCards,
+    settings: Settings,
+};
 
 export function AdminSidebar() {
     const { url, props } = usePage();
     const [moreOpen, setMoreOpen] = useState(false);
-    const permissions = props.auth?.permissions ?? [];
     // Only modules the backend lets this user open; the routes enforce it.
-    const allowedNavigation = navigation.filter(({ permission }) =>
-        permissions.includes(permission),
-    );
-    const primaryNavigation = allowedNavigation.filter(({ href }) =>
-        ['/admin', '/admin/orders', '/admin/customers'].includes(href),
-    );
-    const secondaryNavigation = allowedNavigation.filter(
-        ({ href }) => !primaryNavigation.some((item) => item.href === href),
-    );
-    const isActive = (href: string) =>
-        href === '/admin'
-            ? url === href
-            : href === '/admin/marketing'
-              ? url === href
-              : url === href || url.startsWith(`${href}/`);
+    const groups = visibleAdminNavigation(props.auth?.permissions ?? []);
+    const activeHref = activeAdminEntry(groups, url)?.href;
+    const primaryNavigation = adminMobilePrimaryEntries(groups);
+    const secondaryGroups = groups
+        .map((group) => ({
+            ...group,
+            entries: group.entries.filter(
+                (entry) => !primaryNavigation.includes(entry),
+            ),
+        }))
+        .filter((group) => group.entries.length > 0);
 
     const mobileNavigation =
         typeof document !== 'undefined'
@@ -160,34 +65,34 @@ export function AdminSidebar() {
                   <>
                       <nav
                           aria-label="Navegación principal"
-                          className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-4 rounded-2xl border border-admin-border bg-admin-surface px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden"
+                          style={{
+                              gridTemplateColumns: `repeat(${primaryNavigation.length + 1}, minmax(0, 1fr))`,
+                          }}
+                          className="fixed inset-x-3 bottom-3 z-50 grid rounded-2xl border border-admin-border bg-admin-surface px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden"
                       >
-                          {primaryNavigation.map(
-                              ({ label, href, icon: Icon }) => {
-                                  const active = isActive(href);
+                          {primaryNavigation.map(({ label, href, icon }) => {
+                              const Icon = icons[icon];
+                              const active = href === activeHref;
 
-                                  return (
-                                      <Link
-                                          key={href}
-                                          href={href}
-                                          aria-current={
-                                              active ? 'page' : undefined
-                                          }
-                                          className={cn(
-                                              'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.6875rem] font-medium text-admin-text-tertiary transition-[color,background-color,transform] active:scale-[0.97]',
-                                              active &&
-                                                  'bg-admin-accent/15 text-admin-accent-text',
-                                          )}
-                                      >
-                                          <Icon
-                                              className="size-5"
-                                              strokeWidth={1.8}
-                                          />
-                                          {label}
-                                      </Link>
-                                  );
-                              },
-                          )}
+                              return (
+                                  <Link
+                                      key={href}
+                                      href={href}
+                                      aria-current={active ? 'page' : undefined}
+                                      className={cn(
+                                          'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.6875rem] font-medium text-admin-text-tertiary transition-[color,background-color,transform] active:scale-[0.97]',
+                                          active &&
+                                              'bg-admin-accent/15 text-admin-accent-text',
+                                      )}
+                                  >
+                                      <Icon
+                                          className="size-5"
+                                          strokeWidth={1.8}
+                                      />
+                                      {label}
+                                  </Link>
+                              );
+                          })}
                           <button
                               type="button"
                               aria-label="Abrir más opciones"
@@ -195,8 +100,10 @@ export function AdminSidebar() {
                               onClick={() => setMoreOpen(true)}
                               className={cn(
                                   'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.6875rem] font-medium text-admin-text-tertiary transition-[color,background-color,transform] active:scale-[0.97]',
-                                  secondaryNavigation.some(({ href }) =>
-                                      isActive(href),
+                                  secondaryGroups.some(({ entries }) =>
+                                      entries.some(
+                                          ({ href }) => href === activeHref,
+                                      ),
                                   ) &&
                                       'bg-admin-accent/15 text-admin-accent-text',
                               )}
@@ -209,38 +116,56 @@ export function AdminSidebar() {
                           <SheetContent
                               side="bottom"
                               overlayClassName="bg-overlay/70"
-                              className="admin-shell gap-0 rounded-t-3xl border-admin-border bg-admin-surface px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
+                              className="admin-shell max-h-[85vh] gap-0 overflow-y-auto rounded-t-3xl border-admin-border bg-admin-surface px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
                           >
-                              <SheetTitle className="px-2 pb-4 text-lg text-admin-text-primary">
+                              <SheetTitle className="px-2 pb-2 text-lg text-admin-text-primary">
                                   Más opciones
                               </SheetTitle>
-                              <div className="grid grid-cols-2 gap-2">
-                                  {secondaryNavigation.map(
-                                      ({ label, href, icon: Icon }) => (
-                                          <Link
-                                              key={href}
-                                              href={href}
-                                              aria-current={
-                                                  isActive(href)
-                                                      ? 'page'
-                                                      : undefined
-                                              }
-                                              onClick={() => setMoreOpen(false)}
-                                              className={cn(
-                                                  'flex min-h-14 items-center gap-3 rounded-xl bg-admin-surface-raised px-4 text-sm font-medium text-admin-text-secondary active:scale-[0.98]',
-                                                  isActive(href) &&
-                                                      'text-admin-accent-text ring-1 ring-admin-accent/30',
-                                              )}
-                                          >
-                                              <Icon
-                                                  className="size-5"
-                                                  strokeWidth={1.7}
-                                              />
-                                              {label}
-                                          </Link>
-                                      ),
-                                  )}
-                              </div>
+                              {secondaryGroups.map((group) => (
+                                  <section
+                                      key={group.label}
+                                      aria-label={group.label}
+                                  >
+                                      <h2 className="px-2 pt-3 pb-2 text-xs font-semibold tracking-[0.12em] text-admin-text-tertiary uppercase">
+                                          {group.label}
+                                      </h2>
+                                      <div className="grid grid-cols-2 gap-2">
+                                          {group.entries.map(
+                                              ({ label, href, icon }) => {
+                                                  const Icon = icons[icon];
+                                                  const active =
+                                                      href === activeHref;
+
+                                                  return (
+                                                      <Link
+                                                          key={href}
+                                                          href={href}
+                                                          aria-current={
+                                                              active
+                                                                  ? 'page'
+                                                                  : undefined
+                                                          }
+                                                          onClick={() =>
+                                                              setMoreOpen(false)
+                                                          }
+                                                          className={cn(
+                                                              'flex min-h-14 items-center gap-3 rounded-xl bg-admin-surface-raised px-4 text-sm font-medium text-admin-text-secondary active:scale-[0.98]',
+                                                              active &&
+                                                                  'text-admin-accent-text ring-1 ring-admin-accent/30',
+                                                          )}
+                                                      >
+                                                          <Icon
+                                                              className="size-5"
+                                                              strokeWidth={1.7}
+                                                          />
+                                                          {label}
+                                                      </Link>
+                                                  );
+                                              },
+                                          )}
+                                      </div>
+                                  </section>
+                              ))}
                               <Button
                                   type="button"
                                   variant="ghost"
@@ -258,13 +183,13 @@ export function AdminSidebar() {
 
     return (
         <>
-            <aside className="admin-sidebar sticky top-0 hidden h-screen w-[6.5rem] flex-col items-start rounded-r-2xl bg-admin-surface md:col-start-1 md:row-start-1 md:flex">
+            <aside className="admin-sidebar sticky top-0 hidden h-screen w-[6.5rem] flex-col items-start rounded-r-2xl bg-admin-surface md:col-start-1 md:row-start-1 md:flex lg:w-[14.5rem]">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
-                            href="/admin"
+                            href={groups[0]?.entries[0]?.href ?? '/admin'}
                             aria-label="Te Pinta POS"
-                            className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-admin-accent ring-1 ring-admin-border focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none md:mt-6 md:ml-6 md:size-14"
+                            className="mt-6 ml-6 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-admin-accent ring-1 ring-admin-border focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
                         >
                             <BrandLogo alt="" className="size-full" />
                         </Link>
@@ -274,61 +199,81 @@ export function AdminSidebar() {
 
                 <nav
                     aria-label="Navegación de administración"
-                    className="flex min-w-0 flex-1 overflow-x-auto md:mt-4 md:ml-3 md:min-h-0 md:w-[5.75rem] md:flex-col md:overflow-x-hidden md:overflow-y-auto"
+                    className="mt-4 ml-3 flex min-h-0 w-[5.75rem] flex-1 flex-col overflow-x-hidden overflow-y-auto lg:w-[13.75rem]"
                 >
-                    {allowedNavigation.map(({ label, href, icon: Icon }) => {
-                        const active = isActive(href);
+                    {groups.map((group, index) => (
+                        <Fragment key={group.label}>
+                            {index > 0 && (
+                                <hr
+                                    aria-hidden="true"
+                                    className="mx-3 my-2 w-8 shrink-0 border-admin-border lg:hidden"
+                                />
+                            )}
+                            <p className="hidden shrink-0 px-3 pt-4 pb-1 text-[0.6875rem] font-semibold tracking-[0.12em] text-admin-text-tertiary uppercase lg:block">
+                                {group.label}
+                            </p>
+                            {group.entries.map(({ label, href, icon }) => {
+                                const Icon = icons[icon];
+                                const active = href === activeHref;
 
-                        return (
-                            <div
-                                key={href}
-                                data-active={active}
-                                className="admin-nav-slot relative flex size-12 shrink-0 items-center justify-center md:min-h-14 md:w-[5.75rem] md:flex-1 md:justify-start md:pl-3"
-                            >
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Link
-                                            href={href}
-                                            aria-label={label}
-                                            aria-current={
-                                                active ? 'page' : undefined
-                                            }
-                                            className={cn(
-                                                'relative flex size-11 items-center justify-center rounded-[0.5rem] text-admin-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none md:size-14',
-                                                active &&
-                                                    'bg-admin-accent text-admin-on-accent shadow-admin-nav-active',
-                                            )}
-                                        >
-                                            <Icon
-                                                className="size-6"
-                                                strokeWidth={1.6}
-                                            />
-                                        </Link>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        {label}
-                                    </TooltipContent>
-                                </Tooltip>
-                            </div>
-                        );
-                    })}
+                                return (
+                                    <div
+                                        key={href}
+                                        data-active={active}
+                                        className="admin-nav-slot relative flex min-h-14 w-full shrink-0 items-center pl-3 lg:min-h-12 lg:pl-1.5"
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Link
+                                                    href={href}
+                                                    aria-label={label}
+                                                    aria-current={
+                                                        active
+                                                            ? 'page'
+                                                            : undefined
+                                                    }
+                                                    className={cn(
+                                                        'relative flex size-14 items-center justify-center rounded-[0.5rem] text-admin-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none lg:h-11 lg:w-[11.75rem] lg:justify-start lg:gap-3 lg:px-3',
+                                                        active &&
+                                                            'bg-admin-accent text-admin-on-accent shadow-admin-nav-active',
+                                                    )}
+                                                >
+                                                    <Icon
+                                                        aria-hidden="true"
+                                                        className="size-6 shrink-0 lg:size-5"
+                                                        strokeWidth={1.6}
+                                                    />
+                                                    <span className="hidden truncate text-sm font-medium lg:inline">
+                                                        {label}
+                                                    </span>
+                                                </Link>
+                                            </TooltipTrigger>
+                                            <TooltipContent
+                                                side="right"
+                                                className="lg:hidden"
+                                            >
+                                                {label}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                );
+                            })}
+                        </Fragment>
+                    ))}
                 </nav>
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Cerrar sesión"
-                            onClick={() => router.post('/logout')}
-                            className="size-11 shrink-0 rounded-[0.5rem] text-admin-accent-text hover:bg-transparent hover:text-admin-accent-text md:mt-auto md:mb-6 md:ml-6 md:size-14"
-                        >
-                            <LogOut className="size-6" strokeWidth={1.6} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Cerrar sesión</TooltipContent>
-                </Tooltip>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    aria-label="Cerrar sesión"
+                    onClick={() => router.post('/logout')}
+                    className="mt-auto mb-6 ml-6 size-14 shrink-0 rounded-[0.5rem] text-admin-accent-text hover:bg-transparent hover:text-admin-accent-text lg:ml-4.5 lg:h-11 lg:w-[11.75rem] lg:justify-start lg:gap-3 lg:px-3"
+                >
+                    <LogOut className="size-6 lg:size-5" strokeWidth={1.6} />
+                    <span className="hidden text-sm font-medium lg:inline">
+                        Cerrar sesión
+                    </span>
+                </Button>
             </aside>
             {mobileNavigation}
         </>

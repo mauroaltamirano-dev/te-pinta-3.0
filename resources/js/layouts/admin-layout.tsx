@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
         component === 'admin/settings/general';
 
     return (
-        <div className="admin-shell relative isolate z-0 min-h-screen bg-background pb-24 text-foreground md:grid md:grid-cols-[6.5rem_1fr] md:pb-0">
+        <div className="admin-shell relative isolate z-0 min-h-screen bg-background pb-24 text-foreground md:grid md:grid-cols-[6.5rem_1fr] md:pb-0 lg:grid-cols-[14.5rem_1fr]">
             <div
                 className={cn(
                     'min-w-0 md:col-start-2 md:row-start-1',

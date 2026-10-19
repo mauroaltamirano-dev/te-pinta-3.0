@@ -167,14 +167,12 @@ test('inicio móvil muestra navegación práctica y variedades en dos columnas',
     });
     await expect(navigation).toBeVisible();
     await expect(
-        navigation.getByRole('link', { name: 'Inicio' }),
+        navigation.getByRole('link', { name: 'Vender' }),
     ).toBeVisible();
     await expect(
         navigation.getByRole('link', { name: 'Pedidos' }),
     ).toBeVisible();
-    await expect(
-        navigation.getByRole('link', { name: 'Clientes' }),
-    ).toBeVisible();
+    await expect(navigation.getByRole('link', { name: 'Panel' })).toBeVisible();
     await expect(
         navigation.getByRole('button', { name: 'Abrir más opciones' }),
     ).toBeVisible();
@@ -303,7 +301,20 @@ test('grilla y lista mantienen completa la primera fila con scroll de resultados
             ),
         ).toBe(true);
 
-        for (const firstRowCard of [cards.nth(0), cards.nth(1), cards.nth(2)]) {
+        // The labelled sidebar decides how many cards fit, so measure the real first row.
+        const firstRow = [];
+
+        for (let index = 0; index < (await cards.count()); index++) {
+            const box = await cards.nth(index).boundingBox();
+
+            if (Math.abs((box?.y ?? 0) - (first?.y ?? 0)) < 2) {
+                firstRow.push(cards.nth(index));
+            }
+        }
+
+        expect(firstRow.length).toBeGreaterThanOrEqual(2);
+
+        for (const firstRowCard of firstRow) {
             const cardBox = await firstRowCard.boundingBox();
             expect(
                 (cardBox?.y ?? 0) + (cardBox?.height ?? 0),
@@ -488,7 +499,9 @@ test('lista abre un ticket y permite actualizar estado y pago rápidamente', asy
             .boundingBox();
         const summaryCards = page.getByTestId('order-summary-card');
 
-        const availableWidth = (page.viewportSize()?.width ?? 0) - 104 - 48;
+        const sidebar = await page.locator('aside.admin-sidebar').boundingBox();
+        const availableWidth =
+            (page.viewportSize()?.width ?? 0) - (sidebar?.width ?? 0) - 48;
         expect(grid?.width).toBe(availableWidth);
         expect(
             (insightsColumn?.x ?? 0) -

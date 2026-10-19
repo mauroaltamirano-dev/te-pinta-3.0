@@ -101,6 +101,11 @@ final class RoleRouteMatrixTest extends TestCase
         $this->actingAs(User::factory()->withRole(Role::Waiter)->create())->get('/admin')->assertOk();
     }
 
+    public function test_the_analytics_placeholder_is_not_routed(): void
+    {
+        $this->actingAs(User::factory()->withRole(Role::Owner)->create())->get('/admin/analytics')->assertNotFound();
+    }
+
     /**
      * @return list<array{0: string, 1: string, 2: array<string, mixed>, 3: list<string>, 4: array{0: string, 1: array<string, mixed>}|null}>
      */
@@ -111,7 +116,6 @@ final class RoleRouteMatrixTest extends TestCase
 
         return [
             ['GET', '/admin/dashboard', [], ['owner', 'manager', 'cashier', 'accountant'], null],
-            ['GET', '/admin/analytics', [], ['owner', 'manager', 'cashier', 'accountant'], null],
             ['GET', '/admin/orders', [], self::ALL, null],
             ['GET', "/admin/orders/{$order->public_id}", [], self::ALL, null],
             ['GET', '/admin/orders/create', [], $sellers, null],

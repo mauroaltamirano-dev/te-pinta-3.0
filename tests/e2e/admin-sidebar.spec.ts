@@ -1,27 +1,27 @@
 import { expect, test } from './support/test';
 
 const destinations = [
-    { label: 'Inicio', path: '/admin', expectedPath: '/admin' },
-    {
-        label: 'Panel operativo',
-        path: '/admin/dashboard',
-        expectedPath: '/admin/dashboard',
-    },
+    { label: 'Vender', path: '/admin', expectedPath: '/admin' },
     { label: 'Pedidos', path: '/admin/orders', expectedPath: '/admin/orders' },
+    {
+        label: 'Pedidos',
+        path: '/admin/orders/create',
+        expectedPath: '/admin/orders/create',
+    },
     {
         label: 'Clientes',
         path: '/admin/customers',
         expectedPath: '/admin/customers',
     },
     {
-        label: 'Analíticas',
-        path: '/admin/analytics',
-        expectedPath: '/admin/analytics',
+        label: 'Panel',
+        path: '/admin/dashboard',
+        expectedPath: '/admin/dashboard',
     },
     {
-        label: 'Gestión',
-        path: '/admin/management',
-        expectedPath: '/admin/management',
+        label: 'Productos',
+        path: '/admin/settings',
+        expectedPath: '/admin/settings/products',
     },
     {
         label: 'Marketing',
@@ -29,21 +29,45 @@ const destinations = [
         expectedPath: '/admin/marketing',
     },
     {
-        label: 'Instagram',
+        label: 'Marketing',
         path: '/admin/marketing/instagram',
         expectedPath: '/admin/marketing/instagram',
     },
     {
-        label: 'Configuración',
-        path: '/admin/settings',
-        expectedPath: '/admin/settings/products',
+        label: 'Inventario',
+        path: '/admin/inventory/recipes',
+        expectedPath: '/admin/inventory/recipes',
+    },
+    {
+        label: 'Gestión',
+        path: '/admin/management/audit',
+        expectedPath: '/admin/management/audit',
     },
     {
         label: 'Configuración',
-        path: '/admin/settings/products',
-        expectedPath: '/admin/settings/products',
+        path: '/admin/settings/general',
+        expectedPath: '/admin/settings/general',
+    },
+    {
+        label: 'Configuración',
+        path: '/admin/restaurant/floor',
+        expectedPath: '/admin/restaurant/floor',
+    },
+    {
+        label: 'Configuración',
+        path: '/admin/users',
+        expectedPath: '/admin/users',
     },
 ] as const;
+
+const groups = [
+    'Operación',
+    'Resumen',
+    'Catálogo',
+    'Stock y costos',
+    'Finanzas',
+    'Configuración',
+];
 
 test('navegación administrativa global expone destinos y sección activa', async ({
     page,
@@ -76,7 +100,7 @@ test('navegación administrativa global expone destinos y sección activa', asyn
             const navigation = page.getByRole('navigation', {
                 name: 'Navegación principal',
             });
-            const primary = ['Inicio', 'Pedidos', 'Clientes'].includes(
+            const primary = ['Vender', 'Pedidos', 'Panel'].includes(
                 destination.label,
             );
 
@@ -109,6 +133,13 @@ test('navegación administrativa global expone destinos y sección activa', asyn
         const navigation = page.getByRole('navigation', {
             name: 'Navegación de administración',
         });
+
+        await expect(navigation.getByRole('link')).toHaveCount(9);
+        await expect(
+            navigation.getByRole('link', { name: 'Analíticas' }),
+        ).toHaveCount(0);
+
+        await expect(navigation.locator('p')).toHaveText(groups);
 
         await expect(
             navigation.getByRole('link', { name: destination.label }),

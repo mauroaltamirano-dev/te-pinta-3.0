@@ -16,7 +16,7 @@ Roles and permissions are code-defined ([ADR 0013](decisions/0013-code-defined-r
 
 | Permission | owner (Dueño) | manager (Encargado) | cashier (Cajero) | waiter (Mozo) | kitchen (Cocina) | accountant (Contador) |
 | --- | --- | --- | --- | --- | --- | --- |
-| `dashboard.view` (dashboard, analytics) | ✓ | ✓ | ✓ | | | ✓ |
+| `dashboard.view` (dashboard) | ✓ | ✓ | ✓ | | | ✓ |
 | `orders.view` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `orders.manage` (create, edit, status, payment, restaurant floor reading) | ✓ | ✓ | ✓ | ✓ | | |
 | `customers.view` | ✓ | ✓ | ✓ | ✓ | | ✓ |
