@@ -12,6 +12,7 @@ use LogicException;
 /** Stored empanada unit prices change only when a dozen price or the surcharge percentage changes. */
 final class RecalculateEmpanadaUnitPrices
 {
+    /** Call inside the transaction that stores the unit price, before locking the product row. */
     public function forDozen(int $dozenPrice): int
     {
         // Shared lock: a concurrent percentage change waits for this product save, or this read waits for it.

@@ -4,7 +4,10 @@ namespace App\Modules\Orders\Enums;
 
 enum OrderSettingKey: string
 {
-    // combined_dozen_raw_price / combined_dozen_cooked_price rows are retired history, never read.
+    /** Retired: rows are kept as history and never read; the case stays so stored rows still hydrate. */
+    case CombinedDozenRawPrice = 'combined_dozen_raw_price';
+    /** Retired: rows are kept as history and never read; the case stays so stored rows still hydrate. */
+    case CombinedDozenCookedPrice = 'combined_dozen_cooked_price';
     case CombinedHalfDozenSurcharge = 'combined_half_dozen_surcharge';
     case DeliveryFee = 'delivery_fee';
     case EmpanadaUnitSurchargePercent = 'empanada_unit_surcharge_percent';

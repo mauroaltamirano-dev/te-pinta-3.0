@@ -5,6 +5,10 @@ namespace Tests\Feature\Products;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderSetting;
+use App\Modules\Products\Actions\RecalculateEmpanadaUnitPrices;
+use App\Modules\Products\Actions\UpdateProduct;
+use App\Modules\Products\Data\ProductData;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
@@ -70,6 +74,23 @@ final class FixedDozenUnitPriceTest extends TestCase
         $this->put(route('admin.products.update', $product), $this->payload(['dozen_price' => 20000, 'name' => 'Dulce renombrada']))->assertRedirect();
 
         self::assertSame(1800, $product->fresh()->unit_price);
+        self::assertSame('Dulce renombrada', $product->fresh()->name);
+    }
+
+    public function test_an_edit_loaded_before_a_percentage_recalculation_keeps_the_recalculated_unit_price(): void
+    {
+        $product = $this->empanada(20000);
+        $loadedBeforeRecalculation = Product::query()->findOrFail($product->id);
+        OrderSetting::query()->where('key', OrderSettingKey::EmpanadaUnitSurchargePercent->value)->update(['integer_value' => 20]);
+        app(RecalculateEmpanadaUnitPrices::class)->execute(20);
+
+        app(UpdateProduct::class)->execute($loadedBeforeRecalculation, new ProductData(
+            name: 'Dulce renombrada', slug: null, description: null, longDescription: null, publicIngredients: null,
+            categoryId: $this->category->id, tagIds: [], pricingFamily: ProductPricingFamily::Empanada, unitPrice: null,
+            halfDozenPrice: 11000, dozenPrice: 20000, isAvailable: true, sortOrder: 1, removeImage: false,
+        ), null);
+
+        self::assertSame(2000, $product->fresh()->unit_price);
         self::assertSame('Dulce renombrada', $product->fresh()->name);
     }
 

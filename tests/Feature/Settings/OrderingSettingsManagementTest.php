@@ -10,6 +10,7 @@ use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
+use App\Modules\Products\Pricing\EmpanadaUnitPrice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -171,7 +172,7 @@ final class OrderingSettingsManagementTest extends TestCase
         $dulce = $this->empanada('Dulce', 20000);
         $admin = User::factory()->administrator()->create();
 
-        foreach ([-1, 101, 'diez', 10.5, null] as $invalid) {
+        foreach ([-1, 101, 'diez', 10.5, null, ''] as $invalid) {
             $payload = $this->validPayload();
             $payload['empanada_unit_surcharge_percent'] = $invalid;
 
@@ -204,6 +205,14 @@ final class OrderingSettingsManagementTest extends TestCase
 
         $this->assertSame(0, OrderSetting::integer(OrderSettingKey::DeliveryFee));
         $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
+    }
+
+    public function test_every_stored_setting_row_still_hydrates_after_the_retirement(): void
+    {
+        $keys = OrderSetting::query()->orderBy('key')->get()->map(fn (OrderSetting $setting): string => $setting->key->value);
+
+        $this->assertContains('combined_dozen_raw_price', $keys);
+        $this->assertContains('combined_dozen_cooked_price', $keys);
     }
 
     public function test_invalid_configuration_is_rejected_without_partial_writes(): void
@@ -264,7 +273,7 @@ final class OrderingSettingsManagementTest extends TestCase
             'pricing_family' => 'empanada',
             'name' => $name,
             'slug' => str($name)->slug()->toString(),
-            'unit_price' => intdiv($dozenPrice * 110 + 60000, 120000) * 100,
+            'unit_price' => EmpanadaUnitPrice::fromDozen($dozenPrice, 10),
             'half_dozen_price' => intdiv($dozenPrice, 2) + 500,
             'dozen_price' => $dozenPrice,
             'is_available' => true,

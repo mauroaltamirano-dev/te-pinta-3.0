@@ -9,7 +9,8 @@ import { BrandingForm } from '@/features/settings/components/branding-form';
 import SettingsLayout from '@/layouts/settings-layout';
 
 interface OrderingSettings {
-    empanada_unit_surcharge_percent: number;
+    /** Empty while the operator edits, so the backend rejects it instead of saving 0%. */
+    empanada_unit_surcharge_percent: number | '';
     delivery_fee: number;
     whatsapp_order_phone: string;
     raw_price_discounts: { dozen: number };
@@ -72,7 +73,9 @@ export default function GeneralSettings({
                                 onChange={(event) =>
                                     form.setData(
                                         'empanada_unit_surcharge_percent',
-                                        Number(event.target.value),
+                                        event.target.value === ''
+                                            ? ''
+                                            : Number(event.target.value),
                                     )
                                 }
                                 aria-invalid={Boolean(
