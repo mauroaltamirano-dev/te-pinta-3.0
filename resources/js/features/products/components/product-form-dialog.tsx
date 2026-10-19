@@ -26,6 +26,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Product, ProductCategory, ProductTag } from '../types';
+import { empanadaUnitPrice, formatPesos } from '../utils';
 import { HomogeneousSurchargePreview } from './homogeneous-surcharge-preview';
 
 interface ProductFormData {
@@ -54,6 +55,7 @@ interface ProductFormDialogProps {
     categories: ProductCategory[];
     tags: ProductTag[];
     defaultCategoryId: number | null;
+    empanadaUnitSurchargePercent: number;
 }
 
 export function ProductFormDialog({
@@ -63,6 +65,7 @@ export function ProductFormDialog({
     categories,
     tags,
     defaultCategoryId,
+    empanadaUnitSurchargePercent,
 }: ProductFormDialogProps) {
     const form = useForm<ProductFormData>({
         name: product?.name ?? '',
@@ -122,14 +125,16 @@ export function ProductFormDialog({
 
         form.transform((data) => {
             const {
+                unit_price,
                 half_dozen_price,
                 dozen_price,
                 homogeneous_half_dozen_surcharge,
                 ...common
             } = data;
+            // The empanada unit price is derived from the dozen by the backend.
             const payload =
                 data.pricing_family === 'unit'
-                    ? common
+                    ? { ...common, unit_price }
                     : {
                           ...common,
                           dozen_price,
@@ -540,15 +545,25 @@ export function ProductFormDialog({
                                     'sm:grid-cols-3',
                             )}
                         >
-                            <PriceField
-                                id="unit-price"
-                                label="Unidad"
-                                value={form.data.unit_price}
-                                error={form.errors.unit_price}
-                                onChange={(value) =>
-                                    form.setData('unit_price', value)
-                                }
-                            />
+                            {form.data.pricing_family === 'unit' ? (
+                                <PriceField
+                                    id="unit-price"
+                                    label="Unidad"
+                                    value={form.data.unit_price}
+                                    error={form.errors.unit_price}
+                                    onChange={(value) =>
+                                        form.setData('unit_price', value)
+                                    }
+                                />
+                            ) : (
+                                <DerivedUnitPrice
+                                    dozen={form.data.dozen_price}
+                                    surchargePercent={
+                                        empanadaUnitSurchargePercent
+                                    }
+                                    error={form.errors.unit_price}
+                                />
+                            )}
                             {form.data.pricing_family === 'empanada' && (
                                 <>
                                     {!usingSurcharge && (
@@ -844,6 +859,47 @@ function PriceField({
                 />
             </div>
         </FormField>
+    );
+}
+
+function DerivedUnitPrice({
+    dozen,
+    surchargePercent,
+    error,
+}: {
+    dozen: string;
+    surchargePercent: number;
+    error?: string;
+}) {
+    const dozenPrice = Number(dozen);
+    const valid =
+        dozen.trim() !== '' && Number.isInteger(dozenPrice) && dozenPrice >= 0;
+
+    return (
+        <div className="grid gap-2">
+            <span className="text-sm font-medium" id="derived-unit-price-label">
+                Unidad (calculada)
+            </span>
+            <output
+                aria-labelledby="derived-unit-price-label"
+                aria-describedby="derived-unit-price-help"
+                className="flex h-9 items-center rounded-md border border-border/80 bg-muted/40 px-3 text-sm tabular-nums"
+            >
+                {valid
+                    ? formatPesos(
+                          empanadaUnitPrice(dozenPrice, surchargePercent),
+                      )
+                    : '—'}
+            </output>
+            <p
+                id="derived-unit-price-help"
+                className="text-xs text-admin-text-secondary"
+            >
+                Docena ÷ 12 + {surchargePercent}%, redondeado a $100. El
+                porcentaje se configura en Configuración.
+            </p>
+            <FieldError id="unit-price-error" message={error} />
+        </div>
     );
 }
 

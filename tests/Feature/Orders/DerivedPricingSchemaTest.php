@@ -16,10 +16,12 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Tests\Support\LegacyPricingSnapshots;
 use Tests\TestCase;
 
 final class DerivedPricingSchemaTest extends TestCase
 {
+    use LegacyPricingSnapshots;
     use RefreshDatabase;
 
     public function test_additive_schema_preserves_v1_and_existing_catalog_prices(): void
@@ -53,9 +55,10 @@ final class DerivedPricingSchemaTest extends TestCase
             'pricing_snapshot_version' => 2, 'product_exact_numerator_12' => 3702 * 12,
             'cooked_product_exact_numerator_12' => 3702 * 12, 'raw_discount_exact_numerator_12' => 0,
             'discount_exact_numerator_1200' => 0, 'net_pre_round_exact_numerator_1200' => 3702 * 1200,
-            'rounding_adjustment_numerator_1200' => 0,
+            // Version 2 totals round once to ARS 100 (2026_10_19_000000 fixed dozen activation).
+            'rounding_adjustment_numerator_1200' => -2 * 1200, 'total' => 3700,
         ]);
-        self::assertSame(3702, $order->fresh()->total);
+        self::assertSame(3700, $order->fresh()->total);
         $this->expectException(RuntimeException::class);
         (require database_path('migrations/2026_10_15_000000_prepare_derived_pricing_foundation.php'))->down();
     }
@@ -66,6 +69,7 @@ final class DerivedPricingSchemaTest extends TestCase
         $category = Category::query()->create(['name' => 'Schema fixture', 'slug' => 'schema-fixture']);
         $product = Product::query()->create(['category_id' => $category->id, 'name' => 'Schema fixture', 'slug' => 'schema-fixture', 'pricing_family' => 'unit', 'unit_price' => 1234, 'half_dozen_price' => 1234, 'dozen_price' => 1234, 'is_available' => true]);
 
-        return app(CreateOrder::class)->execute(new OrderCheckoutData(items: [['product_id' => $product->id, 'quantity' => 3]], addons: [], condition: OrderCondition::Cooked, deliveryType: DeliveryType::DineIn, deliveryPeriod: null, deliveryDate: null, deliveryTime: null, deliveryAddress: null, notes: null, customerId: null, customerName: null, customerPhone: null, customerPhoneNormalized: null, customerAddress: null, paymentStatus: PaymentStatus::Unpaid), OrderSource::Pos, $admin->id);
+        // Fixtures stand for orders written before fixed dozen pricing (version 1).
+        return $this->asLegacyVersion1(app(CreateOrder::class)->execute(new OrderCheckoutData(items: [['product_id' => $product->id, 'quantity' => 3]], addons: [], condition: OrderCondition::Cooked, deliveryType: DeliveryType::DineIn, deliveryPeriod: null, deliveryDate: null, deliveryTime: null, deliveryAddress: null, notes: null, customerId: null, customerName: null, customerPhone: null, customerPhoneNormalized: null, customerAddress: null, paymentStatus: PaymentStatus::Unpaid), OrderSource::Pos, $admin->id));
     }
 }

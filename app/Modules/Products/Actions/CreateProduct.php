@@ -13,7 +13,10 @@ use Throwable;
 
 final class CreateProduct
 {
-    public function __construct(private readonly UniqueSlug $uniqueSlug) {}
+    public function __construct(
+        private readonly UniqueSlug $uniqueSlug,
+        private readonly RecalculateEmpanadaUnitPrices $unitPrices,
+    ) {}
 
     public function execute(ProductData $data, ?UploadedFile $image): Product
     {
@@ -35,7 +38,7 @@ final class CreateProduct
                     'public_ingredients' => $data->publicIngredients,
                     'image_path' => $imagePath ?: null,
                     'sort_order' => $data->sortOrder,
-                    'unit_price' => $data->unitPrice,
+                    'unit_price' => $data->unitPrice ?? $this->unitPrices->forDozen($data->dozenPrice),
                     'half_dozen_price' => $data->halfDozenPrice,
                     'dozen_price' => $data->dozenPrice,
                     'is_available' => $data->isAvailable,

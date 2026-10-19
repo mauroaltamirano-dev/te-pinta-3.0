@@ -8,5 +8,6 @@ enum OrderSettingKey: string
     case CombinedDozenCookedPrice = 'combined_dozen_cooked_price';
     case CombinedHalfDozenSurcharge = 'combined_half_dozen_surcharge';
     case DeliveryFee = 'delivery_fee';
+    case EmpanadaUnitSurchargePercent = 'empanada_unit_surcharge_percent';
     case WhatsappOrderPhone = 'whatsapp_order_phone';
 }

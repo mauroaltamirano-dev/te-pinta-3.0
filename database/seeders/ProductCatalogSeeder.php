@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Products\Actions\RecalculateEmpanadaUnitPrices;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
@@ -45,18 +46,19 @@ final class ProductCatalogSeeder extends Seeder
             );
 
             $products = [
-                ['category' => 'especiales', 'name' => 'Salteña', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
-                ['category' => 'especiales', 'name' => 'Humita Tucumana', 'unit' => 1700, 'half' => 9500, 'dozen' => 17000, 'vegetarian' => true],
-                ['category' => 'especiales', 'name' => 'Hongos al puerro', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000, 'vegetarian' => true],
-                ['category' => 'especiales', 'name' => 'Pollo y portobellos', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
-                ['category' => 'especiales', 'name' => 'Matambre y verduras asadas', 'unit' => 1900, 'half' => 10500, 'dozen' => 19000],
-                ['category' => 'clasicas', 'name' => 'Criolla Salada', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
-                ['category' => 'clasicas', 'name' => 'Criolla Dulce', 'unit' => 1800, 'half' => 10000, 'dozen' => 18000],
-                ['category' => 'clasicas', 'name' => 'Jamón y Queso', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000],
-                ['category' => 'clasicas', 'name' => 'Caprese', 'unit' => 1600, 'half' => 9000, 'dozen' => 16000, 'vegetarian' => true],
+                ['category' => 'especiales', 'name' => 'Salteña', 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'especiales', 'name' => 'Humita Tucumana', 'half' => 9500, 'dozen' => 17000, 'vegetarian' => true],
+                ['category' => 'especiales', 'name' => 'Hongos al puerro', 'half' => 10000, 'dozen' => 18000, 'vegetarian' => true],
+                ['category' => 'especiales', 'name' => 'Pollo y portobellos', 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'especiales', 'name' => 'Matambre y verduras asadas', 'half' => 10500, 'dozen' => 19000],
+                ['category' => 'clasicas', 'name' => 'Criolla Salada', 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'clasicas', 'name' => 'Criolla Dulce', 'half' => 10000, 'dozen' => 18000],
+                ['category' => 'clasicas', 'name' => 'Jamón y Queso', 'half' => 9000, 'dozen' => 16000],
+                ['category' => 'clasicas', 'name' => 'Caprese', 'half' => 9000, 'dozen' => 16000, 'vegetarian' => true],
             ];
 
             $sortOrders = [];
+            $unitPrices = app(RecalculateEmpanadaUnitPrices::class);
 
             foreach ($products as $attributes) {
                 $categorySlug = $attributes['category'];
@@ -82,7 +84,7 @@ final class ProductCatalogSeeder extends Seeder
                     'description' => null,
                     'image_path' => null,
                     'sort_order' => $sortOrders[$categorySlug],
-                    'unit_price' => $attributes['unit'],
+                    'unit_price' => $unitPrices->forDozen($attributes['dozen']),
                     'half_dozen_price' => $attributes['half'],
                     'dozen_price' => $attributes['dozen'],
                     'is_available' => true,

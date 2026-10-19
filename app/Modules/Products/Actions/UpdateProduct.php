@@ -3,6 +3,7 @@
 namespace App\Modules\Products\Actions;
 
 use App\Modules\Products\Data\ProductData;
+use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,8 @@ use Throwable;
 
 final class UpdateProduct
 {
+    public function __construct(private readonly RecalculateEmpanadaUnitPrices $unitPrices) {}
+
     public function execute(Product $product, ProductData $data, ?UploadedFile $image): Product
     {
         $oldImagePath = $product->image_path;
@@ -26,6 +29,10 @@ final class UpdateProduct
 
         try {
             DB::transaction(function () use ($product, $data, $newImagePath, $removeImage): void {
+                // An empanada keeps its stored unit price unless its dozen changes or it becomes an empanada.
+                $unitPrice = $data->unitPrice ?? ($product->pricing_family === ProductPricingFamily::Empanada && $product->dozen_price === $data->dozenPrice
+                    ? $product->unit_price
+                    : $this->unitPrices->forDozen($data->dozenPrice));
                 $product->update([
                     'category_id' => $data->categoryId,
                     'pricing_family' => $data->pricingFamily,
@@ -36,7 +43,7 @@ final class UpdateProduct
                     'public_ingredients' => $data->publicIngredients,
                     'image_path' => $newImagePath ?: ($removeImage ? null : $product->image_path),
                     'sort_order' => $data->sortOrder,
-                    'unit_price' => $data->unitPrice,
+                    'unit_price' => $unitPrice,
                     'half_dozen_price' => $data->halfDozenPrice,
                     'dozen_price' => $data->dozenPrice,
                     'is_available' => $data->isAvailable,

@@ -36,12 +36,19 @@ final class UpdateProductRequest extends FormRequest
             'tags' => ['sometimes', 'array', 'max:50'],
             'tags.*' => ['required', 'integer', 'distinct', 'exists:tags,id'],
             'pricing_family' => ['required', Rule::enum(ProductPricingFamily::class)],
-            'unit_price' => ['required', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::Unit)] : [])],
-            'half_dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::HalfDozen)] : [])],
+            // The empanada unit price is derived from its dozen (EmpanadaUnitPrice) and never accepted from the client.
+            'unit_price' => [Rule::requiredIf(! $isEmpanada), Rule::prohibitedIf($isEmpanada), 'nullable', ...$money],
+            'half_dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money],
             'dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::Dozen)] : [])],
             'is_available' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:2147483647'],
         ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return ['unit_price.prohibited' => 'El precio por unidad de las empanadas se calcula desde la docena.'];
     }
 
     protected function prepareForValidation(): void

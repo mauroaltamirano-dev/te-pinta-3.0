@@ -16,6 +16,7 @@ export default function Products({
     categories,
     products,
     tags,
+    empanadaUnitSurchargePercent,
 }: ProductsPageProps) {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
         categories[0]?.id ?? null,
@@ -179,6 +180,7 @@ export default function Products({
                     categories={categories}
                     tags={tags}
                     defaultCategoryId={activeCategoryId}
+                    empanadaUnitSurchargePercent={empanadaUnitSurchargePercent}
                 />
             )}
             <CategoryManagerDialog

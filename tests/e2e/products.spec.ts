@@ -177,11 +177,14 @@ test('administrador crea, edita y cambia la disponibilidad de un producto', asyn
     await createDialog
         .getByLabel('Descripción breve')
         .fill('Creado mediante el flujo administrativo.');
-    await createDialog.getByLabel('Unidad', { exact: true }).fill('1800');
     await createDialog
         .getByLabel('Media docena', { exact: true })
         .fill('10000');
     await createDialog.getByLabel('Docena', { exact: true }).fill('18000');
+    // The empanada unit price is derived from the dozen and read-only: 18000 / 12 × 1.1 → $1.700.
+    await expect(
+        createDialog.getByLabel('Unidad (calculada)', { exact: true }),
+    ).toHaveText(/1\.700/);
     await createDialog.getByLabel('Orden dentro de la categoría').fill('99');
     const vegetarianTag = createDialog.getByRole('checkbox', {
         name: 'Vegetariana',

@@ -38,12 +38,12 @@ async function createProduct(
                 name,
                 pricing_family: family,
                 category_id: categoryId,
-                unit_price: family === 'unit' ? 2500 : 1800,
                 is_available: true,
                 sort_order: 10,
+                // Empanada unit prices are derived from the dozen on the server.
                 ...(family === 'empanada'
                     ? { half_dozen_price: 9800, dozen_price: 18000 }
-                    : {}),
+                    : { unit_price: 2500 }),
             };
             const r = await fetch('/admin/settings/products', {
                 method: 'POST',

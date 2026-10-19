@@ -17,7 +17,8 @@ final readonly class ProductData
         public int $categoryId,
         public array $tagIds,
         public ProductPricingFamily $pricingFamily,
-        public int $unitPrice,
+        /** Null for empanadas: the stored unit price is derived from the dozen. */
+        public ?int $unitPrice,
         public int $halfDozenPrice,
         public int $dozenPrice,
         public bool $isAvailable,
@@ -32,7 +33,7 @@ final readonly class ProductData
         $longDescription = $validated['long_description'] ?? null;
         $publicIngredients = $validated['public_ingredients'] ?? null;
         $pricingFamily = ProductPricingFamily::from($validated->string('pricing_family')->toString());
-        $unitPrice = $validated->integer('unit_price');
+        $unitPrice = $pricingFamily === ProductPricingFamily::Unit ? $validated->integer('unit_price') : null;
 
         return new self(
             name: $validated->string('name')->toString(),
@@ -44,8 +45,8 @@ final readonly class ProductData
             tagIds: $validated->collect('tags')->map(fn (mixed $id): int => (int) $id)->all(),
             pricingFamily: $pricingFamily,
             unitPrice: $unitPrice,
-            halfDozenPrice: $pricingFamily === ProductPricingFamily::Unit ? $unitPrice : $validated->integer('half_dozen_price'),
-            dozenPrice: $pricingFamily === ProductPricingFamily::Unit ? $unitPrice : $validated->integer('dozen_price'),
+            halfDozenPrice: $unitPrice ?? $validated->integer('half_dozen_price'),
+            dozenPrice: $unitPrice ?? $validated->integer('dozen_price'),
             isAvailable: $validated->boolean('is_available'),
             sortOrder: $validated->integer('sort_order'),
             removeImage: $validated->boolean('remove_image'),

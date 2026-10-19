@@ -2,6 +2,8 @@
 
 namespace App\Modules\Products\Http\Controllers;
 
+use App\Modules\Orders\Enums\OrderSettingKey;
+use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Actions\CreateProduct;
 use App\Modules\Products\Actions\DeleteProduct;
 use App\Modules\Products\Actions\UpdateProduct;
@@ -44,6 +46,7 @@ final class ProductManagementController
                 ->all(),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name', 'slug']),
             'rawPriceDiscounts' => RawPriceDiscount::query()->pluck('amount', 'pricing_mode'),
+            'empanadaUnitSurchargePercent' => OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent),
         ]);
     }
 

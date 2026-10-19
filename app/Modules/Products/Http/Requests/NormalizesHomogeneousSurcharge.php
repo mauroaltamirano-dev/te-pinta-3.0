@@ -2,8 +2,6 @@
 
 namespace App\Modules\Products\Http\Requests;
 
-use App\Modules\Orders\Enums\OrderSettingKey;
-use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Pricing\HomogeneousHalfDozenPrice;
 use Illuminate\Validation\ValidationException;
@@ -23,29 +21,17 @@ trait NormalizesHomogeneousSurcharge
             if ($validator->errors()->isNotEmpty() || $this->input('pricing_family') !== 'empanada') {
                 return;
             }
-            $u = $this->integer('unit_price');
             $h = $this->integer('half_dozen_price');
             $d = $this->integer('dozen_price');
             $product = $this->route('product');
             if ($product instanceof Product
                 && $product->pricing_family->value === 'empanada'
-                && [$u, $h, $d] === [$product->unit_price, $product->half_dozen_price, $product->dozen_price]) {
+                && [$h, $d] === [$product->half_dozen_price, $product->dozen_price]) {
                 return;
             }
-            if ($d >= 12 * $u) {
-                $validator->errors()->add('dozen_price', 'La docena debe costar menos que doce unidades.');
+            if (2 * $h < $d) {
+                $validator->errors()->add('half_dozen_price', 'La media docena no puede costar menos que la mitad de la docena.');
             }
-            if ($h >= 6 * $u || 2 * $h < $d) {
-                $validator->errors()->add('half_dozen_price', 'La media debe ahorrar frente a seis unidades y tener un recargo no negativo.');
-            }
-            $combined = OrderSettingKey::CombinedHalfDozenSurcharge;
-            $surcharge = OrderSetting::query()->where('key', $combined->value)->value('integer_value');
-            if ($surcharge === null) {
-                $validator->errors()->add('dozen_price', 'Falta configurar el recargo de media docena combinada.');
-            } elseif ($d + 2 * (int) $surcharge >= 12 * $u) {
-                $validator->errors()->add('dozen_price', 'La docena y el recargo combinado no conservan ahorro por empanada cocinada.');
-            }
-
         }];
     }
 

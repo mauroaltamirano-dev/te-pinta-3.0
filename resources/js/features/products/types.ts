@@ -35,4 +35,5 @@ export interface ProductsPageProps {
     categories: ProductCategory[];
     products: Product[];
     tags: ProductTag[];
+    empanadaUnitSurchargePercent: number;
 }

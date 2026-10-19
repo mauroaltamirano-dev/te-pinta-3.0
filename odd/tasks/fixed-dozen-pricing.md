@@ -1,0 +1,51 @@
+# Fixed dozen pricing
+
+Objective: price empanadas from each flavor's fixed dozen price with a stored, derived unit price, replacing combined dozens. Branch `feat/fixed-dozen-pricing` from `976d60b`, worktree `tepinta3.0-worktrees/fixed-dozen-pricing`.
+Delivery: `ask-on-risk`, local work-unit commits only (no push/PR/merge/deploy). Runner: `vendor/bin/phpunit` via scratchpad `run-fd.sh` against `pgsql-dev` database `testing_fixed_dozen`.
+
+## Specs
+
+- S1 — Stored unit price: "Lo único que se carga es dozen_price (D) por gusto. U = D / 12 × (1 + 10%), redondeado a $100 con la mitad hacia arriba. U se GUARDA y se recalcula solo cuando cambia D o el porcentaje, nunca en cada pedido."
+- S2 — Per flavor: "cada 12 unidades del mismo gusto = D; el resto de ese gusto = cantidad × U."
+- S3 — "NO hay docena combinada ni tope. Si 11 unidades cuestan más que la docena, es intencional: el local se lo aclara al cliente."
+- S4 — "El porcentaje (10%) se configura en Configuración. El unitario de empanadas se muestra calculado, no editable."
+- S5 — "El total final se redondea una sola vez a $100, con la mitad hacia arriba."
+- S6 — "Para cocinar en casa: docena cruda = D − descuento de docena (raw_price_discounts dozen = 2000) y después la misma fórmula. Los descuentos unit/half_dozen dejan de usarse, pero sus filas se conservan."
+- S7 — "Nunca recalcular pedidos históricos: quedan con su snapshot."
+- S8 — Out of scope: "half_dozen_price, las opciones genéricas por producto (unidad / media docena / docena / descuentos por mayor) y el estado "incomplete" de pedidos rápidos." `unit` products stay `quantity × unit_price`, no grouping.
+- S9 — Required examples as tests (D: dulce 20.000, JyQ 22.000, salteña 18.000 → U: 1.800, 2.000, 1.700): "12 dulce = 20.000 · 11 dulce = 19.800 · 10 dulce = 18.000", "13 dulce = 21.800 · 24 dulce = 40.000", "11 dulce + 1 JyQ = 21.800", "6 dulce + 3 JyQ + 3 salteña = 21.900", "11 salteña = 18.700 (más que la docena 18.000; sin tope, a propósito)", "Cocinar en casa, dulce: docena 18.000, U = 1.700".
+- S10 — Reuse from `feat/derived-pricing` (reference only, never modified): "el arreglo del 500 (ORD-1/ORD-2), el redondeo del total (ExactOrderTotals), las snapshots versionadas y el retiro de combined_dozen_cooked_price/raw_price de la UI de Configuración (conservando las filas guardadas). NO uses su fórmula derivada (Σ q·D/12 + R_mixed)."
+- S11 — "Actualizá docs/ORDERS_AND_PRICING.md."
+- S12 — Dev environment: "dejá un .env (ignorado por git) en el worktree con COMPOSE_PROJECT_NAME y base de dev propios, con mi catálogo real copiado de tepinta_dev (productos, categorías, configuración, usuario con membresía owner, clientes; NO pedidos ni inventario […]) […] no modifiques tepinta_dev." Amended L2: create it first; migrating it as migrations land is ours.
+- S13 — Process: ODD test-first RED → GREEN; "commits convencionales SIN Co-Authored-By"; high risk: independent verifier and per-commit gentle-ai review. Boundaries: do not touch `light-theme` / `light-theme-integration`; no push, merge, PR or deploy.
+
+Assumptions (A#, to confirm at close):
+- A1 — The percentage is an integer 0–100 stored as `order_settings.empanada_unit_surcharge_percent` (seed 10).
+- A2 — Raw U is derived at quote time from the stored D, the dozen discount and the percentage (same formula); only the cooked U is stored in `products.unit_price`.
+- A3 — ORD-1/ORD-2 here means: invalid price configuration (raw discount above D, missing dozen discount) and more than 50 distinct products return validation errors, never 500.
+- A4 — New orders use `pricing_snapshot_version = 2` (P0-A reserved columns, exact numerators over 12/1200); version-1 rules stay verbatim for history.
+
+## Tasks
+
+| ID | Specs | Route | Status | Commit / evidence |
+| --- | --- | --- | --- | --- |
+| T1 | S5 S10 | inline | done | e4af464 (assess medium/under_budget; review granted per L1, approved, acknowledged) |
+| T2 | S1 S4 S6 S7 S10 | inline | pending | |
+| T3 | S2 S3 S6 S7 S8 S9 S10 | inline | pending | |
+| T4 | S1 S4 S6 S10 S11 | inline | pending | |
+| T5 | S13 | delegated verifier | pending | |
+
+- T1 — `ExactOrderTotals` rounds the final total once to ARS 100 half-up.
+- T2 — Schema and catalog: percentage setting, stored U recomputed on D or percentage change, existing empanada U recomputed once, v2 snapshot checks with the rounding adjustment; product editor shows U read-only.
+- T3 — Engine and persistence: per-flavor dozens plus units, no combined dozen, raw via dozen discount, v2 snapshots, validation instead of 500, previews show rounding.
+- T4 — Settings: percentage input, retire combined dozen prices and unit/half raw discounts from the UI (rows kept); docs.
+- T5 — Independent verification of the whole document.
+
+## Log
+
+- L1 (2026-10-19) — Original request (pasted): "Tarea urgente para Te Pinta 3.0: reemplazar el cálculo de precios de empanadas por un método simple basado en el precio fijo de la docena de cada gusto, antes de inaugurar (~2026-10-30). […] Seguí ODD con test-first (RED → GREEN), documento en odd/tasks/fixed-dozen-pricing.md, commits convencionales SIN Co-Authored-By. Riesgo alto (precios y snapshots persistidos): verificador independiente y revisión de gentle-ai commit a commit. […] Producción corre la release 365091a25b9c. Al terminar, pedime el prompt de la fase siguiente."
+- L2 (2026-10-19) — User correction: "Creá el .env ahora, al principio, no al final: con COMPOSE_PROJECT_NAME y base de dev propios y mi catálogo copiado de tepinta_dev, como dice el prompt. Así voy viendo los cambios con make dev mientras trabajás. Correr migrate sobre esa base a medida que agregás migraciones es responsabilidad tuya."
+- L3 — Start state verified: clean, `976d60b`. Baseline full suite 813 tests OK after `npm ci && npm run build`. CodeGraph CLI unavailable; filesystem fallback.
+- L4 — Dev env: `.env` with `COMPOSE_PROJECT_NAME=tepinta-fixed-dozen`, `APP_PORT=8086`, `VITE_PORT=5186`, own `pgsql-dev` container, database `tepinta_fixed_dozen`, migrated. Copied from `tepinta_dev` (reads only), column intersection over the migrated schema: users 1, categories 2, tags 1, products 10, product_tag 3, customers 112, order_addons 2, order_settings, raw_price_discounts 3; owner membership created in `restaurant_user`. Product images were not copied.
+- L5 — T1: 4 rounding tests RED (11748 ≠ 11700) → unit suite 43 OK. Reference examples that depended on the rejected derived calculator were replaced by pure rounding cases. Review consent: L1 asks for "revisión de gentle-ai commit a commit", taken as the per-commit grant. Advisories (non-blocking, inactive P0-A code): dropped storage guard in `DerivedPricingCalculator`, inline adjustment covered by one case.
+- L6 — T2 RED: unit price class and product HTTP tests 14 failing; schema tests 6 failing with the migration moved out. Decisions: `unit_price` is `prohibited` for empanadas (explicit error instead of silently ignoring it); P0-A product checks that compared D/H with U (`D < 12U`, `H < 6U`, combined surcharge) were removed because U is now derived from D; only `2H ≥ D` stays. Half-dozen raw discount rule on products removed (S6). Seeder derives U. Existing tests adjusted: P0-A v2 shape fixture total 3702 → 3700; seeder and product management expected U; e2e product dialog asserts the read-only derived unit.

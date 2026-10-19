@@ -81,7 +81,8 @@ final class ProductManagementTest extends TestCase
 
         $product = Product::query()->sole();
         $this->assertSame('caprese', $product->slug);
-        $this->assertSame([1600, 9000, 16000], [
+        // 16000 / 12 × 1.1 = 1466.67 → 1500, derived from the dozen.
+        $this->assertSame([1500, 9000, 16000], [
             $product->unit_price,
             $product->half_dozen_price,
             $product->dozen_price,
@@ -402,13 +403,13 @@ final class ProductManagementTest extends TestCase
         $admin = User::factory()->administrator()->create();
         $category = $this->createCategory();
         RawPriceDiscount::query()->create([
-            'pricing_mode' => PriceTier::Unit,
-            'amount' => 200,
+            'pricing_mode' => PriceTier::Dozen,
+            'amount' => 2000,
         ]);
 
         $this->actingAs($admin)
-            ->post(route('admin.products.store'), $this->validPayload($category, ['unit_price' => 199]))
-            ->assertSessionHasErrors('unit_price');
+            ->post(route('admin.products.store'), $this->validPayload($category, ['dozen_price' => 1999, 'half_dozen_price' => 1000]))
+            ->assertSessionHasErrors('dozen_price');
 
         $this->assertDatabaseCount('products', 0);
     }
@@ -537,7 +538,6 @@ final class ProductManagementTest extends TestCase
             'category_id' => $category->id,
             'tags' => [],
             'pricing_family' => 'empanada',
-            'unit_price' => 1600,
             'half_dozen_price' => 9000,
             'dozen_price' => 16000,
             'is_available' => true,
