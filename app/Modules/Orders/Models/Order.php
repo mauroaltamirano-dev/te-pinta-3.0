@@ -121,9 +121,13 @@ final class Order extends Model implements PublicIdentifier
         ];
     }
 
-    /** Commercial rounding applied to the final total; always 0 for version-1 history. */
+    /** Commercial rounding applied to the final total; version-1 history was never rounded. */
     public function roundingAdjustment(): int
     {
+        if ((int) $this->pricing_snapshot_version < 2) {
+            return 0;
+        }
+
         return (int) $this->total - ((int) $this->items_subtotal + (int) $this->toppings_subtotal
             + (int) $this->shipping_fee_snapshot - (int) $this->discount_amount);
     }
