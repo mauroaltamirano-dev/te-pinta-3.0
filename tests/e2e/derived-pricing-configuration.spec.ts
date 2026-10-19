@@ -20,7 +20,7 @@ test('configures homogeneous surcharge with authoritative preview and ignores st
         .click();
     await dialog.getByLabel('Docena', { exact: true }).fill('22000');
     await dialog.getByLabel('Recargo de media homogénea').fill('2000');
-    await expect(dialog.getByRole('status')).toHaveText(
+    await expect(dialog.locator('#homogeneous-price-result')).toHaveText(
         'Media homogénea resultante: $ 13.000',
     );
     await page.route(
@@ -45,11 +45,11 @@ test('configures homogeneous surcharge with authoritative preview and ignores st
             request.postDataJSON()?.homogeneous_half_dozen_surcharge === '2100',
     );
     await dialog.getByLabel('Recargo de media homogénea').fill('1500');
-    await expect(dialog.getByRole('status')).toHaveText(
+    await expect(dialog.locator('#homogeneous-price-result')).toHaveText(
         'Media homogénea resultante: $ 12.500',
     );
     await page.waitForTimeout(850);
-    await expect(dialog.getByRole('status')).toHaveText(
+    await expect(dialog.locator('#homogeneous-price-result')).toHaveText(
         'Media homogénea resultante: $ 12.500',
     );
     await page.setViewportSize({ width: 320, height: 740 });

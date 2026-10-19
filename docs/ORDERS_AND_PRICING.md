@@ -45,7 +45,7 @@ Payment status: `unpaid`, `paid`, `not_required`. Methods: `cash`, `bank_transfe
 
 ## Snapshots and history
 
-- Creating an order persists the full quote: line name, pricing mode, block count, units, applied price, cooked reference price, raw discount, regular price and savings (`order_items`); combined-dozen parts (`order_item_compositions`); add-ons (`order_toppings`); and on `orders` the customer name/phone, address, shipping, subtotals, savings, discount and total.
+- Creating an order persists the full quote: line name, pricing mode, block count, units, applied price, cooked reference price, raw discount, regular price and savings (`order_items`); combined-dozen parts of version-1 orders (`order_item_compositions`, none for new orders); add-ons (`order_toppings`); and on `orders` the customer name/phone, address, shipping, subtotals, savings, discount and total.
 - Opening an order never re-runs pricing. Changes to products, customers, add-ons or settings never alter existing orders.
 - Legacy fields `items_base_subtotal`, `cooking_surcharge`, `base_unit_price`, `base_line_total` are kept only to read old orders; new orders leave them null. New fields stay null on old orders.
 - `order_revisions` records each successful edit: admin, status, totals before/after, names of changed fields with an economic flag, optional closed-edit reason. It never stores phone, address or note values.
@@ -98,84 +98,69 @@ The engine receives final quantities per product, one condition for the whole or
 
 | Value | Source |
 | --- | --- |
-| Cooked unit / half-dozen / dozen price | `products.unit_price`, `half_dozen_price`, `dozen_price` via `ProductPriceProvider` |
-| Raw price | Cooked price minus the matching positive `raw_price_discounts` tier |
-| Combined dozen | `order_settings.combined_dozen_cooked_price` / `combined_dozen_raw_price` (independent values) |
+| Empanada dozen `D` | `products.dozen_price`, the only empanada price an operator enters |
+| Empanada unit `U` | `products.unit_price`, **stored**: `U = D / 12 × (1 + p%)` rounded half-up to ARS 100, `p` = `order_settings.empanada_unit_surcharge_percent` (seed 10) |
+| Raw (cook at home) | `D_raw = D − raw_price_discounts.dozen`; `U_raw` = same formula on `D_raw`, at quote time |
+| `unit` product | `products.unit_price`, entered by the operator |
 | Add-on | Current `order_addons.price` of an available add-on |
 | Shipping | `delivery_fee` for `delivery`; 0 otherwise |
 
+`U` is recalculated only when `D` changes (product create/edit, or switching a product to `empanada`) or when `p` changes in Configuración (every empanada, soft-deleted included, `RecalculateEmpanadaUnitPrices`). It is never recalculated per order. Product requests reject `unit_price` for empanadas; the editor shows it read-only. `EmpanadaUnitPrice` (`app/Modules/Products/Pricing/`) is the single formula.
+
+Retired inputs (rows kept, never read): `order_settings.combined_dozen_cooked_price` / `combined_dozen_raw_price`, `raw_price_discounts.unit` / `half_dozen`. `half_dozen_price` is still stored and edited but does not price orders.
+
 ### Pricing families
 
-Each product has an explicit `pricing_family`: `empanada` or `unit`. It is never inferred from category, slug or name. `unit` products are priced `quantity × unit_price` with no grouping and no raw discount. Only `empanada` products participate in grouping.
+Each product has an explicit `pricing_family`: `empanada` or `unit`. It is never inferred from category, slug or name. `unit` products are priced `quantity × unit_price` with no grouping and no raw discount.
 
-### Grouping algorithm (empanada products)
+### Fixed dozen algorithm (empanada products)
 
-1. Sort products by internal ID.
-2. Take every full dozen of the same product at its dozen price.
-3. While at least 12 units remain across more than one product, take one combined dozen, filling it in product-ID order.
-4. Take half-dozens of the same product from what remains.
-5. Price the rest as units.
+Per flavor, independently: every 12 units are one `dozen` line at `D`; the remainder is a `unit` line at `U`. There is no combined dozen, no half-dozen tier and no cap — 11 units can cost more than the dozen, on purpose (the restaurant explains it to the customer).
 
-There is no mixed half-dozen in the live engine.
+Required examples (D: dulce 20000, JyQ 22000, salteña 18000 → U 1800, 2000, 1700), `tests/Feature/Orders/FixedDozenOrderPricingTest.php`:
 
-| Requested | Lines |
-| --- | --- |
-| 5 A | 5 units A |
-| 6 A | 1 half-dozen A |
-| 7 A | 1 half-dozen A + 1 unit A |
-| 12 A | 1 dozen A |
-| 18 A | 1 dozen A + 1 half-dozen A |
-| 3 A + 3 B | 3 units A + 3 units B |
-| 6 A + 3 B + 3 C | 1 combined dozen |
-| 6 A + 6 B | 1 combined dozen |
-| 24 mixed | 2 combined dozens |
-
-Combined-dozen savings: `max(0, normal price of the same composition − combined price)`; a combined price above the normal price never shows a negative saving.
+| Basket | Total |
+| --- | ---: |
+| 12 dulce | 20000 |
+| 11 dulce | 19800 |
+| 10 dulce | 18000 |
+| 13 dulce | 21800 |
+| 24 dulce | 40000 |
+| 11 dulce + 1 JyQ | 21800 |
+| 6 dulce + 3 JyQ + 3 salteña | 21900 |
+| 11 salteña | 18700 |
+| Raw dulce: dozen / unit | 18000 / 1700 |
 
 ### Admin discounts and totals
 
 Available only in authenticated admin create, edit and quick order. Types: `percentage` (integer 0–100) or `fixed_amount` (integer pesos); type and value are sent together.
 
 ```text
-discountable subtotal = items subtotal + add-ons subtotal     (shipping excluded)
-discount amount       = min(percentage rounded half-up to pesos | fixed amount, discountable subtotal)
-total                 = discountable subtotal − discount amount + shipping
+discountable subtotal = products subtotal + add-ons subtotal     (shipping excluded)
+discount              = min(exact percentage | fixed amount, discountable subtotal)
+net                   = discountable subtotal − discount + shipping
+total                 = net rounded once, half-up, to ARS 100     (ExactOrderTotals)
+rounding adjustment   = total − net                                (−49 … +50 for a whole-peso net)
 ```
 
-For new orders `items_subtotal = products_cooked_subtotal − raw_discount`.
+The percentage discount is kept exact (numerator over 1200) until the single rounding; `discount_amount` stores it rounded to pesos for display. Previews, WhatsApp and admin summaries show the adjustment as a `Redondeo` line. Products subtotal = cooked products subtotal − raw discount.
 
-### Limits
+### Snapshot versions
 
-At least one product; at most 50 products per request, each once, quantity 1–120; at most 20 add-on rows, each once, quantity 1–100. Unavailable, deleted or inactive-category selections fail. Public selections use slugs; admin selections use validated internal IDs.
+| Version | Orders | Rules |
+| --- | --- | --- |
+| 1 | Created before fixed dozen pricing | Original columns only; their constraints are kept verbatim and nothing is recalculated. |
+| 2 | Every new quote (`PersistOrderQuote`) | Whole-peso lines whose exact numerators are 12 × the pesos (`applied/cooked/raw_discount_exact_numerator_12`, surcharge 0); order numerators for products, discount (over 1200), pre-round net and rounding adjustment. Database checks (`2026_10_19_000000_activate_fixed_dozen_pricing`) only accept `unit`/`dozen` lines with a product and `total = net + adjustment`. |
 
-## Derived pricing foundation (P0-A, inactive)
+Rollback of that migration refuses once version-2 history exists; it never rewrites unit prices back.
 
-A replacement pricing model is implemented as pure classes and schema but **has no production caller**: `Pricing/DerivedTierAllocator.php`, `Pricing/DerivedPricingCalculator.php`, `Pricing/ExactOrderTotals.php`, migration `2026_10_15_000000_prepare_derived_pricing_foundation.php`, tests in `tests/Unit/Orders/DerivedPricingFoundationTest.php`. Checkout, quick order, persistence and costing still use the live engine. Activating it (P0-B) requires wiring into the shared engine, cooked/raw snapshots, version-aware database checks, preview/persist equality and regression of inventory and costing.
+### Limits and errors
 
-Rules as implemented:
+At least one product; at most 50 distinct products per request, each once, quantity 1–120; at most 20 add-on rows, each once, quantity 1–100. Unavailable, deleted or inactive-category selections fail. Public selections use slugs; admin selections use validated internal IDs. Invalid price configuration (raw dozen discount missing or above a flavor's dozen) and requests above the limits return validation errors, never a server error.
 
-- Only `empanada` products are allocated: `floor(N/12)` dozens, one six-pack when `N mod 12 ≥ 6`, then `N mod 6` units. 18 is a dozen plus a six, never three sixes.
-- A dozen slot charges each member `D/12` with no surcharge.
-- A homogeneous six charges the product's `H` (`products.half_dozen_price`). Its surcharge is derived as `R = (2H − D)/2`; there is no surcharge column. The admin product editor accepts either `H` or `R` (never both) and previews `H` through `POST /admin/settings/products/half-dozen-preview`.
-- A mixed six (at least two flavors) charges `sum(q × D/12) + R_combined`, where `R_combined` is `order_settings.combined_half_dozen_surcharge` (seed 1500).
-- The allocator searches homogeneous and mixed six candidates (mixed states keep flavor identity) and picks the cheapest; ties keep homogeneous-first, product-ID order.
-- Arithmetic is exact: numerators over 12, discounts over 1200; `ExactOrderTotals` rounds once, half-up, to the nearest peso. Display projections use largest remainder and never feed pricing.
-- Tier eligibility in the selected condition: dozen `D < 12U`; homogeneous six `H < 6U` with non-negative `R`; each mixed flavor `D + 2R_combined < 12U`. After rounding the basket must still cost less than its unit baseline; otherwise the quote is rejected (no silent fallback).
-- Raw compatibility keeps existing discounts authoritative: `U_raw = U − discount_unit`, `D_raw = D − discount_dozen`, `H_raw = H − discount_half`, `R_raw = R + discount_dozen/2 − discount_half`. Mixed sixes use raw `D` plus `R_combined` once.
-- The migration reserves `pricing_snapshot_version` (default 1) and exact numerator columns with shape checks, and extends the inventory-evidence guard to every new economic field. Rollback refuses once versioned history exists.
+## Derived pricing classes (P0-A, inactive)
 
-Worked fixtures (cooked; Matambre 2200/13000/22000, Caprese 1800/10500/18000, Salteña 2100/12000/20000, Pollo 2000/11500/19000, Humita 1800/10500/18000 as U/H/D; `R_combined` 1500):
-
-| Basket | Total |
-| --- | ---: |
-| 6 Matambre | 13000 |
-| 3 Matambre + 3 Caprese | 11500 |
-| 3 Matambre + 2 Salteña + 1 Caprese | 11833 (exact 142000/12) |
-| 2 Matambre + 2 Humita + 2 Pollo + 2 Salteña | 15267 |
-| 12 Matambre + 6 Caprese | 32500 |
-| 8 Matambre + 8 Salteña + 8 Caprese | 40000 |
-
-Before raw activation the owner must correct prices or surcharges that make raw presentations invalid (for example the seeded Caprese and Humita raw mixed shares are not below their raw unit price with `R_combined` 1500).
+`Pricing/DerivedTierAllocator.php` and `Pricing/DerivedPricingCalculator.php` (formula `Σ q·D/12 + R_combined` with homogeneous and mixed sixes) have **no production caller** and are not the live model; `order_settings.combined_half_dozen_surcharge` only feeds them and is no longer shown in Configuración. Their tests stay in `tests/Unit/Orders/DerivedPricingFoundationTest.php`. Of that foundation, only `ExactOrderTotals` and the reserved snapshot columns are used, by version 2.
 
 ## Admin quick order
 
@@ -187,7 +172,7 @@ Before raw activation the owner must correct prices or surcharges that make raw 
 
 ## Change checklist
 
-1. Change grouping only in `OrderPricingEngine` and update `tests/Feature/Orders/OrderPricingEngineTest.php`.
-2. Keep product price access behind `ProductPriceProvider`.
-3. Update snapshot and constraint tests when persistence changes.
+1. Change line building only in `OrderPricingEngine` and keep `tests/Feature/Orders/FixedDozenOrderPricingTest.php` (required examples) green.
+2. Keep product price access behind `ProductPriceProvider` and the unit formula in `EmpanadaUnitPrice` (mirrored by the migration SQL and `features/products/utils.ts` for display).
+3. Never recalculate stored snapshots; a new persisted shape needs a new snapshot version, constraints and tests.
 4. Update this document.

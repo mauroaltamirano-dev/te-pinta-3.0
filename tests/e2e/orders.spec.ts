@@ -68,7 +68,7 @@ async function configureOrderPaymentWallet(page: Page, walletName: string) {
     await page.waitForLoadState('networkidle');
 }
 
-async function createCombinedOrder(page: Page, customerName: string) {
+async function createMixedFlavorOrder(page: Page, customerName: string) {
     await page.goto('/admin/orders/create');
     await page
         .getByRole('button', { name: 'Agregar media docena de Salteña' })
@@ -252,7 +252,7 @@ test('grilla y lista mantienen completa la primera fila con scroll de resultados
     await createOrder(page, `${fixturePrefix} dos`);
     await createOrder(page, `${fixturePrefix} tres`);
     await createOrder(page, `${fixturePrefix} cuatro`);
-    const orderId = await createCombinedOrder(
+    const orderId = await createMixedFlavorOrder(
         page,
         `${fixturePrefix} con variedades`,
     );
@@ -265,7 +265,8 @@ test('grilla y lista mantienen completa la primera fila con scroll de resultados
     await expect(
         card.getByText('6 × Humita Tucumana', { exact: true }),
     ).toBeVisible();
-    await expect(card.getByText('Variedades', { exact: true })).toBeVisible();
+    // Fixed dozen pricing: mixed flavors are separate lines, never a combined dozen with varieties.
+    await expect(card.getByText('Variedades', { exact: true })).toHaveCount(0);
     await expect(card.locator('img')).toHaveCount(0);
     await expect(page.getByTestId('orders-card-grid')).toHaveAttribute(
         'data-view',

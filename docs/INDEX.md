@@ -15,7 +15,7 @@ The documents below describe the system as implemented. When code and documentat
 | --- | --- |
 | Module boundaries, dependencies, multi-tenancy | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Tables, constraints, migrations, time zones | [DATABASE.md](DATABASE.md) |
-| Order lifecycle, sources, snapshots, payments, pricing engine, derived pricing foundation | [ORDERS_AND_PRICING.md](ORDERS_AND_PRICING.md) |
+| Order lifecycle, sources, snapshots, payments, fixed dozen pricing engine, rounding, snapshot versions | [ORDERS_AND_PRICING.md](ORDERS_AND_PRICING.md) |
 | Stock, cost layers, valuation, recipes, production, adjustments, order consumption, costing | [INVENTORY.md](INVENTORY.md) |
 | Wallets, ledger, outflows, transfers, distributions, order payments, purchases, audit, dashboard KPIs | [FINANCE.md](FINANCE.md) |
 | Public site, checkout, featured products, Instagram automation runbook | [STOREFRONT_AND_MARKETING.md](STOREFRONT_AND_MARKETING.md) |

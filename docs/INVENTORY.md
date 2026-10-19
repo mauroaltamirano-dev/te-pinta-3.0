@@ -125,5 +125,5 @@ margin percentage   = round_half_up(margin × 10000 / selling price)   (basis po
 ```
 
 - Policies (`inventory_costing_policies`, presentations, packaging components) are explicit and assigned per product (`inventory_product_costing_policies`); none is inferred from category. An inactive assigned policy shows but yields no total.
-- Empanada products estimate unit, half-dozen and dozen; unit products show one unit (or a requested quantity 1–120). Mixed-basket costing is not implemented.
+- Empanada products estimate unit, half-dozen (six units at the stored unit price) and dozen; the selling price is the quoted line before the order-level ARS 100 rounding. Unit products show one unit (or a requested quantity 1–120). Mixed-basket costing is not implemented.
 - Missing configuration, missing packaging presentation, unknown, partial, negative or warning-bearing valuation, or insufficient combined stock make the estimate Incomplete or Unreliable; total and margin are then unavailable. The UI never treats missing as zero.

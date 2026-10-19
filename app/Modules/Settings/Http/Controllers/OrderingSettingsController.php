@@ -14,7 +14,6 @@ use App\Modules\Settings\Data\OrderingSettingsData;
 use App\Modules\Settings\Http\Requests\UpdateOrderingSettingsRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use LogicException;
@@ -25,26 +24,20 @@ final class OrderingSettingsController
     {
         abort_unless($request->user()?->can(Permission::CatalogManage->value) === true, 403);
 
-        /** @var Collection<string, int> $discounts */
-        $discounts = RawPriceDiscount::query()->pluck('amount', 'pricing_mode');
+        $dozenRawDiscount = RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen->value)->value('amount');
+
+        if ($dozenRawDiscount === null) {
+            throw new LogicException('Falta el descuento de precio crudo dozen.');
+        }
 
         return Inertia::render('admin/settings/general', [
             'branding' => ['accent_color' => $branding->palette()->accent],
             'orderingSettings' => [
-                'combined_dozen_raw_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice),
-                'combined_dozen_cooked_price' => OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice),
-                'combined_half_dozen_surcharge' => OrderSetting::integer(OrderSettingKey::CombinedHalfDozenSurcharge),
+                'empanada_unit_surcharge_percent' => OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent),
                 'delivery_fee' => OrderSetting::integer(OrderSettingKey::DeliveryFee),
                 'whatsapp_order_phone' => OrderSetting::string(OrderSettingKey::WhatsappOrderPhone),
-                'raw_price_discounts' => collect(PriceTier::cases())
-                    ->mapWithKeys(function (PriceTier $tier) use ($discounts): array {
-                        if (! $discounts->has($tier->value)) {
-                            throw new LogicException("Falta el descuento de precio crudo {$tier->value}.");
-                        }
-
-                        return [$tier->value => (int) $discounts->get($tier->value)];
-                    })
-                    ->all(),
+                // Only the dozen discount prices raw orders; unit and half-dozen rows are retired history.
+                'raw_price_discounts' => ['dozen' => (int) $dozenRawDiscount],
                 'addons' => OrderAddon::query()
                     ->orderBy('sort_order')
                     ->orderBy('id')

@@ -82,7 +82,7 @@ test('administración permite crear, editar y eliminar etiquetas públicas', asy
     await expect(row).toHaveCount(0);
 });
 
-test('configuración presenta precios cocinados y descuentos crudos positivos', async ({
+test('configuración presenta el recargo por unidad y solo el descuento crudo de docena', async ({
     page,
 }) => {
     await logInAsAdministrator(page);
@@ -91,24 +91,21 @@ test('configuración presenta precios cocinados y descuentos crudos positivos', 
     await expect(
         page.getByRole('heading', { name: 'Configuración de pedidos' }),
     ).toBeVisible();
-    await expect(page.getByLabel('Docena combinada cocinada')).toHaveValue(
-        '17500',
-    );
-    await expect(page.getByLabel('Docena combinada cruda')).toHaveValue(
-        '16000',
-    );
+    await expect(page.getByLabel('Recargo por unidad (%)')).toHaveValue('10');
+    await expect(page.getByLabel('Docena combinada cocinada')).toHaveCount(0);
+    await expect(page.getByLabel('Docena combinada cruda')).toHaveCount(0);
     const rawDiscounts = page.getByRole('group', {
         name: 'Descuentos por preparación en crudo',
     });
     await expect(
-        rawDiscounts.getByLabel('Unidad', { exact: true }),
-    ).toHaveValue('200');
-    await expect(
-        rawDiscounts.getByLabel('Media docena', { exact: true }),
-    ).toHaveValue('1000');
-    await expect(
         rawDiscounts.getByLabel('Docena', { exact: true }),
     ).toHaveValue('2000');
+    await expect(
+        rawDiscounts.getByLabel('Unidad', { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+        rawDiscounts.getByLabel('Media docena', { exact: true }),
+    ).toHaveCount(0);
     await expect(page.getByText('Cooking surcharges')).toHaveCount(0);
     await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
 });

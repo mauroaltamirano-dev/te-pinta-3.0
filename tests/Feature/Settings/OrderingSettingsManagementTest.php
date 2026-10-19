@@ -62,13 +62,15 @@ final class OrderingSettingsManagementTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page): Assert => $page
                 ->component('admin/settings/general', false)
-                ->where('orderingSettings.combined_dozen_raw_price', 16000)
-                ->where('orderingSettings.combined_dozen_cooked_price', 17500)
+                ->where('orderingSettings.empanada_unit_surcharge_percent', 10)
                 ->where('orderingSettings.delivery_fee', 0)
                 ->where('orderingSettings.whatsapp_order_phone', '')
-                ->where('orderingSettings.raw_price_discounts.unit', 200)
-                ->where('orderingSettings.raw_price_discounts.half_dozen', 1000)
                 ->where('orderingSettings.raw_price_discounts.dozen', 2000)
+                ->missing('orderingSettings.raw_price_discounts.unit')
+                ->missing('orderingSettings.raw_price_discounts.half_dozen')
+                ->missing('orderingSettings.combined_dozen_raw_price')
+                ->missing('orderingSettings.combined_dozen_cooked_price')
+                ->missing('orderingSettings.combined_half_dozen_surcharge')
                 ->has('orderingSettings.addons', 2)
                 ->where('orderingSettings.addons.0.name', 'Lactonesa')
                 ->where('orderingSettings.addons.0.price', 500)
@@ -83,15 +85,10 @@ final class OrderingSettingsManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->put(route('admin.settings.general.update'), [
-                'combined_dozen_raw_price' => 17000,
-                'combined_dozen_cooked_price' => 19000,
+                'empanada_unit_surcharge_percent' => 10,
                 'delivery_fee' => 2500,
                 'whatsapp_order_phone' => '+54 9 387 555-0101',
-                'raw_price_discounts' => [
-                    'unit' => 250,
-                    'half_dozen' => 1200,
-                    'dozen' => 2200,
-                ],
+                'raw_price_discounts' => ['dozen' => 2200],
                 'addons' => [
                     [
                         'id' => $addons[0]->id,
@@ -112,13 +109,15 @@ final class OrderingSettingsManagementTest extends TestCase
             ->assertRedirect(route('admin.settings.general.index'))
             ->assertSessionHas('success');
 
-        $this->assertSame(17000, OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice));
-        $this->assertSame(19000, OrderSetting::integer(OrderSettingKey::CombinedDozenCookedPrice));
+        $this->assertSame(10, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
         $this->assertSame(2500, OrderSetting::integer(OrderSettingKey::DeliveryFee));
         $this->assertSame('+54 9 387 555-0101', OrderSetting::string(OrderSettingKey::WhatsappOrderPhone));
-        $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::Unit->value, 'amount' => 250]);
-        $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1200]);
         $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2200]);
+        // Retired rows are kept untouched as history.
+        $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200]);
+        $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000]);
+        $this->assertDatabaseHas('order_settings', ['key' => 'combined_dozen_raw_price', 'integer_value' => 16000]);
+        $this->assertDatabaseHas('order_settings', ['key' => 'combined_dozen_cooked_price', 'integer_value' => 17500]);
         $this->assertDatabaseHas('order_addons', [
             'id' => $addons[0]->id,
             'name' => 'Lactonesa grande',
@@ -134,11 +133,85 @@ final class OrderingSettingsManagementTest extends TestCase
         ]);
     }
 
+    public function test_percentage_change_recalculates_every_stored_empanada_unit_price(): void
+    {
+        $dulce = $this->empanada('Dulce', 20000);
+        $deleted = $this->empanada('Retirada', 22000);
+        $deleted->delete();
+        $soda = $this->unitProduct('Soda', 1550);
+        $payload = $this->validPayload();
+        $payload['empanada_unit_surcharge_percent'] = 20;
+
+        $this->actingAs(User::factory()->administrator()->create())
+            ->put(route('admin.settings.general.update'), $payload)
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertSame(20, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
+        // U = D / 12 × 1.20, rounded half-up to ARS 100.
+        $this->assertSame(2000, $dulce->fresh()->unit_price);
+        $this->assertSame(2200, Product::withTrashed()->findOrFail($deleted->id)->unit_price);
+        $this->assertSame(1550, $soda->fresh()->unit_price);
+        $this->assertSame(20000, $dulce->fresh()->dozen_price);
+    }
+
+    public function test_unchanged_percentage_does_not_recalculate_unit_prices(): void
+    {
+        $dulce = $this->empanada('Dulce', 20000);
+        Product::query()->whereKey($dulce->id)->update(['unit_price' => 1900]);
+
+        $this->actingAs(User::factory()->administrator()->create())
+            ->put(route('admin.settings.general.update'), $this->validPayload())
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertSame(1900, $dulce->fresh()->unit_price);
+    }
+
+    public function test_percentage_must_be_an_integer_between_zero_and_one_hundred(): void
+    {
+        $dulce = $this->empanada('Dulce', 20000);
+        $admin = User::factory()->administrator()->create();
+
+        foreach ([-1, 101, 'diez', 10.5, null] as $invalid) {
+            $payload = $this->validPayload();
+            $payload['empanada_unit_surcharge_percent'] = $invalid;
+
+            $this->actingAs($admin)
+                ->put(route('admin.settings.general.update'), $payload)
+                ->assertSessionHasErrors('empanada_unit_surcharge_percent');
+        }
+
+        $this->assertSame(10, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
+        $this->assertSame(1800, $dulce->fresh()->unit_price);
+    }
+
+    public function test_retired_prices_and_discounts_are_rejected_explicitly(): void
+    {
+        $payload = $this->validPayload();
+        $payload['combined_dozen_raw_price'] = 16000;
+        $payload['combined_dozen_cooked_price'] = 17500;
+        $payload['raw_price_discounts']['unit'] = 250;
+        $payload['raw_price_discounts']['half_dozen'] = 1200;
+        $payload['delivery_fee'] = 900;
+
+        $this->actingAs(User::factory()->administrator()->create())
+            ->put(route('admin.settings.general.update'), $payload)
+            ->assertSessionHasErrors([
+                'combined_dozen_raw_price' => 'El precio fijo de docena combinada ya no se usa; recargá la página.',
+                'combined_dozen_cooked_price' => 'El precio fijo de docena combinada ya no se usa; recargá la página.',
+                'raw_price_discounts.unit' => 'Solo se usa el descuento crudo de docena; recargá la página.',
+                'raw_price_discounts.half_dozen' => 'Solo se usa el descuento crudo de docena; recargá la página.',
+            ]);
+
+        $this->assertSame(0, OrderSetting::integer(OrderSettingKey::DeliveryFee));
+        $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
+    }
+
     public function test_invalid_configuration_is_rejected_without_partial_writes(): void
     {
+        $dulce = $this->empanada('Dulce', 20000);
         $admin = User::factory()->administrator()->create();
         $payload = $this->validPayload();
-        $payload['combined_dozen_raw_price'] = 99999;
+        $payload['empanada_unit_surcharge_percent'] = 20;
         $payload['delivery_fee'] = -1;
         $payload['raw_price_discounts']['unexpected'] = 1;
         $payload['addons'][0]['id'] = 999999;
@@ -153,86 +226,83 @@ final class OrderingSettingsManagementTest extends TestCase
                 'addons.0.id',
             ]);
 
-        $this->assertSame(16000, OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice));
-        $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
+        $this->assertSame(10, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
+        $this->assertSame(1800, $dulce->fresh()->unit_price);
+        $this->assertSame(2000, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen)->value('amount'));
     }
 
-    public function test_raw_combined_price_must_be_lower_than_cooked_combined_price(): void
+    public function test_dozen_raw_discount_cannot_exceed_the_cheapest_empanada_dozen(): void
     {
+        $this->empanada('Salteña', 18000);
         $payload = $this->validPayload();
-        $payload['combined_dozen_raw_price'] = $payload['combined_dozen_cooked_price'];
+        $payload['raw_price_discounts']['dozen'] = 18001;
 
         $this->actingAs(User::factory()->administrator()->create())
             ->put(route('admin.settings.general.update'), $payload)
-            ->assertSessionHasErrors('combined_dozen_raw_price');
+            ->assertSessionHasErrors('raw_price_discounts.dozen');
 
-        $this->assertSame(16000, OrderSetting::integer(OrderSettingKey::CombinedDozenRawPrice));
+        $this->assertSame(2000, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen)->value('amount'));
     }
 
-    public function test_raw_discount_cannot_make_any_current_product_price_negative(): void
+    public function test_dozen_raw_discount_ignores_cheap_unit_products(): void
     {
-        $category = Category::query()->create([
-            'name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true,
-        ]);
-        Product::query()->create([
-            'category_id' => $category->id,
-            'name' => 'Salteña',
-            'slug' => 'saltena',
-            'unit_price' => 1800,
-            'half_dozen_price' => 10000,
-            'dozen_price' => 18000,
-            'is_available' => true,
-            'sort_order' => 1,
-        ]);
+        $this->unitProduct('Soda', 100);
         $payload = $this->validPayload();
-        $payload['raw_price_discounts']['unit'] = 1801;
-
-        $this->actingAs(User::factory()->administrator()->create())
-            ->put(route('admin.settings.general.update'), $payload)
-            ->assertSessionHasErrors('raw_price_discounts.unit');
-
-        $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
-    }
-
-    public function test_raw_discounts_ignore_cheap_unit_products(): void
-    {
-        $category = Category::query()->create([
-            'name' => 'Bebidas', 'slug' => 'bebidas', 'sort_order' => 1, 'is_active' => true,
-        ]);
-        Product::query()->create([
-            'category_id' => $category->id,
-            'pricing_family' => 'unit',
-            'name' => 'Soda',
-            'slug' => 'soda',
-            'unit_price' => 100,
-            'half_dozen_price' => 100,
-            'dozen_price' => 100,
-            'is_available' => true,
-            'sort_order' => 1,
-        ]);
-        $payload = $this->validPayload();
-        $payload['raw_price_discounts']['unit'] = 200;
+        $payload['raw_price_discounts']['dozen'] = 2200;
 
         $this->actingAs(User::factory()->administrator()->create())
             ->put(route('admin.settings.general.update'), $payload)
             ->assertSessionDoesntHaveErrors();
 
-        $this->assertSame(200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->value('amount'));
+        $this->assertSame(2200, RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen)->value('amount'));
+    }
+
+    private function empanada(string $name, int $dozenPrice): Product
+    {
+        return Product::query()->create([
+            'category_id' => $this->category()->id,
+            'pricing_family' => 'empanada',
+            'name' => $name,
+            'slug' => str($name)->slug()->toString(),
+            'unit_price' => intdiv($dozenPrice * 110 + 60000, 120000) * 100,
+            'half_dozen_price' => intdiv($dozenPrice, 2) + 500,
+            'dozen_price' => $dozenPrice,
+            'is_available' => true,
+            'sort_order' => 1,
+        ]);
+    }
+
+    private function unitProduct(string $name, int $unitPrice): Product
+    {
+        return Product::query()->create([
+            'category_id' => $this->category()->id,
+            'pricing_family' => 'unit',
+            'name' => $name,
+            'slug' => str($name)->slug()->toString(),
+            'unit_price' => $unitPrice,
+            'half_dozen_price' => $unitPrice,
+            'dozen_price' => $unitPrice,
+            'is_available' => true,
+            'sort_order' => 1,
+        ]);
+    }
+
+    private function category(): Category
+    {
+        return Category::query()->firstOrCreate(
+            ['slug' => 'empanadas'],
+            ['name' => 'Empanadas', 'sort_order' => 1, 'is_active' => true],
+        );
     }
 
     /** @return array<string, mixed> */
     private function validPayload(): array
     {
         return [
-            'combined_dozen_raw_price' => 16000,
-            'combined_dozen_cooked_price' => 17500,
+            'empanada_unit_surcharge_percent' => 10,
             'delivery_fee' => 0,
             'whatsapp_order_phone' => '',
-            'raw_price_discounts' => [
-                'unit' => 200,
-                'half_dozen' => 1000,
-                'dozen' => 2000,
-            ],
+            'raw_price_discounts' => ['dozen' => 2000],
             'addons' => OrderAddon::query()->orderBy('sort_order')->get()->map(
                 fn (OrderAddon $addon): array => [
                     'id' => $addon->id,

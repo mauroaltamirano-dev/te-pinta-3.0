@@ -9,12 +9,10 @@ import { BrandingForm } from '@/features/settings/components/branding-form';
 import SettingsLayout from '@/layouts/settings-layout';
 
 interface OrderingSettings {
-    combined_dozen_raw_price: number;
-    combined_dozen_cooked_price: number;
-    combined_half_dozen_surcharge: number;
+    empanada_unit_surcharge_percent: number;
     delivery_fee: number;
     whatsapp_order_phone: string;
-    raw_price_discounts: { unit: number; half_dozen: number; dozen: number };
+    raw_price_discounts: { dozen: number };
     addons: Array<{
         id: number;
         name: string;
@@ -56,51 +54,56 @@ export default function GeneralSettings({
                 <form onSubmit={submit} className="grid gap-6 p-5 sm:p-7">
                     <fieldset className="grid gap-4 rounded-lg border border-admin-border bg-admin-surface p-4">
                         <legend className="px-1 font-semibold">
-                            Precios derivados — preparación P0
+                            Precio por unidad de empanadas
                         </legend>
-                        <p className="text-sm text-admin-text-secondary">
-                            Este recargo se aplicará una sola vez a cada media
-                            docena combinada. El nuevo cálculo todavía no está
-                            activado en pedidos.
-                        </p>
-                        <MoneyField
-                            id="combined-half-surcharge"
-                            label="Recargo de media docena combinada"
-                            value={form.data.combined_half_dozen_surcharge}
-                            error={form.errors.combined_half_dozen_surcharge}
-                            onChange={(value) =>
-                                form.setData(
-                                    'combined_half_dozen_surcharge',
-                                    value,
-                                )
-                            }
-                        />
+                        <div className="grid gap-2 sm:max-w-xs">
+                            <Label htmlFor="empanada-unit-surcharge">
+                                Recargo por unidad (%)
+                            </Label>
+                            <Input
+                                id="empanada-unit-surcharge"
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="1"
+                                value={
+                                    form.data.empanada_unit_surcharge_percent
+                                }
+                                onChange={(event) =>
+                                    form.setData(
+                                        'empanada_unit_surcharge_percent',
+                                        Number(event.target.value),
+                                    )
+                                }
+                                aria-invalid={Boolean(
+                                    form.errors.empanada_unit_surcharge_percent,
+                                )}
+                                aria-describedby={
+                                    form.errors.empanada_unit_surcharge_percent
+                                        ? 'empanada-unit-surcharge-error'
+                                        : 'empanada-unit-surcharge-help'
+                                }
+                                required
+                            />
+                            <p
+                                id="empanada-unit-surcharge-help"
+                                className="text-xs text-muted-foreground"
+                            >
+                                Unidad = docena ÷ 12 + este porcentaje,
+                                redondeada a $100. Al guardar un porcentaje
+                                nuevo se recalcula la unidad de todas las
+                                empanadas; los pedidos ya hechos no cambian.
+                            </p>
+                            <ErrorText
+                                id="empanada-unit-surcharge-error"
+                                message={
+                                    form.errors.empanada_unit_surcharge_percent
+                                }
+                            />
+                        </div>
                     </fieldset>
                     <fieldset className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
-                        <legend className="px-1 font-semibold">
-                            Docena combinada y entrega
-                        </legend>
-                        <MoneyField
-                            id="combined-cooked"
-                            label="Docena combinada cocinada"
-                            value={form.data.combined_dozen_cooked_price}
-                            error={form.errors.combined_dozen_cooked_price}
-                            onChange={(value) =>
-                                form.setData(
-                                    'combined_dozen_cooked_price',
-                                    value,
-                                )
-                            }
-                        />
-                        <MoneyField
-                            id="combined-raw"
-                            label="Docena combinada cruda"
-                            value={form.data.combined_dozen_raw_price}
-                            error={form.errors.combined_dozen_raw_price}
-                            onChange={(value) =>
-                                form.setData('combined_dozen_raw_price', value)
-                            }
-                        />
+                        <legend className="px-1 font-semibold">Entrega</legend>
                         <MoneyField
                             id="delivery-fee"
                             label="Costo de envío"
@@ -151,38 +154,22 @@ export default function GeneralSettings({
                             Descuentos por preparación en crudo
                         </legend>
                         <p className="text-sm text-admin-text-secondary sm:col-span-3">
-                            Estos importes se descuentan del precio cocinado.
-                            Deben ser positivos y nunca se aplican como
-                            recargos.
+                            Se descuenta de la docena de cada gusto. La unidad
+                            cruda se calcula desde esa docena con el mismo
+                            recargo por unidad.
                         </p>
-                        {(['unit', 'half_dozen', 'dozen'] as const).map(
-                            (tier) => (
-                                <MoneyField
-                                    key={tier}
-                                    id={`raw-discount-${tier}`}
-                                    min={1}
-                                    label={
-                                        tier === 'unit'
-                                            ? 'Unidad'
-                                            : tier === 'half_dozen'
-                                              ? 'Media docena'
-                                              : 'Docena'
-                                    }
-                                    value={form.data.raw_price_discounts[tier]}
-                                    error={
-                                        form.errors[
-                                            `raw_price_discounts.${tier}`
-                                        ]
-                                    }
-                                    onChange={(value) =>
-                                        form.setData('raw_price_discounts', {
-                                            ...form.data.raw_price_discounts,
-                                            [tier]: value,
-                                        })
-                                    }
-                                />
-                            ),
-                        )}
+                        <MoneyField
+                            id="raw-discount-dozen"
+                            min={1}
+                            label="Docena"
+                            value={form.data.raw_price_discounts.dozen}
+                            error={form.errors['raw_price_discounts.dozen']}
+                            onChange={(value) =>
+                                form.setData('raw_price_discounts', {
+                                    dozen: value,
+                                })
+                            }
+                        />
                     </fieldset>
                     <fieldset className="grid gap-4 rounded-lg border p-4">
                         <legend className="px-1 font-semibold">

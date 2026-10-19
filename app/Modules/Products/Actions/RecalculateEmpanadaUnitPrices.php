@@ -7,13 +7,22 @@ use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Pricing\EmpanadaUnitPrice;
+use LogicException;
 
 /** Stored empanada unit prices change only when a dozen price or the surcharge percentage changes. */
 final class RecalculateEmpanadaUnitPrices
 {
     public function forDozen(int $dozenPrice): int
     {
-        return EmpanadaUnitPrice::fromDozen($dozenPrice, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
+        // Shared lock: a concurrent percentage change waits for this product save, or this read waits for it.
+        $percent = OrderSetting::query()->where('key', OrderSettingKey::EmpanadaUnitSurchargePercent->value)
+            ->sharedLock()->value('integer_value');
+
+        if ($percent === null) {
+            throw new LogicException('Missing integer order setting '.OrderSettingKey::EmpanadaUnitSurchargePercent->value.'.');
+        }
+
+        return EmpanadaUnitPrice::fromDozen($dozenPrice, (int) $percent);
     }
 
     /** Recompute every empanada, soft-deleted ones included, after a percentage change. */

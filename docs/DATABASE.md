@@ -65,9 +65,9 @@ Decision record: [ADR 0013](decisions/0013-code-defined-roles-and-permissions.md
 
 | Table | Content |
 | --- | --- |
-| `order_settings` | Closed key set (`Orders\Enums\OrderSettingKey`), exactly one integer or string value per row. Seeds: `combined_dozen_cooked_price` 17500, `combined_dozen_raw_price` 16000, `combined_half_dozen_surcharge` 1500 (used only by the inactive derived pricing), `delivery_fee` 0, `whatsapp_order_phone` empty. |
+| `order_settings` | Closed key set (`Orders\Enums\OrderSettingKey`), exactly one integer or string value per row. Seeds: `empanada_unit_surcharge_percent` 10 (derives stored empanada unit prices), `delivery_fee` 0, `whatsapp_order_phone` empty. Retired rows kept as history and never read: `combined_dozen_cooked_price` 17500, `combined_dozen_raw_price` 16000; `combined_half_dozen_surcharge` 1500 feeds only the inactive derived classes. |
 | `order_addons` | Toppings: slug, name, integer price, availability, sort order, soft delete. Seeds: Lactonesa (500), Yasgua (200). |
-| `raw_price_discounts` | Positive discounts per tier (`unit`, `half_dozen`, `dozen`) subtracted from cooked prices for raw orders. |
+| `raw_price_discounts` | Positive discounts per tier. Only `dozen` is used: raw dozen = `dozen_price − dozen`; `unit` and `half_dozen` rows are retired history. |
 | `instagram_automation_settings` | Operator on/off switch for Story automation. |
 
 These are database records edited through the admin UI, not environment variables. Seed values are safe placeholders: configure the real delivery fee and WhatsApp number before taking orders.

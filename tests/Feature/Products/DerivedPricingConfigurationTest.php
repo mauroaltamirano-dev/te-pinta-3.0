@@ -62,7 +62,7 @@ final class DerivedPricingConfigurationTest extends TestCase
     public function test_settings_updates_the_surcharge_and_legacy_clients_preserve_it(): void
     {
         $this->actingAs(User::factory()->administrator()->create());
-        $payload = ['combined_dozen_raw_price' => 16000, 'combined_dozen_cooked_price' => 17500, 'combined_half_dozen_surcharge' => 1200, 'delivery_fee' => 987, 'whatsapp_order_phone' => '', 'raw_price_discounts' => ['unit' => 200, 'half_dozen' => 1000, 'dozen' => 2000], 'addons' => []];
+        $payload = ['empanada_unit_surcharge_percent' => 10, 'combined_half_dozen_surcharge' => 1200, 'delivery_fee' => 987, 'whatsapp_order_phone' => '', 'raw_price_discounts' => ['dozen' => 2000], 'addons' => []];
         $payload['addons'] = OrderAddon::query()->get(['id', 'name', 'price', 'is_available', 'sort_order'])->toArray();
         $this->putJson(route('admin.settings.general.update'), $payload)->assertRedirect();
         self::assertSame(1200, OrderSetting::integer(OrderSettingKey::CombinedHalfDozenSurcharge));

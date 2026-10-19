@@ -5,6 +5,7 @@ namespace App\Modules\Settings\Actions;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
+use App\Modules\Products\Actions\RecalculateEmpanadaUnitPrices;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateOrderingSettings
 {
+    public function __construct(private readonly RecalculateEmpanadaUnitPrices $unitPrices) {}
+
     public function execute(OrderingSettingsData $data): void
     {
         $this->validateRawPrices($data);
@@ -24,8 +27,7 @@ final class UpdateOrderingSettings
             if ($data->combinedHalfDozenSurcharge !== null) {
                 $this->updateIntegerSetting(OrderSettingKey::CombinedHalfDozenSurcharge, $data->combinedHalfDozenSurcharge);
             }
-            $this->updateIntegerSetting(OrderSettingKey::CombinedDozenRawPrice, $data->combinedDozenRawPrice);
-            $this->updateIntegerSetting(OrderSettingKey::CombinedDozenCookedPrice, $data->combinedDozenCookedPrice);
+            $this->updateSurchargePercent($data->empanadaUnitSurchargePercent);
             $this->updateIntegerSetting(OrderSettingKey::DeliveryFee, $data->deliveryFee);
 
             OrderSetting::query()->updateOrCreate(
@@ -33,12 +35,11 @@ final class UpdateOrderingSettings
                 ['integer_value' => null, 'string_value' => $data->whatsappOrderPhone],
             );
 
-            foreach (PriceTier::cases() as $tier) {
-                RawPriceDiscount::query()->updateOrCreate(
-                    ['pricing_mode' => $tier->value],
-                    ['amount' => $data->rawPriceDiscounts[$tier->value]],
-                );
-            }
+            // Unit and half-dozen discount rows are retired history and stay untouched.
+            RawPriceDiscount::query()->updateOrCreate(
+                ['pricing_mode' => PriceTier::Dozen->value],
+                ['amount' => $data->dozenRawDiscount],
+            );
 
             foreach ($data->addons as $addonData) {
                 OrderAddon::query()
@@ -58,26 +59,28 @@ final class UpdateOrderingSettings
 
     private function validateRawPrices(OrderingSettingsData $data): void
     {
-        if ($data->combinedDozenRawPrice >= $data->combinedDozenCookedPrice) {
+        $minimumDozenPrice = Product::query()->where('pricing_family', ProductPricingFamily::Empanada)->min('dozen_price');
+
+        if ($minimumDozenPrice !== null && $data->dozenRawDiscount > (int) $minimumDozenPrice) {
             throw ValidationException::withMessages([
-                'combined_dozen_raw_price' => 'El precio crudo debe ser menor que el precio cocinado.',
+                'raw_price_discounts.dozen' => 'El descuento crudo no puede superar el menor precio cocinado.',
             ]);
         }
+    }
 
-        $columns = [
-            PriceTier::Unit->value => 'unit_price',
-            PriceTier::HalfDozen->value => 'half_dozen_price',
-            PriceTier::Dozen->value => 'dozen_price',
-        ];
+    /**
+     * Stored empanada unit prices follow the percentage. Updating the setting row first locks it, so a concurrent
+     * product save (which reads the percentage with a shared lock) either finishes before the recalculation or
+     * waits and derives its unit price from the new percentage.
+     */
+    private function updateSurchargePercent(int $percent): void
+    {
+        $current = OrderSetting::query()->where('key', OrderSettingKey::EmpanadaUnitSurchargePercent->value)
+            ->lockForUpdate()->value('integer_value');
+        $this->updateIntegerSetting(OrderSettingKey::EmpanadaUnitSurchargePercent, $percent);
 
-        foreach ($columns as $mode => $column) {
-            $minimumCookedPrice = Product::query()->where('pricing_family', ProductPricingFamily::Empanada)->min($column);
-
-            if ($minimumCookedPrice !== null && $data->rawPriceDiscounts[$mode] > (int) $minimumCookedPrice) {
-                throw ValidationException::withMessages([
-                    "raw_price_discounts.{$mode}" => 'El descuento crudo no puede superar el menor precio cocinado.',
-                ]);
-            }
+        if ($current === null || (int) $current !== $percent) {
+            $this->unitPrices->execute($percent);
         }
     }
 
