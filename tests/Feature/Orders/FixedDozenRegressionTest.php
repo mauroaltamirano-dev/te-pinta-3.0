@@ -11,6 +11,7 @@ use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\RawPriceDiscount;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -33,6 +34,8 @@ final class FixedDozenRegressionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // A fixed business morning keeps same-day night deliveries valid whatever the wall clock.
+        $this->travelTo(CarbonImmutable::parse('2026-10-20 13:00:00 UTC'));
         $this->admin = User::factory()->administrator()->create();
         $this->category = Category::query()->create(['name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true]);
         foreach (['unit' => 200, 'half_dozen' => 1000, 'dozen' => 2000] as $mode => $amount) {
