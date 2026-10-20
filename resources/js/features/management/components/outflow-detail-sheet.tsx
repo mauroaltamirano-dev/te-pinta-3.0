@@ -6,10 +6,10 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { formatMoney } from '@/lib/format';
 import {
     administratorName,
     formatManagementDate,
-    formatManagementMoney,
     transactionLabel,
 } from '../presentation';
 import type { ManagementTransaction } from '../types';
@@ -96,7 +96,7 @@ export function OutflowDetailSheet({
                         />
                         <Detail
                             label="Importe"
-                            value={formatManagementMoney.format(outflow.amount)}
+                            value={formatMoney(outflow.amount)}
                             numeric
                         />
                         <Detail

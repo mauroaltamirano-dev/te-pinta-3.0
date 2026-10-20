@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { percentage } from '@/features/inventory/costing/types';
 import type { CostLine, Economics } from '@/features/inventory/costing/types';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
-import { formatOrderMoney } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 
 type PolicyOption = { id: number; name: string };
 const statusNames = {
@@ -39,7 +39,7 @@ const reasons: Record<string, string> = {
     packaging_item_ineligible: 'Item de packaging inactivo o no elegible',
 };
 function money(value: number | null) {
-    return value === null ? 'No disponible' : formatOrderMoney.format(value);
+    return value === null ? 'No disponible' : formatMoney(value);
 }
 function CostComponents({
     title,

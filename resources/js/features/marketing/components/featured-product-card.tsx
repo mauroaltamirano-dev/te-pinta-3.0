@@ -1,6 +1,6 @@
 import { ImageIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatPesos } from '@/features/products/utils';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FeaturedProductPublicView } from '../types';
 
@@ -71,7 +71,7 @@ export function FeaturedProductCard({
                                     : 'Precio por unidad'}
                             </p>
                             <p className="mt-1 text-2xl font-bold tabular-nums">
-                                {formatPesos(
+                                {formatMoney(
                                     featured.product.pricing_family ===
                                         'empanada'
                                         ? featured.product.prices.dozen!

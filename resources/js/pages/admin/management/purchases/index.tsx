@@ -2,8 +2,8 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
-import { formatManagementMoney as money } from '@/features/management/presentation';
 import type { Purchase, PurchaseOptions } from '@/features/purchases/types';
+import { formatMoney as money } from '@/lib/format';
 interface Props extends PurchaseOptions {
     filters: {
         from?: string;
@@ -146,9 +146,7 @@ export default function Purchases({ purchases, filters, wallets }: Props) {
                                     ? 'Revertida'
                                     : 'Confirmada'}
                             </p>
-                            <p className="tabular-nums">
-                                {money.format(p.total)}
-                            </p>
+                            <p className="tabular-nums">{money(p.total)}</p>
                         </li>
                     ))}
                 </ul>

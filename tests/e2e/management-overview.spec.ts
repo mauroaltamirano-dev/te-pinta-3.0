@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import type { Page } from '@playwright/test';
-import { formatManagementMoney } from '@/features/management/presentation';
 import type { ManagementPageProps } from '@/features/management/types';
+import { formatMoney } from '@/lib/format';
 import { expect, test } from './support/test';
 
 test.beforeEach(() => {
@@ -155,7 +155,7 @@ test('Panorama prioritizes three KPIs without losing expenses, wallet balances o
         ] as const) {
             await expect(
                 kpis.getByRole('group', { name, exact: true }),
-            ).toContainText(formatManagementMoney.format(value));
+            ).toContainText(formatMoney(value));
         }
 
         const outflows = page.getByRole('region', {
@@ -169,9 +169,7 @@ test('Panorama prioritizes three KPIs without losing expenses, wallet balances o
             props.summary.period_personal_withdrawal,
             props.summary.period_purchase_shipping,
         ]) {
-            await expect(outflows).toContainText(
-                formatManagementMoney.format(value),
-            );
+            await expect(outflows).toContainText(formatMoney(value));
         }
 
         await expect(outflows).toContainText('Egresos manuales');
@@ -186,9 +184,7 @@ test('Panorama prioritizes three KPIs without losing expenses, wallet balances o
             props.summary.period_distribution,
             props.summary.period_other_movements,
         ]) {
-            await expect(internal).toContainText(
-                formatManagementMoney.format(value),
-            );
+            await expect(internal).toContainText(formatMoney(value));
         }
 
         const wallets = page.getByRole('region', {
@@ -199,7 +195,7 @@ test('Panorama prioritizes three KPIs without losing expenses, wallet balances o
         for (const wallet of props.wallets) {
             await expect(
                 wallets.getByRole('listitem').filter({ hasText: wallet.name }),
-            ).toContainText(formatManagementMoney.format(wallet.balance));
+            ).toContainText(formatMoney(wallet.balance));
         }
 
         await expect(wallets).toContainText('Archivada');
@@ -208,11 +204,7 @@ test('Panorama prioritizes three KPIs without losing expenses, wallet balances o
                 name: 'Conciliación del período',
                 exact: true,
             }),
-        ).toContainText(
-            formatManagementMoney.format(
-                props.summary.reconciliation_difference,
-            ),
-        );
+        ).toContainText(formatMoney(props.summary.reconciliation_difference));
         await geometry(page, width);
     }
 

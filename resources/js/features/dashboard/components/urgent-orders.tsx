@@ -4,10 +4,10 @@ import { formatDeliveryMoment } from '@/features/dashboard/presentation';
 import type { DashboardOrder } from '@/features/dashboard/types';
 import {
     deliveryTypeLabels,
-    formatOrderMoney,
     orderStatusLabels,
     orderStatusStyles,
 } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 
 export function UrgentOrders({
     orders,
@@ -72,7 +72,7 @@ export function UrgentOrders({
                                 </div>
                             </div>
                             <p className="text-right text-base font-semibold text-admin-text-primary tabular-nums">
-                                {formatOrderMoney.format(order.total)}
+                                {formatMoney(order.total)}
                             </p>
                         </li>
                     ))}

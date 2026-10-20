@@ -19,8 +19,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { formatMoney } from '@/lib/format';
 import { managementBusinessToday } from '../presentation';
-import { formatManagementMoney } from '../presentation';
 import type {
     DistributionRule,
     DistributionRuleVersion,
@@ -137,9 +137,7 @@ export function DistributionFormDialog({
                                         value={wallet.id.toString()}
                                     >
                                         {wallet.name} ·{' '}
-                                        {formatManagementMoney.format(
-                                            wallet.balance,
-                                        )}
+                                        {formatMoney(wallet.balance)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -281,10 +279,7 @@ export function DistributionFormDialog({
                                             </span>
                                         </span>
                                         <strong className="shrink-0 text-destructive tabular-nums">
-                                            −
-                                            {formatManagementMoney.format(
-                                                amount,
-                                            )}
+                                            −{formatMoney(amount)}
                                         </strong>
                                     </li>
                                 )}
@@ -300,10 +295,7 @@ export function DistributionFormDialog({
                                             </span>
                                         </span>
                                         <strong className="shrink-0 text-admin-accent-text tabular-nums">
-                                            +
-                                            {formatManagementMoney.format(
-                                                allocation.amount,
-                                            )}
+                                            +{formatMoney(allocation.amount)}
                                         </strong>
                                     </li>
                                 ))}

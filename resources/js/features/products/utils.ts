@@ -1,11 +1,3 @@
-export function formatPesos(amount: number): string {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        maximumFractionDigits: 0,
-    }).format(amount);
-}
-
 /**
  * Display preview only; the backend stores the authoritative value
  * (App\\Modules\\Products\\Pricing\\EmpanadaUnitPrice): dozen / 12 × (1 + surcharge%),

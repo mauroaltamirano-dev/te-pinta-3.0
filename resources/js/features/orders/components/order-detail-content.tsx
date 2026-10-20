@@ -17,7 +17,6 @@ import {
     formatOrderCustomer,
     deliveryTypeLabels,
     formatOrderDate,
-    formatOrderMoney,
     orderConditionLabels,
     orderStatusLabels,
     orderStatuses,
@@ -31,6 +30,7 @@ import type {
     PaymentMethod,
     PaymentStatus,
 } from '@/features/orders/types';
+import { formatMoney } from '@/lib/format';
 
 interface OrderDetailContentProps {
     order: AdminOrder;
@@ -107,7 +107,7 @@ export function OrderDetailContent({
                             Total
                         </p>
                         <p className="mt-1 text-xl font-semibold text-admin-text-primary tabular-nums sm:text-2xl">
-                            {formatOrderMoney.format(order.total)}
+                            {formatMoney(order.total)}
                         </p>
                     </div>
                 </div>
@@ -192,7 +192,7 @@ export function OrderDetailContent({
                                 </p>
                                 <p className="mt-1 text-xs text-admin-text-tertiary">
                                     {item.units_count} unidades ·{' '}
-                                    {formatOrderMoney.format(item.unit_price)}
+                                    {formatMoney(item.unit_price)}
                                 </p>
                                 {item.composition.length > 0 && (
                                     <ul className="mt-2 grid gap-1 text-sm text-admin-text-secondary">
@@ -208,13 +208,12 @@ export function OrderDetailContent({
                                 )}
                                 {item.savings > 0 && (
                                     <p className="mt-2 text-xs text-success">
-                                        Ahorro:{' '}
-                                        {formatOrderMoney.format(item.savings)}
+                                        Ahorro: {formatMoney(item.savings)}
                                     </p>
                                 )}
                             </div>
                             <span className="shrink-0 font-medium text-admin-text-primary tabular-nums">
-                                {formatOrderMoney.format(item.subtotal)}
+                                {formatMoney(item.subtotal)}
                             </span>
                         </div>
                     ))}
@@ -233,7 +232,7 @@ export function OrderDetailContent({
                                     {item.name} ×{item.quantity}
                                 </span>
                                 <span className="tabular-nums">
-                                    {formatOrderMoney.format(item.subtotal)}
+                                    {formatMoney(item.subtotal)}
                                 </span>
                             </div>
                         ))}
@@ -276,7 +275,7 @@ export function OrderDetailContent({
                                 : 'Productos'}
                         </span>
                         <span className="tabular-nums">
-                            {formatOrderMoney.format(
+                            {formatMoney(
                                 order.items_cooked_subtotal ??
                                     order.items_subtotal,
                             )}
@@ -286,33 +285,27 @@ export function OrderDetailContent({
                         <div className="flex justify-between gap-4 text-success">
                             <span>Descuento por preparación en crudo</span>
                             <span className="tabular-nums">
-                                −
-                                {formatOrderMoney.format(
-                                    order.raw_discount ?? 0,
-                                )}
+                                −{formatMoney(order.raw_discount ?? 0)}
                             </span>
                         </div>
                     )}
                     <div className="flex justify-between gap-4">
                         <span>Adicionales</span>
                         <span className="tabular-nums">
-                            {formatOrderMoney.format(order.toppings_subtotal)}
+                            {formatMoney(order.toppings_subtotal)}
                         </span>
                     </div>
                     <div className="flex justify-between gap-4">
                         <span>Envío</span>
                         <span className="tabular-nums">
-                            {formatOrderMoney.format(order.shipping_fee)}
+                            {formatMoney(order.shipping_fee)}
                         </span>
                     </div>
                     {order.combined_dozen_savings > 0 && (
                         <div className="flex justify-between gap-4 text-success">
                             <span>Ahorro</span>
                             <span className="tabular-nums">
-                                −
-                                {formatOrderMoney.format(
-                                    order.combined_dozen_savings,
-                                )}
+                                −{formatMoney(order.combined_dozen_savings)}
                             </span>
                         </div>
                     )}
@@ -320,10 +313,7 @@ export function OrderDetailContent({
                         <div className="flex justify-between gap-4 text-success">
                             <span>Descuento</span>
                             <span className="tabular-nums">
-                                −
-                                {formatOrderMoney.format(
-                                    order.discount_amount ?? 0,
-                                )}
+                                −{formatMoney(order.discount_amount ?? 0)}
                             </span>
                         </div>
                     )}
@@ -334,7 +324,7 @@ export function OrderDetailContent({
                                 {(order.rounding_adjustment ?? 0) > 0
                                     ? '+'
                                     : '−'}
-                                {formatOrderMoney.format(
+                                {formatMoney(
                                     Math.abs(order.rounding_adjustment ?? 0),
                                 )}
                             </span>
@@ -343,7 +333,7 @@ export function OrderDetailContent({
                     <div className="mt-2 flex justify-between border-t border-border pt-4 text-lg font-semibold text-admin-text-primary">
                         <span>Total</span>
                         <span className="tabular-nums">
-                            {formatOrderMoney.format(order.total)}
+                            {formatMoney(order.total)}
                         </span>
                     </div>
                 </div>

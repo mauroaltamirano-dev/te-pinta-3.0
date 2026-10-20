@@ -9,8 +9,8 @@ import {
     CardFooter,
     CardHeader,
 } from '@/components/ui/card';
+import { formatMoney } from '@/lib/format';
 import type { Product } from '../types';
-import { formatPesos } from '../utils';
 
 interface ProductCardProps {
     product: Product;
@@ -113,7 +113,7 @@ function PriceRow({ label, value }: { label: string; value: number }) {
         <div className="flex items-center justify-between gap-3">
             <span className="text-admin-text-secondary">{label}</span>
             <span className="font-medium tabular-nums">
-                {formatPesos(value)}
+                {formatMoney(value)}
             </span>
         </div>
     );

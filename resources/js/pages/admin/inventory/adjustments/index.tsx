@@ -7,11 +7,9 @@ import type {
 } from '@/features/inventory/adjustments/types';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
-import {
-    formatRecipeMoney as money,
-    costCoverageLabels,
-} from '@/features/inventory/recipes/presentation';
+import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import type { InventoryUnit, Pagination } from '@/features/inventory/types';
+import { formatCost as money } from '@/lib/format';
 export default function Adjustments({
     items,
     units,

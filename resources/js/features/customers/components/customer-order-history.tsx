@@ -1,8 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import {
-    formatCustomerDate,
-    formatCustomerMoney,
-} from '@/features/customers/presentation';
+import { formatCustomerDate } from '@/features/customers/presentation';
 import type { CustomerOrderSummary } from '@/features/customers/types';
 import {
     deliveryTypeLabels,
@@ -11,6 +8,7 @@ import {
     paymentMethodLabels,
     paymentStatusLabels,
 } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 
 function PaymentLabel({ order }: { order: CustomerOrderSummary }) {
     return (
@@ -99,7 +97,7 @@ export function CustomerOrderHistory({
                                     <PaymentLabel order={order} />
                                 </td>
                                 <td className="px-4 py-4 text-right font-semibold text-admin-text-primary tabular-nums">
-                                    {formatCustomerMoney.format(order.total)}
+                                    {formatMoney(order.total)}
                                 </td>
                             </tr>
                         ))}
@@ -125,7 +123,7 @@ export function CustomerOrderHistory({
                                 </p>
                             </div>
                             <p className="font-semibold text-admin-text-primary tabular-nums">
-                                {formatCustomerMoney.format(order.total)}
+                                {formatMoney(order.total)}
                             </p>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-admin-text-secondary">

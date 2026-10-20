@@ -4,12 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
-import {
-    costCoverageLabels,
-    formatRecipeMoney as money,
-} from '@/features/inventory/recipes/presentation';
+import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import type { RecipeVersion } from '@/features/inventory/recipes/types';
 import type { InventoryUnit } from '@/features/inventory/types';
+import { formatCost as money } from '@/lib/format';
 export default function CreateProduction({
     versions,
     units,

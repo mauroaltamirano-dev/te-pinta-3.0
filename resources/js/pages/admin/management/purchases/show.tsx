@@ -15,8 +15,8 @@ import {
     formatInventoryQuantity,
 } from '@/features/inventory/presentation';
 import { AttachmentSection } from '@/features/management/components/attachment-section';
-import { formatManagementMoney as money } from '@/features/management/presentation';
 import type { Purchase } from '@/features/purchases/types';
+import { formatMoney as money } from '@/lib/format';
 export default function ShowPurchase({
     purchase: p,
     business_today,
@@ -45,9 +45,8 @@ export default function ShowPurchase({
             <section className="rounded-xl border border-admin-border bg-admin-surface p-4">
                 <h2>Impacto registrado</h2>
                 <p className="tabular-nums">
-                    Insumos: {money.format(p.subtotal)} · Envío:{' '}
-                    {money.format(p.shipping_amount)} · Egreso total:{' '}
-                    {money.format(p.total)}
+                    Insumos: {money(p.subtotal)} · Envío:{' '}
+                    {money(p.shipping_amount)} · Egreso total: {money(p.total)}
                 </p>
                 <p>
                     Importes y cantidades históricos; no se recalculan con el
@@ -89,9 +88,7 @@ export default function ShowPurchase({
                                 ? 'Entrada física registrada'
                                 : 'Sin impacto en stock'}
                         </p>
-                        <p className="tabular-nums">
-                            {money.format(l.line_total)}
-                        </p>
+                        <p className="tabular-nums">{money(l.line_total)}</p>
                     </li>
                 ))}
             </ul>

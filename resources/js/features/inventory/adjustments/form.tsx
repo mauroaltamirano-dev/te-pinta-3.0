@@ -4,11 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
-import {
-    formatRecipeMoney as money,
-    costCoverageLabels,
-} from '@/features/inventory/recipes/presentation';
+import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import type { InventoryUnit } from '@/features/inventory/types';
+import { formatCost as money } from '@/lib/format';
 import {
     adjustmentTypes,
     adjustmentWarnings,

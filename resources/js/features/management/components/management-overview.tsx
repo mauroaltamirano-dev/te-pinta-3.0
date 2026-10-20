@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { AdminEmptyState } from '@/components/shared/admin-empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { formatManagementMoney } from '../presentation';
+import { formatMoney } from '@/lib/format';
 import type {
     ManagementFilters,
     ManagementMetrics,
@@ -64,7 +64,7 @@ export function ManagementOverview({
         {
             label: 'Gastos',
             value: expenses,
-            hint: `Gastos operativos: ${formatManagementMoney.format(summary.period_expenses)} · Egresos manuales: ${formatManagementMoney.format(summary.period_expense ?? 0)}.`,
+            hint: `Gastos operativos: ${formatMoney(summary.period_expenses)} · Egresos manuales: ${formatMoney(summary.period_expense ?? 0)}.`,
         },
         {
             label: 'Retiros personales',
@@ -132,7 +132,7 @@ export function ManagementOverview({
                                 {kpi.label}
                             </h2>
                             <p className="text-3xl font-semibold break-words text-admin-text-primary tabular-nums">
-                                {formatManagementMoney.format(kpi.value)}
+                                {formatMoney(kpi.value)}
                             </p>
                             <p className="text-sm text-admin-text-secondary">
                                 {kpi.hint}
@@ -204,9 +204,7 @@ export function ManagementOverview({
                                             {row.label}
                                         </dt>
                                         <dd className="font-semibold tabular-nums">
-                                            {formatManagementMoney.format(
-                                                row.value,
-                                            )}
+                                            {formatMoney(row.value)}
                                         </dd>
                                         <dd className="w-full text-sm text-admin-text-secondary">
                                             {row.hint}
@@ -262,9 +260,7 @@ export function ManagementOverview({
                                         </p>
                                     </div>
                                     <p className="font-semibold tabular-nums">
-                                        {formatManagementMoney.format(
-                                            wallet.balance,
-                                        )}
+                                        {formatMoney(wallet.balance)}
                                     </p>
                                 </li>
                             ))}
@@ -309,11 +305,7 @@ export function ManagementOverview({
                         {summary.reconciliation_difference === 0
                             ? 'Sin diferencia de conciliación'
                             : 'Hay una diferencia de conciliación'}
-                        :{' '}
-                        {formatManagementMoney.format(
-                            summary.reconciliation_difference,
-                        )}
-                        .
+                        : {formatMoney(summary.reconciliation_difference)}.
                     </p>
                     <p className="text-sm text-admin-text-secondary">
                         Compara el cambio de saldo con el resultado operativo,

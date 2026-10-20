@@ -1,8 +1,8 @@
 import { ImageIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { formatMoney } from '@/lib/format';
 import type { AdminProductOption } from '../admin-order-types';
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
-import { formatOrderMoney } from '../presentation';
 
 export function QuickOrderCatalog({
     products,
@@ -134,7 +134,7 @@ export function QuickOrderCatalog({
                                             : 'Precio por unidad'}
                                     </span>
                                     <span className="mt-0.5 block text-sm font-semibold text-admin-text-primary tabular-nums">
-                                        {formatOrderMoney.format(
+                                        {formatMoney(
                                             product.pricing_family ===
                                                 'empanada'
                                                 ? product.dozen_price

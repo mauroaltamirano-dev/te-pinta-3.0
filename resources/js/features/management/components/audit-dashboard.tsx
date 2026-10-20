@@ -20,8 +20,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { formatManagementDate, formatManagementMoney } from '../presentation';
+import { formatManagementDate } from '../presentation';
 import type {
     ManagementAuditData,
     ManagementAuditFinding,
@@ -347,7 +348,7 @@ function FindingCard({ finding }: { finding: ManagementAuditFinding }) {
                 {finding.amount != null && (
                     <AuditDetail
                         label="Importe"
-                        value={formatManagementMoney.format(finding.amount)}
+                        value={formatMoney(finding.amount)}
                         numeric
                     />
                 )}
@@ -445,9 +446,7 @@ function WalletBalanceAudit({
                                                 'text-destructive',
                                         )}
                                     >
-                                        {formatManagementMoney.format(
-                                            wallet.derived_balance,
-                                        )}
+                                        {formatMoney(wallet.derived_balance)}
                                     </p>
                                 </div>
                                 <WalletStatusBadge status={wallet.status} />
@@ -653,6 +652,6 @@ function findingComparisonValue(
     value: string | number,
 ) {
     return finding.type === 'amount_mismatch' && typeof value === 'number'
-        ? formatManagementMoney.format(value)
+        ? formatMoney(value)
         : String(value);
 }

@@ -1,13 +1,3 @@
-/** Inventory amounts are integer pesos, not cents. Null is not a free recipe. */
-export function formatRecipeMoney(value: number | null): string {
-    return value === null
-        ? 'Sin costo conocido'
-        : new Intl.NumberFormat('es-AR', {
-              style: 'currency',
-              currency: 'ARS',
-              maximumFractionDigits: 0,
-          }).format(value);
-}
 export const costCoverageLabels: Record<string, string> = {
     complete: 'Costo completo',
     partial: 'Costo incompleto',

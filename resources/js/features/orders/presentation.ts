@@ -62,12 +62,6 @@ export const pricingModeLabels: Record<string, string> = {
 
 export const orderStatuses = Object.keys(orderStatusLabels) as OrderStatus[];
 
-export const formatOrderMoney = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-});
-
 export function formatOrderCustomer(order: AdminOrder): string {
     return (
         order.customer_name ??

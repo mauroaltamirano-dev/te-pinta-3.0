@@ -2,12 +2,10 @@ import { Head, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
-import {
-    costCoverageLabels,
-    formatRecipeMoney as money,
-} from '@/features/inventory/recipes/presentation';
+import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import type { ProductionBatch } from '@/features/inventory/recipes/types';
 import type { Pagination } from '@/features/inventory/types';
+import { formatCost as money } from '@/lib/format';
 export default function Production({
     batches,
 }: {

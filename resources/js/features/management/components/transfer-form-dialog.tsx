@@ -19,8 +19,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { formatMoney } from '@/lib/format';
 import { managementBusinessToday } from '../presentation';
-import { formatManagementMoney } from '../presentation';
 import type { ManagementWallet } from '../types';
 
 export function TransferFormDialog({
@@ -240,7 +240,7 @@ export function TransferFormDialog({
 function WalletOption({ wallet }: { wallet: ManagementWallet }) {
     return (
         <SelectItem value={wallet.id.toString()}>
-            {wallet.name} — {formatManagementMoney.format(wallet.balance)}
+            {wallet.name} — {formatMoney(wallet.balance)}
         </SelectItem>
     );
 }

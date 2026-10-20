@@ -13,7 +13,6 @@ import {
     formatOrderCustomer,
     deliveryTypeLabels,
     formatOrderDate,
-    formatOrderMoney,
     orderConditionLabels,
     orderStatusLabels,
     paymentMethodLabels,
@@ -21,6 +20,7 @@ import {
     pricingModeLabels,
 } from '@/features/orders/presentation';
 import type { AdminOrder } from '@/features/orders/types';
+import { formatMoney } from '@/lib/format';
 
 export function OrderTicketDialog({
     order,
@@ -153,9 +153,7 @@ export function OrderTicketDialog({
                                                 )}
                                             </div>
                                             <span className="font-semibold tabular-nums">
-                                                {formatOrderMoney.format(
-                                                    item.subtotal,
-                                                )}
+                                                {formatMoney(item.subtotal)}
                                             </span>
                                         </div>
                                     ))}
@@ -168,7 +166,7 @@ export function OrderTicketDialog({
                                         Total
                                     </span>
                                     <span className="text-2xl font-bold tabular-nums">
-                                        {formatOrderMoney.format(order.total)}
+                                        {formatMoney(order.total)}
                                     </span>
                                 </div>
                             </section>

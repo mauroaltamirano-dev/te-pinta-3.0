@@ -19,11 +19,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
     administratorName,
     formatManagementDate,
-    formatManagementMoney,
     outflowTypeLabels,
     transactionLabel,
 } from '../presentation';
@@ -448,7 +448,7 @@ export function TransactionHistory({
                                                 )}
                                             >
                                                 {row.semanticOperation
-                                                    ? formatManagementMoney.format(
+                                                    ? formatMoney(
                                                           Math.abs(row.amount),
                                                       )
                                                     : signedMoney(row.amount)}
@@ -540,7 +540,7 @@ export function TransactionHistory({
                                                     {transferRoute(transaction)}
                                                 </p>
                                                 <p className="mt-1 font-semibold text-admin-accent-text tabular-nums">
-                                                    {formatManagementMoney.format(
+                                                    {formatMoney(
                                                         transaction
                                                             .management_transfer
                                                             .amount,
@@ -561,7 +561,7 @@ export function TransactionHistory({
                                                     )}
                                                 </p>
                                                 <p className="mt-1 font-semibold text-admin-accent-text tabular-nums">
-                                                    {formatManagementMoney.format(
+                                                    {formatMoney(
                                                         transaction
                                                             .management_distribution
                                                             .amount,
@@ -591,7 +591,7 @@ export function TransactionHistory({
                                                     )}
                                                 </p>
                                                 <p className="mt-1 font-semibold text-admin-accent-text tabular-nums">
-                                                    {formatManagementMoney.format(
+                                                    {formatMoney(
                                                         transaction
                                                             .management_order_payment
                                                             .amount,
@@ -765,7 +765,7 @@ export function TransactionHistory({
 }
 
 function signedMoney(amount: number) {
-    const formatted = formatManagementMoney.format(Math.abs(amount));
+    const formatted = formatMoney(Math.abs(amount));
 
     return `${amount >= 0 ? '+' : '−'}${formatted}`;
 }

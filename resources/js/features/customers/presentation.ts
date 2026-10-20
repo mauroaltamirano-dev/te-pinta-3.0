@@ -1,9 +1,3 @@
-export const formatCustomerMoney = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-});
-
 export function formatCustomerDate(value: string | null): string {
     if (!value) {
         return 'Sin pedidos';

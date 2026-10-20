@@ -13,10 +13,10 @@ import { FormField } from '@/features/inventory/components/form-field';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import {
     costCoverageLabels,
-    formatRecipeMoney as money,
     productionWarningLabels,
 } from '@/features/inventory/recipes/presentation';
 import type { ProductionBatch } from '@/features/inventory/recipes/types';
+import { formatCost as money } from '@/lib/format';
 export default function ShowProduction({
     batch: b,
     business_today,

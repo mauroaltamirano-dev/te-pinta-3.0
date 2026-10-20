@@ -18,7 +18,7 @@ import type {
     Pagination,
     PurchasePresentation,
 } from '@/features/inventory/types';
-import { formatOrderMoney } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 
 interface Props {
     categories: InventoryCategory[];
@@ -114,7 +114,7 @@ export default function Inventory({
             <section className="rounded-xl border border-admin-border bg-admin-surface p-4">
                 <h2 className="text-lg font-semibold">Valoración actual</h2>
                 <p className="mt-2 text-xl font-semibold tabular-nums">
-                    {formatOrderMoney.format(valuation.confident_value)}
+                    {formatMoney(valuation.confident_value)}
                 </p>
                 <p className="mt-2 text-sm text-admin-text-secondary">
                     Sólo incluye stock con cobertura completa de costo. No es
@@ -179,7 +179,7 @@ export default function Inventory({
                                 <p className="mt-1 text-sm">
                                     {coverageLabels[item.valuation.coverage]}
                                     {item.valuation.value !== null &&
-                                        ` · ${formatOrderMoney.format(item.valuation.value)}`}
+                                        ` · ${formatMoney(item.valuation.value)}`}
                                 </p>
                                 <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-admin-text-secondary">
                                     {item.recipe_input_enabled && (

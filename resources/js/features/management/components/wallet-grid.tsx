@@ -11,8 +11,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { formatManagementMoney } from '../presentation';
 import type { ManagementWallet } from '../types';
 
 export function WalletGrid({
@@ -97,9 +97,7 @@ export function WalletGrid({
                                             {wallet.name}
                                         </p>
                                         <p className="mt-2 text-xl font-semibold text-admin-text-primary tabular-nums">
-                                            {formatManagementMoney.format(
-                                                wallet.balance,
-                                            )}
+                                            {formatMoney(wallet.balance)}
                                         </p>
                                     </div>
                                     <span className="rounded-full border border-admin-border px-2 py-1 text-xs text-admin-text-tertiary">
@@ -185,7 +183,7 @@ function WalletCard({
                     wallet.balance < 0 && 'text-destructive',
                 )}
             >
-                {formatManagementMoney.format(wallet.balance)}
+                {formatMoney(wallet.balance)}
             </p>
             <p className="mt-1 text-xs text-admin-text-tertiary">
                 Saldo derivado del ledger

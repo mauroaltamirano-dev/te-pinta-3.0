@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatOrderMoney, pricingModeLabels } from '../presentation';
+import { formatMoney } from '@/lib/format';
+import { pricingModeLabels } from '../presentation';
 import type { PriceQuote } from '../types';
 export function PriceSummary({
     quote,
@@ -83,7 +84,7 @@ export function PriceSummary({
                                 )}
                             </div>
                             <span className="tabular-nums">
-                                {formatOrderMoney.format(
+                                {formatMoney(
                                     line.subtotal ?? line.lineTotal ?? 0,
                                 )}
                             </span>
@@ -99,7 +100,7 @@ export function PriceSummary({
                             {addon.name} ×{addon.quantity}
                         </span>
                         <span>
-                            {formatOrderMoney.format(
+                            {formatMoney(
                                 addon.subtotal ?? addon.lineTotal ?? 0,
                             )}
                         </span>
@@ -113,7 +114,7 @@ export function PriceSummary({
                                 : 'Productos'}
                         </dt>
                         <dd>
-                            {formatOrderMoney.format(
+                            {formatMoney(
                                 quote.products_cooked_subtotal ??
                                     quote.products_subtotal ??
                                     quote.empanadas_subtotal ??
@@ -124,18 +125,13 @@ export function PriceSummary({
                     {(quote.raw_discount ?? 0) > 0 && (
                         <div className="flex justify-between text-success">
                             <dt>Descuento por preparación en crudo</dt>
-                            <dd>
-                                −
-                                {formatOrderMoney.format(
-                                    quote.raw_discount ?? 0,
-                                )}
-                            </dd>
+                            <dd>−{formatMoney(quote.raw_discount ?? 0)}</dd>
                         </div>
                     )}
                     <div className="flex justify-between">
                         <dt>Adicionales</dt>
                         <dd>
-                            {formatOrderMoney.format(
+                            {formatMoney(
                                 quote.addons_subtotal ??
                                     quote.toppings_subtotal ??
                                     0,
@@ -148,35 +144,26 @@ export function PriceSummary({
                             <div className="flex justify-between border-t pt-2 font-medium">
                                 <dt>Subtotal descontable</dt>
                                 <dd>
-                                    {formatOrderMoney.format(
-                                        quote.discountable_subtotal,
-                                    )}
+                                    {formatMoney(quote.discountable_subtotal)}
                                 </dd>
                             </div>
                         )}
                     {(quote.discount_amount ?? 0) > 0 && (
                         <div className="flex justify-between text-success">
                             <dt>Descuento</dt>
-                            <dd>
-                                −
-                                {formatOrderMoney.format(
-                                    quote.discount_amount ?? 0,
-                                )}
-                            </dd>
+                            <dd>−{formatMoney(quote.discount_amount ?? 0)}</dd>
                         </div>
                     )}
                     <div className="flex justify-between">
                         <dt>Envío</dt>
-                        <dd>
-                            {formatOrderMoney.format(quote.shipping_fee ?? 0)}
-                        </dd>
+                        <dd>{formatMoney(quote.shipping_fee ?? 0)}</dd>
                     </div>
                     {(quote.savings ?? quote.combined_dozen_savings ?? 0) >
                         0 && (
                         <div className="flex justify-between text-success">
                             <dt>Ahorro por docena combinada</dt>
                             <dd>
-                                {formatOrderMoney.format(
+                                {formatMoney(
                                     quote.savings ??
                                         quote.combined_dozen_savings ??
                                         0,
@@ -191,7 +178,7 @@ export function PriceSummary({
                                 {(quote.rounding_adjustment ?? 0) > 0
                                     ? '+'
                                     : '−'}
-                                {formatOrderMoney.format(
+                                {formatMoney(
                                     Math.abs(quote.rounding_adjustment ?? 0),
                                 )}
                             </dd>
@@ -200,7 +187,7 @@ export function PriceSummary({
                     <div className="flex justify-between border-t pt-3 text-lg font-bold">
                         <dt>Total</dt>
                         <dd data-testid="order-total" aria-live="polite">
-                            {formatOrderMoney.format(quote.total)}
+                            {formatMoney(quote.total)}
                         </dd>
                     </div>
                 </dl>

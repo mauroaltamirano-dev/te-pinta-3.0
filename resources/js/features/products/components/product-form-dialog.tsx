@@ -24,9 +24,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Product, ProductCategory, ProductTag } from '../types';
-import { empanadaUnitPrice, formatPesos } from '../utils';
+import { empanadaUnitPrice } from '../utils';
 
 interface ProductFormData {
     name: string;
@@ -806,7 +807,7 @@ function DerivedHalfDozenPrice({
                 className="flex h-9 items-center rounded-md border border-border/80 bg-muted/40 px-3 text-sm tabular-nums"
             >
                 {valid
-                    ? formatPesos(
+                    ? formatMoney(
                           6 * empanadaUnitPrice(dozenPrice, surchargePercent),
                       )
                     : '—'}
@@ -845,7 +846,7 @@ function DerivedUnitPrice({
                 className="flex h-9 items-center rounded-md border border-border/80 bg-muted/40 px-3 text-sm tabular-nums"
             >
                 {valid
-                    ? formatPesos(
+                    ? formatMoney(
                           empanadaUnitPrice(dozenPrice, surchargePercent),
                       )
                     : '—'}

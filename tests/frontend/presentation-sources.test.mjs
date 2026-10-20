@@ -49,3 +49,19 @@ test('order status labels have a single source', () => {
         [],
     );
 });
+
+test('money is formatted by lib/format.ts only', () => {
+    // Public pages adopt it when the public redesign rebases (S-01).
+    const pending = [
+        'pages/public/menu.tsx',
+        'pages/public/product-detail.tsx',
+    ];
+
+    assert.deepEqual(
+        files
+            .filter(({ code }) => /currency:\s*'ARS'/.test(code))
+            .map(({ path }) => path)
+            .filter((path) => !pending.includes(path)),
+        ['lib/format.ts'],
+    );
+});

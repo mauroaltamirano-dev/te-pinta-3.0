@@ -4,12 +4,6 @@ import type {
     ManagementTransactionType,
 } from './types';
 
-export const formatManagementMoney = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-});
-
 export const formatManagementDate = (value: string) =>
     new Intl.DateTimeFormat('es-AR', {
         day: '2-digit',

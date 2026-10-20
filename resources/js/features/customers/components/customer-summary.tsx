@@ -8,9 +8,9 @@ import {
 import {
     formatCustomerCount,
     formatCustomerDate,
-    formatCustomerMoney,
 } from '@/features/customers/presentation';
 import type { Customer } from '@/features/customers/types';
+import { formatMoney } from '@/lib/format';
 
 export function CustomerSummary({ customer }: { customer: Customer }) {
     const items = [
@@ -34,7 +34,7 @@ export function CustomerSummary({ customer }: { customer: Customer }) {
             value:
                 customer.orders_count === 0
                     ? 'Sin compras registradas'
-                    : formatCustomerMoney.format(customer.historical_spend),
+                    : formatMoney(customer.historical_spend),
             icon: WalletCards,
         },
         {

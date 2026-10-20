@@ -11,13 +11,13 @@ import { Button } from '@/components/ui/button';
 import {
     formatCustomerCount,
     formatCustomerDate,
-    formatCustomerMoney,
 } from '@/features/customers/presentation';
 import type {
     Customer,
     CustomerSort,
     CustomerSortDirection,
 } from '@/features/customers/types';
+import { formatMoney } from '@/lib/format';
 
 const sortLabels: Record<CustomerSort, string> = {
     name: 'Nombre',
@@ -153,7 +153,7 @@ export function CustomerList({
                                 <td className="px-4 py-4 font-medium text-admin-text-primary tabular-nums">
                                     {customer.orders_count === 0
                                         ? 'Sin compras'
-                                        : formatCustomerMoney.format(
+                                        : formatMoney(
                                               customer.historical_spend,
                                           )}
                                 </td>
@@ -216,7 +216,7 @@ export function CustomerList({
                                 <span className="font-medium text-admin-text-primary tabular-nums">
                                     {customer.orders_count === 0
                                         ? 'Sin compras'
-                                        : formatCustomerMoney.format(
+                                        : formatMoney(
                                               customer.historical_spend,
                                           )}
                                 </span>

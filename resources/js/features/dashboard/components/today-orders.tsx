@@ -6,11 +6,11 @@ import { formatDeliveryMoment } from '@/features/dashboard/presentation';
 import type { DashboardOrder } from '@/features/dashboard/types';
 import {
     deliveryTypeLabels,
-    formatOrderMoney,
     orderStatusLabels,
     orderStatusStyles,
     paymentStatusLabels,
 } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 
 function OrderIdButton({
     id,
@@ -131,9 +131,7 @@ export function TodayOrders({
                                             }
                                         </td>
                                         <td className="px-3 py-3 text-right font-semibold text-admin-text-primary tabular-nums">
-                                            {formatOrderMoney.format(
-                                                order.total,
-                                            )}
+                                            {formatMoney(order.total)}
                                         </td>
                                     </tr>
                                 ))}
@@ -184,7 +182,7 @@ export function TodayOrders({
                                         }
                                     </p>
                                     <p className="col-span-2 text-right text-base font-semibold text-admin-text-primary tabular-nums">
-                                        {formatOrderMoney.format(order.total)}
+                                        {formatMoney(order.total)}
                                     </p>
                                 </div>
                             </li>

@@ -66,6 +66,8 @@ Measured WCAG contrast ratios: default white-on-accent **4.97:1**; accent text o
 
 `orderStatusLabels` and `orderStatusStyles` in `features/orders/presentation.ts` own the shared vocabulary: pending confirmation is **En espera**, waiting is **Confirmado**. Dashboard reuses these labels instead of maintaining another map. Chart fills, strokes and legend markers use the same semantic role colors.
 
+Money is integer pesos formatted by `formatMoney` in `lib/format.ts` (es-AR, ARS, no decimals, e.g. `$ 16.650`); inventory costs use `formatCost`, which shows **Sin costo conocido** for an unknown cost instead of `$ 0`. Admin features import these instead of building their own `Intl.NumberFormat`.
+
 Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL licence in `resources/fonts/OFL.txt`). The root uses `font-orders`; the public shell explicitly keeps `font-sans`.
 
 ## Admin compositions

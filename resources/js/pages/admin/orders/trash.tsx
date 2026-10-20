@@ -2,11 +2,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    formatOrderMoney,
-    orderStatusLabels,
-} from '@/features/orders/presentation';
+import { orderStatusLabels } from '@/features/orders/presentation';
 import type { OrderStatus } from '@/features/orders/types';
+import { formatMoney } from '@/lib/format';
 
 interface DeletedOrder {
     id: string;
@@ -119,9 +117,7 @@ export default function OrderTrash({ orders }: { orders: DeletedOrdersPage }) {
                                                     }
                                                 </td>
                                                 <td className="px-3 py-4 tabular-nums">
-                                                    {formatOrderMoney.format(
-                                                        order.total,
-                                                    )}
+                                                    {formatMoney(order.total)}
                                                 </td>
                                                 <td className="px-3 py-4">
                                                     <Button

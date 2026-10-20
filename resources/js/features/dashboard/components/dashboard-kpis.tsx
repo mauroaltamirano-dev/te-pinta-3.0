@@ -10,7 +10,7 @@ import {
     dashboardSalesLabel,
 } from '@/features/dashboard/presentation';
 import type { DashboardData } from '@/features/dashboard/types';
-import { formatOrderMoney } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 function KpiCard({
@@ -72,7 +72,7 @@ export function DashboardKpis({ dashboard }: { dashboard: DashboardData }) {
                     <CircleDollarSign className="size-5" aria-hidden="true" />
                 }
                 label={dashboardSalesLabel(period)}
-                value={formatOrderMoney.format(kpis.sales_total)}
+                value={formatMoney(kpis.sales_total)}
                 detail={
                     kpis.sales_total > 0
                         ? 'Venta confirmada, independientemente del pago.'
@@ -82,7 +82,7 @@ export function DashboardKpis({ dashboard }: { dashboard: DashboardData }) {
             <KpiCard
                 icon={<WalletCards className="size-5" aria-hidden="true" />}
                 label={dashboardCollectedLabel(period)}
-                value={formatOrderMoney.format(kpis.collected_total)}
+                value={formatMoney(kpis.collected_total)}
                 detail={`${kpis.unpaid_count} ${kpis.unpaid_count === 1 ? 'pedido confirmado sin cobrar' : 'pedidos confirmados sin cobrar'}`}
             />
             <KpiCard

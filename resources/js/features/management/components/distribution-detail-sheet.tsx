@@ -7,11 +7,11 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
     administratorName,
     formatManagementDate,
-    formatManagementMoney,
     transactionLabel,
 } from '../presentation';
 import type { ManagementTransaction } from '../types';
@@ -134,9 +134,7 @@ export function DistributionDetailSheet({
                     <dl className="grid gap-4 sm:grid-cols-2">
                         <Detail
                             label="Monto"
-                            value={formatManagementMoney.format(
-                                distribution.amount,
-                            )}
+                            value={formatMoney(distribution.amount)}
                             numeric
                         />
                         <Detail
@@ -269,7 +267,7 @@ export function DistributionDetailSheet({
 }
 
 function signedMoney(amount: number) {
-    return `${amount >= 0 ? '+' : '−'}${formatManagementMoney.format(Math.abs(amount))}`;
+    return `${amount >= 0 ? '+' : '−'}${formatMoney(Math.abs(amount))}`;
 }
 
 function Detail({

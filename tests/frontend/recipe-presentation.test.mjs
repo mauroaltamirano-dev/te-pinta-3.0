@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { formatInventoryQuantity } from '../../resources/js/features/inventory/presentation.ts';
-import { formatRecipeMoney } from '../../resources/js/features/inventory/recipes/presentation.ts';
+import { formatCost as formatRecipeMoney } from '../../resources/js/lib/format.ts';
 test('recipe money is integer pesos, never cents', () => {
     assert.equal(formatRecipeMoney(16650).replace(/\s/g, ''), '$16.650');
     assert.equal(formatRecipeMoney(8325).replace(/\s/g, ''), '$8.325');

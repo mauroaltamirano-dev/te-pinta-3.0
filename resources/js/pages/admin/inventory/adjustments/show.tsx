@@ -17,10 +17,8 @@ import {
 import type { Adjustment } from '@/features/inventory/adjustments/types';
 import { FormField } from '@/features/inventory/components/form-field';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
-import {
-    costCoverageLabels,
-    formatRecipeMoney as money,
-} from '@/features/inventory/recipes/presentation';
+import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
+import { formatCost as money } from '@/lib/format';
 export default function ShowAdjustment({
     adjustment: a,
     business_today,

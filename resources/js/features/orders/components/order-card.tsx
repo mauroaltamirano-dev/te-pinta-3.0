@@ -6,11 +6,11 @@ import {
     formatOrderCustomer,
     deliveryTypeLabels,
     formatOrderDate,
-    formatOrderMoney,
     orderConditionLabels,
     pricingModeLabels,
 } from '@/features/orders/presentation';
 import type { AdminOrder, OrdersView } from '@/features/orders/types';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { OrderPaymentToggle, OrderStatusSelect } from './order-quick-controls';
 
@@ -135,7 +135,7 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                                         </p>
                                     </div>
                                     <span className="shrink-0 text-sm text-admin-text-secondary tabular-nums">
-                                        {formatOrderMoney.format(item.subtotal)}
+                                        {formatMoney(item.subtotal)}
                                     </span>
                                 </div>
 
@@ -189,9 +189,7 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                                         {topping.quantity} × {topping.name}
                                     </span>
                                     <span className="shrink-0 tabular-nums">
-                                        {formatOrderMoney.format(
-                                            topping.subtotal,
-                                        )}
+                                        {formatMoney(topping.subtotal)}
                                     </span>
                                 </li>
                             ))}
@@ -212,7 +210,7 @@ export function OrderCard({ order, view = 'grid', onOpen }: OrderCardProps) {
                         Total
                     </span>
                     <span className="text-xl font-semibold text-admin-accent-text tabular-nums">
-                        {formatOrderMoney.format(order.total)}
+                        {formatMoney(order.total)}
                     </span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">

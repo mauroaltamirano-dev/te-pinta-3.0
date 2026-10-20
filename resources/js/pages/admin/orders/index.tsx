@@ -46,7 +46,6 @@ import { OrderCollection } from '@/features/orders/components/order-collection';
 import { OrderTicketDialog } from '@/features/orders/components/order-ticket-dialog';
 import { OrdersInsightsPanel } from '@/features/orders/components/orders-insights-panel';
 import {
-    formatOrderMoney,
     orderStatusLabels,
     orderStatuses,
 } from '@/features/orders/presentation';
@@ -59,6 +58,7 @@ import type {
     OrderStatus,
     PaginatedOrders,
 } from '@/features/orders/types';
+import { formatMoney } from '@/lib/format';
 
 const orderGroups = [
     { value: 'all', label: 'Todos' },
@@ -317,9 +317,7 @@ export default function Orders({
                         <div className="grid gap-3 sm:grid-cols-3">
                             <SummaryCard
                                 icon={CircleDollarSign}
-                                value={formatOrderMoney.format(
-                                    visiblePaidTotal,
-                                )}
+                                value={formatMoney(visiblePaidTotal)}
                                 label="Cobrado en esta página"
                                 tone="accent"
                                 trend={`${percentage(visiblePaid)}%`}

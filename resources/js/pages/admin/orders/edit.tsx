@@ -20,13 +20,13 @@ import { PriceSummary } from '@/features/orders/components/price-summary';
 import { useAdminOrderDraft } from '@/features/orders/hooks/use-admin-order-draft';
 import { useUnsavedChangesWarning } from '@/features/orders/hooks/use-unsaved-changes-warning';
 import {
-    formatOrderMoney,
     orderStatusLabels,
     orderStatuses,
     paymentMethodLabels,
     paymentStatusLabels,
 } from '@/features/orders/presentation';
 import type { OrderStatus } from '@/features/orders/types';
+import { formatMoney } from '@/lib/format';
 
 interface EditOrderProps extends AdminOrderOptions {
     order: AdminOrderEditContext & { closed_edit_required?: boolean };
@@ -181,7 +181,7 @@ export default function EditOrder({
                             <CardContent className="grid gap-2 text-sm">
                                 <SummaryRow
                                     label="Total original"
-                                    value={formatOrderMoney.format(order.total)}
+                                    value={formatMoney(order.total)}
                                 />
                                 <SummaryRow
                                     label="Estado"
@@ -218,17 +218,15 @@ export default function EditOrder({
                             <CardContent className="grid gap-2 pt-6 text-sm">
                                 <SummaryRow
                                     label="Total anterior"
-                                    value={formatOrderMoney.format(order.total)}
+                                    value={formatMoney(order.total)}
                                 />
                                 <SummaryRow
                                     label="Total actualizado"
-                                    value={formatOrderMoney.format(
-                                        updatedTotal,
-                                    )}
+                                    value={formatMoney(updatedTotal)}
                                 />
                                 <SummaryRow
                                     label="Diferencia total"
-                                    value={`${difference > 0 ? '+' : difference < 0 ? '−' : ''}${formatOrderMoney.format(Math.abs(difference))}`}
+                                    value={`${difference > 0 ? '+' : difference < 0 ? '−' : ''}${formatMoney(Math.abs(difference))}`}
                                     emphasized
                                 />
                             </CardContent>

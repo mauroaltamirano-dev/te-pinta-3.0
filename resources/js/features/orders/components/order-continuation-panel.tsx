@@ -2,12 +2,12 @@ import { Link } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { formatMoney } from '@/lib/format';
 import type {
     AdminAddonOption,
     AdminCustomerOption,
 } from '../admin-order-types';
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
-import { formatOrderMoney } from '../presentation';
 import { AdminOrderDetailsFields } from './admin-order-details-fields';
 import { CopyOrderDetailButton } from './copy-order-detail-button';
 import { PriceSummary } from './price-summary';
@@ -68,7 +68,7 @@ export function OrderContinuationPanel({
                                             Total
                                         </p>
                                         <p className="text-xl font-semibold text-admin-text-primary tabular-nums">
-                                            {formatOrderMoney.format(
+                                            {formatMoney(
                                                 draft.createdOrder.total,
                                             )}
                                         </p>

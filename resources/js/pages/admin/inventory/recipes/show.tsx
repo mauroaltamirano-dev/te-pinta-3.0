@@ -3,16 +3,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
-import {
-    costCoverageLabels,
-    formatRecipeMoney as money,
-} from '@/features/inventory/recipes/presentation';
+import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import { RecipeForm } from '@/features/inventory/recipes/recipe-form';
 import type {
     Recipe,
     RecipeOptions,
     RecipePage,
 } from '@/features/inventory/recipes/types';
+import { formatCost as money } from '@/lib/format';
 export default function ShowRecipe({
     recipe,
     versions,

@@ -6,11 +6,11 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
     administratorName,
     formatManagementDate,
-    formatManagementMoney,
     transactionLabel,
 } from '../presentation';
 import type { ManagementTransaction } from '../types';
@@ -94,9 +94,7 @@ export function TransferDetailSheet({
                         />
                         <Detail
                             label="Importe"
-                            value={formatManagementMoney.format(
-                                transfer.amount,
-                            )}
+                            value={formatMoney(transfer.amount)}
                             numeric
                         />
                         <Detail
@@ -172,7 +170,7 @@ function walletName(wallet: { name: string; archived_at: string | null }) {
 }
 
 function signedMoney(amount: number) {
-    return `${amount >= 0 ? '+' : '−'}${formatManagementMoney.format(Math.abs(amount))}`;
+    return `${amount >= 0 ? '+' : '−'}${formatMoney(Math.abs(amount))}`;
 }
 
 function Detail({

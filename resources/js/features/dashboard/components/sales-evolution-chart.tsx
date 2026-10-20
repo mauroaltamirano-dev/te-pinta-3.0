@@ -5,7 +5,7 @@ import {
     formatDashboardBucketAccessible,
 } from '@/features/dashboard/presentation';
 import type { DashboardData } from '@/features/dashboard/types';
-import { formatOrderMoney } from '@/features/orders/presentation';
+import { formatMoney } from '@/lib/format';
 
 const width = 640;
 const height = 220;
@@ -68,13 +68,13 @@ export function SalesEvolutionChart({
                         <span>
                             Total:{' '}
                             <strong className="font-semibold text-admin-text-primary tabular-nums">
-                                {formatOrderMoney.format(total)}
+                                {formatMoney(total)}
                             </strong>
                         </span>
                         <span>
                             Máximo por tramo:{' '}
                             <strong className="font-semibold text-admin-text-primary tabular-nums">
-                                {formatOrderMoney.format(maximum)}
+                                {formatMoney(maximum)}
                             </strong>
                         </span>
                     </div>
@@ -123,7 +123,7 @@ export function SalesEvolutionChart({
                                         fill="var(--admin-text-tertiary)"
                                         fontSize="11"
                                     >
-                                        {formatOrderMoney.format(value)}
+                                        {formatMoney(value)}
                                     </text>
                                     <line
                                         x1={insetX}
@@ -157,7 +157,7 @@ export function SalesEvolutionChart({
                                 strokeWidth="2"
                                 vectorEffect="non-scaling-stroke"
                             >
-                                <title>{`${formatDashboardBucketAccessible(point.bucket, period)}: ${formatOrderMoney.format(point.total)}`}</title>
+                                <title>{`${formatDashboardBucketAccessible(point.bucket, period)}: ${formatMoney(point.total)}`}</title>
                             </circle>
                         ))}
                     </svg>
@@ -180,7 +180,7 @@ export function SalesEvolutionChart({
                                     point.bucket,
                                     period,
                                 )}
-                                : {formatOrderMoney.format(point.total)}
+                                : {formatMoney(point.total)}
                             </li>
                         ))}
                     </ol>
