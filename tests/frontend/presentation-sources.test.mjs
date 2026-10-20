@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('../../resources/js/', import.meta.url).pathname;
+const root = fileURLToPath(new URL('../../resources/js/', import.meta.url));
 
 function sources(directory) {
     return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

@@ -38,7 +38,6 @@ export default function Purchases({ purchases, filters, wallets }: Props) {
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title="Compras" />
-            <ManagementSectionNavigation />
             <header className="flex flex-wrap justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-semibold text-balance">
@@ -55,6 +54,7 @@ export default function Purchases({ purchases, filters, wallets }: Props) {
                     </Link>
                 </Button>
             </header>
+            <ManagementSectionNavigation />
             <p>
                 Las compras históricas simples siguen en Movimientos de Gestión.
                 No se reconstruyen líneas que nunca se registraron.

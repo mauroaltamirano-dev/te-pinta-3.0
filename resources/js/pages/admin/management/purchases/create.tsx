@@ -48,7 +48,6 @@ export default function CreatePurchase({
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title="Registrar compra" />
-            <ManagementSectionNavigation />
             <Link href="/admin/management/purchases">Volver a Compras</Link>
             <h1 className="text-2xl font-semibold text-balance">
                 Registrar compra
@@ -58,6 +57,7 @@ export default function CreatePurchase({
                 controlan stock generan entradas físicas y capas de costo. El
                 envío no se distribuye entre los insumos.
             </p>
+            <ManagementSectionNavigation />
             {(!wallets.length || !inventory_items.length) && (
                 <p>
                     Necesitás una billetera activa y al menos un insumo activo.{' '}

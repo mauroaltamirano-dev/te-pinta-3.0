@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
     managementNavigation,
-    managementOperationsHref,
+    managementSectionHref,
     requestedManagementSection,
 } from '../../resources/js/features/management/navigation.ts';
 
@@ -37,7 +37,10 @@ test('ledger sections keep the reporting filters of the current page', () => {
         ['Auditoría', '/admin/management/audit'],
     ]);
     assert.equal(
-        managementOperationsHref('/admin/management?history_period=month'),
+        managementSectionHref(
+            '/admin/management?history_period=month',
+            'operations',
+        ),
         '/admin/management?history_period=month&section=operations',
     );
 });

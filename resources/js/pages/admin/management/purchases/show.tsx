@@ -31,7 +31,6 @@ export default function ShowPurchase({
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title={`Compra #${p.id}`} />
-            <ManagementSectionNavigation />
             <Link href="/admin/management/purchases">Volver a Compras</Link>
             <header>
                 <h1 className="text-2xl font-semibold text-balance">
@@ -44,6 +43,7 @@ export default function ShowPurchase({
                 <p>{p.description}</p>
                 <p>{p.status === 'reversed' ? 'Revertida' : 'Confirmada'}</p>
             </header>
+            <ManagementSectionNavigation />
             <section className="rounded-xl border border-admin-border bg-admin-surface p-4">
                 <h2>Impacto registrado</h2>
                 <p className="tabular-nums">

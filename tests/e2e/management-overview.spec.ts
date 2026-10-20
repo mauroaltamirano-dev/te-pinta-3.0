@@ -373,6 +373,20 @@ test('Compras and Auditoría are Gestión sections with the same tabs', async ({
     await expect(
         nav.getByRole('link', { name: 'Compras', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
+
+    // Like every Gestión page: heading first, then the section tabs.
+    for (const [path, heading] of [
+        ['/admin/management/purchases', 'Compras'],
+        ['/admin/management/audit', 'Auditoría'],
+    ]) {
+        await page.goto(path);
+        const headingBox = await page
+            .getByRole('heading', { name: heading, level: 1 })
+            .boundingBox();
+        const navBox = await nav.boundingBox();
+        expect(headingBox!.y).toBeLessThan(navBox!.y);
+    }
+
     await page.goto('/admin/management/purchases/create');
     await expect(
         nav.getByRole('link', { name: 'Compras', exact: true }),

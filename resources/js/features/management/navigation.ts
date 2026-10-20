@@ -66,10 +66,6 @@ export function managementSectionHref(
     return `/admin/management?${query}`;
 }
 
-export function managementOperationsHref(url: string): string {
-    return managementSectionHref(url, 'operations');
-}
-
 export function managementNavigation(url: string): {
     items: { label: string; href: string }[];
     currentHref: string | null;
