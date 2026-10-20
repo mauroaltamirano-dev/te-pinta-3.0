@@ -242,7 +242,9 @@ export function useAdminOrderDraft(
         });
     };
 
-    const selectDeliveryType = (deliveryType: 'pickup' | 'delivery') => {
+    const selectDeliveryType = (
+        deliveryType: 'pickup' | 'delivery' | 'dine_in',
+    ) => {
         form.setData((data) => {
             if (deliveryType !== 'delivery' || data.delivery_address) {
                 return { ...data, delivery_type: deliveryType };
@@ -322,7 +324,16 @@ export function useAdminOrderDraft(
         try {
             const { data } = await postJson<{ data: AdminCreatedOrder }>(
                 '/admin/orders',
-                form.data,
+                form.data.delivery_type === 'dine_in'
+                    ? // A counter order is immediate: no schedule or address.
+                      {
+                          ...form.data,
+                          delivery_date: null,
+                          delivery_period: null,
+                          delivery_time: null,
+                          delivery_address: null,
+                      }
+                    : form.data,
             );
             setCreatedOrder(data);
             autoFilledDeliveryAddress.current = null;

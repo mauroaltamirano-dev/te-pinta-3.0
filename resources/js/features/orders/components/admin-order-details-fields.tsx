@@ -26,16 +26,25 @@ import type {
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
 import { formatOrderDate } from '../presentation';
 
+const DELIVERY_CHOICES = {
+    dine_in: 'Mostrador',
+    pickup: 'Retiro en local',
+    delivery: 'Envío',
+} as const;
+
 export function AdminOrderDetailsFields({
     draft,
     customers,
     addons,
     minimumDeliveryDate,
+    allowCounter = false,
 }: {
     draft: AdminOrderDraft;
     customers: AdminCustomerOption[];
     addons: AdminAddonOption[];
     minimumDeliveryDate?: string | null;
+    /** Offers "Mostrador" (consumo en el local, without customer data) when creating a quick order. */
+    allowCounter?: boolean;
 }) {
     const { form } = draft;
     const [customerSearch, setCustomerSearch] = useState('');
@@ -255,96 +264,126 @@ export function AdminOrderDetailsFields({
             <div className="grid content-start gap-5">
                 <section className="grid gap-3">
                     <h3 className="font-semibold">Entrega</h3>
-                    {form.data.delivery_type === 'dine_in' ? (
+                    {form.data.delivery_type === 'dine_in' && !allowCounter ? (
                         <p>
                             Salón · pedido inmediato, sin dirección ni
                             programación.
                         </p>
                     ) : (
                         <>
-                            <div className="grid grid-cols-2 gap-3">
-                                {(['pickup', 'delivery'] as const).map(
-                                    (type) => (
-                                        <Button
-                                            key={type}
-                                            type="button"
-                                            variant={
-                                                form.data.delivery_type === type
-                                                    ? 'default'
-                                                    : 'outline'
-                                            }
-                                            onClick={() =>
-                                                draft.selectDeliveryType(type)
-                                            }
-                                        >
-                                            {type === 'pickup'
-                                                ? 'Retiro en local'
-                                                : 'Envío'}
-                                        </Button>
-                                    ),
-                                )}
-                            </div>
-                            {form.data.delivery_type === 'delivery' && (
-                                <Field
-                                    id="delivery-address"
-                                    label="Dirección de entrega"
-                                    value={form.data.delivery_address}
-                                    onChange={draft.setDeliveryAddress}
-                                    required
-                                />
-                            )}
-                            <DeliveryDatePicker
-                                value={form.data.delivery_date}
-                                minimumDate={minimumDeliveryDate}
-                                onChange={(value) =>
-                                    form.setData('delivery_date', value)
+                            <div
+                                className={
+                                    allowCounter
+                                        ? 'grid grid-cols-3 gap-2'
+                                        : 'grid grid-cols-2 gap-3'
                                 }
-                            />
-                            <div className="grid gap-2">
-                                <Label htmlFor="delivery-period">Franja</Label>
-                                <Select
-                                    value={form.data.delivery_period ?? ''}
-                                    onValueChange={(
-                                        value: 'midday' | 'afternoon' | 'night',
-                                    ) => form.setData('delivery_period', value)}
-                                >
-                                    <SelectTrigger
-                                        id="delivery-period"
-                                        className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
+                            >
+                                {(allowCounter
+                                    ? ([
+                                          'dine_in',
+                                          'pickup',
+                                          'delivery',
+                                      ] as const)
+                                    : (['pickup', 'delivery'] as const)
+                                ).map((type) => (
+                                    <Button
+                                        key={type}
+                                        type="button"
+                                        variant={
+                                            form.data.delivery_type === type
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        onClick={() =>
+                                            draft.selectDeliveryType(type)
+                                        }
                                     >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="admin-shell border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
-                                        <SelectItem
-                                            value="midday"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
-                                        >
-                                            Mediodía
-                                        </SelectItem>
-                                        <SelectItem
-                                            value="afternoon"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
-                                        >
-                                            Tarde
-                                        </SelectItem>
-                                        <SelectItem
-                                            value="night"
-                                            className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
-                                        >
-                                            Noche
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                        {DELIVERY_CHOICES[type]}
+                                    </Button>
+                                ))}
                             </div>
-                            <Field
-                                id="delivery-time"
-                                type="time"
-                                label="Hora opcional"
-                                value={form.data.delivery_time}
-                                onChange={(value) =>
-                                    form.setData('delivery_time', value)
-                                }
-                            />
+                            {form.data.delivery_type === 'dine_in' ? (
+                                <p className="text-sm text-admin-text-secondary">
+                                    Consumo en el local · sin cliente, dirección
+                                    ni programación.
+                                </p>
+                            ) : (
+                                <>
+                                    {form.data.delivery_type === 'delivery' && (
+                                        <Field
+                                            id="delivery-address"
+                                            label="Dirección de entrega"
+                                            value={form.data.delivery_address}
+                                            onChange={draft.setDeliveryAddress}
+                                            required
+                                        />
+                                    )}
+                                    <DeliveryDatePicker
+                                        value={form.data.delivery_date}
+                                        minimumDate={minimumDeliveryDate}
+                                        onChange={(value) =>
+                                            form.setData('delivery_date', value)
+                                        }
+                                    />
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="delivery-period">
+                                            Franja
+                                        </Label>
+                                        <Select
+                                            value={
+                                                form.data.delivery_period ?? ''
+                                            }
+                                            onValueChange={(
+                                                value:
+                                                    | 'midday'
+                                                    | 'afternoon'
+                                                    | 'night',
+                                            ) =>
+                                                form.setData(
+                                                    'delivery_period',
+                                                    value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                id="delivery-period"
+                                                className="h-11 w-full border-admin-border !bg-admin-canvas text-admin-text-primary focus-visible:border-admin-accent focus-visible:ring-admin-accent/30"
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="admin-shell border-admin-border !bg-admin-surface-raised !text-admin-text-primary shadow-xl">
+                                                <SelectItem
+                                                    value="midday"
+                                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
+                                                >
+                                                    Mediodía
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value="afternoon"
+                                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
+                                                >
+                                                    Tarde
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value="night"
+                                                    className="focus:bg-admin-selection focus:text-admin-text-primary data-[state=checked]:text-admin-accent-text"
+                                                >
+                                                    Noche
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Field
+                                        id="delivery-time"
+                                        type="time"
+                                        label="Hora opcional"
+                                        value={form.data.delivery_time}
+                                        onChange={(value) =>
+                                            form.setData('delivery_time', value)
+                                        }
+                                    />
+                                </>
+                            )}
                         </>
                     )}
                 </section>

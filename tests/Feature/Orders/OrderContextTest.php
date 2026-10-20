@@ -178,13 +178,14 @@ final class OrderContextTest extends TestCase
         $this->assertSame(0, Order::query()->latest('id')->firstOrFail()->shipping_fee_snapshot);
     }
 
-    public function test_admin_cannot_spoof_pos_source_or_create_unscheduled_dine_in(): void
+    public function test_admin_cannot_spoof_pos_source_or_schedule_a_counter_order(): void
     {
         $payload = $this->adminPayload();
         $this->actingAs($this->admin)->postJson(route('admin.orders.store'), $payload + ['source' => 'pos'])
             ->assertUnprocessable()->assertJsonValidationErrors('source');
+        // A dine-in order from the admin store is a counter order (CounterOrderTest): immediate, never scheduled.
         $payload['delivery_type'] = 'dine_in';
-        $this->postJson(route('admin.orders.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('delivery_type');
+        $this->postJson(route('admin.orders.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors(['delivery_date', 'delivery_period']);
     }
 
     #[DataProvider('invalidDatabaseContexts')]

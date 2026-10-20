@@ -125,6 +125,7 @@ export function OrderContinuationPanel({
                                 draft={draft}
                                 customers={customers}
                                 addons={addons}
+                                allowCounter
                             />
                             <div className="mt-6">
                                 <PriceSummary

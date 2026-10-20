@@ -127,7 +127,8 @@ final class OrderManagementController
 
     public function store(StoreAdminOrderRequest $request, CreateOrder $createOrder, OrderSummaryFormatter $formatter): RedirectResponse|JsonResponse
     {
-        $order = $createOrder->execute(OrderCheckoutData::fromRequest($request, false), OrderSource::Admin, (int) $request->user()->getAuthIdentifier());
+        $source = $request->isCounterOrder() ? OrderSource::Pos : OrderSource::Admin;
+        $order = $createOrder->execute(OrderCheckoutData::fromRequest($request, false), $source, (int) $request->user()->getAuthIdentifier());
 
         if ($request->expectsJson()) {
             return response()->json([

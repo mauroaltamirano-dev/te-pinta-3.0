@@ -12,7 +12,7 @@ Code: `app/Modules/Orders/`. Key entry points: `Actions/CreateOrder.php`, `Actio
 | --- | --- | --- |
 | `admin` | Admin quick order (`/admin`) or full form (`/admin/orders/create`) | `waiting` |
 | `public_checkout` | Public storefront `POST /checkout/orders` | `pending_confirmation` |
-| `pos` | Table service (`ConfirmTableRound`, first round of a table) and the internal `CreateOrder` command | `waiting` |
+| `pos` | Table service (`ConfirmTableRound`, first round of a table), counter orders (`POST /admin/orders` with `delivery_type=dine_in`, "Mostrador" in the quick order) and the internal `CreateOrder` command | `waiting` |
 
 | Context | Customer / contact | Address | Schedule | Shipping |
 | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ Code: `app/Modules/Orders/`. Key entry points: `Actions/CreateOrder.php`, `Actio
 | Admin pickup | Existing customer or new name; phone optional | Not required | As above | 0 |
 | POS `dine_in` | Customer, name and phone optional; no profile is created | Prohibited | Date, period and time null | 0 |
 
-Public checkout and admin forms reject `dine_in` and never accept a client-supplied `source`. Delivery periods: `midday`, `afternoon`, `night`; `delivery_time` is optional.
+Public checkout rejects `dine_in` and the full admin form does not offer it; the admin store accepts it only as a counter order, which it records as `source=pos` (it never accepts a client-supplied `source`). Delivery periods: `midday`, `afternoon`, `night`; `delivery_time` is optional.
 
 ## Lifecycle
 
