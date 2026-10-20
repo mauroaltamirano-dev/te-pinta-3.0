@@ -1,13 +1,11 @@
 import { AlertTriangle } from 'lucide-react';
 import { DashboardCard } from '@/features/dashboard/components/dashboard-card';
-import {
-    dashboardStatusLabels,
-    formatDeliveryMoment,
-} from '@/features/dashboard/presentation';
+import { formatDeliveryMoment } from '@/features/dashboard/presentation';
 import type { DashboardOrder } from '@/features/dashboard/types';
 import {
     deliveryTypeLabels,
     formatOrderMoney,
+    orderStatusLabels,
     orderStatusStyles,
 } from '@/features/orders/presentation';
 
@@ -46,7 +44,7 @@ export function UrgentOrders({
                                 <span
                                     className={`mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${orderStatusStyles[order.status]}`}
                                 >
-                                    {dashboardStatusLabels[order.status]}
+                                    {orderStatusLabels[order.status]}
                                 </span>
                                 <div className="min-w-0">
                                     <button

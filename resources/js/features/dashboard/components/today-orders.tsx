@@ -2,14 +2,12 @@ import { Link } from '@inertiajs/react';
 import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardCard } from '@/features/dashboard/components/dashboard-card';
-import {
-    dashboardStatusLabels,
-    formatDeliveryMoment,
-} from '@/features/dashboard/presentation';
+import { formatDeliveryMoment } from '@/features/dashboard/presentation';
 import type { DashboardOrder } from '@/features/dashboard/types';
 import {
     deliveryTypeLabels,
     formatOrderMoney,
+    orderStatusLabels,
     orderStatusStyles,
     paymentStatusLabels,
 } from '@/features/orders/presentation';
@@ -119,7 +117,7 @@ export function TodayOrders({
                                                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${orderStatusStyles[order.status]}`}
                                             >
                                                 {
-                                                    dashboardStatusLabels[
+                                                    orderStatusLabels[
                                                         order.status
                                                     ]
                                                 }
@@ -162,7 +160,7 @@ export function TodayOrders({
                                     <span
                                         className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${orderStatusStyles[order.status]}`}
                                     >
-                                        {dashboardStatusLabels[order.status]}
+                                        {orderStatusLabels[order.status]}
                                     </span>
                                 </div>
                                 <div className="mt-3 grid grid-cols-2 gap-3 border-t border-admin-border pt-3 text-xs text-admin-text-secondary">

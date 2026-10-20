@@ -1,10 +1,8 @@
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import {
     deliveryPeriodLabels,
-    orderStatusLabels,
     formatOrderDate,
 } from '@/features/orders/presentation';
-import type { OrderStatus } from '@/features/orders/types';
 
 export const dashboardPeriodLabels: Record<DashboardPeriod, string> = {
     today: 'Hoy',
@@ -12,9 +10,6 @@ export const dashboardPeriodLabels: Record<DashboardPeriod, string> = {
     month: 'Mes',
     all: 'Desde siempre',
 };
-
-export const dashboardStatusLabels: Record<OrderStatus, string> =
-    orderStatusLabels;
 
 export function dashboardSalesLabel(period: DashboardPeriod): string {
     if (period === 'today') {

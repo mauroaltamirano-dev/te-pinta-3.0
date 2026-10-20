@@ -1,10 +1,10 @@
 import { DashboardCard } from '@/features/dashboard/components/dashboard-card';
-import {
-    dashboardStatusLabels,
-    formatDashboardNumber,
-} from '@/features/dashboard/presentation';
+import { formatDashboardNumber } from '@/features/dashboard/presentation';
 import type { DashboardData } from '@/features/dashboard/types';
-import { orderStatusStyles } from '@/features/orders/presentation';
+import {
+    orderStatusLabels,
+    orderStatusStyles,
+} from '@/features/orders/presentation';
 
 export function OperationalStatus({
     statuses,
@@ -33,7 +33,7 @@ export function OperationalStatus({
                                 className={`size-2.5 rounded-full ${orderStatusStyles[item.status].split(' ')[0]}`}
                             />
                             <span className="truncate">
-                                {dashboardStatusLabels[item.status]}
+                                {orderStatusLabels[item.status]}
                             </span>
                         </dt>
                         <dd className="text-lg font-semibold text-admin-text-primary tabular-nums">
