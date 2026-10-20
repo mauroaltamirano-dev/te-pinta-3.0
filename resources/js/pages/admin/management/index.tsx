@@ -7,17 +7,16 @@ import {
     PieChart,
     ReceiptText,
     ShoppingBasket,
-    ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import { AdminPageShell } from '@/components/shared/admin-page-shell';
-import { AdminSectionNavigation } from '@/components/shared/admin-section-navigation';
 import { Button } from '@/components/ui/button';
 import { adminBreadcrumbRoot } from '@/features/admin-navigation/model';
 import { DistributionFormDialog } from '@/features/management/components/distribution-form-dialog';
 import { DistributionRuleDialog } from '@/features/management/components/distribution-rule-dialog';
 import { DistributionRulesPanel } from '@/features/management/components/distribution-rules-panel';
 import { ManagementOverview } from '@/features/management/components/management-overview';
+import { ManagementSectionNavigation } from '@/features/management/components/management-section-navigation';
 import { MovementFormDialog } from '@/features/management/components/movement-form-dialog';
 import { OutflowFormDialog } from '@/features/management/components/outflow-form-dialog';
 import { ReversalDialog } from '@/features/management/components/reversal-dialog';
@@ -25,6 +24,11 @@ import { TransactionHistory } from '@/features/management/components/transaction
 import { TransferFormDialog } from '@/features/management/components/transfer-form-dialog';
 import { WalletFormDialog } from '@/features/management/components/wallet-form-dialog';
 import { WalletGrid } from '@/features/management/components/wallet-grid';
+import {
+    managementSectionHref,
+    requestedManagementSection,
+} from '@/features/management/navigation';
+import type { ManagementSection } from '@/features/management/navigation';
 import type {
     ManagementPageProps,
     DistributionRule,
@@ -32,35 +36,6 @@ import type {
     ManagementTransaction,
     ManagementWallet,
 } from '@/features/management/types';
-
-const sections = [
-    { id: 'panorama', label: 'Panorama' },
-    { id: 'operations', label: 'Registrar operación' },
-    { id: 'wallets', label: 'Billeteras' },
-    { id: 'movements', label: 'Movimientos' },
-] as const;
-
-function requestedSection(url: string) {
-    const query = new URL(url, 'http://localhost').searchParams;
-    const section = query.get('section');
-
-    if (section && sections.some((candidate) => candidate.id === section)) {
-        return section;
-    }
-
-    return [
-        'transaction_id',
-        'type',
-        'wallet_id',
-        'category_id',
-        'page',
-        'history_period',
-        'history_from',
-        'history_to',
-    ].some((key) => query.has(key))
-        ? 'movements'
-        : 'panorama';
-}
 
 export default function Management({
     business_today: businessToday,
@@ -74,13 +49,9 @@ export default function Management({
     distribution_rules: distributionRules,
 }: ManagementPageProps) {
     const { url, props } = usePage();
-    const activeSection = requestedSection(url);
-    const sectionHref = (section: string) => {
-        const query = new URL(url, 'http://localhost').searchParams;
-        query.set('section', section);
-
-        return `/admin/management?${query}`;
-    };
+    const activeSection = requestedManagementSection(url);
+    const sectionHref = (section: ManagementSection) =>
+        managementSectionHref(url, section);
     const [walletFormOpen, setWalletFormOpen] = useState(false);
     const [editingWallet, setEditingWallet] = useState<ManagementWallet | null>(
         null,
@@ -126,21 +97,25 @@ export default function Management({
                 ]}
                 actions={
                     <>
-                        <nav
-                            aria-label="Áreas relacionadas de Gestión"
-                            className="admin-page-actions"
+                        <Button
+                            asChild
+                            variant={
+                                activeSection === 'operations'
+                                    ? 'default'
+                                    : 'outline'
+                            }
                         >
-                            <Button asChild variant="ghost">
-                                <Link href="/admin/management/purchases">
-                                    Compras
-                                </Link>
-                            </Button>
-                            <Button asChild variant="ghost">
-                                <Link href="/admin/management/audit">
-                                    <ShieldCheck /> Auditoría
-                                </Link>
-                            </Button>
-                        </nav>
+                            <Link
+                                href={sectionHref('operations')}
+                                aria-current={
+                                    activeSection === 'operations'
+                                        ? 'page'
+                                        : undefined
+                                }
+                            >
+                                <ReceiptText /> Registrar operación
+                            </Link>
+                        </Button>
                         {activeSection === 'wallets' && (
                             <Button
                                 type="button"
@@ -151,16 +126,7 @@ export default function Management({
                         )}
                     </>
                 }
-                navigation={
-                    <AdminSectionNavigation
-                        label="Secciones de Gestión"
-                        currentUrl={sectionHref(activeSection)}
-                        items={sections.map((section) => ({
-                            label: section.label,
-                            href: sectionHref(section.id),
-                        }))}
-                    />
-                }
+                navigation={<ManagementSectionNavigation />}
             >
                 <div
                     hidden={activeSection !== 'panorama'}

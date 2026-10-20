@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import { ManagementSectionNavigation } from '@/features/management/components/management-section-navigation';
 import type { PurchaseOptions } from '@/features/purchases/types';
 interface Line {
     inventory_item_id: string;
@@ -47,6 +48,7 @@ export default function CreatePurchase({
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title="Registrar compra" />
+            <ManagementSectionNavigation />
             <Link href="/admin/management/purchases">Volver a Compras</Link>
             <h1 className="text-2xl font-semibold text-balance">
                 Registrar compra

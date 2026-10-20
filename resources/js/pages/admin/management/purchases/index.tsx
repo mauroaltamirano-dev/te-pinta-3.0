@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
+import { ManagementSectionNavigation } from '@/features/management/components/management-section-navigation';
 import type { Purchase, PurchaseOptions } from '@/features/purchases/types';
 import { formatMoney as money } from '@/lib/format';
 interface Props extends PurchaseOptions {
@@ -37,7 +38,7 @@ export default function Purchases({ purchases, filters, wallets }: Props) {
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title="Compras" />
-            <Link href="/admin/management">Volver a Gestión</Link>
+            <ManagementSectionNavigation />
             <header className="flex flex-wrap justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-semibold text-balance">

@@ -21,9 +21,17 @@ function moneyPattern(amount: string) {
 }
 
 async function managementSection(page: Page, label: string) {
-    const link = page
-        .getByRole('navigation', { name: 'Secciones de Gestión', exact: true })
-        .getByRole('link', { name: label, exact: true });
+    // "Registrar operación" is a header action; the rest are section tabs.
+    const container =
+        label === 'Registrar operación'
+            ? page.locator('header').filter({
+                  has: page.getByRole('heading', { name: 'Gestión', level: 1 }),
+              })
+            : page.getByRole('navigation', {
+                  name: 'Secciones de Gestión',
+                  exact: true,
+              });
+    const link = container.getByRole('link', { name: label, exact: true });
 
     if ((await link.getAttribute('aria-current')) === 'page') {
         return;

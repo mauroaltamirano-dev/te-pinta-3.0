@@ -15,6 +15,7 @@ import {
     formatInventoryQuantity,
 } from '@/features/inventory/presentation';
 import { AttachmentSection } from '@/features/management/components/attachment-section';
+import { ManagementSectionNavigation } from '@/features/management/components/management-section-navigation';
 import type { Purchase } from '@/features/purchases/types';
 import { formatMoney as money } from '@/lib/format';
 export default function ShowPurchase({
@@ -30,6 +31,7 @@ export default function ShowPurchase({
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title={`Compra #${p.id}`} />
+            <ManagementSectionNavigation />
             <Link href="/admin/management/purchases">Volver a Compras</Link>
             <header>
                 <h1 className="text-2xl font-semibold text-balance">

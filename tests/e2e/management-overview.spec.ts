@@ -223,16 +223,30 @@ test('header operations are contextual and URL navigation preserves the reportin
     await expect(
         page.getByRole('button', { name: 'Nueva billetera', exact: true }),
     ).toHaveCount(0);
-    const related = page.getByRole('navigation', {
-        name: 'Áreas relacionadas de Gestión',
-    });
+    const nav = page.getByRole('navigation', { name: 'Secciones de Gestión' });
+    await expect(nav.getByRole('link')).toHaveText([
+        'Panorama',
+        'Movimientos',
+        'Billeteras',
+        'Compras',
+        'Auditoría',
+    ]);
     await expect(
-        related.getByRole('link', { name: 'Compras', exact: true }),
+        nav.getByRole('link', { name: 'Compras', exact: true }),
     ).toHaveAttribute('href', '/admin/management/purchases');
     await expect(
-        related.getByRole('link', { name: 'Auditoría', exact: true }),
+        nav.getByRole('link', { name: 'Auditoría', exact: true }),
     ).toHaveAttribute('href', '/admin/management/audit');
-    const nav = page.getByRole('navigation', { name: 'Secciones de Gestión' });
+    const register = page
+        .locator('header')
+        .filter({
+            has: page.getByRole('heading', { name: 'Gestión', level: 1 }),
+        })
+        .getByRole('link', { name: 'Registrar operación', exact: true });
+    await expect(register).toHaveAttribute(
+        'href',
+        /period=30_days.*section=operations/,
+    );
     await nav.getByRole('link', { name: 'Billeteras', exact: true }).click();
     await expect(page).toHaveURL(
         (url) =>
@@ -348,4 +362,34 @@ test('net-zero purchase and reversal are not described as missing financial hist
     await expect(
         page.getByText('Todavía no registraste operaciones.', { exact: true }),
     ).toHaveCount(0);
+});
+
+test('Compras and Auditoría are Gestión sections with the same tabs', async ({
+    page,
+}) => {
+    const nav = page.getByRole('navigation', { name: 'Secciones de Gestión' });
+
+    await page.goto('/admin/management/purchases');
+    await expect(
+        nav.getByRole('link', { name: 'Compras', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+    await page.goto('/admin/management/purchases/create');
+    await expect(
+        nav.getByRole('link', { name: 'Compras', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+
+    await nav.getByRole('link', { name: 'Auditoría', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/management\/audit$/);
+    await expect(
+        page.getByRole('heading', { name: 'Auditoría', level: 1 }),
+    ).toBeVisible();
+    await expect(
+        nav.getByRole('link', { name: 'Auditoría', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+
+    await nav.getByRole('link', { name: 'Movimientos', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/management\?section=movements$/);
+    await expect(
+        nav.getByRole('link', { name: 'Movimientos', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
 });

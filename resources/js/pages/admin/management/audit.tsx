@@ -1,7 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Head } from '@inertiajs/react';
+import { ShieldCheck } from 'lucide-react';
 import { AuditDashboard } from '@/features/management/components/audit-dashboard';
+import { ManagementSectionNavigation } from '@/features/management/components/management-section-navigation';
 import type { ManagementAuditPageProps } from '@/features/management/types';
 
 export default function ManagementAudit({ audit }: ManagementAuditPageProps) {
@@ -27,16 +27,8 @@ export default function ManagementAudit({ audit }: ManagementAuditPageProps) {
                             vista es de sólo lectura.
                         </p>
                     </div>
-                    <Button
-                        asChild
-                        variant="outline"
-                        className="h-11 rounded-lg px-4"
-                    >
-                        <Link href="/admin/management">
-                            <ArrowLeft /> Volver a Gestión
-                        </Link>
-                    </Button>
                 </header>
+                <ManagementSectionNavigation />
 
                 <AuditDashboard audit={audit} />
             </section>

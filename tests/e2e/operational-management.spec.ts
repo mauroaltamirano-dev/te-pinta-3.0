@@ -23,14 +23,18 @@ test('Management sections are URL-authoritative across reload, history and filte
     await login(page);
     await page.goto('/admin/management?period=30_days');
     const nav = page.getByRole('navigation', { name: 'Secciones de Gestión' });
+    const header = page.locator('header').filter({
+        has: page.getByRole('heading', { name: 'Gestión', level: 1 }),
+    });
     await expect(
         nav.getByRole('link', { name: 'Panorama', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
     await expect(page.getByTestId('management-summary-group')).toBeVisible();
-    await nav
+    await header
         .getByRole('link', { name: 'Registrar operación', exact: true })
         .click();
     await expect(page).toHaveURL(/section=operations/);
+    await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
     await expect(
         page.getByRole('button', { name: 'Registrar gasto', exact: true }),
     ).toBeVisible();
@@ -43,7 +47,7 @@ test('Management sections are URL-authoritative across reload, history and filte
     ).toHaveAttribute('aria-current', 'page');
     await page.goBack();
     await expect(
-        nav.getByRole('link', { name: 'Registrar operación', exact: true }),
+        header.getByRole('link', { name: 'Registrar operación', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
     await page.goForward();
     await expect(page.getByTestId('management-wallets-group')).toBeVisible();
@@ -139,7 +143,11 @@ test('Management exposes one Rich Purchase entry point and retains financial ope
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
-    await navigation
+    await page
+        .locator('header')
+        .filter({
+            has: page.getByRole('heading', { name: 'Gestión', level: 1 }),
+        })
         .getByRole('link', { name: 'Registrar operación', exact: true })
         .click();
     await page

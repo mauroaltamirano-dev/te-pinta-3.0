@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { AdminEmptyState } from '@/components/shared/admin-empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import type { ManagementSection } from '@/features/management/navigation';
 import { formatMoney } from '@/lib/format';
 import type {
     ManagementFilters,
@@ -19,7 +20,7 @@ export function ManagementOverview({
     summary: ManagementMetrics;
     wallets: ManagementWallet[];
     filters: ManagementFilters;
-    sectionHref: (section: string) => string;
+    sectionHref: (section: ManagementSection) => string;
 }) {
     // Preserve the existing presentation aggregate; financial formulas remain backend-owned.
     const expenses = summary.period_expenses + (summary.period_expense ?? 0);
