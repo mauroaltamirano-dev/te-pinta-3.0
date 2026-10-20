@@ -159,6 +159,46 @@ test('una mesa de otro mozo se ve pero no se carga', async ({ page }) => {
     ).toHaveCount(0);
 });
 
+test('reintentar una ronda cuya respuesta se perdió no la comanda dos veces', async ({
+    page,
+}) => {
+    prepareFloor();
+    await logIn(page, 'playwright-waiter@example.test');
+    await page.goto('/admin/tables');
+    await page.getByRole('link', { name: 'Mesa M1' }).click();
+    let lost = false;
+    await page.route('**/admin/tables/*/rounds', async (route) => {
+        if (lost) {
+            return route.continue();
+        }
+
+        // The server confirms the round, but the phone never gets the answer.
+        lost = true;
+        await route.fetch({ maxRedirects: 0 });
+
+        return route.abort();
+    });
+
+    await page.getByRole('button', { name: 'Agregar 6 Salteña' }).click();
+    await confirmRound(page, /Revisar ronda 1 \(6\)/);
+    await expect(
+        page.getByText('Sin conexión con el servidor: no se guardó.'),
+    ).toBeVisible();
+    await confirmRound(page, /Revisar ronda 1 \(6\)/);
+
+    await expect(
+        page.getByRole('region', { name: 'Total provisorio' }),
+    ).toContainText('6 × Salteña');
+    await expect(
+        page.getByRole('region', { name: 'Rondas' }).getByRole('article'),
+    ).toHaveCount(1);
+    expect(
+        tinker(
+            'echo App\\Modules\\Printing\\Models\\PrintJob::query()->where("kind", "kitchen_ticket")->count();',
+        ),
+    ).toBe('1');
+});
+
 test('una mesa cobrada en caja saca al mozo del modo anular', async ({
     page,
 }) => {

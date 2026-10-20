@@ -20,6 +20,11 @@ import type {
     FloorShape,
     GeometryPatch,
 } from '@/features/restaurant/types';
+import {
+    notifySubmissionFailure,
+    OFFLINE_SUBMISSION_MESSAGE,
+    submissionFailureMessage,
+} from '@/lib/submission-failure';
 
 const selectClass =
     'min-h-11 w-full min-w-0 rounded-md border border-admin-border bg-admin-surface px-3 text-sm text-admin-text-primary focus-visible:outline-2 focus-visible:outline-admin-accent';
@@ -171,11 +176,17 @@ export default function FloorEditor({
                 setMessage(
                     'Otro administrador guardó este plano. Tu borrador se conserva: copia tus ajustes antes de recargar.',
                 );
+                notifySubmissionFailure(
+                    'Otro administrador guardó este plano antes.',
+                );
             } else if (!response.ok || !data.area) {
                 setErrors(data.errors || {});
                 setMessage(
                     data.message ||
                         'No se pudo guardar. El borrador se conserva.',
+                );
+                notifySubmissionFailure(
+                    submissionFailureMessage(response.status),
                 );
             } else {
                 accept(data.area);
@@ -186,6 +197,7 @@ export default function FloorEditor({
             setMessage(
                 'No se pudo conectar. El borrador se conserva; vuelve a intentar.',
             );
+            notifySubmissionFailure(OFFLINE_SUBMISSION_MESSAGE);
         } finally {
             setSaving(false);
         }

@@ -1,5 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { notifySubmissionFailure } from '@/lib/submission-failure';
 import type {
     AdminCreatedOrder,
     AdminCustomerOption,
@@ -348,12 +349,12 @@ export function useAdminOrderDraft(
 
             return data;
         } catch (error) {
-            form.setError(
-                'items',
+            const message =
                 error instanceof Error
                     ? error.message
-                    : 'No pudimos crear el pedido.',
-            );
+                    : 'No pudimos crear el pedido.';
+            form.setError('items', message);
+            notifySubmissionFailure(message);
 
             return null;
         } finally {

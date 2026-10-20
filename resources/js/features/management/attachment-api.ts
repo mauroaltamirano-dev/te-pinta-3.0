@@ -1,3 +1,7 @@
+import {
+    notifySubmissionFailure,
+    OFFLINE_SUBMISSION_MESSAGE,
+} from '@/lib/submission-failure';
 import type { ManagementAttachment } from './types';
 
 type ErrorPayload = {
@@ -29,6 +33,24 @@ async function requestError(response: Response, fallback: string) {
         : undefined;
 
     return new Error(firstError ?? payload.message ?? fallback);
+}
+
+/** A failed upload or delete also raises the admin-wide failure toast. */
+async function submissionError(response: Response, fallback: string) {
+    const error = await requestError(response, fallback);
+    notifySubmissionFailure(error.message);
+
+    return error;
+}
+
+async function submit(url: string, init: RequestInit) {
+    try {
+        return await fetch(url, init);
+    } catch {
+        notifySubmissionFailure(OFFLINE_SUBMISSION_MESSAGE);
+
+        throw new Error(OFFLINE_SUBMISSION_MESSAGE);
+    }
 }
 
 function collectionUrl(transactionId: number) {
@@ -66,7 +88,7 @@ export async function uploadManagementAttachment(
     const data = new FormData();
     data.append('file', file);
 
-    const response = await fetch(collectionUrl(transactionId), {
+    const response = await submit(collectionUrl(transactionId), {
         method: 'POST',
         credentials: 'same-origin',
         headers: headers(),
@@ -74,7 +96,7 @@ export async function uploadManagementAttachment(
     });
 
     if (!response.ok) {
-        throw await requestError(
+        throw await submissionError(
             response,
             'No se pudo adjuntar el comprobante.',
         );
@@ -92,7 +114,7 @@ export async function deleteManagementAttachment(
     attachmentId: number,
     reason: string,
 ) {
-    const response = await fetch(
+    const response = await submit(
         `${collectionUrl(transactionId)}/${attachmentId}`,
         {
             method: 'DELETE',
@@ -103,7 +125,7 @@ export async function deleteManagementAttachment(
     );
 
     if (!response.ok) {
-        throw await requestError(
+        throw await submissionError(
             response,
             'No se pudo eliminar el comprobante.',
         );

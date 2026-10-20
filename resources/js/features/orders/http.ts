@@ -1,3 +1,8 @@
+import {
+    OFFLINE_SUBMISSION_MESSAGE,
+    submissionFailureMessage,
+} from '@/lib/submission-failure';
+
 export async function postJson<T>(url: string, body: unknown): Promise<T> {
     const token = document.cookie
         .split('; ')
@@ -12,8 +17,11 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
             ...(token ? { 'X-XSRF-TOKEN': decodeURIComponent(token) } : {}),
         },
         body: JSON.stringify(body),
+    }).catch(() => {
+        throw new Error(OFFLINE_SUBMISSION_MESSAGE);
     });
-    const payload = (await response.json()) as T & {
+    // An expired session or a proxy error answers HTML, not JSON.
+    const payload = (await response.json().catch(() => ({}))) as T & {
         message?: string;
         errors?: Record<string, string[]>;
     };
@@ -25,8 +33,9 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
 
         throw new Error(
             firstError ??
-                payload.message ??
-                'No se pudo completar la solicitud.',
+                // Laravel's own messages for other statuses are English ("Server Error").
+                (response.status === 422 ? payload.message : undefined) ??
+                submissionFailureMessage(response.status),
         );
     }
 
