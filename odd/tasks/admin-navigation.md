@@ -40,6 +40,14 @@ Assumptions:
 - T5 — `formatMoney` in `resources/js/lib/format.ts`.
 - T6 — Gestión sections "Panorama · Movimientos · Billeteras · Compras · Auditoría" across its pages, "Registrar operación" as a header action (split from T2: it rewires the `managementSection` e2e helper used by ~15 tests).
 
+Follow-ups (from the final review `review-96bdf2c95afc2266`, not started):
+
+| ID | Source | Status | Note |
+|---|---|---|---|
+| F1 | R2-heading-order-test-partial, R3-order-coverage-show-create | pending | The heading-before-tabs e2e in `management-overview.spec.ts` covers Compras index and Auditoría only; add Compras show and create. |
+| F2 | R2-create-tabs-after-intro | pending | On Compras create the tabs sit after the intro paragraph; index and show place them right after the header block. Align the placement. |
+| F3 | R3-boundingbox-null-diagnostics | pending | Assert `toBeVisible()` on the heading and the nav before `boundingBox()` so a failure names the missing element and path. |
+
 Route evidence: no Writer trigger — the units share the sidebar/layout surface and each is under ~400 lines, so the parent writes inline.
 
 ## Log
@@ -65,3 +73,4 @@ Route evidence: no Writer trigger — the units share the sidebar/layout surface
 - L19 — T6 commit `e581505` assessed medium, `review_due` false (`under_budget`). The user asked for gentle-ai review commit by commit, so the slice from `103e6e2` was reviewed now that the feature is complete. The whole slice (80 files, 1774 lines) hit `lens_context_budget_exceeded` (no authority was created), so it was reviewed as four chained candidates. Each was checked out detached at its end commit and the branch was restored afterwards. Each got consent ("Revisar este cambio") and the readability + reliability lenses, and each was approved and acknowledged: `103e6e2..a970ac1` (`review-1247fa33dc280a59`), `a970ac1..c5045c4` (`review-5336c690561eba0e`), `c5045c4..fdbc57b` (`review-999d9a0ab73a74f0`), `fdbc57b..ff8450b` (`review-74010e1e83572a38`). Advisory warnings fixed in a follow-up commit: Gestión tabs below the H1 on the Compras pages (now pinned by e2e), `fileURLToPath` for the source root in `presentation-sources.test.mjs`, unused `managementOperationsHref` removed. Kept as is: the General settings scroll growth (pre-existing, L11), and suggestions on test/locator duplication, the `ManagementSection` union, `formatMoney` test tautology and the money-source regex scope.
 - L20 — Follow-up `f07b39e` checks: frontend 18/18, tsc, eslint, prettier, build clean; management-overview + management e2e 20 passed (incl. heading-before-tabs on Compras and Auditoría). The RED for that e2e was not run separately; at `ff8450b` the tabs rendered before the H1 (reviewer finding R3-nav-before-heading). Assessed medium, `review_due` false (`under_budget`, 35 lines): not reviewed, pending as the open slice from boundary `ff8450b`. Feature complete; no push, PR or merge.
 - L21 — Open slice `ff8450b..d15ba57` (follow-up `f07b39e` + ODD docs) reviewed with consent, readability + reliability, approved and acknowledged (`review-96bdf2c95afc2266`). Suggestions only, kept as later work: the heading-before-tabs e2e covers Compras index and Auditoría but not Compras show/create; tabs sit after the intro paragraph on create; assert `toBeVisible()` before `boundingBox()`. Every commit of the feature is now reviewed.
+- L22 (2026-10-20) — User: "Anotá las tres sugerencias de la revisión como seguimiento en el documento ODD. Autorizo el merge local a main con git merge --ff-only y el push de main a origin. Sin deploy. Reportame el sha final de main. Y antes de usar make dev en ese worktree, bajá el stack viejo: ./vendor/bin/sail stop en la carpeta fixed-dozen-pricing." Follow-ups F1–F3 recorded; main fast-forwarded from `34cdc2f` to the branch tip and pushed to origin; no deploy.
