@@ -43,7 +43,7 @@ test('dashboard muestra la operación real, estados vacíos y prioridad móvil',
     page,
 }, testInfo) => {
     await expect(
-        page.getByRole('heading', { name: 'Panel operativo', exact: true }),
+        page.getByRole('heading', { name: 'Panel', exact: true }),
     ).toBeVisible();
     const kpis = page.getByTestId('dashboard-kpis');
     await expect(kpis).toBeVisible();
@@ -287,7 +287,7 @@ test('un pedido urgente abre y cierra el detalle operativo compartido', async ({
     await expect(sheet).toHaveCount(0);
     await expect(page).toHaveURL(/\/admin\/dashboard\?period=today$/);
     await expect(
-        page.getByRole('heading', { name: 'Panel operativo', exact: true }),
+        page.getByRole('heading', { name: 'Panel', exact: true }),
     ).toBeVisible();
 });
 

@@ -356,12 +356,12 @@ export default function FloorEditor({
 
     return (
         <>
-            <Head title="Plano del restaurante" />
+            <Head title="Plano del salón" />
             <div className="mx-auto grid max-w-[1600px] min-w-0 gap-5 font-orders">
                 <header className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h1 className="text-2xl font-semibold text-balance text-admin-text-primary">
-                            Plano del restaurante
+                            Plano del salón
                         </h1>
                         <p className="mt-1 text-sm text-pretty text-admin-text-secondary">
                             {canManage

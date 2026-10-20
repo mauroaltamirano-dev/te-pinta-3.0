@@ -26,17 +26,19 @@ Assumptions:
 
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
-| T1 | S1, S2, S5, S6 | inline | done | T1 commit |
-| T2 | S2, S3, S4, S5 | inline | pending | |
+| T1 | S1, S2, S5, S6 | inline | done | `103e6e2` (review approved, acknowledged) |
+| T2 | S2, S3, S4, S5 | inline | done | T2 commit |
 | T3 | S7 | inline | pending | |
 | T4 | S8 | inline | pending | |
 | T5 | S9 | inline | pending | |
+| T6 | S3 (Gestión) | inline | pending | |
 
 - T1 — Navigation model + grouped sidebar (desktop labels/rail, mobile bar), Analytics route and page removed.
-- T2 — Section navigation in `AdminLayout` for Inventario, Gestión, Marketing and Configuración; labels and breadcrumb root.
+- T2 — Module tabs in `AdminLayout` for Inventario, Marketing and Configuración; labels ("Ajustes de stock", "Costos", "Plano del salón", "Panel"), Productos eyebrow Catálogo, breadcrumb root Panel.
 - T3 — Single "Nuevo pedido" and "Modo avanzado".
 - T4 — Status labels from one source.
 - T5 — `formatMoney` in `resources/js/lib/format.ts`.
+- T6 — Gestión sections "Panorama · Movimientos · Billeteras · Compras · Auditoría" across its pages, "Registrar operación" as a header action (split from T2: it rewires the `managementSection` e2e helper used by ~15 tests).
 
 Route evidence: no Writer trigger — the units share the sidebar/layout surface and each is under ~400 lines, so the parent writes inline.
 
@@ -51,3 +53,5 @@ Route evidence: no Writer trigger — the units share the sidebar/layout surface
 - L7 — Findings: CodeGraph unavailable (`codegraph` not in PATH), filesystem tools used. Inventory section nav exists only on `/admin/inventory`; its subpages have no shared header, so module section navigation is rendered by `AdminLayout` from one pure navigation model. `dashboardStatusLabels` is already an alias of `orderStatusLabels`. Seven admin money formatters share the same options.
 - L8 — Correction to the L3 preview: `/admin` redirects roles without `orders.manage` (kitchen, accountant) to the order list (`RoleRouteMatrixTest::test_roles_without_order_management_land_on_the_order_list`), so "Vender" requires `orders.manage`; kitchen sees Pedidos, Productos, Inventario and accountant sees Pedidos, Clientes, Panel, Productos, Inventario, Gestión.
 - L9 — T1 RED: `tests/frontend/admin-navigation.test.mjs` failed (model module missing); `test_the_analytics_placeholder_is_not_routed` failed (route answered). GREEN: `features/admin-navigation/model.ts` (groups, permission filter, active matching, mobile primary), sidebar rewritten on it (104 px rail with tooltips below `lg`, 232 px with group headings and labels from `lg`, mobile bar Vender · Pedidos · Panel · Más with a grouped sheet), Analytics route, page and the now unused `PlaceholderPage` removed; docs updated (DESIGN_SYSTEM navigation, ARCHITECTURE Analytics row, SECURITY permission row). e2e adjusted: sidebar destinations; "Inicio" → "Vender"; the link before Configuración is now Gestión; `orders.spec` measured the sidebar as a hardcoded 104 px and assumed 3 cards per row at 1659 px — with the 232 px sidebar the grid fits 2, so the test now measures the sidebar and the real first row. Checks: frontend unit 7/7; PHPUnit 897 OK; build, tsc, eslint, prettier, pint clean; full Playwright 193 passed + `management-overview` 8 and `instagram` 7 passed after fixing the runner environment (`PLAYWRIGHT_DB_DATABASE`, host PHP without GD → Sail PHP shim, `INSTAGRAM_AUTOMATION_PUBLIC_MEDIA_BASE_URL`), 0 change-caused failures.
+- L10 — T1 review: risk + readability + reliability, approved and acknowledged (`review-c037f9fe91380cd4`). Advisories taken into T2: misleading alias comment, unused section `paths`, General permission untested, hand-copied role fixture (now `tests/frontend/fixtures/role-permissions.json` pinned by `RolePermissionsFixtureTest`), mobile bar coupled to hrefs (now `mobilePrimary`), implicit logo href (commented). Left as is: heading locator in `admin-sidebar.spec`, the ≥2 first-row assertion in `orders.spec`.
+- L11 — T2 RED: frontend tests failed (`activeAdminSection`, `adminBreadcrumbRoot` missing). GREEN: Inventario and Marketing sections in the model, `AdminModuleNavigation` in `AdminLayout` (tabs for the active entry with ≥2 permitted sections; `AdminSectionNavigation` gained `activeHref` so product-consumption pages mark no tab), page-level Inventario tabs removed, `SettingsLayout` reduced to its content panel (its Productos/General side menu is replaced by the sidebar and the Configuración tabs), Productos eyebrow "Catálogo", "Plano del salón" and "Panel" headings, breadcrumbs start at Panel only with `dashboard.view`. Finding: `/admin/settings/general` already scrolls the document at base (`scrollHeight` 1248 at 1280×720 with the base layouts, probe); with the tabs it is 1289 — pre-existing, not fixed here; the products height check stays products-only. Checks: frontend 10/10, PHPUnit 898 OK, pint, tsc, eslint, prettier, build clean; targeted e2e 62 passed (+ products 9); full Playwright 210 passed, 32 skipped (by design), 0 failed.

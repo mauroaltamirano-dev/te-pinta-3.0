@@ -10,9 +10,9 @@ shadcn/ui is the accessible primitive layer, not the visual identity. Public and
 | --- | --- | --- |
 | Tokens and Tailwind theme | `resources/css/app.css` | Single source for color, type, spacing, radius, shadow and state decisions |
 | shadcn primitives | `resources/js/components/ui/` | Low-level accessible primitives; no business behavior |
-| Shared Te Pinta UI | `resources/js/components/shared/` | Reusable compositions: `admin-sidebar`, `admin-page-shell`, `admin-section-navigation`, `admin-empty-state` |
+| Shared Te Pinta UI | `resources/js/components/shared/` | Reusable compositions: `admin-sidebar`, `admin-module-navigation`, `admin-page-shell`, `admin-section-navigation`, `admin-empty-state` |
 | Feature UI | `resources/js/features/<feature>/components/` | Business components owned by one feature |
-| Layouts | `resources/js/layouts/` | `public-layout`, `admin-layout`, `settings-layout`, `auth-layout` |
+| Layouts | `resources/js/layouts/` | `public-layout`, `admin-layout`, `settings-layout` (full-height panel for Productos and General), `auth-layout` |
 
 ## Rules
 
@@ -71,7 +71,7 @@ Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL 
 ## Admin compositions
 
 - **Page shell.** `AdminPageShell` owns the 80rem maximum width, centered exterior and 24 px vertical rhythm; `AdminLayout` alone owns the gutters (20 px mobile, 24 px from 640 px). Order: optional breadcrumbs, `AdminPageHeader` (one H1), optional `AdminSectionNavigation`, content. Simple forms use `admin-form-content` (48rem). Never add another padded outer container.
-- **Section navigation** uses real Inertia links with `aria-current="page"` derived from the URL (query parameters preserved), never local state; on narrow screens it scrolls inside its own container.
+- **Section navigation** uses real Inertia links with `aria-current="page"` derived from the URL (query parameters preserved), never local state; on narrow screens it scrolls inside its own container. Module tabs come from the navigation model: `AdminModuleNavigation` (rendered by `AdminLayout` above the page) shows the permitted sections of the active entry when it has two or more — Inventario (Insumos · Recetas · Producción · Ajustes de stock · Costos, with Políticas de costo inside Costos), Marketing (Producto destacado · Instagram) and Configuración (General · Plano del salón · Usuarios). Gestión still renders its own query-based sections. Breadcrumbs start at **Panel** (`adminBreadcrumbRoot`), omitted for users without `dashboard.view`.
 - **`admin-ui`** is an explicit local opt-in that adapts Button/Input/Select/Textarea to 44 px targets and local focus tokens. It is not global; portalled Dialog/Sheet content must opt in separately.
 - **Panels.** Use `Card className="admin-ui admin-panel"` (12 px radius, 16/24 px padding) for grouped surfaces, `admin-panel-table` for edge-to-edge tables. Do not nest panels by default.
 - **Empty states.** `AdminEmptyState` shows a short heading, explanation and caller-supplied real actions; never hard-coded metrics or fictitious data.

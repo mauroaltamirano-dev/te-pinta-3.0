@@ -1,0 +1,57 @@
+{
+    "owner": [
+        "dashboard.view",
+        "orders.view",
+        "orders.manage",
+        "customers.view",
+        "customers.manage",
+        "catalog.view",
+        "catalog.manage",
+        "inventory.view",
+        "inventory.manage",
+        "finance.view",
+        "finance.manage",
+        "marketing.manage",
+        "floor.manage",
+        "settings.manage",
+        "users.manage"
+    ],
+    "manager": [
+        "dashboard.view",
+        "orders.view",
+        "orders.manage",
+        "customers.view",
+        "customers.manage",
+        "catalog.view",
+        "catalog.manage",
+        "inventory.view",
+        "inventory.manage",
+        "finance.view",
+        "finance.manage",
+        "marketing.manage",
+        "floor.manage"
+    ],
+    "cashier": [
+        "dashboard.view",
+        "orders.view",
+        "orders.manage",
+        "customers.view",
+        "customers.manage",
+        "catalog.view"
+    ],
+    "waiter": [
+        "orders.view",
+        "orders.manage",
+        "customers.view",
+        "catalog.view"
+    ],
+    "kitchen": ["orders.view", "catalog.view", "inventory.view"],
+    "accountant": [
+        "dashboard.view",
+        "orders.view",
+        "customers.view",
+        "catalog.view",
+        "inventory.view",
+        "finance.view"
+    ]
+}

@@ -117,11 +117,12 @@ for (const [route, title] of [
             });
             await expect(
                 crumbs.getByRole('link', {
-                    name: 'Administración',
+                    name: 'Panel',
                     exact: true,
                 }),
-            ).toHaveAttribute('href', '/admin');
-            const links = shell
+            ).toHaveAttribute('href', '/admin/dashboard');
+            // Inventario's tabs come from the layout, Gestión's from the page.
+            const links = page
                 .getByRole('navigation', { name: /Secciones de/ })
                 .getByRole('link');
 

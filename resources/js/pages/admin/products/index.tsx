@@ -61,7 +61,7 @@ export default function Products({
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="text-xs font-semibold tracking-[0.18em] text-admin-accent-text uppercase">
-                                Configuración
+                                Catálogo
                             </p>
                             <h1 className="mt-1 text-xl font-bold tracking-tight">
                                 Gestión de productos

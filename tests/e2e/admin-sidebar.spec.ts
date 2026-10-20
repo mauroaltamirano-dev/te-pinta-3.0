@@ -154,3 +154,73 @@ test('navegación administrativa global expone destinos y sección activa', asyn
         }
     }
 });
+
+test('las páginas absorbidas muestran las secciones de su módulo', async ({
+    page,
+}) => {
+    await page.goto('/login');
+    await page
+        .getByLabel('Correo electrónico')
+        .fill('playwright-admin@example.test');
+    await page.locator('#password').fill('playwright-password');
+    await page
+        .getByRole('button', { name: 'Iniciar sesión', exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/admin$/);
+
+    const modules = [
+        {
+            path: '/admin/inventory/recipes',
+            label: 'Secciones de Inventario',
+            sections: [
+                'Insumos',
+                'Recetas',
+                'Producción',
+                'Ajustes de stock',
+                'Costos',
+            ],
+            active: 'Recetas',
+        },
+        {
+            path: '/admin/inventory/costing-policies',
+            label: 'Secciones de Inventario',
+            active: 'Costos',
+        },
+        {
+            path: '/admin/marketing/instagram',
+            label: 'Secciones de Marketing',
+            sections: ['Producto destacado', 'Instagram'],
+            active: 'Instagram',
+        },
+        {
+            path: '/admin/restaurant/floor',
+            label: 'Secciones de Configuración',
+            sections: ['General', 'Plano del salón', 'Usuarios'],
+            active: 'Plano del salón',
+        },
+    ];
+
+    for (const module of modules) {
+        await page.goto(module.path);
+        const navigation = page.getByRole('navigation', {
+            name: module.label,
+            exact: true,
+        });
+
+        if (module.sections) {
+            await expect(navigation.getByRole('link')).toHaveText(
+                module.sections,
+            );
+        }
+
+        await expect(navigation.locator('[aria-current="page"]')).toHaveText(
+            module.active,
+        );
+    }
+
+    // Pages with one destination get no tabs.
+    await page.goto('/admin/customers');
+    await expect(
+        page.getByRole('navigation', { name: /^Secciones de/ }),
+    ).toHaveCount(0);
+});

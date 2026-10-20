@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { AdminPageShell } from '@/components/shared/admin-page-shell';
 import { AdminSectionNavigation } from '@/components/shared/admin-section-navigation';
 import { Button } from '@/components/ui/button';
+import { adminBreadcrumbRoot } from '@/features/admin-navigation/model';
 import { DistributionFormDialog } from '@/features/management/components/distribution-form-dialog';
 import { DistributionRuleDialog } from '@/features/management/components/distribution-rule-dialog';
 import { DistributionRulesPanel } from '@/features/management/components/distribution-rules-panel';
@@ -72,7 +73,7 @@ export default function Management({
     outflow_categories: outflowCategories,
     distribution_rules: distributionRules,
 }: ManagementPageProps) {
-    const { url } = usePage();
+    const { url, props } = usePage();
     const activeSection = requestedSection(url);
     const sectionHref = (section: string) => {
         const query = new URL(url, 'http://localhost').searchParams;
@@ -120,7 +121,7 @@ export default function Management({
                 title="Gestión"
                 description="Registrá operaciones y consultá saldos derivados del historial financiero. Los pedidos confirmados como pagados ingresan en su billetera receptora."
                 breadcrumbs={[
-                    { title: 'Administración', href: '/admin' },
+                    ...adminBreadcrumbRoot(props.auth?.permissions ?? []),
                     { title: 'Gestión', href: '/admin/management' },
                 ]}
                 actions={

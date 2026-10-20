@@ -277,8 +277,8 @@ test('header operations are contextual and URL navigation preserves the reportin
     await expect(
         page
             .getByRole('navigation', { name: 'migas de pan' })
-            .getByRole('link', { name: 'Administración', exact: true }),
-    ).toHaveAttribute('href', '/admin');
+            .getByRole('link', { name: 'Panel', exact: true }),
+    ).toHaveAttribute('href', '/admin/dashboard');
 });
 
 test('a period without activity keeps the current balance distinct and offers valid next steps', async ({

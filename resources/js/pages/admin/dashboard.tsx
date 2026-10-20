@@ -57,7 +57,7 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title="Panel operativo" />
+            <Head title="Panel" />
             <section className="grid gap-5 font-orders sm:gap-6">
                 <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
@@ -65,7 +65,7 @@ export default function Dashboard({
                             Operación diaria
                         </p>
                         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-admin-text-primary">
-                            Panel operativo
+                            Panel
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">
                             Revisá qué necesita atención hoy y cómo viene la

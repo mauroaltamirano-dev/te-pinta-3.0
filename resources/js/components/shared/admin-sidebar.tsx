@@ -186,6 +186,7 @@ export function AdminSidebar() {
             <aside className="admin-sidebar sticky top-0 hidden h-screen w-[6.5rem] flex-col items-start rounded-r-2xl bg-admin-surface md:col-start-1 md:row-start-1 md:flex lg:w-[14.5rem]">
                 <Tooltip>
                     <TooltipTrigger asChild>
+                        {/* First visible entry: the POS, or Pedidos for roles that cannot sell. */}
                         <Link
                             href={groups[0]?.entries[0]?.href ?? '/admin'}
                             aria-label="Te Pinta POS"

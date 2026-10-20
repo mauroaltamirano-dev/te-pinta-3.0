@@ -3,7 +3,8 @@ import type { Permission } from '@/types/auth';
 /**
  * Single source of the admin information architecture: 9 entries in 6 groups.
  * Visibility mirrors the route permissions, so the menu never shows a page the
- * backend rejects. Kept free of React and path aliases so node:test can load it.
+ * backend rejects. Only type imports (erased by Node) and no React, so
+ * node:test can load it directly.
  */
 
 export type AdminNavigationIcon =
@@ -23,6 +24,8 @@ export interface AdminNavigationSection {
     permission: Permission;
     /** Path prefixes that belong to this section besides `href`. */
     paths?: string[];
+    /** `href` itself matches only exactly, not its nested pages. */
+    exact?: boolean;
 }
 
 export interface AdminNavigationEntry {
@@ -35,6 +38,8 @@ export interface AdminNavigationEntry {
     paths: string[];
     /** `/admin` is the POS only, not every admin page. */
     exact?: boolean;
+    /** Shown in the phone bottom bar instead of the "Más" sheet. */
+    mobilePrimary?: boolean;
     sections?: AdminNavigationSection[];
 }
 
@@ -55,6 +60,7 @@ const navigation: AdminNavigationGroup[] = [
                 permission: 'orders.manage',
                 paths: ['/admin'],
                 exact: true,
+                mobilePrimary: true,
             },
             {
                 label: 'Pedidos',
@@ -62,6 +68,7 @@ const navigation: AdminNavigationGroup[] = [
                 icon: 'orders',
                 permission: 'orders.view',
                 paths: ['/admin/orders'],
+                mobilePrimary: true,
             },
             {
                 label: 'Clientes',
@@ -81,6 +88,7 @@ const navigation: AdminNavigationGroup[] = [
                 icon: 'dashboard',
                 permission: 'dashboard.view',
                 paths: ['/admin/dashboard'],
+                mobilePrimary: true,
             },
         ],
     },
@@ -100,6 +108,20 @@ const navigation: AdminNavigationGroup[] = [
                 icon: 'marketing',
                 permission: 'marketing.manage',
                 paths: ['/admin/marketing'],
+                sections: [
+                    {
+                        label: 'Producto destacado',
+                        href: '/admin/marketing',
+                        permission: 'marketing.manage',
+                        exact: true,
+                        paths: ['/admin/marketing/products'],
+                    },
+                    {
+                        label: 'Instagram',
+                        href: '/admin/marketing/instagram',
+                        permission: 'marketing.manage',
+                    },
+                ],
             },
         ],
     },
@@ -112,6 +134,36 @@ const navigation: AdminNavigationGroup[] = [
                 icon: 'inventory',
                 permission: 'inventory.view',
                 paths: ['/admin/inventory'],
+                sections: [
+                    {
+                        label: 'Insumos',
+                        href: '/admin/inventory',
+                        permission: 'inventory.view',
+                        exact: true,
+                    },
+                    {
+                        label: 'Recetas',
+                        href: '/admin/inventory/recipes',
+                        permission: 'inventory.view',
+                    },
+                    {
+                        label: 'Producción',
+                        href: '/admin/inventory/production',
+                        permission: 'inventory.view',
+                    },
+                    {
+                        label: 'Ajustes de stock',
+                        href: '/admin/inventory/adjustments',
+                        permission: 'inventory.view',
+                    },
+                    {
+                        label: 'Costos',
+                        href: '/admin/inventory/costing',
+                        permission: 'inventory.view',
+                        // Políticas de costo live inside Costos.
+                        paths: ['/admin/inventory/costing-policies'],
+                    },
+                ],
             },
         ],
     },
@@ -217,12 +269,30 @@ export function activeAdminEntry(
         );
 }
 
-const mobilePrimaryHrefs = ['/admin', '/admin/orders', '/admin/dashboard'];
+export function activeAdminSection(
+    entry: AdminNavigationEntry | undefined,
+    url: string,
+): AdminNavigationSection | undefined {
+    return entry?.sections?.find(
+        (section) =>
+            matchesAdminPath(url, section.href, section.exact) ||
+            section.paths?.some((path) => matchesAdminPath(url, path)),
+    );
+}
 
 export function adminMobilePrimaryEntries(
     groups: AdminNavigationGroup[],
 ): AdminNavigationEntry[] {
     return groups
         .flatMap((group) => group.entries)
-        .filter((entry) => mobilePrimaryHrefs.includes(entry.href));
+        .filter((entry) => entry.mobilePrimary);
+}
+
+/** Breadcrumbs start at Panel, but only for users who may open it. */
+export function adminBreadcrumbRoot(
+    permissions: readonly string[],
+): { title: string; href: string }[] {
+    return permissions.includes('dashboard.view')
+        ? [{ title: 'Panel', href: '/admin/dashboard' }]
+        : [];
 }

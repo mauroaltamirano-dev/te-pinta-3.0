@@ -1,8 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { AdminPageShell } from '@/components/shared/admin-page-shell';
-import { AdminSectionNavigation } from '@/components/shared/admin-section-navigation';
 import { Button } from '@/components/ui/button';
+import { adminBreadcrumbRoot } from '@/features/admin-navigation/model';
 import { CategoryDialog } from '@/features/inventory/components/category-dialog';
 import {
     ItemDialog,
@@ -61,7 +61,7 @@ export default function Inventory({
     filters,
     valuation,
 }: Props) {
-    const { url } = usePage();
+    const permissions = usePage().props.auth?.permissions ?? [];
     const [categoryEditor, setCategoryEditor] = useState<
         InventoryCategory | 'new' | null
     >(null);
@@ -89,7 +89,7 @@ export default function Inventory({
             title="Inventario físico"
             description="Insumos, presentaciones de compra, stock e historial físico. Configurar datos no registra movimientos."
             breadcrumbs={[
-                { title: 'Administración', href: '/admin' },
+                ...adminBreadcrumbRoot(permissions),
                 { title: 'Inventario', href: '/admin/inventory' },
             ]}
             actions={
@@ -109,28 +109,6 @@ export default function Inventory({
                         Nuevo insumo
                     </Button>
                 </>
-            }
-            navigation={
-                <AdminSectionNavigation
-                    label="Secciones de Inventario"
-                    currentUrl={url}
-                    items={[
-                        { label: 'Insumos', href: '/admin/inventory' },
-                        { label: 'Recetas', href: '/admin/inventory/recipes' },
-                        {
-                            label: 'Producción',
-                            href: '/admin/inventory/production',
-                        },
-                        {
-                            label: 'Ajustes',
-                            href: '/admin/inventory/adjustments',
-                        },
-                        {
-                            label: 'Costos de productos',
-                            href: '/admin/inventory/costing',
-                        },
-                    ]}
-                />
             }
         >
             <section className="rounded-xl border border-admin-border bg-admin-surface p-4">

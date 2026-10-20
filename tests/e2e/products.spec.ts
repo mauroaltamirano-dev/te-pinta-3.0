@@ -110,36 +110,37 @@ test('configuración presenta el recargo por unidad y solo el descuento crudo de
     await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
 });
 
-test('configuración mantiene ambos paneles dentro del viewport de escritorio', async ({
+test('productos mantiene su panel dentro del viewport de escritorio', async ({
     page,
 }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium');
 
     await logInAsAdministrator(page);
+
+    // Productos belongs to Catálogo: only Configuración pages show its tabs.
+    await page.goto('/admin/settings/general');
+    await expect(
+        page.getByRole('navigation', { name: 'Secciones de Configuración' }),
+    ).toBeVisible();
+
     await page.goto('/admin/settings/products');
-
-    const navigationPanel = page.locator('[data-settings-panel="navigation"]');
-    const contentPanel = page.locator('[data-settings-panel="content"]');
-
-    await expect(navigationPanel).toBeVisible();
-    await expect(contentPanel).toBeVisible();
+    await expect(
+        page.getByRole('navigation', { name: 'Secciones de Configuración' }),
+    ).toHaveCount(0);
+    await expect(page.locator('[data-settings-panel="content"]')).toBeVisible();
 
     const layout = await page.evaluate(() => {
-        const navigation = document.querySelector<HTMLElement>(
-            '[data-settings-panel="navigation"]',
-        );
         const content = document.querySelector<HTMLElement>(
             '[data-settings-panel="content"]',
         );
 
-        if (!navigation || !content) {
-            throw new Error('No se renderizaron los paneles de configuración.');
+        if (!content) {
+            throw new Error('No se renderizó el panel de contenido.');
         }
 
         return {
             documentScrollHeight: document.documentElement.scrollHeight,
             viewportHeight: window.innerHeight,
-            navigationBottom: navigation.getBoundingClientRect().bottom,
             contentBottom: content.getBoundingClientRect().bottom,
             contentOverflowY: getComputedStyle(content).overflowY,
         };
@@ -148,7 +149,6 @@ test('configuración mantiene ambos paneles dentro del viewport de escritorio', 
     expect(layout.documentScrollHeight).toBeLessThanOrEqual(
         layout.viewportHeight,
     );
-    expect(layout.navigationBottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.contentBottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.contentOverflowY).toBe('auto');
 });

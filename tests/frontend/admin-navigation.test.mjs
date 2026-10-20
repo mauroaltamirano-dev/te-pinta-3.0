@@ -1,64 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
     activeAdminEntry,
+    activeAdminSection,
+    adminBreadcrumbRoot,
     adminMobilePrimaryEntries,
     visibleAdminNavigation,
 } from '../../resources/js/features/admin-navigation/model.ts';
 
-// Mirrors App\Modules\Identity\Enums\Role::permissions().
-const roles = {
-    owner: [
-        'dashboard.view',
-        'orders.view',
-        'orders.manage',
-        'customers.view',
-        'customers.manage',
-        'catalog.view',
-        'catalog.manage',
-        'inventory.view',
-        'inventory.manage',
-        'finance.view',
-        'finance.manage',
-        'marketing.manage',
-        'floor.manage',
-        'settings.manage',
-        'users.manage',
-    ],
-    manager: [
-        'dashboard.view',
-        'orders.view',
-        'orders.manage',
-        'customers.view',
-        'customers.manage',
-        'catalog.view',
-        'catalog.manage',
-        'inventory.view',
-        'inventory.manage',
-        'finance.view',
-        'finance.manage',
-        'marketing.manage',
-        'floor.manage',
-    ],
-    cashier: [
-        'dashboard.view',
-        'orders.view',
-        'orders.manage',
-        'customers.view',
-        'customers.manage',
-        'catalog.view',
-    ],
-    waiter: ['orders.view', 'orders.manage', 'customers.view', 'catalog.view'],
-    kitchen: ['orders.view', 'catalog.view', 'inventory.view'],
-    accountant: [
-        'dashboard.view',
-        'orders.view',
-        'customers.view',
-        'catalog.view',
-        'inventory.view',
-        'finance.view',
-    ],
-};
+// RolePermissionsFixtureTest keeps this file equal to Role::permissions().
+const roles = JSON.parse(
+    readFileSync(new URL('./fixtures/role-permissions.json', import.meta.url)),
+);
 
 const outline = (groups) =>
     groups.map(({ label, entries }) => [
@@ -150,6 +104,7 @@ test('Configuración opens the first section the user may use', () => {
     );
     assert.equal(settings(['floor.manage']).href, '/admin/restaurant/floor');
     assert.equal(settings(['users.manage']).href, '/admin/users');
+    assert.equal(settings(['catalog.manage']).href, '/admin/settings/general');
     // The floor route stays open to orders.manage, but only floor.manage edits it.
     assert.equal(settings(['orders.manage']), undefined);
 });
@@ -189,4 +144,80 @@ test('the mobile bar keeps Vender, Pedidos and Panel when allowed', () => {
     assert.deepEqual(labels(roles.owner), ['Vender', 'Pedidos', 'Panel']);
     assert.deepEqual(labels(roles.waiter), ['Vender', 'Pedidos']);
     assert.deepEqual(labels(roles.kitchen), ['Pedidos']);
+});
+
+const entry = (permissions, label) =>
+    visibleAdminNavigation(permissions)
+        .flatMap((group) => group.entries)
+        .find((item) => item.label === label);
+
+test('absorbed pages are sections of their module', () => {
+    const sections = (label) =>
+        entry(roles.owner, label).sections.map((section) => [
+            section.label,
+            section.href,
+        ]);
+
+    assert.deepEqual(sections('Inventario'), [
+        ['Insumos', '/admin/inventory'],
+        ['Recetas', '/admin/inventory/recipes'],
+        ['Producción', '/admin/inventory/production'],
+        ['Ajustes de stock', '/admin/inventory/adjustments'],
+        ['Costos', '/admin/inventory/costing'],
+    ]);
+    assert.deepEqual(sections('Marketing'), [
+        ['Producto destacado', '/admin/marketing'],
+        ['Instagram', '/admin/marketing/instagram'],
+    ]);
+    assert.deepEqual(entry(roles.kitchen, 'Inventario').sections.length, 5);
+});
+
+test('the active section follows nested pages', () => {
+    const active = (label, url) =>
+        activeAdminSection(entry(roles.owner, label), url)?.label ?? null;
+
+    assert.equal(active('Inventario', '/admin/inventory'), 'Insumos');
+    assert.equal(
+        active('Inventario', '/admin/inventory?category=2'),
+        'Insumos',
+    );
+    assert.equal(active('Inventario', '/admin/inventory/recipes/4'), 'Recetas');
+    assert.equal(
+        active('Inventario', '/admin/inventory/production/create'),
+        'Producción',
+    );
+    assert.equal(
+        active('Inventario', '/admin/inventory/adjustments/9'),
+        'Ajustes de stock',
+    );
+    assert.equal(active('Inventario', '/admin/inventory/costing'), 'Costos');
+    assert.equal(
+        active('Inventario', '/admin/inventory/costing-policies'),
+        'Costos',
+    );
+    assert.equal(
+        active('Inventario', '/admin/inventory/product-consumption/3'),
+        null,
+    );
+    assert.equal(active('Marketing', '/admin/marketing'), 'Producto destacado');
+    assert.equal(
+        active('Marketing', '/admin/marketing/products/5/featured'),
+        'Producto destacado',
+    );
+    assert.equal(
+        active('Marketing', '/admin/marketing/instagram'),
+        'Instagram',
+    );
+    assert.equal(
+        active('Configuración', '/admin/restaurant/floor'),
+        'Plano del salón',
+    );
+    assert.equal(active('Configuración', '/admin/users'), 'Usuarios');
+});
+
+test('the breadcrumb root is Panel only for users who can open it', () => {
+    assert.deepEqual(adminBreadcrumbRoot(roles.accountant), [
+        { title: 'Panel', href: '/admin/dashboard' },
+    ]);
+    assert.deepEqual(adminBreadcrumbRoot(roles.kitchen), []);
 });

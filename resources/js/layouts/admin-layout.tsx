@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
+import { AdminModuleNavigation } from '@/components/shared/admin-module-navigation';
 import { AdminSidebar } from '@/components/shared/admin-sidebar';
 import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                             </p>
                         </header>
                     )}
+                {!isQuickOrderHome && (
+                    <div className="shrink-0 px-5 pt-4 empty:hidden sm:px-6">
+                        <AdminModuleNavigation />
+                    </div>
+                )}
                 <main
                     className={cn(
                         isQuickOrderHome ? 'p-0' : 'p-5 sm:p-6',

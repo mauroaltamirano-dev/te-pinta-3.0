@@ -10,13 +10,16 @@ export function AdminSectionNavigation({
     label,
     items,
     currentUrl,
+    activeHref,
 }: {
     label: string;
     items: NavigationItem[];
     currentUrl: string;
+    /** Overrides prefix matching; null marks no section as current. */
+    activeHref?: string | null;
 }) {
     const current = new URL(currentUrl, 'http://localhost');
-    const active = items
+    const matched = items
         .filter(({ href }) => {
             const target = new URL(href, current);
 
@@ -29,6 +32,7 @@ export function AdminSectionNavigation({
             );
         })
         .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+    const active = activeHref === undefined ? matched : activeHref;
     const navigation = useRef<HTMLElement>(null);
 
     useEffect(() => {
