@@ -32,9 +32,7 @@ function time(iso: string | null): string {
 export default function PrintStation({ restaurant }: { restaurant: string }) {
     const station = usePrintStation(restaurant);
     const pending = station.status?.pending ?? 0;
-    const unconfirmed = station.recent.filter(
-        (job) => job.status === 'claimed',
-    );
+    const unconfirmed = station.unconfirmed;
 
     return (
         <>

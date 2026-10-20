@@ -214,3 +214,49 @@ test('la estación imprime la cuenta con precio de docena sumando rondas y la le
     expect(bill).toMatch(/TOTAL<\/td><td class="right">\$&nbsp;18\.000</);
     expect(bill).toContain('Documento no válido como factura');
 });
+
+test('un acuse que falla no frena el resto de la tanda y se reintenta', async ({
+    page,
+}) => {
+    createCounterOrder();
+    createCounterOrder();
+    const printed = await capturePrints(page);
+    await logIn(page);
+    let failedAcks = 0;
+    await page.route('**/admin/print-jobs/*/printed', (route) => {
+        if (failedAcks === 0) {
+            failedAcks += 1;
+
+            return route.abort();
+        }
+
+        return route.continue();
+    });
+
+    await page.goto('/admin/print-station');
+    await page
+        .getByRole('button', { name: 'Activar esta PC como estación' })
+        .click();
+
+    await expect.poll(async () => (await printed()).length).toBe(2);
+    await expect(page.getByTestId('pending-count')).toHaveText('0');
+    // The stored acknowledgement is retried on the next tick: nothing stays unconfirmed.
+    await expect(page.getByText('Sin confirmar ·')).toHaveCount(0);
+    await expect(page.getByText('Impreso ·')).toHaveCount(2);
+    expect(failedAcks).toBe(1);
+});
+
+test('un pedido colgado termina en la alerta de conexión', async ({ page }) => {
+    await capturePrints(page);
+    await logIn(page);
+    await page.goto('/admin/print-station');
+    await expect(page.getByTestId('pending-count')).toHaveText('0');
+
+    // Never answered: the request times out instead of freezing the polling.
+    await page.route('**/admin/print-jobs/status', () => undefined);
+    await expect(
+        page
+            .getByRole('alert')
+            .filter({ hasText: 'Sin conexión con el servidor' }),
+    ).toBeVisible({ timeout: 20_000 });
+});

@@ -223,6 +223,20 @@ final class PrintJobTest extends TestCase
         $this->assertGreaterThanOrEqual(45, $status['oldest_pending_seconds']);
     }
 
+    public function test_the_recent_list_includes_every_unconfirmed_job_however_old(): void
+    {
+        $this->round([$this->coke->id => 1]);
+        $old = $this->actingAs($this->cashier)->postJson(route('admin.print-jobs.claim'))->json('data.0.id');
+        foreach (range(1, 30) as $round) {
+            $this->round([$this->coke->id => 1], session: TableRound::query()->value('table_session_id'));
+        }
+
+        $response = $this->getJson(route('admin.print-jobs.index'))->assertOk();
+        $this->assertCount(30, $response->json('data'));
+        $this->assertNotContains($old, array_column($response->json('data'), 'id'));
+        $this->assertSame([$old], array_column($response->json('unconfirmed'), 'id'));
+    }
+
     public function test_a_reprint_is_a_new_job_with_the_same_frozen_payload(): void
     {
         $this->round([$this->coke->id => 1]);

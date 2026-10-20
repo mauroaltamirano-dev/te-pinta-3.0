@@ -22,7 +22,9 @@ final class PrintJobController
 
     public function recent(): AnonymousResourceCollection
     {
-        return PrintJobResource::collection(PrintJob::queue()->latest('id')->limit(30)->get());
+        // Every unconfirmed job, however old, so the station can always settle it.
+        return PrintJobResource::collection(PrintJob::queue()->latest('id')->limit(30)->get())
+            ->additional(['unconfirmed' => PrintJobResource::collection(PrintJob::queue()->where('status', 'claimed')->orderBy('id')->get())]);
     }
 
     public function claim(Request $request, ClaimPrintJobs $claim): AnonymousResourceCollection

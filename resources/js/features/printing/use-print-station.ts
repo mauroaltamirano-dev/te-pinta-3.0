@@ -33,6 +33,7 @@ export function usePrintStation(restaurant: string) {
     const [active, setActiveState] = useState(isStationActive);
     const [status, setStatus] = useState<QueueStatus | null>(null);
     const [recent, setRecent] = useState<PrintJob[]>([]);
+    const [unconfirmed, setUnconfirmed] = useState<PrintJob[]>([]);
     const [connection, setConnection] = useState<StationConnection>('ok');
     const [lastContactAt, setLastContactAt] = useState<Date | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export function usePrintStation(restaurant: string) {
     const activeRef = useRef(active);
     const busy = useRef(false);
     const ticks = useRef(0);
+    const listedUnconfirmed = useRef(0);
 
     const report = useCallback((error: unknown) => {
         if (error instanceof StationRequestError && error.sessionLost) {
@@ -50,9 +52,12 @@ export function usePrintStation(restaurant: string) {
     }, []);
 
     const refreshRecent = useCallback(async () => {
-        const { data } =
-            await stationRequest<Envelope<PrintJob[]>>('/admin/print-jobs');
-        setRecent(data);
+        const response = await stationRequest<
+            Envelope<PrintJob[]> & { unconfirmed: PrintJob[] }
+        >('/admin/print-jobs');
+        setRecent(response.data);
+        setUnconfirmed(response.unconfirmed);
+        listedUnconfirmed.current = response.unconfirmed.length;
     }, []);
 
     const flushAcks = useCallback(async () => {
@@ -90,13 +95,18 @@ export function usePrintStation(restaurant: string) {
             try {
                 await printHtml(jobHtml(job, restaurant));
             } catch {
-                setPrintError(
-                    `No se pudo imprimir el trabajo #${job.id}. Volvió a la cola.`,
-                );
-                await stationRequest(
+                const released = await stationRequest(
                     `/admin/print-jobs/${job.id}/release`,
                     'POST',
-                ).catch(() => undefined);
+                ).then(
+                    () => true,
+                    () => false,
+                );
+                setPrintError(
+                    released
+                        ? `No se pudo imprimir el trabajo #${job.id}. Volvió a la cola.`
+                        : `No se pudo imprimir el trabajo #${job.id} y quedó sin confirmar: mandalo de nuevo a la cola.`,
+                );
                 continue;
             }
 
@@ -106,9 +116,11 @@ export function usePrintStation(restaurant: string) {
                     ...pendingAcks(),
                     { id: job.id, token: job.claim_token },
                 ]);
-                await flushAcks();
             }
         }
+
+        // Once, after the batch: a failed acknowledgement stays stored and never stops printing.
+        await flushAcks().catch(() => undefined);
 
         return jobs.length > 0;
     }, [flushAcks, restaurant]);
@@ -139,7 +151,11 @@ export function usePrintStation(restaurant: string) {
             setConnection('ok');
             setLastContactAt(new Date());
 
-            if (changed || ticks.current % RECENT_EVERY_TICKS === 1) {
+            if (
+                changed ||
+                data.unconfirmed !== listedUnconfirmed.current ||
+                ticks.current % RECENT_EVERY_TICKS === 1
+            ) {
                 await refreshRecent();
             }
         } catch (error) {
@@ -256,6 +272,7 @@ export function usePrintStation(restaurant: string) {
         setActive,
         status,
         recent,
+        unconfirmed,
         alerts,
         connection,
         lastContactAt,

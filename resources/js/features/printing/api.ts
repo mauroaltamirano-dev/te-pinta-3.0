@@ -21,6 +21,9 @@ function xsrfToken(): string | undefined {
     return token ? decodeURIComponent(token) : undefined;
 }
 
+/** A hung request (half-open connection) must fail into the offline alert, not freeze the polling. */
+const TIMEOUT_MS = 8000;
+
 export async function stationRequest<T>(
     url: string,
     method: 'GET' | 'POST' = 'GET',
@@ -42,6 +45,7 @@ export async function stationRequest<T>(
                 ...(token ? { 'X-XSRF-TOKEN': token } : {}),
             },
             body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
+            signal: AbortSignal.timeout(TIMEOUT_MS),
         });
     } catch {
         throw new StationRequestError('Sin conexión con el servidor.', null);
