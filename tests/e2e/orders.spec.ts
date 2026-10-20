@@ -876,3 +876,25 @@ test.describe('edición administrativa segura', () => {
         ).toBeVisible();
     });
 });
+
+test('Pedidos ofrece un solo Nuevo pedido y el formulario largo como modo avanzado', async ({
+    page,
+}) => {
+    await logIn(page);
+    await page.goto('/admin/orders');
+
+    await expect(
+        page.getByRole('link', { name: 'Nuevo pedido', exact: true }),
+    ).toHaveAttribute('href', '/admin');
+    await page
+        .getByRole('link', { name: 'Modo avanzado', exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/admin\/orders\/create$/);
+    await expect(
+        page.getByRole('heading', { level: 1, name: 'Modo avanzado' }),
+    ).toBeVisible();
+    await expect(page).toHaveTitle(/^Modo avanzado/);
+    await expect(
+        page.getByRole('heading', { name: 'Nuevo pedido' }),
+    ).toHaveCount(0);
+});

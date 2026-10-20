@@ -6,6 +6,7 @@ import {
     activeAdminSection,
     adminBreadcrumbRoot,
     adminMobilePrimaryEntries,
+    adminNewOrder,
     visibleAdminNavigation,
 } from '../../resources/js/features/admin-navigation/model.ts';
 
@@ -220,4 +221,14 @@ test('the breadcrumb root is Panel only for users who can open it', () => {
         { title: 'Panel', href: '/admin/dashboard' },
     ]);
     assert.deepEqual(adminBreadcrumbRoot(roles.kitchen), []);
+});
+
+test('"Nuevo pedido" always opens the POS, for roles that can sell', () => {
+    assert.deepEqual(adminNewOrder(roles.waiter), {
+        href: '/admin',
+        advancedHref: '/admin/orders/create',
+    });
+    assert.deepEqual(adminNewOrder(roles.cashier), adminNewOrder(roles.owner));
+    assert.equal(adminNewOrder(roles.kitchen), null);
+    assert.equal(adminNewOrder(roles.accountant), null);
 });

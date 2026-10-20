@@ -296,3 +296,15 @@ export function adminBreadcrumbRoot(
         ? [{ title: 'Panel', href: '/admin/dashboard' }]
         : [];
 }
+
+/**
+ * The POS is the one "Nuevo pedido" flow; the long form stays as "Modo
+ * avanzado". Both need orders.manage, like their routes.
+ */
+export function adminNewOrder(
+    permissions: readonly string[],
+): { href: string; advancedHref: string } | null {
+    return permissions.includes('orders.manage')
+        ? { href: '/admin', advancedHref: '/admin/orders/create' }
+        : null;
+}

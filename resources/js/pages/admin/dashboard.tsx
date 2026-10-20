@@ -1,6 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { adminNewOrder } from '@/features/admin-navigation/model';
 import { DashboardKpis } from '@/features/dashboard/components/dashboard-kpis';
 import { OperationalStatus } from '@/features/dashboard/components/operational-status';
 import { OrderDistributions } from '@/features/dashboard/components/order-distributions';
@@ -22,6 +23,7 @@ export default function Dashboard({
     selectedOrder = null,
     selectedOrderSummary = null,
 }: DashboardPageProps) {
+    const newOrder = adminNewOrder(usePage().props.auth?.permissions ?? []);
     const selectPeriod = (period: DashboardPeriod) =>
         router.get(
             '/admin/dashboard',
@@ -77,11 +79,13 @@ export default function Dashboard({
                             value={dashboard.period}
                             onChange={selectPeriod}
                         />
-                        <Button asChild className="h-12 rounded-xl px-5">
-                            <Link href="/admin">
-                                <Plus aria-hidden="true" /> Nuevo pedido
-                            </Link>
-                        </Button>
+                        {newOrder && (
+                            <Button asChild className="h-12 rounded-xl px-5">
+                                <Link href={newOrder.href}>
+                                    <Plus aria-hidden="true" /> Nuevo pedido
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 </header>
 

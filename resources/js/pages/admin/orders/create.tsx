@@ -23,7 +23,7 @@ export default function CreateOrder({
 
     return (
         <>
-            <Head title="Nuevo pedido" />
+            <Head title="Modo avanzado" />
             <section className="grid gap-6 font-orders">
                 <header>
                     <Link
@@ -32,7 +32,7 @@ export default function CreateOrder({
                     >
                         <ArrowLeft className="size-4" /> Pedidos
                     </Link>
-                    <h1 className="text-2xl font-bold">Crear pedido</h1>
+                    <h1 className="text-2xl font-bold">Modo avanzado</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Flujo completo de respaldo. El precio final siempre lo
                         determina el sistema.

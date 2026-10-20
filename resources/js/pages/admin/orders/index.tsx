@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArchiveRestore,
     Bookmark,
@@ -41,6 +41,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { adminNewOrder } from '@/features/admin-navigation/model';
 import { OrderCollection } from '@/features/orders/components/order-collection';
 import { OrderTicketDialog } from '@/features/orders/components/order-ticket-dialog';
 import { OrdersInsightsPanel } from '@/features/orders/components/orders-insights-panel';
@@ -112,6 +113,7 @@ export default function Orders({
     deliveryTypeDistribution,
     conditionDistribution,
 }: OrdersProps) {
+    const newOrder = adminNewOrder(usePage().props.auth?.permissions ?? []);
     const [search, setSearch] = useState(filters.search);
     const [status, setStatus] = useState<OrderStatus | 'all'>(
         filters.status ?? 'all',
@@ -253,6 +255,14 @@ export default function Orders({
                                     Revisá entregas, pagos y estados desde un
                                     solo lugar.
                                 </p>
+                                {newOrder && (
+                                    <Link
+                                        href={newOrder.advancedHref}
+                                        className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-admin-accent-text underline-offset-4 hover:underline"
+                                    >
+                                        Modo avanzado
+                                    </Link>
+                                )}
                             </div>
                             <div className="grid gap-2 sm:grid-cols-[minmax(15rem,1fr)_auto_auto]">
                                 <form
@@ -291,14 +301,16 @@ export default function Orders({
                                         <ArchiveRestore /> Papelera
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    className="h-11 rounded-lg px-4"
-                                >
-                                    <Link href="/admin/orders/create">
-                                        <Plus /> Nuevo pedido
-                                    </Link>
-                                </Button>
+                                {newOrder && (
+                                    <Button
+                                        asChild
+                                        className="h-11 rounded-lg px-4"
+                                    >
+                                        <Link href={newOrder.href}>
+                                            <Plus /> Nuevo pedido
+                                        </Link>
+                                    </Button>
+                                )}
                             </div>
                         </header>
 
