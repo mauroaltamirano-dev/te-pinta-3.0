@@ -27,11 +27,11 @@ Assumptions:
 | ID | Specs | Route | Status | Commit |
 |---|---|---|---|---|
 | T1 | S1, S2, S5, S6 | inline | done | `103e6e2` (review approved, acknowledged) |
-| T2 | S2, S3, S4, S5 | inline | done | `3d15f89` (assessed medium, under budget) |
+| T2 | S2, S3, S4, S5 | inline | done | `3d15f89` |
 | T3 | S7 | inline | done | `a970ac1` (sidebar fix), `46ca390` |
-| T4 | S8 | inline | done | T4 commit |
-| T5 | S9 | inline | done | 464c00e |
-| T6 | S3 (Gestión) | inline | done | e581505 |
+| T4 | S8 | inline | done | `c5045c4` |
+| T5 | S9 | inline | done | `464c00e` |
+| T6 | S3 (Gestión) | inline | done | `e581505` (+ review follow-up `f07b39e`) |
 
 - T1 — Navigation model + grouped sidebar (desktop labels/rail, mobile bar), Analytics route and page removed.
 - T2 — Module tabs in `AdminLayout` for Inventario, Marketing and Configuración; labels ("Ajustes de stock", "Costos", "Plano del salón", "Panel"), Productos eyebrow Catálogo, breadcrumb root Panel.
