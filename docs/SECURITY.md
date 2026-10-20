@@ -39,7 +39,9 @@ Updating the restaurant accent uses `catalog.manage`, matching General settings.
 | Capability gate | Granted to | Use |
 | --- | --- | --- |
 | `use-pos` | `orders.manage` holders | `CreateOrder` for the internal `pos` source |
-| `operate-cashier` | owner, manager, cashier | Required to create a POS order already marked paid |
+| `operate-cashier` | owner, manager, cashier | Required to create a POS order already marked paid, and to print a table bill, charge or cancel a table |
+
+Table service (`Orders\Support\TableSessionGuard`): confirming rounds, voids and requesting the bill need `use-pos`; a `waiter` acts only on tables they opened, while owner, manager and cashier act on any table. Kitchen and accountant cannot take tables. Rounds are immutable in PostgreSQL; an open table's order cannot be edited, re-statused, paid or trashed through the generic order routes.
 
 ### User management
 

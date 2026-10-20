@@ -12,7 +12,7 @@ Code: `app/Modules/Orders/`. Key entry points: `Actions/CreateOrder.php`, `Actio
 | --- | --- | --- |
 | `admin` | Admin quick order (`/admin`) or full form (`/admin/orders/create`) | `waiting` |
 | `public_checkout` | Public storefront `POST /checkout/orders` | `pending_confirmation` |
-| `pos` | Internal `CreateOrder` command only; no HTTP endpoint yet | `waiting` |
+| `pos` | Table service (`ConfirmTableRound`, first round of a table) and the internal `CreateOrder` command | `waiting` |
 
 | Context | Customer / contact | Address | Schedule | Shipping |
 | --- | --- | --- | --- | --- |
@@ -162,6 +162,27 @@ At least one product; at most 50 distinct products per request, each once, quant
 ## Derived pricing classes (P0-A, inactive)
 
 `Pricing/DerivedTierAllocator.php` and `Pricing/DerivedPricingCalculator.php` (formula `Σ q·D/12 + R_combined` with homogeneous and mixed sixes) have **no production caller** and are not the live model; `order_settings.combined_half_dozen_surcharge` only feeds them and is no longer shown in Configuración. Their tests stay in `tests/Unit/Orders/DerivedPricingFoundationTest.php`. Of that foundation, only `ExactOrderTotals` and the reserved snapshot columns are used, by version 2.
+
+## Table service
+
+Code: `Actions/ConfirmTableRound.php`, `RequestTableBill.php`, `IssueTableBill.php`, `ChargeTableSession.php`, `CancelTableSession.php`, `Support/TableSessionGuard.php`, `Support/TableDocuments.php`. Tables come from the floor editor (`Restaurant`); `Restaurant\Queries\ServiceTables` locks one without exposing geometry.
+
+```text
+free table --first round--> open session + POS order (dine_in, cooked, waiting, unpaid)
+open session --round / void round--> same order re-priced over all rounds; kitchen ticket with only that round
+open session --request bill--> flag only (cleared by the next round)
+open session --print bill--> bill of the current order version
+open session --charge--> paid (method) + delivered, session closed: the order is frozen
+open session --cancel--> order cancelled, session cancelled
+```
+
+- One open session per table (partial unique index `table_sessions_one_open_per_table`). A session belongs to one order (`table_sessions.order_id` unique). The member who confirms the first round is the session's waiter.
+- **Rounds are immutable.** `table_rounds` and `table_round_items` reject `UPDATE`/`DELETE` (trigger `table_service_reject_history_mutation`). A correction is a `void` round with positive quantities that subtract; the running quantity of a product can never go below zero, and a void cannot empty the table (cancel it instead).
+- **Pricing.** Every round re-quotes the still-open order with `OrderPricingEngine` over the summed quantities of all rounds and replaces only that order's snapshots (`PersistOrderQuote`, one `order_revisions` row per re-quote). Fixed dozen pricing therefore applies across rounds: 6 salteñas in one round and 6 in another are one dozen (18000), not 12 × 1700. The order total is the table's provisional total. Engine limits apply to the sums (120 per product).
+- **Stale screens.** A round sends the session the client was showing (`null` for a free table). If that session was charged, cancelled, or the table was opened meanwhile, the round is rejected; it never silently opens a new session. A round key (HMAC-stored, unique) makes a retried confirmation return the same round; the same key with other lines is rejected.
+- **Generic order actions** (`UpdateOrder`, `UpdateOrderStatus`, `UpdateOrderPaymentStatus`, trash) refuse an order whose table session is open (`Support/OpenTableOrders`). After the charge the order follows the regular closed-order rules.
+- **Charge** sets `paid` with the method and `delivered` in one transaction; the payment and consumption listeners run inside it, so a missing wallet or a product without consumption configuration leaves the table open and unpaid. `Inventory\Queries\ProductsWithoutConsumption` lists the products that would block it. Charging prints nothing.
+- **Documents.** Each round emits `PrintableDocumentIssued` (`kitchen_ticket`, dedupe key `table-round:{id}`): title `Mesa <code>`, order, round number, void flag, date and time (business time zone), waiter, `added_by` (role label and name when the confirming member is not the waiter, for example "Cajero Lu"), note and lines (name, quantity) — no prices. Printing the bill emits `bill` with key `order:{id}:bill:v{edit_version}`: lines with dozen detail, unit price and total, add-ons, subtotal, discount, rounding, total and the legend "Documento no válido como factura".
 
 ## Admin quick order
 

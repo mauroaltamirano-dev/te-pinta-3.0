@@ -1,0 +1,97 @@
+# Inauguration POS — tables, rounds, kitchen tickets and receipt
+
+Objective: dine-in tables with immutable rounds, counter quick order and server-side print jobs printed by a Windows print station, ready to deploy on 2026-10-27 (inauguration ~2026-10-30).
+Branch: `feat/inauguration-pos` from `main` 58deae2 (`release/inauguration` is not merged: it only adds two docs commits). Delivery strategy: `ask-on-risk`. Test runners: Pest (`make test`), Playwright (`make e2e`).
+Status: **plan awaiting approval — no code written.**
+
+## Specs
+
+Quoted fragments are the requester's words, verbatim.
+
+- S1 Tables. "Cada mesa tiene una sola sesión abierta a la vez." Tables come from the existing `dining_tables` (floor editor, `floor.manage`); no floor-plan work.
+- S2 Immutable rounds. "Una ronda confirmada no se regenera ni se edita. Si hay que corregir algo, se agrega una ronda o una anulación que quede registrada."
+- S3 Table pricing. "Se calcula sobre todas sus rondas con el método vigente de docena fija por gusto: 12 del mismo gusto, sumando rondas, van a precio de docena." "si en la mesa coinciden 12 empanadas del mismo gusto sí aplicamos el precio de docena." A provisional total is shown while the session is open. Required example: "6 salteñas en una ronda + 6 en otra = precio de docena" (salteña D 18000 → 18000, not 2 × 6 × 1700 = 20400).
+- S4 Kitchen tickets. "Cada confirmación de ronda imprime una comanda con solo lo nuevo: número de mesa, hora, mozo y productos con cantidades bien destacados, sin precios. Tiene que haber reimpresión." "solo se comanda lo nuevo, no lo ya comandado anteriormente". "Acá no hace falta el precio en la comanda de cocina".
+- S5 Close. "Al cerrar, se marca pagado con el método de pago y se imprime el comprobante detallado con precios." "cuando el cliente se vaya y pague, ahí cerramos la mesa y sí se imprime el comprobante detallado". Revised by S16 (L8): the detailed bill prints before payment, on demand; closing prints nothing (D6, L9: option 1, "Nada"); a printed bill can be reprinted from the print station.
+- S16 Bill. "el mozo es el que lleva el comprobante con el total, y allí el mozo es el encargado de entregárselo al cliente, y luego debe ir con el cajero a darle la plata, si el cajero cuenta y está bien la plata, ya sí cambia el estado a pagado." "El mozo selecciona pedir cuenta, el cajero recibe la orden e imprime el comprobante de la mesa". "no hace falta que sí o sí pida la cuenta desde la app para que se pueda imprimir el comprobante."
+  - "Pedir cuenta" (any member who can act on the session, S14) only flags the session as bill requested, visible on every table screen; it prints nothing and does not lock the table.
+  - "Imprimir cuenta" (`operate-cashier`) enqueues a detailed bill with prices and total for any open session, requested or not. Its payload is frozen at that moment; a double click does not create a second job, and printing again after new rounds produces a bill with the new total.
+  - Charging (`operate-cashier`) is a separate action after the cash is counted: payment method → `paid` + `delivered` (S15).
+- S6 Quick order. "Confirmar un pedido rápido también imprime" a kitchen ticket; counter orders are "consumo en el local / mostrador" without customer data (`source=pos`, `dine_in`, no customer). "si nos llega un pedido por mensaje, el que esté atendiendo la computadora, carga el pedido rápido, lo confirma, y una vez que lo confirma se imprime en la comanda."
+- S7 Waiter screen. "Mobile-first", flow tables → table → round → confirm → request bill, using the existing `waiter` role and its permissions. "el mozo con el celular o cualquiera, toma el pedido, y cuando lo confirma desde el celular, se comanda o cambia el estado a confirmado".
+- S8 Printing. "Trabajos de impresión guardados en el servidor, idempotentes" (never printed twice). A "Estación de impresión" page for Chrome/Edge on Windows with `--kiosk-printing` that takes pending jobs, prints 80 mm templates and marks them printed. Document the PC setup: shortcut, default printer and cut. Printer: "Waggs térmica de 80 mm, USB, con corte automático, conectada a la PC con Windows."
+- S9 Errors. "Un toast genérico para cualquier envío que falle en todo el admin."
+- S10 Access (read-only check). Document how the phone and the shop PC reach the operational app (Tailscale Serve → `127.0.0.1:8082`). Do not change Tailscale.
+- S12 Public orders. "sí, que imprima comanda al confirmar los pedidos web que estaba en pendiente de confirmación": the first `pending_confirmation → waiting` transition of a `public_checkout` order enqueues one kitchen ticket (T2).
+- S13 Table set. "las mesas son las que crearemos en el plano, eso determinará la cantiad de demsas, inclusive una noche pueden haber más o menos mesas también. Y es todoun mismo salón, será el mismo area del plano que configuraremos". "solamente tendremos unas 6 mesas aprox, u 8, en la vereda, nada más, pero puede ir variando". No seed and no numbering rule: the waiter screen lists the active tables of active areas by their floor `code`; a new session requires an active table; a table deactivated while its session is open still appears until that session closes. The floor editor never deletes tables (it saves all of them and toggles `is_active`), so session history keeps its foreign key.
+- S14 Table access. "la idea sería que el cajero, encargado y dueño pueda cerrarla y cobrar o confirmar el pago." "todos los demás roles pueden tener acceso al rol de mozo, ya que si yo soy encargado, y justo estoy con mi cuenta, debo poder cargar una mesa y todo eso como hace el mozo". "supongamos que un mozo agarra la Mesa 1, otro mozo no puede agarrar esa mesa, pero sí puede hacerlo un encargado, o dueño o cajero, de agregar algo a esa mesa que ya tiene algún mozo, en todo caso aclararemos que por ejemplo, 1 cerveza (agregada por cajero "Lu")".
+  - Waiter actions (open a table, add a round, void, request the bill) need `use-pos` (`orders.manage`: owner, manager, cashier, waiter). Close and charge need `operate-cashier` (owner, manager, cashier). No role or permission mapping changes.
+  - The member who opens the session is its waiter. A `waiter` can act only on sessions they opened; owner, manager and cashier can act on any session.
+  - Each round stores who confirmed it. When that member is not the session's waiter, the table view and the kitchen ticket mark its lines with the member and role (for example "agregado por Cajero Lu"). Assumption: the customer receipt does not show it.
+- S15 Close and inventory. User chose option 1, "Cerrar = pagado + entregado": closing sets `paid` with the method and `delivered` in one transaction (existing payment and consumption listeners); any failure rolls back the whole close and returns a clear error. A read-only check lists available products without a consumption definition (shown to members who can close, and run in the rehearsal against the restored database) so they are configured before 2026-10-27.
+- S17 Station alerts. "Estación de impresión: alerta bien visible si se pierde la sesión o la conexión, o si hay trabajos pendientes hace más de 30 segundos, con el contador de pendientes en pantalla. Documentá que tiene que quedar en su propia ventana al frente, porque Chrome frena las pestañas en segundo plano." (T3)
+- S18 Restore proof. "La migración del search_path va en su propio commit, con un test o un ensayo que demuestre que un respaldo nuevo se restaura con pg_restore normal." (T0)
+- S19 Bill legend. "La leyenda de la cuenta: "Documento no válido como factura"." (T1, T3)
+- S20 Frozen charge. "Cobrar congela el pedido: una sesión cerrada rechaza rondas nuevas y su total no se recalcula. Agregá un test para eso." (T1)
+- S11 Constraints. Migrations only add; never recalculate historical orders; keep retired configuration rows. Tests first, including the 6 + 6 salteña example. Small commits, each reviewed. Stop before merge with: real-printer test plan, rehearsal on an isolated database restored from the backup by sections (search_path issue, `odd/tasks/release-inauguration.md` L4), and a deploy prompt.
+
+Out of scope: transfer/merge tables, floor plan, stations, split payments, tips, cash drawer sessions, native ESC/POS bridge, category hierarchy (follow-up: Empanadas > Clásicas/Especiales, Bebidas > Con/Sin alcohol, impacts the public site), rest of Phase 4.
+
+## Design (proposed)
+
+- **One table session = one order.** Confirming the first round creates a `pos`/`dine_in` order in `waiting` ("confirmado"). Each later round re-quotes that still-open order with `OrderPricingEngine` over the aggregated quantities of all rounds (S3) and replaces only its snapshots (same path as an economic edit; the order is unpaid and has no consumption, so it is not history). Rounds keep the immutable record of what was sent to the kitchen.
+- **Void** = a round of kind `void` with negative quantities; the aggregate per product can never go below zero. It prints an "ANULACIÓN" kitchen ticket.
+- **Request bill** sets `bill_requested_at/by` on the session (S16). **Print bill** enqueues a `bill` job from the current order snapshot. **Charge** = payment method + `paid` (existing `OrderPaymentConfirmed` → Management ledger) + `delivered` (existing inventory consumption) in one transaction, closes the session and prints nothing (S15, D6). Closed orders follow the existing closed-order rules.
+- **Print jobs** are created inside the same transaction as the business event, with a unique dedupe key per event (`table-round:{id}`, `order:{id}:kitchen` for counter, admin and confirmed public orders, `order:{id}:bill:v{edit_version}`); the payload is a frozen snapshot, so a reprint is byte-identical. The station claims a job with a lease (conditional `UPDATE … WHERE status='pending'`), prints, then acknowledges. A reprint is a new job linked to the original and requested explicitly. The bill legend is "Documento no válido como factura" (S19).
+- **Modules (revised L10).** Table sessions and rounds live in `Orders` (they are the order's lines and lifecycle, and generic order actions must refuse open table orders without a cross-module dependency). `Restaurant` keeps tables; `Inventory` exposes the read-only missing-consumption query. Orders emits `PrintableDocumentIssued(kind, dedupeKey, orderId, payload)`; the new `Printing` module persists it as a job and owns the station, so Printing never reads Orders tables.
+- **Stale screens (S20).** A round carries the session the client was looking at (`null` for a free table). A closed or cancelled expected session, or a table opened meanwhile by someone else, rejects the round instead of silently opening a new session.
+
+### Migrations (additive only)
+
+| Migration | Adds |
+| --- | --- |
+| `create_pos_table_sessions` | `table_sessions` (table, order unique, waiter = opener, opened/closed by/at, bill requested by/at, status) with a partial unique index `one open session per table`; `table_rounds` (session, sequence, kind `order`/`void`, confirmed by/at, idempotency hash unique); `table_round_items` (round, product, name snapshot, signed non-zero quantity); immutability triggers on rounds and items; `restaurant_id` everywhere |
+| `create_print_jobs` | `print_jobs` (kind `kitchen_ticket`/`bill`, order, round nullable, dedupe key unique per restaurant, payload jsonb, status `pending`/`claimed`/`printed`, claim token and lease, attempts, printed at/by, reprint of) |
+| optional `fix_restaurant_obstacles_search_path` | `ALTER FUNCTION … SET search_path = public` on the floor functions (release follow-up L16-1); changes no data |
+
+## Tasks
+
+| ID | Specs | Work | Route | Status | Commit |
+| --- | --- | --- | --- | --- | --- |
+| T0 | S18 | Pin `search_path` on the floor functions; own commit; restore proof with plain `pg_restore` | inline | done (reviewed: approved, acknowledged) | `97e31d0`, follow-up `0dcfdd5` |
+| T1 | S1–S3, S11, S13–S16, S19, S20 | Schema + table session domain: open, confirm round, void, provisional total, request bill, charge (paid + delivered), per-session waiter rule, missing-consumption check. Pest first (6 + 6 salteñas, role matrix) | inline | pending | — |
+| T2 | S4–S6, S8, S12, S16 | Print jobs: enqueue on round / void / counter order / admin order / public confirmation / print bill; claim, ack, reprint; idempotency and double-claim tests | inline | pending | — |
+| T3 | S8, S10, S17 | Print station page + 80 mm kitchen/receipt templates; PC setup and Tailscale access docs | inline | pending | — |
+| T4 | S6, S7 | Waiter mobile screens (tables, table, round entry, confirm, request bill, void) + counter quick order; Playwright | inline | pending | — |
+| T5 | S9 | Generic admin failure toast; Playwright | inline | pending | — |
+| T6 | S11 | Docs (ORDERS_AND_PRICING, DATABASE, SECURITY, ARCHITECTURE, OPERATIONS), rehearsal on restored isolated DB, real-printer test plan, deploy prompt | inline | pending | — |
+
+Forecast: about 2,400 authored changed lines (T1 ≈ 700, T2 ≈ 450, T3 ≈ 450, T4 ≈ 600, T5 ≈ 80, T6 ≈ 150) → more than one review slice; delivery strategy question pending when the first slice closes.
+
+Schedule (7 working days, 2026-10-20 → 2026-10-27): T1 by 10-22, T2 10-23, T3 10-24, T4 10-25/26, T5 + T6 + rehearsal 10-26/27. Cut order if late: (1) void rounds from the UI (keep the domain), (2) reprint UI outside the station, (3) admin-order kitchen ticket for delivery orders.
+
+## Open decisions (asked one at a time)
+
+- D1 ~~Do public web orders print a kitchen ticket when staff confirm them?~~ Resolved (L4): yes, see S12.
+- D2 ~~How many tables and how they are numbered.~~ Resolved (L5): see S13.
+- D3 ~~Who can close a table and charge it.~~ Resolved (L6): see S14.
+- D4 ~~Close and inventory.~~ Resolved (L7): see S15.
+- D5 ~~What "pedir cuenta" does.~~ Resolved (L8): see S16. The "request bill" pre-receipt cut item no longer applies; the bill print is core.
+- D6 ~~Does charging print anything?~~ Resolved (L9): nothing.
+
+## Log
+
+- L1 (2026-10-20) Original request: the task pasted by the user, starting "Tarea para Te Pinta 3.0: POS de inauguración (mesas, rondas, comandas impresas y comprobante)." and ending "el prompt para el deploy." Kept verbatim in the session; quoted fragments above are its exact words.
+- L2 (2026-10-20) Findings. `main` already has `dining_areas`/`dining_tables` and the floor editor (`Restaurant`), the `pos`/`dine_in` order context (`orders_context_valid`), `use-pos`/`operate-cashier` gates and the `waiter` role (`orders.view`, `orders.manage`, `customers.view`, `catalog.view`). Kitchen tickets and table sessions do not exist (ARCHITECTURE "Not implemented"). `sonner` and `use-flash-toast` exist. CodeGraph unavailable (`codegraph` not in PATH); used direct reads.
+- L3 (2026-10-20) Access, read-only: `tailscale serve status` shows `https://tuki-notebook.tail2b1906.ts.net` (tailnet only) → `http://127.0.0.1:8082`, Funnel only `:8443/media/instagram`. Every phone and the shop PC must run Tailscale signed in to this tailnet, and the notebook must be on. Tailnet devices today: two Windows and two Android nodes, all offline except `tuki`; the waiter's phone and the shop PC need to be confirmed as members. The notebook reported a DERP certificate interception warning from the local router (Sagemcom); recheck connectivity from the shop network.
+- L4 (2026-10-20) User answer to D1, verbatim: "sí, que imprima comanda al confirmar los pedidos web que estaba en pendiente de confirmación". Added S12; T2 covers it.
+- L5 (2026-10-20) User answer to D2, quoted in S13. Verified `UpdateDiningAreaLayout` creates/updates tables and toggles `is_active`, never deletes. T1 and T4 cover S13.
+- L6 (2026-10-20) User answer to D3, quoted in S14. Uses the existing `use-pos` and `operate-cashier` gates; the per-session waiter rule is new authorization logic (Risk item 2: tests for each role against a foreign session). T1 and T4 cover S14.
+- L7 (2026-10-20) User answer to D4, verbatim: "1" (option "Cerrar = pagado + entregado (recomendado)"). Added S15; T1 (close) and T6 (rehearsal check) cover it.
+- L8 (2026-10-20) User answer to D5, quoted in S16 (option 1 plus the cashier-printed bill before payment). S5 revised; new D6. T1 (request flag, close), T2 (bill job) and T4 (cashier actions) cover S16.
+- L9 (2026-10-20) User answer to D6, verbatim: "1" (option "Nada (recomendado)"). S5 and Design updated; receipt kind renamed `bill`; cut item "request bill pre-receipt" removed. All decisions resolved.
+- L10 (2026-10-20) User approved the plan ("si") and then added, verbatim: "Aprobado, arrancá con T1. Cuatro agregados: 1. Estación de impresión: alerta bien visible si se pierde la sesión o la conexión, o si hay trabajos pendientes hace más de 30 segundos, con el contador de pendientes en pantalla. Documentá que tiene que quedar en su propia ventana al frente, porque Chrome frena las pestañas en segundo plano. 2. La migración del search_path va en su propio commit, con un test o un ensayo que demuestre que un respaldo nuevo se restaura con pg_restore normal. 3. La leyenda de la cuenta: "Documento no válido como factura". 4. Cobrar congela el pedido: una sesión cerrada rechaza rondas nuevas y su total no se recalcula. Agregá un test para eso." Added S17–S20 and T0. Design revised: table service lives in Orders (no new Pos module); rounds carry the expected session (S20).
+- L11 (2026-10-20) Test runtime: private `postgres:18-alpine` container `tepinta-inaug-pos-pg` on `127.0.0.1:55492`, ignored `.env.testing`, PHP through the `sail-8.5/app` image (host PHP lacks `ext-gd`). First baseline: 54 failures, all `ViteManifestNotFoundException` (no build in the new worktree); rerunning after `npm run build`.
+- L12 (2026-10-20) Baseline after `npm run build`: 898 passed. T0: RED without the migration (2 failed, `42883 restaurant_geometry_valid does not exist`), GREEN 83/83 Restaurant tests. Restore rehearsal (private container): migrated DB + one dining area with an obstacle, `pg_dump -Fc` → plain `pg_restore --no-owner --exit-on-error`: without the migration `COPY failed for table "dining_areas"` (same as production L4 of the release log); with it `RESTORE OK`, 1 area, 52 migrations. Commit `97e31d0`; native review (risk, reliability) approved and acknowledged. Advisories fixed in `0dcfdd5`: R3-001 (document the sectioned restore for dumps taken before the fix; its premise that this branch deleted `odd/tasks/release-inauguration.md` is wrong, the file only exists on `release/inauguration`), R3-002 (savepoint keeps the real error visible).
+- L13 (2026-10-20) T1 RED: 10 failed / 10 passed (missing bill/charge/cancel actions and guards). GREEN: 22/22 `TableServiceTest`. Fingerprint excludes the expected session so a retried request after a screen refresh replays instead of failing.
+- Next: T1 full checks, commit and review; then T2.

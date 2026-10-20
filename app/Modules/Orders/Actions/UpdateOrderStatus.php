@@ -4,6 +4,7 @@ namespace App\Modules\Orders\Actions;
 
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Support\OpenTableOrders;
 use App\Modules\Orders\Support\OrderBusinessDate;
 use App\Modules\Orders\Support\OrderPhysicalFulfillment;
 use Illuminate\Support\Facades\DB;
@@ -11,12 +12,13 @@ use Illuminate\Support\Facades\Log;
 
 final readonly class UpdateOrderStatus
 {
-    public function __construct(private OrderBusinessDate $businessDate, private OrderPhysicalFulfillment $fulfillment) {}
+    public function __construct(private OrderBusinessDate $businessDate, private OrderPhysicalFulfillment $fulfillment, private OpenTableOrders $openTables) {}
 
     public function execute(Order $order, OrderStatus $status, int $adminId): Order
     {
         return DB::transaction(function () use ($order, $status, $adminId): Order {
             $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $this->openTables->assertNotOpen($locked->id);
             $previous = $locked->status;
             $this->fulfillment->assertTransition($locked->id, $previous, $status);
             if ($previous !== $status) {

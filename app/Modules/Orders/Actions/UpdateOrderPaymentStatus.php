@@ -6,6 +6,7 @@ use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Support\OpenTableOrders;
 use App\Modules\Orders\Support\OrderBusinessDate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,12 +16,14 @@ final class UpdateOrderPaymentStatus
     public function __construct(
         private readonly ResolveOrderPayment $payments,
         private readonly OrderBusinessDate $businessDate,
+        private readonly OpenTableOrders $openTables,
     ) {}
 
     public function execute(Order $order, PaymentStatus $status, ?PaymentMethod $method, int $adminId): Order
     {
         [$updated, $previous, $previousMethod] = DB::transaction(function () use ($order, $status, $method, $adminId): array {
             $locked = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
+            $this->openTables->assertNotOpen($locked->id);
             $previous = $locked->payment_status;
             $previousMethod = $locked->payment_method;
             $payment = $this->payments->forTotal((int) $locked->total, $status, $method);

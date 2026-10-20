@@ -31,7 +31,7 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 | `Identity` | Users, per-restaurant memberships (`restaurant_user`), code-defined roles and permissions, `restaurant.member` middleware, user management (`/admin/users`), `admin:create` console command |
 | `Products` | Categories, products, tags, availability, pricing family (`empanada`/`unit`), cooked base prices, raw-price discounts, public catalog and product detail |
 | `Customers` | Customer profiles, phone normalization, search, history, soft delete and restore |
-| `Orders` | Order creation (admin, public checkout, POS command), editing, snapshots, revisions, status and payment transitions, pricing engine, WhatsApp link |
+| `Orders` | Order creation (admin, public checkout, POS), editing, snapshots, revisions, status and payment transitions, pricing engine, table service (sessions, immutable rounds, bill, charge), WhatsApp link |
 | `Settings` | Admin write surface for restaurant branding, ordering settings, raw-price discounts and add-ons (`/admin/settings/general`) |
 | `Inventory` | Items, units, categories, purchase presentations, stock movements, cost layers, valuation, recipes, production, adjustments, order consumption, current product costing |
 | `Management` | Wallets, immutable ledger, outflows, transfers, distributions, order payments, rich purchases, attachments, financial summary and audit (UI label: **Gestión**) |
@@ -129,4 +129,4 @@ Every business row carries a NOT NULL `restaurant_id` whose column default is th
 
 ## Not implemented
 
-Online payment gateways, WhatsApp sending (only a `wa.me` link is generated), promotions/coupons/combos, multiple or partial payments per order, automatic financial reversal on cancel or unpay, table sessions/occupancy, kitchen tickets, Analytics, read isolation between restaurants.
+Online payment gateways, WhatsApp sending (only a `wa.me` link is generated), promotions/coupons/combos, multiple or partial payments per order, automatic financial reversal on cancel or unpay, table transfer/merge, split payments, Analytics, read isolation between restaurants.

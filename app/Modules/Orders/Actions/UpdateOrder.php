@@ -11,6 +11,7 @@ use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
+use App\Modules\Orders\Support\OpenTableOrders;
 use App\Modules\Orders\Support\OrderBusinessDate;
 use App\Modules\Orders\Support\OrderPhysicalFulfillment;
 use Carbon\CarbonImmutable;
@@ -28,6 +29,7 @@ final readonly class UpdateOrder
         private ResolveOrderPayment $payments,
         private OrderBusinessDate $businessDate,
         private OrderPhysicalFulfillment $fulfillment,
+        private OpenTableOrders $openTables,
     ) {}
 
     public function execute(
@@ -40,6 +42,7 @@ final readonly class UpdateOrder
     ): Order {
         $result = DB::transaction(function () use ($order, $data, $status, $expectedVersion, $adminId, $closedEditReason): Order {
             $locked = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
+            $this->openTables->assertNotOpen($locked->id);
             if ((int) $locked->edit_version !== $expectedVersion) {
                 throw ValidationException::withMessages(['expected_version' => 'El pedido fue modificado desde que lo abriste. Recargá antes de continuar.']);
             }

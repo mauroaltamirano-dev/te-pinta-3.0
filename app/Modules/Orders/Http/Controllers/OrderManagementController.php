@@ -14,6 +14,7 @@ use App\Modules\Orders\Http\Requests\StoreAdminOrderRequest;
 use App\Modules\Orders\Http\Requests\UpdateAdminOrderRequest;
 use App\Modules\Orders\Http\Resources\AdminOrderResource;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Support\OpenTableOrders;
 use App\Modules\Orders\Support\OrderSummaryFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -209,6 +210,7 @@ final class OrderManagementController
     public function destroy(Request $request, Order $order): RedirectResponse
     {
         Gate::authorize('delete', $order);
+        app(OpenTableOrders::class)->assertNotOpen($order->id);
         $order->delete();
         Log::info('[Orders] order.deleted', ['module' => 'Orders', 'order_id' => $order->public_id, 'admin_id' => $request->user()->getAuthIdentifier()]);
 
