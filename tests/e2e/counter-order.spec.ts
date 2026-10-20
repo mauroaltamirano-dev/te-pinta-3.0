@@ -28,7 +28,13 @@ test('un pedido de mostrador se confirma sin cliente y queda en cola de impresi√
     await draft.getByRole('button', { name: 'Continuar' }).click();
     const continuation = page.getByRole('dialog');
 
+    // A customer chosen before switching to Mostrador is not attached to the counter order.
+    await continuation.getByLabel('Buscar cliente').fill('habitual');
+    await continuation
+        .getByRole('button', { name: /Cliente habitual/ })
+        .click();
     await continuation.getByRole('button', { name: 'Mostrador' }).click();
+    await expect(continuation.getByLabel('Buscar cliente')).toHaveCount(0);
     await expect(
         continuation.getByText('Consumo en el local ¬∑ sin cliente'),
     ).toBeVisible();
@@ -42,6 +48,10 @@ test('un pedido de mostrador se confirma sin cliente y queda en cola de impresi√
         .click();
     const orderHeading = continuation.getByRole('heading', { name: /TP-\d+/ });
     await expect(orderHeading).toBeVisible();
+    const orderId = (await orderHeading.textContent())?.trim();
+    await page.goto(`/admin/orders/${orderId}`);
+    await expect(page.getByText('Sal√≥n').first()).toBeVisible();
+    await expect(page.getByText('Cliente habitual')).toHaveCount(0);
 
     await page.goto('/admin/print-station');
     await expect(page.getByTestId('pending-count')).toHaveText('1');

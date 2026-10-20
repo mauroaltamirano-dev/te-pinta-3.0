@@ -237,6 +237,22 @@ final class PrintJobTest extends TestCase
         $this->assertSame([$old], array_column($response->json('unconfirmed'), 'id'));
     }
 
+    public function test_the_unconfirmed_list_is_capped_oldest_first_while_status_counts_them_all(): void
+    {
+        $this->round([$this->coke->id => 1]);
+        foreach (range(1, 54) as $round) {
+            $this->round([$this->coke->id => 1], session: TableRound::query()->value('table_session_id'));
+        }
+        $this->actingAs($this->cashier);
+        foreach (range(1, 6) as $claim) {
+            $this->postJson(route('admin.print-jobs.claim'))->assertOk();
+        }
+
+        $unconfirmed = array_column($this->getJson(route('admin.print-jobs.index'))->json('unconfirmed'), 'id');
+        $this->assertSame(PrintJob::query()->orderBy('id')->limit(50)->pluck('id')->all(), $unconfirmed);
+        $this->assertSame(55, $this->getJson(route('admin.print-jobs.status'))->json('data.unconfirmed'));
+    }
+
     public function test_a_reprint_is_a_new_job_with_the_same_frozen_payload(): void
     {
         $this->round([$this->coke->id => 1]);

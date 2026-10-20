@@ -69,115 +69,120 @@ export function AdminOrderDetailsFields({
     return (
         <div className="grid gap-6 lg:grid-cols-2">
             <div className="grid content-start gap-5">
-                <section className="grid gap-3">
-                    <h3 className="font-semibold">Cliente</h3>
-                    <Field
-                        id="customer-search"
-                        label="Buscar cliente"
-                        value={customerSearch}
-                        onChange={setCustomerSearch}
-                        placeholder="Nombre o teléfono"
-                    />
-                    {customerSearch.trim() && (
-                        <div className="grid gap-2">
-                            <p className="sr-only" role="status">
-                                {filteredCustomers.length === 1
-                                    ? '1 coincidencia encontrada'
-                                    : `${filteredCustomers.length} coincidencias encontradas`}
-                            </p>
-                            {filteredCustomers.length > 0 ? (
-                                <ul
-                                    className="grid gap-1"
-                                    aria-label="Coincidencias de clientes"
-                                >
-                                    {filteredCustomers.map((customer) => (
-                                        <li key={customer.id}>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    draft.selectCustomer(
-                                                        customer.id.toString(),
-                                                    );
-                                                    setCustomerSearch('');
-                                                }}
-                                                className="w-full rounded-lg bg-admin-surface-raised px-3 py-2 text-left text-sm transition-colors hover:bg-admin-accent/10 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
-                                            >
-                                                <span className="font-medium">
-                                                    {customer.name}
-                                                </span>
-                                                {customer.phone && (
-                                                    <span className="text-admin-text-secondary">
-                                                        {' · '}
-                                                        {customer.phone}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-admin-text-secondary">
-                                    No encontramos clientes.
+                {/* A counter order carries no customer data. */}
+                {!(allowCounter && form.data.delivery_type === 'dine_in') && (
+                    <section className="grid gap-3">
+                        <h3 className="font-semibold">Cliente</h3>
+                        <Field
+                            id="customer-search"
+                            label="Buscar cliente"
+                            value={customerSearch}
+                            onChange={setCustomerSearch}
+                            placeholder="Nombre o teléfono"
+                        />
+                        {customerSearch.trim() && (
+                            <div className="grid gap-2">
+                                <p className="sr-only" role="status">
+                                    {filteredCustomers.length === 1
+                                        ? '1 coincidencia encontrada'
+                                        : `${filteredCustomers.length} coincidencias encontradas`}
                                 </p>
-                            )}
-                        </div>
-                    )}
-                    {selectedCustomer && (
-                        <div className="flex items-center justify-between gap-3 rounded-lg bg-admin-surface-raised px-3 py-2 text-sm">
-                            <span>
-                                <span className="font-medium">
-                                    {selectedCustomer.name}
+                                {filteredCustomers.length > 0 ? (
+                                    <ul
+                                        className="grid gap-1"
+                                        aria-label="Coincidencias de clientes"
+                                    >
+                                        {filteredCustomers.map((customer) => (
+                                            <li key={customer.id}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        draft.selectCustomer(
+                                                            customer.id.toString(),
+                                                        );
+                                                        setCustomerSearch('');
+                                                    }}
+                                                    className="w-full rounded-lg bg-admin-surface-raised px-3 py-2 text-left text-sm transition-colors hover:bg-admin-accent/10 focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
+                                                >
+                                                    <span className="font-medium">
+                                                        {customer.name}
+                                                    </span>
+                                                    {customer.phone && (
+                                                        <span className="text-admin-text-secondary">
+                                                            {' · '}
+                                                            {customer.phone}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-admin-text-secondary">
+                                        No encontramos clientes.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                        {selectedCustomer && (
+                            <div className="flex items-center justify-between gap-3 rounded-lg bg-admin-surface-raised px-3 py-2 text-sm">
+                                <span>
+                                    <span className="font-medium">
+                                        {selectedCustomer.name}
+                                    </span>
+                                    {selectedCustomer.phone
+                                        ? ` · ${selectedCustomer.phone}`
+                                        : ''}
                                 </span>
-                                {selectedCustomer.phone
-                                    ? ` · ${selectedCustomer.phone}`
-                                    : ''}
-                            </span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => draft.selectCustomer('new')}
-                            >
-                                Crear cliente rápido
-                            </Button>
-                        </div>
-                    )}
-                    {form.data.customer_id === null && (
-                        <>
-                            <Field
-                                id="new-customer-name"
-                                label="Nombre"
-                                value={form.data.customer.name}
-                                onChange={(name) =>
-                                    form.setData('customer', {
-                                        ...form.data.customer,
-                                        name,
-                                    })
-                                }
-                                required={form.data.delivery_type !== 'dine_in'}
-                            />
-                            <Field
-                                id="new-customer-phone"
-                                label="Teléfono"
-                                value={form.data.customer.phone}
-                                onChange={(phone) =>
-                                    form.setData('customer', {
-                                        ...form.data.customer,
-                                        phone,
-                                    })
-                                }
-                            />
-                            {form.data.delivery_type !== 'dine_in' && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => draft.selectCustomer('new')}
+                                >
+                                    Crear cliente rápido
+                                </Button>
+                            </div>
+                        )}
+                        {form.data.customer_id === null && (
+                            <>
                                 <Field
-                                    id="new-customer-address"
-                                    label="Dirección"
-                                    value={form.data.customer.address}
-                                    onChange={draft.setCustomerAddress}
+                                    id="new-customer-name"
+                                    label="Nombre"
+                                    value={form.data.customer.name}
+                                    onChange={(name) =>
+                                        form.setData('customer', {
+                                            ...form.data.customer,
+                                            name,
+                                        })
+                                    }
+                                    required={
+                                        form.data.delivery_type !== 'dine_in'
+                                    }
                                 />
-                            )}
-                        </>
-                    )}
-                </section>
+                                <Field
+                                    id="new-customer-phone"
+                                    label="Teléfono"
+                                    value={form.data.customer.phone}
+                                    onChange={(phone) =>
+                                        form.setData('customer', {
+                                            ...form.data.customer,
+                                            phone,
+                                        })
+                                    }
+                                />
+                                {form.data.delivery_type !== 'dine_in' && (
+                                    <Field
+                                        id="new-customer-address"
+                                        label="Dirección"
+                                        value={form.data.customer.address}
+                                        onChange={draft.setCustomerAddress}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </section>
+                )}
 
                 <section className="grid gap-3">
                     <h3 className="font-semibold">Preparación</h3>

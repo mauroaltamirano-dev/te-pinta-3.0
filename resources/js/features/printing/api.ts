@@ -28,6 +28,7 @@ export async function stationRequest<T>(
     url: string,
     method: 'GET' | 'POST' = 'GET',
     body?: unknown,
+    timeoutMs = TIMEOUT_MS,
 ): Promise<T> {
     let response: Response;
 
@@ -45,7 +46,7 @@ export async function stationRequest<T>(
                 ...(token ? { 'X-XSRF-TOKEN': token } : {}),
             },
             body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
-            signal: AbortSignal.timeout(TIMEOUT_MS),
+            signal: AbortSignal.timeout(timeoutMs),
         });
     } catch {
         throw new StationRequestError('Sin conexión con el servidor.', null);

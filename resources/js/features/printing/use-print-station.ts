@@ -11,6 +11,9 @@ import { jobHtml, testTicketHtml } from './templates';
 import type { PrintJob, QueueStatus } from './types';
 
 const POLL_MS = 3000;
+const CLAIM_TIMEOUT_MS = 30_000;
+/** The server lists at most this many unconfirmed jobs (PrintJobController). */
+const UNCONFIRMED_LIMIT = 50;
 const RECENT_EVERY_TICKS = 5;
 export const STALE_SECONDS = 30;
 
@@ -86,9 +89,12 @@ export function usePrintStation(restaurant: string) {
     }, []);
 
     const printClaimed = useCallback(async () => {
+        // A claim committed on the server but abandoned here leaves its jobs unconfirmed, so it waits longer.
         const { data: jobs } = await stationRequest<Envelope<PrintJob[]>>(
             '/admin/print-jobs/claim',
             'POST',
+            undefined,
+            CLAIM_TIMEOUT_MS,
         );
 
         for (const job of jobs) {
@@ -153,7 +159,8 @@ export function usePrintStation(restaurant: string) {
 
             if (
                 changed ||
-                data.unconfirmed !== listedUnconfirmed.current ||
+                Math.min(data.unconfirmed, UNCONFIRMED_LIMIT) !==
+                    listedUnconfirmed.current ||
                 ticks.current % RECENT_EVERY_TICKS === 1
             ) {
                 await refreshRecent();

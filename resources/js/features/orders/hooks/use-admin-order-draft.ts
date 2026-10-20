@@ -325,9 +325,11 @@ export function useAdminOrderDraft(
             const { data } = await postJson<{ data: AdminCreatedOrder }>(
                 '/admin/orders',
                 form.data.delivery_type === 'dine_in'
-                    ? // A counter order is immediate: no schedule or address.
+                    ? // A counter order is immediate and anonymous: no schedule, address or customer.
                       {
                           ...form.data,
+                          customer_id: null,
+                          customer: null,
                           delivery_date: null,
                           delivery_period: null,
                           delivery_time: null,

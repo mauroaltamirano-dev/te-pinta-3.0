@@ -159,6 +159,13 @@ export default function PrintStation({ restaurant }: { restaurant: string }) {
                                 Si salió el papel, confirmalo; si no, mandalo de
                                 nuevo a la cola.
                             </p>
+                            {(station.status?.unconfirmed ?? 0) >
+                                unconfirmed.length && (
+                                <p className="text-sm font-semibold text-admin-text-primary">
+                                    Se muestran los {unconfirmed.length} más
+                                    viejos de {station.status?.unconfirmed}.
+                                </p>
+                            )}
                             <ul className="grid gap-2">
                                 {unconfirmed.map((job) => (
                                     <li

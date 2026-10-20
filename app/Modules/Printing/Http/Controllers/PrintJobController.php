@@ -15,6 +15,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class PrintJobController
 {
+    private const UNCONFIRMED_LIMIT = 50;
+
     public function status(PrintQueueStatus $status): JsonResponse
     {
         return response()->json(['data' => $status->get()]);
@@ -22,9 +24,10 @@ final class PrintJobController
 
     public function recent(): AnonymousResourceCollection
     {
-        // Every unconfirmed job, however old, so the station can always settle it.
+        // Unconfirmed jobs, however old, oldest first, so the station can always settle them; capped so a
+        // stuck backlog cannot grow every refresh (status reports the full count).
         return PrintJobResource::collection(PrintJob::queue()->latest('id')->limit(30)->get())
-            ->additional(['unconfirmed' => PrintJobResource::collection(PrintJob::queue()->where('status', 'claimed')->orderBy('id')->get())]);
+            ->additional(['unconfirmed' => PrintJobResource::collection(PrintJob::queue()->where('status', 'claimed')->orderBy('id')->limit(self::UNCONFIRMED_LIMIT)->get())]);
     }
 
     public function claim(Request $request, ClaimPrintJobs $claim): AnonymousResourceCollection
