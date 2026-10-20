@@ -300,7 +300,7 @@ final class TableServiceTest extends TestCase
         $this->assertSame(20500, $bill['total']);
         $this->assertSame('Documento no válido como factura', $bill['legend']);
         $this->assertSame([
-            ['name' => 'Salteña', 'detail' => '1 docena', 'quantity' => 1, 'unit_price' => 18000, 'total' => 18000],
+            ['name' => 'Salteña', 'detail' => '1 docena', 'quantity' => 12, 'unit_price' => 18000, 'total' => 18000],
             ['name' => 'Coca-Cola', 'detail' => null, 'quantity' => 1, 'unit_price' => 2500, 'total' => 2500],
         ], $bill['lines']);
 

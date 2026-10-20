@@ -86,8 +86,9 @@ final readonly class OrderDocuments
         $now = $this->businessDate->today();
         $lines = $order->items()->orderBy('id')->get()->map(fn (OrderItem $item): array => [
             'name' => $item->product_name,
-            'detail' => $item->getRawOriginal('pricing_mode') === PricingMode::Dozen->value ? ($item->quantity === 1 ? '1 docena' : "{$item->quantity} docenas") : null,
-            'quantity' => $item->quantity,
+            // Customers count units; a dozen line is priced per dozen, so its detail names the packs.
+            'detail' => $this->packs($item),
+            'quantity' => $item->units_count,
             'unit_price' => $item->unit_price,
             'total' => $item->line_total,
         ]);
@@ -110,6 +111,17 @@ final readonly class OrderDocuments
             'total' => (int) $order->total,
             'legend' => self::BILL_LEGEND,
         ], $actor->id);
+    }
+
+    private function packs(OrderItem $item): ?string
+    {
+        $count = $item->quantity;
+
+        return match ($item->getRawOriginal('pricing_mode')) {
+            PricingMode::Dozen->value, PricingMode::CombinedDozen->value => $count === 1 ? '1 docena' : "{$count} docenas",
+            PricingMode::HalfDozen->value => $count === 1 ? '1 media docena' : "{$count} medias docenas",
+            default => null,
+        };
     }
 
     private function title(TableSession $session): string
