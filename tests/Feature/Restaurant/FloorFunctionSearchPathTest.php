@@ -34,11 +34,12 @@ final class FloorFunctionSearchPathTest extends TestCase
         // pg_restore sets an empty search_path before COPY; the check must still resolve its helpers.
         DB::statement("SELECT set_config('search_path', '', false)");
         try {
-            DB::statement(<<<'SQL'
+            // A savepoint keeps the real error visible: a failure here must not abort the test transaction.
+            DB::transaction(fn () => DB::statement(<<<'SQL'
                 UPDATE public.dining_areas
                 SET obstacles = '[{"type":"rectangle","x":"0.1","y":"0.1","width":"0.2","height":"0.2","label":"Barra"}]'::jsonb
                 WHERE id = ?
-                SQL, [$area->id]);
+                SQL, [$area->id]));
         } finally {
             DB::statement('SELECT set_config(?, ?, false)', ['search_path', $searchPath]);
         }
