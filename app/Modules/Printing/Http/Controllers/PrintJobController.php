@@ -22,7 +22,7 @@ final class PrintJobController
 
     public function recent(): AnonymousResourceCollection
     {
-        return PrintJobResource::collection(PrintJob::query()->latest('id')->limit(30)->get());
+        return PrintJobResource::collection(PrintJob::queue()->latest('id')->limit(30)->get());
     }
 
     public function claim(Request $request, ClaimPrintJobs $claim): AnonymousResourceCollection

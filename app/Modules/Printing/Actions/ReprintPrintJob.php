@@ -11,7 +11,7 @@ final class ReprintPrintJob
 {
     public function execute(int $jobId, int $userId): PrintJob
     {
-        $original = PrintJob::query()->findOrFail($jobId);
+        $original = PrintJob::queue()->findOrFail($jobId);
         $root = $original->reprint_of_id ?? $original->id;
         $reprint = PrintJob::query()->create([
             'kind' => $original->kind, 'order_id' => $original->order_id, 'dedupe_key' => "reprint:{$root}:".Str::uuid(),

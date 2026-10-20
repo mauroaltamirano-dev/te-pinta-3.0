@@ -14,7 +14,7 @@ final class ClaimPrintJobs
     public function execute(int $stationUserId, int $limit = 10): Collection
     {
         return DB::transaction(function () use ($stationUserId, $limit): Collection {
-            $jobs = PrintJob::query()->where('status', 'pending')->orderBy('id')->limit($limit)->lock('for update skip locked')->get();
+            $jobs = PrintJob::queue()->where('status', 'pending')->orderBy('id')->limit($limit)->lock('for update skip locked')->get();
             foreach ($jobs as $job) {
                 $job->forceFill([
                     'status' => 'claimed', 'claim_token' => (string) Str::uuid(), 'claimed_at' => now(),

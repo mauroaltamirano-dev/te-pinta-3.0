@@ -217,6 +217,28 @@ final class PrintJobTest extends TestCase
         DB::table('print_jobs')->update(['payload' => '{"lines":[]}']);
     }
 
+    public function test_the_station_never_sees_or_touches_another_restaurants_jobs(): void
+    {
+        $this->round([$this->coke->id => 1]);
+        $own = PrintJob::query()->sole();
+        DB::table('restaurants')->insert(['id' => 2, 'name' => 'Otro', 'slug' => 'otro', 'created_at' => now(), 'updated_at' => now()]);
+        $foreignId = DB::table('print_jobs')->insertGetId([
+            'restaurant_id' => 2, 'kind' => 'kitchen_ticket', 'order_id' => $own->order_id, 'dedupe_key' => 'foreign',
+            'payload' => '{"title":"Otro"}', 'requested_by' => $this->cashier->id, 'created_at' => now()->subMinute(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->cashier);
+        $this->assertSame(1, $this->getJson(route('admin.print-jobs.status'))->assertOk()->json('data.pending'));
+        $this->assertSame([$own->id], array_column($this->getJson(route('admin.print-jobs.index'))->assertOk()->json('data'), 'id'));
+        $this->assertSame([$own->id], array_column($this->postJson(route('admin.print-jobs.claim'))->assertOk()->json('data'), 'id'));
+        $this->postJson(route('admin.print-jobs.printed', $foreignId))->assertNotFound();
+        $this->postJson(route('admin.print-jobs.release', $foreignId))->assertNotFound();
+        $this->postJson(route('admin.print-jobs.reprint', $foreignId))->assertNotFound();
+
+        $this->assertSame(['pending', 0], [DB::table('print_jobs')->where('id', $foreignId)->value('status'), DB::table('print_jobs')->where('restaurant_id', 2)->where('id', '<>', $foreignId)->count()]);
+        $this->assertSame(2, DB::table('print_jobs')->count());
+    }
+
     public function test_members_without_order_management_cannot_operate_the_station(): void
     {
         $this->round([$this->coke->id => 1]);

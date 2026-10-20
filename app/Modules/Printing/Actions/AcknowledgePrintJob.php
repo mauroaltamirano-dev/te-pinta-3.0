@@ -16,7 +16,7 @@ final class AcknowledgePrintJob
     public function execute(int $jobId, ?string $claimToken, int $userId): PrintJob
     {
         return DB::transaction(function () use ($jobId, $claimToken, $userId): PrintJob {
-            $job = PrintJob::query()->lockForUpdate()->findOrFail($jobId);
+            $job = PrintJob::queue()->lockForUpdate()->findOrFail($jobId);
             if ($job->status === 'printed' && ($claimToken === null || $job->claim_token === $claimToken)) {
                 return $job;
             }

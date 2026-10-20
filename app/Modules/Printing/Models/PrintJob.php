@@ -2,6 +2,8 @@
 
 namespace App\Modules\Printing\Models;
 
+use App\Core\Tenancy\RestaurantContext;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -30,6 +32,17 @@ final class PrintJob extends Model
     protected $attributes = ['status' => 'pending', 'attempts' => 0];
 
     protected $fillable = ['kind', 'order_id', 'dedupe_key', 'payload', 'reprint_of_id', 'requested_by'];
+
+    /**
+     * The current restaurant's jobs. Every station read and write starts here: reads are not
+     * isolated by the database yet (docs/DATABASE.md, tenancy).
+     *
+     * @return Builder<self>
+     */
+    public static function queue(): Builder
+    {
+        return self::query()->where('restaurant_id', app(RestaurantContext::class)->id());
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

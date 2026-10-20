@@ -13,7 +13,7 @@ final class ReleasePrintJob
     public function execute(int $jobId, int $userId): PrintJob
     {
         $job = DB::transaction(function () use ($jobId): PrintJob {
-            $job = PrintJob::query()->lockForUpdate()->findOrFail($jobId);
+            $job = PrintJob::queue()->lockForUpdate()->findOrFail($jobId);
             if ($job->status !== 'claimed') {
                 throw new ConflictHttpException('Only an unconfirmed print job can be released.');
             }
