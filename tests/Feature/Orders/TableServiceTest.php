@@ -34,6 +34,7 @@ use App\Modules\Products\Models\Product;
 use App\Modules\Products\Pricing\EmpanadaUnitPrice;
 use App\Modules\Restaurant\Models\DiningArea;
 use App\Modules\Restaurant\Models\DiningTable;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -221,6 +222,41 @@ final class TableServiceTest extends TestCase
         $this->assertCount(1, $this->issued('kitchen_ticket'));
         $this->assertSame(2500, $first->session->order->refresh()->total);
         $this->assertRejected(fn () => $this->round([$this->coke->id => 2], key: $key), 'round_key');
+    }
+
+    public function test_a_retry_after_the_screen_refreshed_replays_the_round_instead_of_failing(): void
+    {
+        $key = (string) Str::uuid();
+        $first = $this->round([$this->coke->id => 1], key: $key, session: null);
+        // The phone timed out, refreshed (now it sees the open session) and sent the same round again.
+        $retry = $this->round([$this->coke->id => 1], key: $key, session: $first->table_session_id);
+
+        $this->assertSame($first->id, $retry->id);
+        $this->assertSame(1, TableRound::query()->count());
+    }
+
+    public function test_a_concurrent_duplicate_of_the_first_round_waits_and_replays(): void
+    {
+        $key = (string) Str::uuid();
+        $first = $this->round([$this->coke->id => 1], key: $key, session: null);
+        // Same request as the first one, decided after the first committed (double tap on a free table).
+        $duplicate = (new \ReflectionMethod(ConfirmTableRound::class, 'confirm'))->invoke(
+            app(ConfirmTableRound::class), $this->table->id, null, TableRoundKind::Order, [$this->coke->id => 1], [], null,
+            $first->idempotency_hash, $first->fingerprint, $this->waiter,
+        );
+
+        $this->assertSame($first->id, $duplicate->id);
+        $this->assertSame(1, TableRound::query()->count());
+        $this->assertCount(1, $this->issued('kitchen_ticket'));
+    }
+
+    public function test_tickets_print_the_confirmation_time_in_the_business_time_zone(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-31 00:45:00', 'UTC'));
+        $this->round([$this->coke->id => 1]);
+
+        $ticket = $this->issued('kitchen_ticket')[0]->payload;
+        $this->assertSame(['2026-10-30', '21:45'], [$ticket['date'], $ticket['time']]);
     }
 
     public function test_an_inactive_table_cannot_be_opened_but_an_open_one_keeps_working_after_deactivation(): void

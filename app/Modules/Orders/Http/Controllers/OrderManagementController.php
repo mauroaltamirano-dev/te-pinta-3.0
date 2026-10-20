@@ -19,6 +19,7 @@ use App\Modules\Orders\Support\OrderSummaryFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -210,8 +211,11 @@ final class OrderManagementController
     public function destroy(Request $request, Order $order): RedirectResponse
     {
         Gate::authorize('delete', $order);
-        app(OpenTableOrders::class)->assertNotOpen($order->id);
-        $order->delete();
+        DB::transaction(function () use ($order): void {
+            $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
+            app(OpenTableOrders::class)->assertNotOpen($locked->id);
+            $locked->delete();
+        });
         Log::info('[Orders] order.deleted', ['module' => 'Orders', 'order_id' => $order->public_id, 'admin_id' => $request->user()->getAuthIdentifier()]);
 
         return to_route('admin.orders.index')->with('success', 'Pedido enviado a la papelera.');

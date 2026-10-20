@@ -2,6 +2,7 @@
 
 namespace App\Modules\Orders\Actions;
 
+use App\Core\Tenancy\RestaurantContext;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Data\OrderCheckoutData;
 use App\Modules\Orders\Enums\DeliveryType;
@@ -36,6 +37,7 @@ final readonly class ConfirmTableRound
         private PersistOrderQuote $quotes,
         private ServiceTables $tables,
         private TableDocuments $documents,
+        private RestaurantContext $restaurant,
     ) {}
 
     /**
@@ -91,6 +93,10 @@ final readonly class ConfirmTableRound
         $table = $this->tables->lock($tableId);
         if ($table === null) {
             throw ValidationException::withMessages(['table' => 'La mesa no existe.']);
+        }
+        // A duplicate that waited on the table lock replays the round its twin just committed.
+        if ($existing = $this->replay($hash, $fingerprint)) {
+            return $existing;
         }
         $session = TableSession::query()->where('dining_table_id', $tableId)->where('status', TableSessionStatus::Open)->lockForUpdate()->first();
         if ($session?->id !== $expectedSessionId) {
@@ -234,7 +240,7 @@ final readonly class ConfirmTableRound
 
     private function replay(string $hash, string $fingerprint): ?TableRound
     {
-        $round = TableRound::query()->where('idempotency_hash', $hash)->first();
+        $round = TableRound::query()->where('restaurant_id', $this->restaurant->id())->where('idempotency_hash', $hash)->first();
         if ($round !== null && $round->fingerprint !== $fingerprint) {
             throw ValidationException::withMessages(['round_key' => 'Esta ronda ya fue confirmada con otro contenido.']);
         }
