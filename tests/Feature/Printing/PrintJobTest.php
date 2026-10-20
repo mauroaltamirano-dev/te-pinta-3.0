@@ -138,14 +138,26 @@ final class PrintJobTest extends TestCase
         $this->assertSame('Visitor', $job->payload['customer']);
     }
 
+    public function test_confirming_a_public_order_through_the_full_edit_prints_it_once(): void
+    {
+        $order = $this->publicOrder('print-public-order-key-0003');
+        $payload = fn (Order $order): array => [
+            'items' => [['product_id' => $this->coke->id, 'quantity' => 2]], 'addons' => [], 'condition' => 'cooked', 'delivery_type' => 'pickup',
+            'delivery_period' => 'night', 'delivery_date' => now()->toDateString(), 'delivery_time' => null, 'delivery_address' => null,
+            'notes' => null, 'customer_id' => $order->customer_id, 'payment_status' => 'unpaid', 'status' => 'waiting', 'expected_version' => $order->edit_version,
+        ];
+
+        $this->actingAs($this->cashier)->put(route('admin.orders.update', $order), $payload($order))->assertSessionHasNoErrors();
+        $this->actingAs($this->cashier)->put(route('admin.orders.update', $order), $payload($order->refresh()))->assertSessionHasNoErrors();
+
+        $job = PrintJob::query()->sole();
+        $this->assertSame("order:{$order->id}:kitchen", $job->dedupe_key);
+        $this->assertSame([['name' => 'Coca-Cola', 'quantity' => 2]], $job->payload['lines']);
+    }
+
     public function test_a_cancelled_public_order_never_prints(): void
     {
-        $order = app(CreateOrder::class)->execute(new OrderCheckoutData(
-            items: [['product_id' => $this->coke->id, 'quantity' => 1]], addons: [], condition: OrderCondition::Cooked, deliveryType: DeliveryType::Pickup,
-            deliveryPeriod: DeliveryPeriod::Night, deliveryDate: now()->toDateString(), deliveryTime: null, deliveryAddress: null, notes: null,
-            customerId: null, customerName: 'Visitor', customerPhone: '+54 9 11 1234-5678', customerPhoneNormalized: '5491112345678', customerAddress: null,
-            paymentStatus: PaymentStatus::Unpaid, idempotencyKey: 'print-public-order-key-0002',
-        ), OrderSource::PublicCheckout);
+        $order = $this->publicOrder('print-public-order-key-0002');
 
         $this->actingAs($this->cashier)->patch(route('admin.orders.status.update', $order), ['status' => 'cancelled'])->assertSessionHasNoErrors();
         $this->assertSame(0, PrintJob::query()->count());
@@ -170,6 +182,17 @@ final class PrintJobTest extends TestCase
         $job = PrintJob::query()->findOrFail($first['id']);
         $this->assertSame(['printed', $this->cashier->id, 1], [$job->status, $job->printed_by, $job->attempts]);
         $this->assertSame('claimed', PrintJob::query()->findOrFail($claimed[1]['id'])->status);
+    }
+
+    public function test_a_person_confirms_an_unacknowledged_job_without_its_claim_token(): void
+    {
+        $this->round([$this->coke->id => 1]);
+        $job = $this->actingAs($this->cashier)->postJson(route('admin.print-jobs.claim'))->json('data.0');
+
+        $this->postJson(route('admin.print-jobs.printed', $job['id']))->assertOk()->assertJsonPath('data.status', 'printed');
+        $this->postJson(route('admin.print-jobs.printed', $job['id']))->assertOk();
+        $this->postJson(route('admin.print-jobs.release', $job['id']))->assertStatus(409);
+        $this->assertSame(['printed', $this->cashier->id], [PrintJob::query()->sole()->status, PrintJob::query()->sole()->printed_by]);
     }
 
     public function test_an_unconfirmed_claim_is_never_printed_again_automatically_and_a_person_releases_it(): void
@@ -257,6 +280,16 @@ final class PrintJobTest extends TestCase
             items: array_map(fn (int $id, int $quantity): array => ['product_id' => $id, 'quantity' => $quantity], array_keys($items), $items),
             addons: [], note: null, roundKey: $key ?? (string) Str::uuid(), actor: $this->cashier,
         );
+    }
+
+    private function publicOrder(string $idempotencyKey): Order
+    {
+        return app(CreateOrder::class)->execute(new OrderCheckoutData(
+            items: [['product_id' => $this->coke->id, 'quantity' => 1]], addons: [], condition: OrderCondition::Cooked, deliveryType: DeliveryType::Pickup,
+            deliveryPeriod: DeliveryPeriod::Night, deliveryDate: now()->toDateString(), deliveryTime: null, deliveryAddress: null, notes: null,
+            customerId: null, customerName: 'Visitor', customerPhone: '+54 9 11 1234-5678', customerPhoneNormalized: '5491112345678', customerAddress: null,
+            paymentStatus: PaymentStatus::Unpaid, idempotencyKey: $idempotencyKey,
+        ), OrderSource::PublicCheckout);
     }
 
     private function counterData(): OrderCheckoutData
