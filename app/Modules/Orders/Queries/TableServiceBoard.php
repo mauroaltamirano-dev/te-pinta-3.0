@@ -45,7 +45,11 @@ final readonly class TableServiceBoard
         $session = TableSession::query()->where('dining_table_id', $tableId)->where('status', TableSessionStatus::Open)
             ->with(['waiter:id,name', 'order:id,total', 'rounds.items', 'rounds.confirmer:id,name'])->first();
         $cashier = $viewer->canOperateCashier();
-        $catalog = $this->options->catalog();
+        // Lazy: the table page polls only the session, so the catalog is built on full visits only.
+        $catalog = null;
+        $loadCatalog = function () use (&$catalog): array {
+            return $catalog ??= $this->options->catalog();
+        };
 
         return [
             'table' => $table,
@@ -55,8 +59,8 @@ final readonly class TableServiceBoard
                 'rounds' => $session->rounds->map(fn (TableRound $round): array => $this->round($round, $session))->all(),
                 'lines' => $this->lines($session),
             ],
-            'products' => $catalog['products'],
-            'addons' => $catalog['addons'],
+            'products' => fn (): array => $loadCatalog()['products'],
+            'addons' => fn (): mixed => $loadCatalog()['addons'],
             'can_cashier' => $cashier,
             'payment_methods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::cases()),
             // Charging delivers the order, which Inventory blocks for these products: warn before the money is counted.

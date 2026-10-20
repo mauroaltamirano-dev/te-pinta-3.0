@@ -17,7 +17,10 @@ import type { TableDetail, TableRoundKind } from '@/features/tables/types';
 import { cn } from '@/lib/utils';
 
 interface Option {
+    /** Void options get their own keys, so a draft never carries over between modes. */
     key: string;
+    id: number;
+    addon: boolean;
     name: string;
     group: string;
     /** Void mode: what the table has of it. */
@@ -32,8 +35,10 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
         return (detail.session?.lines ?? []).map((line) => ({
             key:
                 line.product_id !== null
-                    ? `p${line.product_id}`
-                    : `a${line.addon_id}`,
+                    ? `vp${line.product_id}`
+                    : `va${line.addon_id}`,
+            id: (line.product_id ?? line.addon_id) as number,
+            addon: line.product_id === null,
             name: line.name,
             group: 'En la mesa',
             max: line.quantity,
@@ -46,6 +51,8 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
             .filter((product) => product.is_sellable !== false)
             .map((product) => ({
                 key: `p${product.id}`,
+                id: product.id,
+                addon: false,
                 name: product.name,
                 group: product.category.name,
                 max: 120,
@@ -55,6 +62,8 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
             .filter((addon) => addon.is_sellable !== false)
             .map((addon) => ({
                 key: `a${addon.id}`,
+                id: addon.id,
+                addon: true,
                 name: addon.name,
                 group: EXTRAS,
                 max: 120,
@@ -66,15 +75,18 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
 /** Draft of one round (or void) for a table; confirming sends only these lines to the kitchen. */
 export function RoundComposer({ detail }: { detail: TableDetail }) {
     const session = detail.session;
-    const [kind, setKind] = useState<TableRoundKind>('order');
+    const [requestedKind, setKind] = useState<TableRoundKind>('order');
+    // A table charged, cancelled or emptied elsewhere (polling) has nothing to void: back to ordering.
+    const kind: TableRoundKind =
+        session && session.lines.length > 0 ? requestedKind : 'order';
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [note, setNote] = useState('');
     const [group, setGroup] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [reviewing, setReviewing] = useState(false);
     const [processing, setProcessing] = useState(false);
-    // One key per attempt of the same draft: a retry replays instead of printing twice.
-    const roundKey = useRef<string | null>(null);
+    // One key per draft: retrying the same lines replays the round instead of printing it twice.
+    const roundKey = useRef<{ key: string; draft: string } | null>(null);
 
     const available = useMemo(() => options(detail, kind), [detail, kind]);
     const groups = [...new Set(available.map((option) => option.group))];
@@ -93,7 +105,6 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
     const nextRound = (session?.rounds.length ?? 0) + 1;
 
     function change(option: Option, delta: number) {
-        roundKey.current = null;
         setQuantities((current) => {
             const quantity = Math.min(
                 option.max,
@@ -112,7 +123,6 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
     }
 
     function switchKind(next: TableRoundKind) {
-        roundKey.current = null;
         setKind(next);
         setQuantities({});
         setGroup(null);
@@ -120,12 +130,17 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
     }
 
     function confirm() {
-        roundKey.current ??= newRoundKey();
         const lines = chosen.map((option) => ({
-            id: Number(option.key.slice(1)),
+            id: option.id,
             quantity: quantities[option.key],
-            addon: option.key.startsWith('a'),
+            addon: option.addon,
         }));
+        const draft = JSON.stringify([kind, lines, note.trim()]);
+
+        if (roundKey.current?.draft !== draft) {
+            roundKey.current = { key: newRoundKey(), draft };
+        }
+
         setProcessing(true);
         router.post(
             `/admin/tables/${detail.table.id}/rounds`,
@@ -145,15 +160,11 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
                         quantity: line.quantity,
                     })),
                 note: note.trim() === '' ? null : note.trim(),
-                round_key: roundKey.current,
+                round_key: roundKey.current.key,
             },
             {
                 preserveScroll: true,
-                onSuccess: (page) => {
-                    if (Object.keys(page.props.errors ?? {}).length > 0) {
-                        return;
-                    }
-
+                onSuccess: () => {
                     roundKey.current = null;
                     setQuantities({});
                     setNote('');
@@ -307,10 +318,7 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
                 placeholder="Nota para cocina (opcional)"
                 maxLength={300}
                 value={note}
-                onChange={(event) => {
-                    roundKey.current = null;
-                    setNote(event.target.value);
-                }}
+                onChange={(event) => setNote(event.target.value)}
                 className="mt-3"
             />
 

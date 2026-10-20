@@ -4,7 +4,7 @@ namespace App\Modules\Inventory\Queries;
 
 use Illuminate\Support\Facades\DB;
 
-/** Sellable products whose delivery would be blocked for missing or incomplete consumption configuration. */
+/** Products whose delivery would be blocked for missing or incomplete consumption configuration: every sellable one, or the given ones. */
 final class ProductsWithoutConsumption
 {
     /**
@@ -15,9 +15,12 @@ final class ProductsWithoutConsumption
     {
         return array_values(DB::table('products as p')
             ->leftJoin('inventory_product_consumption_definitions as d', 'd.product_id', '=', 'p.id')
-            ->whereNull('p.deleted_at')
-            ->where('p.is_available', true)
-            ->when($productIds !== null, fn ($query) => $query->whereIn('p.id', $productIds))
+            // Products already ordered still block their delivery after being retired from sale.
+            ->when(
+                $productIds === null,
+                fn ($query) => $query->whereNull('p.deleted_at')->where('p.is_available', true),
+                fn ($query) => $query->whereIn('p.id', $productIds),
+            )
             ->where(fn ($query) => $query->whereNull('d.id')->orWhere(fn ($incomplete) => $incomplete->where('d.mode', 'consume')->whereNull('d.current_version_id')))
             ->orderBy('p.name')
             ->pluck('p.name')

@@ -118,8 +118,8 @@ export default function TableShow(detail: TableDetail) {
                                         </p>
                                     )}
                                     <ul className="mt-1">
-                                        {round.items.map((item) => (
-                                            <li key={item.name}>
+                                        {round.items.map((item, index) => (
+                                            <li key={index}>
                                                 <span className="font-semibold tabular-nums">
                                                     {round.kind === 'void'
                                                         ? '−'

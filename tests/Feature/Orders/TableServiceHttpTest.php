@@ -178,6 +178,23 @@ final class TableServiceHttpTest extends TestCase
         $this->assertSame([TableSessionStatus::Cancelled, OrderStatus::Cancelled], [$session->refresh()->status, $session->order->status]);
     }
 
+    public function test_the_cashier_is_warned_about_a_table_product_that_became_unavailable(): void
+    {
+        $this->round($this->waiter, $this->table, [$this->beer->id => 1]);
+        $this->beer->update(['is_available' => false]);
+        $this->beer->delete();
+
+        $this->actingAs($this->cashier)->get(route('admin.tables.show', $this->table))
+            ->assertInertia(fn (Assert $page) => $page->where('missing_consumption', ['Cerveza']));
+    }
+
+    public function test_an_unknown_table_is_not_found_and_an_empty_round_is_rejected(): void
+    {
+        $this->actingAs($this->waiter)->get(route('admin.tables.show', 999999))->assertNotFound();
+        $this->round($this->waiter, $this->table, [])->assertSessionHasErrors('items');
+        $this->assertSame(0, TableSession::query()->count());
+    }
+
     public function test_members_without_order_management_cannot_open_the_tables(): void
     {
         $kitchen = User::factory()->withRole(Role::Kitchen)->create();

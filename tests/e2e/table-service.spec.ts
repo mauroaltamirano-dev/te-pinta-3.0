@@ -158,3 +158,37 @@ test('una mesa de otro mozo se ve pero no se carga', async ({ page }) => {
         page.getByRole('button', { name: 'Pedir la cuenta' }),
     ).toHaveCount(0);
 });
+
+test('una mesa cobrada en caja saca al mozo del modo anular', async ({
+    page,
+}) => {
+    prepareFloor();
+    configureSaltenaConsumption();
+    await logIn(page, 'playwright-waiter@example.test');
+    await page.goto('/admin/tables');
+    await page.getByRole('link', { name: 'Mesa M1' }).click();
+    await page.getByRole('button', { name: 'Agregar 6 Salteña' }).click();
+    await confirmRound(page, /Revisar ronda 1 \(6\)/);
+    await expect(page.getByTestId('table-total')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Anular' }).click();
+    await page.getByRole('button', { name: 'Agregar 1 Salteña' }).click();
+    tinker(String.raw`
+        $owner = App\Modules\Identity\Models\User::where('email', 'playwright-admin@example.test')->firstOrFail();
+        app(App\Modules\Orders\Actions\ChargeTableSession::class)->execute(
+            App\Modules\Orders\Models\TableSession::query()->sole(), App\Modules\Orders\Enums\PaymentMethod::Cash, $owner,
+        );
+    `);
+
+    // The next poll shows the free table, ready for a new order with an empty draft.
+    await expect(page.getByTestId('table-total')).toHaveCount(0, {
+        timeout: 15_000,
+    });
+    await expect(
+        page.getByRole('heading', { name: 'Nueva ronda' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Cantidad de Salteña')).toHaveText('0');
+    await expect(
+        page.getByRole('button', { name: 'Elegí productos' }),
+    ).toBeDisabled();
+});
