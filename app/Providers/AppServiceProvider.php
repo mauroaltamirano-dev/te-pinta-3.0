@@ -39,8 +39,10 @@ use App\Modules\Marketing\Policies\FeaturedProductPolicy;
 use App\Modules\Orders\Events\OrderDelivered;
 use App\Modules\Orders\Events\OrderDeliveryCancelled;
 use App\Modules\Orders\Events\OrderPaymentConfirmed;
+use App\Modules\Orders\Events\PrintableDocumentIssued;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Policies\OrderPolicy;
+use App\Modules\Printing\Listeners\StorePrintJob;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Policies\CategoryPolicy;
@@ -97,6 +99,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OrderPaymentConfirmed::class, RecordConfirmedOrderPayment::class);
         Event::listen(OrderDelivered::class, RecordDeliveredOrderConsumption::class);
         Event::listen(OrderDeliveryCancelled::class, ReverseCancelledOrderConsumption::class);
+        Event::listen(PrintableDocumentIssued::class, StorePrintJob::class);
 
         RateLimiter::for('instagram-automation', fn (Request $request) => Limit::perMinute(30)->by($request->ip()));
     }

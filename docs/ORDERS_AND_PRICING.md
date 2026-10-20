@@ -165,7 +165,7 @@ At least one product; at most 50 distinct products per request, each once, quant
 
 ## Table service
 
-Code: `Actions/ConfirmTableRound.php`, `RequestTableBill.php`, `IssueTableBill.php`, `ChargeTableSession.php`, `CancelTableSession.php`, `Support/TableSessionGuard.php`, `Support/TableDocuments.php`. Tables come from the floor editor (`Restaurant`); `Restaurant\Queries\ServiceTables` locks one without exposing geometry.
+Code: `Actions/ConfirmTableRound.php`, `RequestTableBill.php`, `IssueTableBill.php`, `ChargeTableSession.php`, `CancelTableSession.php`, `Support/TableSessionGuard.php`, `Support/OrderDocuments.php`. Tables come from the floor editor (`Restaurant`); `Restaurant\Queries\ServiceTables` locks one without exposing geometry.
 
 ```text
 free table --first round--> open session + POS order (dine_in, cooked, waiting, unpaid)
@@ -183,6 +183,17 @@ open session --cancel--> order cancelled, session cancelled
 - **Generic order actions** (`UpdateOrder`, `UpdateOrderStatus`, `UpdateOrderPaymentStatus`, trash) refuse an order whose table session is open (`Support/OpenTableOrders`). After the charge the order follows the regular closed-order rules.
 - **Charge** sets `paid` with the method and `delivered` in one transaction; the payment and consumption listeners run inside it, so a missing wallet or a product without consumption configuration leaves the table open and unpaid. `Inventory\Queries\ProductsWithoutConsumption` lists the products that would block it. Charging prints nothing.
 - **Documents.** Each round emits `PrintableDocumentIssued` (`kitchen_ticket`, dedupe key `table-round:{id}`): title `Mesa <code>`, order, round number, void flag, date and time (business time zone), waiter, `added_by` (role label and name when the confirming member is not the waiter, for example "Cajero Lu"), note and lines (name, quantity) — no prices. Printing the bill emits `bill` with key `order:{id}:bill:v{edit_version}`: lines with dozen detail, unit price and total, add-ons, subtotal, discount, rounding, total and the legend "Documento no válido como factura".
+
+## Kitchen tickets and bills
+
+Orders builds every printable document in `Support/OrderDocuments.php` and emits `PrintableDocumentIssued` inside the business transaction; `Printing` stores it (see [OPERATIONS.md](OPERATIONS.md#print-station)).
+
+| When | Kind | Dedupe key | Content |
+| --- | --- | --- | --- |
+| A table round or void round is confirmed | `kitchen_ticket` | `table-round:{id}` | Only that round's lines (see Table service) |
+| An admin or counter (`pos`, no table) order is created | `kitchen_ticket` | `order:{id}:kitchen` | Title `Delivery`/`Retiro`/`Mostrador`, order, date and time, customer name, `Crudas (para cocinar en casa)` for raw orders, period and time, note, units per product (dozens are expanded to units) and add-ons — no prices |
+| A public order leaves `pending_confirmation` for any status except `cancelled` (status control or full edit) | `kitchen_ticket` | `order:{id}:kitchen` | Same as above; later status changes print nothing |
+| A cashier role prints a table bill | `bill` | `order:{id}:bill:v{edit_version}` | Priced lines, totals and "Documento no válido como factura" |
 
 ## Admin quick order
 

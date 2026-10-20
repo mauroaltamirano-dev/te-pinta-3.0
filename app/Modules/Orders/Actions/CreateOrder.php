@@ -11,6 +11,7 @@ use App\Modules\Orders\Events\OrderPaymentConfirmed;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Orders\Support\OrderBusinessDate;
+use App\Modules\Orders\Support\OrderDocuments;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -25,9 +26,11 @@ final readonly class CreateOrder
         private PersistOrderQuote $quotes,
         private ResolveOrderPayment $payments,
         private OrderBusinessDate $businessDate,
+        private OrderDocuments $documents,
     ) {}
 
-    public function execute(OrderCheckoutData $data, OrderSource $source, ?int $adminId = null): Order
+    /** @param  bool  $kitchenTicket  false when the caller prints its own ticket (table rounds) */
+    public function execute(OrderCheckoutData $data, OrderSource $source, ?int $adminId = null, bool $kitchenTicket = true): Order
     {
         if ($source === OrderSource::Pos) {
             $actor = $adminId === null ? null : User::query()->find($adminId);
@@ -46,7 +49,7 @@ final readonly class CreateOrder
         }
 
         try {
-            $order = DB::transaction(function () use ($data, $source, $adminId, $idempotencyHash, $fingerprint): Order {
+            $order = DB::transaction(function () use ($data, $source, $adminId, $idempotencyHash, $fingerprint, $kitchenTicket): Order {
                 $customer = $this->customers->execute($data, $source);
                 $quote = $this->pricing->quote(
                     $data->items,
@@ -90,6 +93,11 @@ final readonly class CreateOrder
                         confirmedOn: $this->businessDate->today(),
                         adminId: $adminId,
                     ));
+                }
+
+                // Staff-created orders are confirmed on creation; public orders print when staff confirm them.
+                if ($kitchenTicket && $source !== OrderSource::PublicCheckout && $adminId !== null) {
+                    event($this->documents->orderKitchenTicket($order->refresh(), $adminId));
                 }
 
                 return $order->refresh()->load(['items.compositions', 'toppings']);

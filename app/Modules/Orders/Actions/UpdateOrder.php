@@ -13,6 +13,7 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Orders\Support\OpenTableOrders;
 use App\Modules\Orders\Support\OrderBusinessDate;
+use App\Modules\Orders\Support\OrderDocuments;
 use App\Modules\Orders\Support\OrderPhysicalFulfillment;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ final readonly class UpdateOrder
         private OrderBusinessDate $businessDate,
         private OrderPhysicalFulfillment $fulfillment,
         private OpenTableOrders $openTables,
+        private OrderDocuments $documents,
     ) {}
 
     public function execute(
@@ -144,6 +146,9 @@ final readonly class UpdateOrder
             }
 
             $this->fulfillment->dispatch($locked->id, $previousStatus, $status, $this->businessDate->today(), $adminId);
+            if ($previousStatus === OrderStatus::PendingConfirmation && ! in_array($status, [OrderStatus::PendingConfirmation, OrderStatus::Cancelled], true)) {
+                event($this->documents->orderKitchenTicket($locked, $adminId));
+            }
 
             return $locked->refresh()->load(['items.compositions', 'toppings']);
         });

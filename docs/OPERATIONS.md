@@ -130,6 +130,23 @@ OPERATIONAL_RUNTIME_CONFIRM=yes make ops-stop
 - `APP_URL` is the WebAuthn/passkey origin: passkeys registered on `localhost` do not work on the `*.ts.net` origin; register a new one there.
 - Mobile: open the HTTPS tailnet URL in Chrome, log in, **Add to Home screen**. The manifest starts `/admin` standalone; there is no service worker or offline cache.
 
+### Print station
+
+Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printing`) and printed by the shop PC. Every route needs `orders.manage`.
+
+| Route | Effect |
+| --- | --- |
+| `GET /admin/print-jobs/status` | `pending`, `oldest_pending_seconds`, `unconfirmed` (claimed, never acknowledged) |
+| `GET /admin/print-jobs` | Last 30 jobs, for reprints |
+| `POST /admin/print-jobs/claim` | Up to 10 pending jobs, oldest first, each with a claim token (`FOR UPDATE SKIP LOCKED`: two stations never get the same job) |
+| `POST /admin/print-jobs/{id}/printed` | Acknowledge with the claim token (repeatable); without a token a person confirms an unconfirmed job |
+| `POST /admin/print-jobs/{id}/release` | A person decides an unconfirmed job did not print; it returns to the queue |
+| `POST /admin/print-jobs/{id}/reprint` | New pending job with the same frozen payload, marked as a reprint |
+
+- One job per business event: the dedupe key is unique per restaurant and the listener inserts with `ON CONFLICT DO NOTHING`, inside the business transaction (a rolled-back round stores no job).
+- A claimed job is never claimed again automatically, so a print whose acknowledgement was lost is not repeated; it appears as unconfirmed until someone confirms or releases it.
+- PostgreSQL rejects changing a job's content, deleting it, or moving a printed job back to the queue.
+
 ### Public storefront
 
 `https://tepinta.com.ar` is served by a scoped Cloudflare named tunnel (user systemd unit `tepinta-public-cloudflared.service`, configuration outside the repo) → gateway `8083` → public app `8084`. The gateway allows only storefront pages, catalog, cart, checkout endpoints, product images and required assets; admin, auth, API, health, Instagram media, generic storage and the admin manifest are denied. It trusts `CF-Connecting-IP` only from its loopback peer.

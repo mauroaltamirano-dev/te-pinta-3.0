@@ -5,7 +5,7 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\TableSession;
-use App\Modules\Orders\Support\TableDocuments;
+use App\Modules\Orders\Support\OrderDocuments;
 use App\Modules\Orders\Support\TableSessionGuard;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class IssueTableBill
 {
-    public function __construct(private TableSessionGuard $guard, private TableDocuments $documents) {}
+    public function __construct(private TableSessionGuard $guard, private OrderDocuments $documents) {}
 
     public function execute(TableSession $session, User $actor): void
     {

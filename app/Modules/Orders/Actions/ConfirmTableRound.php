@@ -16,7 +16,7 @@ use App\Modules\Orders\Models\TableRound;
 use App\Modules\Orders\Models\TableRoundItem;
 use App\Modules\Orders\Models\TableSession;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
-use App\Modules\Orders\Support\TableDocuments;
+use App\Modules\Orders\Support\OrderDocuments;
 use App\Modules\Restaurant\Queries\ServiceTables;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
@@ -36,7 +36,7 @@ final readonly class ConfirmTableRound
         private OrderPricingEngine $pricing,
         private PersistOrderQuote $quotes,
         private ServiceTables $tables,
-        private TableDocuments $documents,
+        private OrderDocuments $documents,
         private RestaurantContext $restaurant,
     ) {}
 
@@ -112,7 +112,7 @@ final readonly class ConfirmTableRound
             if (! $table['available']) {
                 throw ValidationException::withMessages(['table' => 'La mesa no está activa.']);
             }
-            $order = $this->createOrder->execute($this->orderData($products, $extras), OrderSource::Pos, $actor->id);
+            $order = $this->createOrder->execute($this->orderData($products, $extras), OrderSource::Pos, $actor->id, kitchenTicket: false);
             $session = TableSession::query()->create(['dining_table_id' => $tableId, 'order_id' => $order->id, 'waiter_id' => $actor->id, 'opened_at' => now()]);
             $names = [];
         } else {

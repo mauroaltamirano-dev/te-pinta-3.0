@@ -39,7 +39,8 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 | `Marketing` | Featured-product scheduling, public-safe view model, dashboard summary |
 | `Instagram` | Story assets, schedules, publication queue, n8n automation API, signed media |
 | `PublicSite` | Public routes (`/`, `/menu`, `/cart`, checkout endpoints) delegating to Products and Orders |
-| `Restaurant` | Physical floor configuration: dining areas and tables (`/admin/restaurant/floor`) |
+| `Restaurant` | Physical floor configuration: dining areas and tables (`/admin/restaurant/floor`); `Queries/ServiceTables` for table service |
+| `Printing` | Server-side print queue (`print_jobs`) fed by `PrintableDocumentIssued`, station API (`/admin/print-jobs/*`) and the print station page |
 | `Analytics` | Unused `AnalyticsReader` interface only; no route or page until metrics are defined |
 
 `Inventory\Contracts\InventoryAvailability` and `Dashboard\Contracts\PublicPromotionFeed` are declared but have no implementation or caller.
@@ -73,6 +74,7 @@ Synchronous application events, registered in `app/Providers/AppServiceProvider.
 | `OrderPaymentConfirmed(orderId, amount, confirmedOn, adminId)` | `Management\Listeners\RecordConfirmedOrderPayment` | One `ManagementOrderPayment` + ledger entry; automatic distribution when an active rule exists |
 | `OrderDelivered(orderId, businessDate, adminId)` | `Inventory\Listeners\RecordDeliveredOrderConsumption` | Physical consumption and historical COGS |
 | `OrderDeliveryCancelled(orderId, businessDate, adminId)` | `Inventory\Listeners\ReverseCancelledOrderConsumption` | Exact reversal of that consumption |
+| `PrintableDocumentIssued(kind, dedupeKey, orderId, payload, actorId)` | `Printing\Listeners\StorePrintJob` | One `print_jobs` row per dedupe key (`insertOrIgnore`); Printing never reads Orders tables |
 
 Orders reads product prices only through `Core\Contracts\ProductPriceProvider` (bound to `Products\Pricing\DatabaseProductPriceProvider`).
 
