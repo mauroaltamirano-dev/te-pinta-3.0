@@ -183,6 +183,17 @@ open session --cancel--> order cancelled, session cancelled
 - **Generic order actions** (`UpdateOrder`, `UpdateOrderStatus`, `UpdateOrderPaymentStatus`, trash) refuse an order whose table session is open (`Support/OpenTableOrders`). After the charge the order follows the regular closed-order rules.
 - **Charge** sets `paid` with the method and `delivered` in one transaction; the payment and consumption listeners run inside it, so a missing wallet or a product without consumption configuration leaves the table open and unpaid. `Inventory\Queries\ProductsWithoutConsumption` lists the products that would block it. Charging prints nothing.
 - **Documents.** Each round emits `PrintableDocumentIssued` (`kitchen_ticket`, dedupe key `table-round:{id}`): title `Mesa <code>`, order, round number, void flag, date and time (business time zone), waiter, `added_by` (role label and name when the confirming member is not the waiter, for example "Cajero Lu"), note and lines (name, quantity) — no prices. Printing the bill emits `bill` with key `order:{id}:bill:v{edit_version}`: lines with dozen detail, unit price and total, add-ons, subtotal, discount, rounding, total and the legend "Documento no válido como factura".
+- **Screens** (`Http/Controllers/TableServiceController.php`, `TableSessionController.php`, read model `Queries/TableServiceBoard.php`; all routes need `orders.manage`, actions re-check roles through `TableSessionGuard`):
+
+  | Route | Page / effect |
+  | --- | --- |
+  | `GET /admin/tables` | `admin/tables/index`: active tables of active areas plus any deactivated table that still has an open session, in natural code order (M1, M2, M10); waiter, provisional total and bill flag per open table. Polls every 10 s. |
+  | `GET /admin/tables/{table}` | `admin/tables/show`: provisional total, current lines, rounds (time in the business time zone, "Agregado por <Rol> <Nombre>"), round composer (order or void), and for owner/manager/cashier the missing-consumption warning for the table's products. |
+  | `POST /admin/tables/{table}/rounds` | `ConfirmTableRound` with `expected_session_id`, `kind`, `items`, `addons`, `note` (≤ 300) and a client-generated `round_key` (UUID) reused when the same draft is retried. |
+  | `POST /admin/table-sessions/{session}/bill-request` | `RequestTableBill` (waiter of the table or a cashier role). |
+  | `POST /admin/table-sessions/{session}/bill`, `/charge` (`payment_method`), `/cancel` | `IssueTableBill`, `ChargeTableSession`, `CancelTableSession`: owner, manager and cashier only. |
+
+  Rejections (stale session, inactive table, void beyond the table) come back as validation errors on `table`/`items`; role failures are 403. Successful actions flash a `toast`. "Vender" groups Mostrador, Mesas and Impresión, and the POS home shows those tabs.
 
 ## Kitchen tickets and bills
 

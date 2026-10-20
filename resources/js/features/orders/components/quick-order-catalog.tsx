@@ -1,5 +1,6 @@
 import { ImageIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AdminModuleNavigation } from '@/components/shared/admin-module-navigation';
 import { formatMoney } from '@/lib/format';
 import type { AdminProductOption } from '../admin-order-types';
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
@@ -36,6 +37,10 @@ export function QuickOrderCatalog({
     return (
         <section className="min-w-0 px-3 py-4 sm:p-6 lg:h-screen lg:overflow-y-auto">
             <header className="mb-5 sm:mb-6">
+                {/* The POS home hides the layout's module tabs: Mesas and Impresión start here. */}
+                <div className="mb-4 empty:hidden">
+                    <AdminModuleNavigation />
+                </div>
                 <p className="text-sm text-admin-text-secondary">
                     {new Intl.DateTimeFormat('es-AR', {
                         weekday: 'long',

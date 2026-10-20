@@ -6,6 +6,8 @@ use App\Modules\Orders\Http\Controllers\OrderPaymentStatusController;
 use App\Modules\Orders\Http\Controllers\OrderPricingController;
 use App\Modules\Orders\Http\Controllers\OrderStatusController;
 use App\Modules\Orders\Http\Controllers\OrderTrashController;
+use App\Modules\Orders\Http\Controllers\TableServiceController;
+use App\Modules\Orders\Http\Controllers\TableSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [OrderManagementController::class, 'home'])->middleware('can:orders.view')->name('home');
@@ -22,3 +24,10 @@ Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->middl
 Route::patch('/orders/{order}/status', OrderStatusController::class)->middleware('can:orders.manage')->name('orders.status.update');
 Route::patch('/orders/{order}/payment-status', OrderPaymentStatusController::class)->middleware('can:orders.manage')->name('orders.payment-status.update');
 Route::delete('/orders/{order}', [OrderManagementController::class, 'destroy'])->middleware('can:orders.manage')->name('orders.destroy');
+Route::get('/tables', [TableServiceController::class, 'index'])->middleware('can:orders.manage')->name('tables.index');
+Route::get('/tables/{table}', [TableServiceController::class, 'show'])->whereNumber('table')->middleware('can:orders.manage')->name('tables.show');
+Route::post('/tables/{table}/rounds', [TableServiceController::class, 'storeRound'])->whereNumber('table')->middleware('can:orders.manage')->name('tables.rounds.store');
+Route::post('/table-sessions/{session}/bill-request', [TableSessionController::class, 'requestBill'])->whereNumber('session')->middleware('can:orders.manage')->name('table-sessions.bill-request');
+Route::post('/table-sessions/{session}/bill', [TableSessionController::class, 'bill'])->whereNumber('session')->middleware('can:orders.manage')->name('table-sessions.bill');
+Route::post('/table-sessions/{session}/charge', [TableSessionController::class, 'charge'])->whereNumber('session')->middleware('can:orders.manage')->name('table-sessions.charge');
+Route::post('/table-sessions/{session}/cancel', [TableSessionController::class, 'cancel'])->whereNumber('session')->middleware('can:orders.manage')->name('table-sessions.cancel');

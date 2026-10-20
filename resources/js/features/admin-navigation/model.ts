@@ -58,7 +58,7 @@ const navigation: AdminNavigationGroup[] = [
                 icon: 'sell',
                 // Roles without orders.manage are redirected to the order list.
                 permission: 'orders.manage',
-                paths: ['/admin', '/admin/print-station'],
+                paths: ['/admin', '/admin/tables', '/admin/print-station'],
                 exact: true,
                 mobilePrimary: true,
                 sections: [
@@ -67,6 +67,11 @@ const navigation: AdminNavigationGroup[] = [
                         href: '/admin',
                         permission: 'orders.manage',
                         exact: true,
+                    },
+                    {
+                        label: 'Mesas',
+                        href: '/admin/tables',
+                        permission: 'orders.manage',
                     },
                     {
                         label: 'Impresión',

@@ -17,6 +17,20 @@ final class BuildAdminOrderFormOptions
     /** @return array{products: array<int, array<string, mixed>>, customers: mixed, addons: mixed, today: string} */
     public function execute(?Order $historicalOrder = null): array
     {
+        return [
+            ...$this->catalog($historicalOrder),
+            'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'phone', 'address']),
+            'today' => $this->businessDate->todayString(),
+        ];
+    }
+
+    /**
+     * Sellable products and add-ons, plus the retired ones a historical order still holds.
+     *
+     * @return array{products: array<int, array<string, mixed>>, addons: mixed}
+     */
+    public function catalog(?Order $historicalOrder = null): array
+    {
         $quantities = $historicalOrder === null ? [] : $this->itemQuantities($historicalOrder);
         $addonQuantities = $historicalOrder === null ? [] : $this->addonQuantities($historicalOrder);
         $historicalProductIds = array_keys($quantities);
@@ -60,12 +74,7 @@ final class BuildAdminOrderFormOptions
                 'historical_quantity' => $addonQuantities[$addon->id] ?? null,
             ])->all();
 
-        return [
-            'products' => $products,
-            'addons' => $addons,
-            'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'phone', 'address']),
-            'today' => $this->businessDate->todayString(),
-        ];
+        return ['products' => $products, 'addons' => $addons];
     }
 
     /** @return array<int, int> */
