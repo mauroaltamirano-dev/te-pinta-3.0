@@ -44,6 +44,7 @@ Decision record: [ADR 0013](decisions/0013-code-defined-roles-and-permissions.md
 - Partial unique indexes and GiST exclusion constraints are the concurrency authority where row locks cannot serialize (active phone, featured-product windows).
 - Constraints that legacy data cannot satisfy are created `NOT VALID` (for example `orders_payment_matches_total`): they apply to every new or updated row without inventing history.
 - Foreign keys to historical facts use `RESTRICT`. Cascades exist only from an order to its own child rows on a physical delete, which the application never performs.
+- Functions called from a check constraint pin `search_path = public` (or qualify every name): `pg_restore` loads data with an empty `search_path`, so an unqualified helper call fails the restore. The floor functions are pinned by `2026_10_20_000000_pin_restaurant_floor_function_search_path.php`; a dump taken after it restores with a plain `pg_restore --exit-on-error`.
 - Add an index only for a real query; do not duplicate indexes already provided by unique or foreign keys.
 
 ## Deletion and restoration
