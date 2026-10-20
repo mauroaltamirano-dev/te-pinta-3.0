@@ -136,7 +136,8 @@ Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printi
 
 | Route | Effect |
 | --- | --- |
-| `GET /admin/print-jobs/status` | `pending`, `oldest_pending_seconds`, `unconfirmed` (claimed, never acknowledged) |
+| `GET /admin/print-station` | The station page (Vender → Impresión) |
+| `GET /admin/print-jobs/status` | `pending`, `oldest_pending_seconds`, `unconfirmed` (claimed, never acknowledged), `oldest_unconfirmed_seconds` |
 | `GET /admin/print-jobs` | Last 30 jobs, for reprints |
 | `POST /admin/print-jobs/claim` | Up to 10 pending jobs, oldest first, each with a claim token (`FOR UPDATE SKIP LOCKED`: two stations never get the same job) |
 | `POST /admin/print-jobs/{id}/printed` | Acknowledge with the claim token (repeatable); without a token a person confirms an unconfirmed job |
@@ -146,6 +147,31 @@ Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printi
 - One job per business event: the dedupe key is unique per restaurant and the listener inserts with `ON CONFLICT DO NOTHING`, inside the business transaction (a rolled-back round stores no job).
 - A claimed job is never claimed again automatically, so a print whose acknowledgement was lost is not repeated; it appears as unconfirmed until someone confirms or releases it.
 - PostgreSQL rejects changing a job's content, deleting it, or moving a printed job back to the queue.
+- Every station read and write starts from `PrintJob::queue()`, scoped to the current restaurant.
+
+#### Station page
+
+- Only the PC whose "Activar esta PC como estación" is on prints (remembered in that browser's `localStorage`); any other device that opens the page only watches the queue. It polls every 3 seconds, prints each claimed job through a hidden iframe and acknowledges it; an acknowledgement that cannot reach the server is kept in `localStorage` and retried before the next claim.
+- Red alerts, always on screen, with the pending counter (also in the window title as `(N) Estación de impresión`): the session closed (401/419, with a link to log in again), no connection to the server, the station is off while jobs wait, pending jobs older than 30 seconds, jobs claimed more than 30 seconds ago and never confirmed, and a job that failed to print (it goes back to the queue). Unconfirmed jobs are listed with "Salió" (confirm) and "No salió" (back to the queue); the last 30 jobs can be reprinted.
+- Kitchen tickets carry table or order type, order number, round, time, waiter, "agregado por", customer and schedule for orders, notes and big quantities, never prices. Bills carry units per product (with the pack price, for example "1 docena × $ 18.000"), subtotal, discount, rounding, total and "Documento no válido como factura". Both are 80 mm HTML (`@page` 80 mm wide, zero margins).
+
+#### Shop PC setup (Windows)
+
+1. Install the Waggs 80 mm USB driver. In *Printing preferences* choose the 80 mm roll paper and turn on the automatic cut after each document. In Windows *Printers & scanners*, turn off "Let Windows manage my default printer" and set the Waggs as the default printer.
+2. Install Tailscale on the PC and sign in to the shop tailnet (see "Device access" below).
+3. Create a desktop shortcut with this target (Chrome; for Edge use `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`):
+
+   ```text
+   "C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir="%LOCALAPPDATA%\TePintaStation" --kiosk-printing --app=<private app URL>/admin/print-station
+   ```
+
+   `--kiosk-printing` sends `print()` straight to the default printer without a dialog. Chrome ignores flags when a window with the same profile is already open, so the shortcut uses its own profile (`--user-data-dir`). `--app` opens the station in its own window. Copy the shortcut to `shell:startup` so it opens when Windows starts.
+4. Open the shortcut, log in with "Recordarme", press "Activar esta PC como estación" and then "Imprimir prueba": the ticket must come out complete and cut. If a URL or date is printed at the top or bottom, open the page once without `--kiosk-printing`, print the test with "Headers and footers" unchecked, close every window of that profile and reopen the shortcut.
+5. Keep the station window on its own, in front, never minimized or behind another window: Chrome slows down timers of hidden pages and the tickets would arrive late (the page warns when it was hidden). Turn off sleep in Windows power settings. Polling keeps the session alive; after a restart "Recordarme" logs it in again.
+
+#### Device access
+
+Phones (the waiter screens) and the shop PC reach the operational app through Tailscale Serve on the notebook (`make route-status` shows the HTTPS URL; it proxies to `127.0.0.1:8082`). It is tailnet-only: every device must have Tailscale installed, signed in to the shop tailnet and connected, and the notebook must be on. A device without Tailscale gets no answer; the station then shows "Sin conexión con el servidor". Do not change Serve or Funnel to work around a missing device: add the device to the tailnet instead.
 
 ### Public storefront
 

@@ -30,6 +30,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 final class PrintJobTest extends TestCase
@@ -205,6 +206,7 @@ final class PrintJobTest extends TestCase
         $status = $this->getJson(route('admin.print-jobs.status'))->assertOk()->json('data');
         $this->assertSame(0, $status['pending']);
         $this->assertSame(1, $status['unconfirmed']);
+        $this->assertGreaterThanOrEqual(600, $status['oldest_unconfirmed_seconds']);
 
         $this->postJson(route('admin.print-jobs.release', $job['id']))->assertOk();
         $this->assertSame('pending', PrintJob::query()->findOrFail($job['id'])->status);
@@ -260,6 +262,13 @@ final class PrintJobTest extends TestCase
 
         $this->assertSame(['pending', 0], [DB::table('print_jobs')->where('id', $foreignId)->value('status'), DB::table('print_jobs')->where('restaurant_id', 2)->where('id', '<>', $foreignId)->count()]);
         $this->assertSame(2, DB::table('print_jobs')->count());
+    }
+
+    public function test_the_print_station_page_opens_for_order_managers_with_the_restaurant_name(): void
+    {
+        $this->actingAs($this->cashier)->get(route('admin.print-station'))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('admin/printing/station')->where('restaurant', 'Te Pinta'));
+        $this->actingAs(User::factory()->withRole(Role::Kitchen)->create())->get(route('admin.print-station'))->assertForbidden();
     }
 
     public function test_members_without_order_management_cannot_operate_the_station(): void

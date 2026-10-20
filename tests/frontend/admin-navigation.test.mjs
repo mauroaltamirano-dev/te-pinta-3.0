@@ -116,6 +116,7 @@ test('the active entry follows every page it absorbs', () => {
 
     assert.equal(active('/admin'), 'Vender');
     assert.equal(active('/admin?customer=3'), 'Vender');
+    assert.equal(active('/admin/print-station'), 'Vender');
     assert.equal(active('/admin/orders'), 'Pedidos');
     assert.equal(active('/admin/orders/create'), 'Pedidos');
     assert.equal(active('/admin/orders/trash?page=2'), 'Pedidos');
@@ -171,6 +172,14 @@ test('absorbed pages are sections of their module', () => {
         ['Instagram', '/admin/marketing/instagram'],
     ]);
     assert.deepEqual(entry(roles.kitchen, 'Inventario').sections.length, 5);
+    assert.deepEqual(sections('Vender'), [
+        ['Mostrador', '/admin'],
+        ['Impresión', '/admin/print-station'],
+    ]);
+    assert.deepEqual(
+        entry(roles.waiter, 'Vender').sections.map(({ label }) => label),
+        ['Mostrador', 'Impresión'],
+    );
 });
 
 test('the active section follows nested pages', () => {
@@ -178,6 +187,9 @@ test('the active section follows nested pages', () => {
         activeAdminSection(entry(roles.owner, label), url)?.label ?? null;
 
     assert.equal(active('Inventario', '/admin/inventory'), 'Insumos');
+    assert.equal(active('Vender', '/admin'), 'Mostrador');
+    assert.equal(active('Vender', '/admin?customer=3'), 'Mostrador');
+    assert.equal(active('Vender', '/admin/print-station'), 'Impresión');
     assert.equal(
         active('Inventario', '/admin/inventory?category=2'),
         'Insumos',

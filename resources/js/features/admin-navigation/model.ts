@@ -36,7 +36,7 @@ export interface AdminNavigationEntry {
     permission?: Permission;
     /** Path prefixes that keep the entry active. */
     paths: string[];
-    /** `/admin` is the POS only, not every admin page. */
+    /** `href` matches only exactly (`/admin` is the POS, not every admin page); other paths match their nested pages. */
     exact?: boolean;
     /** Shown in the phone bottom bar instead of the "Más" sheet. */
     mobilePrimary?: boolean;
@@ -58,9 +58,22 @@ const navigation: AdminNavigationGroup[] = [
                 icon: 'sell',
                 // Roles without orders.manage are redirected to the order list.
                 permission: 'orders.manage',
-                paths: ['/admin'],
+                paths: ['/admin', '/admin/print-station'],
                 exact: true,
                 mobilePrimary: true,
+                sections: [
+                    {
+                        label: 'Mostrador',
+                        href: '/admin',
+                        permission: 'orders.manage',
+                        exact: true,
+                    },
+                    {
+                        label: 'Impresión',
+                        href: '/admin/print-station',
+                        permission: 'orders.manage',
+                    },
+                ],
             },
             {
                 label: 'Pedidos',
@@ -264,7 +277,7 @@ export function activeAdminEntry(
         .flatMap((group) => group.entries)
         .find((entry) =>
             entry.paths.some((path) =>
-                matchesAdminPath(url, path, entry.exact),
+                matchesAdminPath(url, path, entry.exact && path === entry.href),
             ),
         );
 }
