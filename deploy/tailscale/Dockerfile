@@ -24,6 +24,11 @@ WORKDIR /var/www/html
 COPY --from=build --chown=sail:sail /var/www/html /var/www/html
 COPY deploy/tailscale/php-security.ini /etc/php/8.5/cli/conf.d/99-tepinta-security.ini
 
+# Fail the build if the hardening is not loaded, e.g. after the base image
+# moves to another PHP minor version and the conf.d path above is no longer read.
+RUN php -r 'exit(ini_get("session.upload_progress.enabled") === "0" && ini_get("fatal_error_backtraces") === "0" ? 0 : 1);' \
+    || { echo "php-security.ini is not active" >&2; exit 1; }
+
 RUN rm -rf public/storage \
     && ln -s /var/www/html/storage/app/public public/storage \
     && chown -R sail:sail bootstrap/cache storage
