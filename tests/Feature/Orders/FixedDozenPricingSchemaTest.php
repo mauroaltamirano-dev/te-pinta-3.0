@@ -140,6 +140,41 @@ final class FixedDozenPricingSchemaTest extends TestCase
         $migration->down();
     }
 
+    public function test_v2_raw_mixed_dozen_is_accepted_and_thirteen_units_rejected(): void
+    {
+        $order = $this->order();
+        $raw = [...$this->v2CombinedItem($order), 'unit_price' => 19200, 'line_total' => 19200, 'raw_discount' => 1920,
+            'regular_price_total' => 24000, 'savings' => 4800,
+            'applied_exact_numerator_12' => 19200 * 12, 'raw_discount_exact_numerator_12' => 1920 * 12];
+        DB::table('order_items')->insert($raw);
+
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$raw, 'units_count' => 13]), 'order_items_fixed_dozen_snapshot_valid');
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$raw, 'applied_exact_numerator_12' => 19200 * 12 - 1, 'raw_discount_exact_numerator_12' => 1920 * 12 + 1]), 'order_items_fixed_dozen_snapshot_valid');
+    }
+
+    public function test_combined_dozen_rollback_restores_the_exact_previous_definition_and_keeps_v1_combined_history(): void
+    {
+        $order = $this->order();
+        $definition = fn (): string => DB::selectOne("select pg_get_constraintdef(oid) as d from pg_constraint where conname = 'order_items_fixed_dozen_snapshot_valid'")->d;
+        $migration = require database_path(self::COMBINED_MIGRATION);
+        $wide = $definition();
+        $migration->down();
+        $narrow = $definition();
+        self::assertStringNotContainsString('combined_dozen', $narrow);
+
+        // A version-1 mixed dozen never blocks the rollback.
+        $v1 = (array) DB::table('order_items')->where('order_id', $order->id)->first();
+        unset($v1['id']);
+        DB::table('order_items')->insert([...$v1, 'product_id' => null, 'pricing_mode' => 'combined_dozen', 'quantity' => 1, 'units_count' => 12,
+            'unit_price' => 17500, 'line_total' => 17500, 'regular_price_total' => 18000, 'savings' => 500,
+            'cooked_unit_price' => null, 'cooked_line_total' => null, 'raw_discount' => null]);
+
+        $migration->up();
+        self::assertSame($wide, $definition());
+        $migration->down();
+        self::assertSame($narrow, $definition());
+    }
+
     public function test_rollback_restores_legacy_checks_and_refuses_with_v2_history(): void
     {
         $order = $this->order();
