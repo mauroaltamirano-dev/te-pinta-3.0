@@ -26,6 +26,8 @@ final class FixedDozenPricingSchemaTest extends TestCase
 
     private const MIGRATION = 'migrations/2026_10_19_000000_activate_fixed_dozen_pricing.php';
 
+    private const COMBINED_MIGRATION = 'migrations/2026_10_22_000100_allow_combined_dozen_snapshots.php';
+
     private int $productId;
 
     public function test_v2_order_total_is_a_multiple_of_100_reconciled_through_exact_rounding(): void
@@ -99,6 +101,45 @@ final class FixedDozenPricingSchemaTest extends TestCase
         $this->assertRejected(fn () => DB::table('order_items')->insert([...$dozen, 'cooked_unit_price' => null, 'cooked_line_total' => null, 'raw_discount' => null]), 'order_items_fixed_dozen_snapshot_valid');
     }
 
+    public function test_v2_mixed_dozen_is_one_whole_peso_line_of_twelve_units_without_product(): void
+    {
+        $order = $this->order();
+        $combined = $this->v2CombinedItem($order);
+        DB::table('order_items')->insert($combined);
+        self::assertSame(1, DB::table('order_items')->where('order_id', $order->id)->where('pricing_mode', 'combined_dozen')->count());
+
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$combined, 'units_count' => 11]), 'order_items_fixed_dozen_snapshot_valid');
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$combined, 'quantity' => 2, 'units_count' => 24, 'line_total' => 42240, 'regular_price_total' => 52800, 'savings' => 10560, 'cooked_line_total' => 42240, 'applied_exact_numerator_12' => 42240 * 12, 'cooked_exact_numerator_12' => 42240 * 12]), 'order_items_fixed_dozen_snapshot_valid');
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$combined, 'applied_exact_numerator_12' => 21120 * 12 + 1, 'cooked_exact_numerator_12' => 21120 * 12 + 1]), 'order_items_fixed_dozen_snapshot_valid');
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$combined, 'surcharge_exact_numerator_12' => 12]), 'order_items_fixed_dozen_snapshot_valid');
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$combined, 'cooked_unit_price' => null, 'cooked_line_total' => null, 'raw_discount' => null]), 'order_items_fixed_dozen_snapshot_valid');
+        $this->assertRejected(fn () => DB::table('order_items')->insert([...$combined, 'product_id' => $this->productId]), 'order_items_fixed_dozen_snapshot_valid');
+    }
+
+    public function test_combined_dozen_rollback_restores_the_narrow_check_and_refuses_with_combined_history(): void
+    {
+        $order = $this->order();
+        $migration = require database_path(self::COMBINED_MIGRATION);
+        $migration->down();
+        $this->assertRejected(fn () => DB::table('order_items')->insert($this->v2CombinedItem($order)), 'order_items_fixed_dozen_snapshot_valid');
+        DB::table('order_items')->insert($this->v2Item($order, [
+            'pricing_mode' => 'unit', 'quantity' => 1, 'units_count' => 1, 'unit_price' => 1234, 'line_total' => 1234,
+            'cooked_unit_price' => 1234, 'cooked_line_total' => 1234, 'raw_discount' => 0, 'regular_price_total' => 1234, 'savings' => 0,
+            'applied_exact_numerator_12' => 1234 * 12, 'cooked_exact_numerator_12' => 1234 * 12,
+            'raw_discount_exact_numerator_12' => 0, 'surcharge_exact_numerator_12' => 0,
+        ]));
+
+        // Version-2 unit and dozen history never blocks the widening or its rollback.
+        $migration->up();
+        $migration->down();
+        $migration->up();
+        DB::table('order_items')->insert($this->v2CombinedItem($order));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('combined dozen');
+        $migration->down();
+    }
+
     public function test_rollback_restores_legacy_checks_and_refuses_with_v2_history(): void
     {
         $order = $this->order();
@@ -164,6 +205,22 @@ final class FixedDozenPricingSchemaTest extends TestCase
         unset($base['id']);
 
         return [...$base, 'product_id' => $this->productId, 'pricing_snapshot_version' => 2, ...$overrides];
+    }
+
+    /**
+     * 6 dulce (U 2100) + 6 JyQ (U 2300) cooked at a 20% combined discount: regular 26400, line 21120.
+     *
+     * @return array<string, mixed>
+     */
+    private function v2CombinedItem(Order $order): array
+    {
+        return $this->v2Item($order, [
+            'product_id' => null, 'product_name' => 'Docena combinada', 'pricing_mode' => 'combined_dozen', 'quantity' => 1, 'units_count' => 12,
+            'unit_price' => 21120, 'line_total' => 21120, 'cooked_unit_price' => 21120, 'cooked_line_total' => 21120,
+            'raw_discount' => 0, 'regular_price_total' => 26400, 'savings' => 5280,
+            'applied_exact_numerator_12' => 21120 * 12, 'cooked_exact_numerator_12' => 21120 * 12,
+            'raw_discount_exact_numerator_12' => 0, 'surcharge_exact_numerator_12' => 0,
+        ]);
     }
 
     private function assertRejected(callable $write, string $constraint): void
