@@ -12,6 +12,7 @@ use App\Shared\Logging\LogAdminRequest;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Env;
@@ -47,4 +48,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // PHP discards a body over post_max_size before routing, so no field or
+        // limit can be named. Inertia visits get JSON too: the client shows it as a toast.
+        $exceptions->render(function (PostTooLargeException $exception, Request $request) {
+            $message = 'El archivo es demasiado grande.';
+
+            return $request->expectsJson() || $request->hasHeader('X-Inertia')
+                ? response()->json(['message' => $message], 413)
+                : response($message, 413);
+        });
     })->create();

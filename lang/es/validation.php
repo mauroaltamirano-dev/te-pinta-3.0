@@ -52,6 +52,7 @@ return [
     'same' => 'Los campos :attribute y :other deben coincidir.',
     'string' => 'El campo :attribute debe ser texto.',
     'unique' => 'El valor de :attribute ya está en uso.',
+    'uploaded' => 'El archivo :attribute no se pudo subir.',
     'url' => 'El campo :attribute debe ser una URL válida.',
     'lt' => [
         'numeric' => 'El campo :attribute debe ser menor que :value.',

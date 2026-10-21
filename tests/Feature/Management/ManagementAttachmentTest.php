@@ -124,6 +124,29 @@ final class ManagementAttachmentTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles('management/attachments'));
     }
 
+    public function test_file_over_the_php_upload_limit_reports_a_translated_validation_error(): void
+    {
+        // An 11 MB file exceeds upload_max_filesize (10M), so PHP hands over an errored upload.
+        $path = tempnam(sys_get_temp_dir(), 'attachment');
+        file_put_contents($path, $this->pdfContents());
+        $file = new UploadedFile($path, 'factura-11mb.pdf', 'application/pdf', UPLOAD_ERR_INI_SIZE, true);
+
+        try {
+            $this->actingAs($this->admin)
+                ->postJson($this->collectionUrl(), ['file' => $file])
+                ->assertUnprocessable()
+                ->assertExactJson([
+                    'message' => 'El archivo file no se pudo subir.',
+                    'errors' => ['file' => ['El archivo file no se pudo subir.']],
+                ]);
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertDatabaseCount('management_attachments', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles('management/attachments'));
+    }
+
     public function test_supported_image_formats_are_validated_from_their_real_contents(): void
     {
         foreach ([

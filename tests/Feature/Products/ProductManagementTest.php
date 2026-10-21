@@ -341,6 +341,20 @@ final class ProductManagementTest extends TestCase
         $this->assertDatabaseCount('products', 0);
     }
 
+    public function test_product_image_over_its_limit_keeps_its_size_validation_error(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->createCategory();
+
+        $this->actingAs($admin)->postJson(route('admin.products.store'), $this->validPayload($category, [
+            'image' => UploadedFile::fake()->image('five-megabytes.jpg')->size(5 * 1024),
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['image' => 'El archivo image no puede superar 4096 kilobytes.']);
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
     public function test_administrator_can_create_a_unit_product_with_only_its_unit_price(): void
     {
         $admin = User::factory()->administrator()->create();
