@@ -102,7 +102,7 @@ The engine receives final quantities per product, one condition for the whole or
 | Empanada unit `U` | `products.unit_price`, **stored**: `U = D / 12 × (1 + p%)` rounded half-up to ARS 100, `p` = `order_settings.empanada_unit_surcharge_percent` (seed 10) |
 | Empanada half dozen | `products.half_dozen_price`, **stored** as `6 × U` and recalculated with `U`; never entered and never used to price orders (6 units are priced as 6 × `U`) |
 | Raw (cook at home) | `D_raw = D − raw_price_discounts.dozen`; `U_raw` = same formula on `D_raw`, at quote time |
-| Combined dozen discount `X` | `order_settings.combined_dozen_discount_percent` (integer 0–100, seed 20), edited in Configuración |
+| Combined dozen discount `X` | `order_settings.combined_dozen_discount_percent` (integer 0–50, seed 20; at 0 no combined dozen is formed and the remainders sell at U), edited in Configuración |
 | `unit` product | `products.unit_price`, entered by the operator |
 | Add-on | Current `order_addons.price` of an available add-on |
 | Shipping | `delivery_fee` for `delivery`; 0 otherwise |

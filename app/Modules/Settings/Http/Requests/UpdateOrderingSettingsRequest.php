@@ -23,7 +23,7 @@ final class UpdateOrderingSettingsRequest extends FormRequest
 
         return [
             'empanada_unit_surcharge_percent' => ['required', 'integer', 'min:0', 'max:100'],
-            'combined_dozen_discount_percent' => ['required', 'integer', 'min:0', 'max:100'],
+            'combined_dozen_discount_percent' => ['required', 'integer', 'min:0', 'max:50'],
             // Retired inputs: dozens are priced per flavor (docs/ORDERS_AND_PRICING.md); stored rows are kept.
             'combined_dozen_raw_price' => ['prohibited'],
             'combined_dozen_cooked_price' => ['prohibited'],

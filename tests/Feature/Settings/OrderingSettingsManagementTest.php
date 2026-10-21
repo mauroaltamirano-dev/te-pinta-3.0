@@ -184,11 +184,27 @@ final class OrderingSettingsManagementTest extends TestCase
         $this->assertSame(15, OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent));
     }
 
-    public function test_combined_dozen_discount_percentage_must_be_an_integer_between_zero_and_one_hundred(): void
+    public function test_combined_dozen_discount_percentage_accepts_zero_and_fifty(): void
     {
         $admin = User::factory()->administrator()->create();
 
-        foreach ([-1, 101, 'veinte', 10.5, null, ''] as $invalid) {
+        foreach ([0, 50] as $valid) {
+            $payload = $this->validPayload();
+            $payload['combined_dozen_discount_percent'] = $valid;
+
+            $this->actingAs($admin)
+                ->put(route('admin.settings.general.update'), $payload)
+                ->assertSessionDoesntHaveErrors();
+
+            $this->assertSame($valid, OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent));
+        }
+    }
+
+    public function test_combined_dozen_discount_percentage_must_be_an_integer_between_zero_and_fifty(): void
+    {
+        $admin = User::factory()->administrator()->create();
+
+        foreach ([-1, 51, 101, 'veinte', 10.5, null, ''] as $invalid) {
             $payload = $this->validPayload();
             $payload['combined_dozen_discount_percent'] = $invalid;
             $payload['delivery_fee'] = 900;

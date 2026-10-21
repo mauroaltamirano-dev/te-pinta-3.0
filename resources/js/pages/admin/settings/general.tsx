@@ -120,7 +120,7 @@ export default function GeneralSettings({
                                 id="combined-dozen-discount"
                                 type="number"
                                 min={0}
-                                max={100}
+                                max={50}
                                 step="1"
                                 value={
                                     form.data.combined_dozen_discount_percent
@@ -148,7 +148,8 @@ export default function GeneralSettings({
                                 className="text-xs text-muted-foreground"
                             >
                                 Doce empanadas de gustos distintos cuestan la
-                                suma de sus unidades menos este porcentaje. Los
+                                suma de sus unidades menos este porcentaje (de 0
+                                a 50; con 0 no se arma docena combinada). Los
                                 pedidos ya hechos no cambian.
                             </p>
                             <ErrorText

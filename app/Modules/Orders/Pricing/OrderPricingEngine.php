@@ -68,8 +68,9 @@ final readonly class OrderPricingEngine
                 $remainders[$productId] = $quantity % 12;
             }
         }
-        if (array_sum($remainders) >= 12) {
-            $discountPercent = OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent);
+        // At 0% a combined dozen saves nothing, so the remainders stay at the unit price.
+        $discountPercent = array_sum($remainders) >= 12 ? OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent) : 0;
+        if ($discountPercent > 0) {
             // The most expensive flavor enters first; equal unit prices go by product ID so snapshots are deterministic.
             uksort($remainders, fn (int $left, int $right): int => [$products[$right]->unitPrice, $left] <=> [$products[$left]->unitPrice, $right]);
             // Each remainder is under 12, so every combined dozen mixes more than one flavor.

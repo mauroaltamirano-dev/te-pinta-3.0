@@ -151,6 +151,31 @@ final class CombinedDozenPricingTest extends TestCase
         $this->assertSame(23800, $this->engine()->quote($this->items(['dulce' => 6, 'jyq' => 6]), OrderCondition::Cooked)->total);
     }
 
+    public function test_zero_percent_builds_no_combined_dozen_and_the_remainders_sell_at_unit_price(): void
+    {
+        OrderSetting::query()->where('key', OrderSettingKey::CombinedDozenDiscountPercent->value)->update(['integer_value' => 0]);
+
+        $quote = $this->engine()->quote($this->items(['dulce' => 6, 'jyq' => 6]), OrderCondition::Cooked);
+
+        $this->assertSame([
+            ['unit', $this->flavors['dulce']->id, 6, 12600],
+            ['unit', $this->flavors['jyq']->id, 6, 13800],
+        ], array_map(fn (PricingLine $line): array => [$line->pricingMode, $line->productId, $line->quantity, $line->lineTotal], $quote->lines));
+        $this->assertSame(0, $quote->savings);
+        $this->assertSame(26400, $quote->total);
+    }
+
+    public function test_fifty_percent_halves_the_combined_dozen(): void
+    {
+        OrderSetting::query()->where('key', OrderSettingKey::CombinedDozenDiscountPercent->value)->update(['integer_value' => 50]);
+
+        $quote = $this->engine()->quote($this->items(['dulce' => 6, 'jyq' => 6]), OrderCondition::Cooked);
+
+        // 26400 × 0.5 = 13200.
+        $this->assertSame([['combined_dozen', 13200, 26400, 13200]], array_map(fn (PricingLine $line): array => [$line->pricingMode, $line->lineTotal, $line->regularPriceTotal, $line->savings], $quote->lines));
+        $this->assertSame(13200, $quote->total);
+    }
+
     public function test_unit_products_never_join_a_combined_dozen(): void
     {
         $soda = Product::query()->create([
