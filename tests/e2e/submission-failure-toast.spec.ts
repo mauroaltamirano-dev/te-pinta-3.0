@@ -89,7 +89,9 @@ test('un envío sin conexión muestra el aviso', async ({ page }) => {
 
     await sendRound(page);
     await expect(
-        page.getByText('Sin conexión con el servidor: no se guardó.'),
+        page.getByText(
+            'Sin conexión con el servidor. Revisá si se guardó antes de reintentar.',
+        ),
     ).toBeVisible();
 });
 
@@ -168,4 +170,42 @@ test('el editor del plano avisa si no pudo guardar', async ({ page }) => {
             .locator('[data-sonner-toast]')
             .filter({ hasText: 'No tenés permiso para hacer esto.' }),
     ).toBeVisible();
+});
+
+test('una respuesta que no es del servidor nunca cuenta como pedido creado', async ({
+    page,
+}) => {
+    await logIn(page);
+    await page.route('**/admin/orders', (route) =>
+        route.request().method() === 'POST'
+            ? route.fulfill({
+                  status: 200,
+                  contentType: 'text/html',
+                  body: '<h1>Iniciar sesión</h1>',
+              })
+            : route.continue(),
+    );
+
+    await page
+        .getByRole('button', { name: 'Agregar 6 unidades de Salteña' })
+        .click();
+    await page
+        .locator('aside')
+        .filter({ hasText: 'Pedido actual' })
+        .getByRole('button', { name: 'Continuar' })
+        .click();
+    const continuation = page.getByRole('dialog');
+    await continuation.getByRole('button', { name: 'Mostrador' }).click();
+    await continuation
+        .getByRole('button', { name: 'Confirmar pedido' })
+        .click();
+
+    await expect(
+        page
+            .locator('[data-sonner-toast]')
+            .filter({ hasText: 'Respuesta inesperada del servidor' }),
+    ).toBeVisible();
+    await expect(
+        continuation.getByRole('heading', { name: /TP-\d+/ }),
+    ).toHaveCount(0);
 });

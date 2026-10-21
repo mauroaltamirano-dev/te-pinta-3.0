@@ -1,6 +1,7 @@
 import {
     OFFLINE_SUBMISSION_MESSAGE,
-    submissionFailureMessage,
+    serverFailureMessage,
+    UNEXPECTED_RESPONSE_MESSAGE,
 } from '@/lib/submission-failure';
 
 export async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -21,22 +22,16 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
         throw new Error(OFFLINE_SUBMISSION_MESSAGE);
     });
     // An expired session or a proxy error answers HTML, not JSON.
-    const payload = (await response.json().catch(() => ({}))) as T & {
-        message?: string;
-        errors?: Record<string, string[]>;
-    };
+    const payload = (await response.json().catch(() => null)) as
+        (T & { message?: string; errors?: Record<string, string[]> }) | null;
 
     if (!response.ok) {
-        const firstError = payload.errors
-            ? Object.values(payload.errors).flat()[0]
-            : undefined;
+        throw new Error(serverFailureMessage(response.status, payload ?? {}));
+    }
 
-        throw new Error(
-            firstError ??
-                // Laravel's own messages for other statuses are English ("Server Error").
-                (response.status === 422 ? payload.message : undefined) ??
-                submissionFailureMessage(response.status),
-        );
+    // A 200 that is not JSON (a login or proxy page) never counts as a saved order.
+    if (payload === null) {
+        throw new Error(UNEXPECTED_RESPONSE_MESSAGE);
     }
 
     return payload;

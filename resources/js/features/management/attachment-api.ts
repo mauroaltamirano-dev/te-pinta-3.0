@@ -1,6 +1,7 @@
 import {
     notifySubmissionFailure,
     OFFLINE_SUBMISSION_MESSAGE,
+    serverFailureMessage,
 } from '@/lib/submission-failure';
 import type { ManagementAttachment } from './types';
 
@@ -35,12 +36,13 @@ async function requestError(response: Response, fallback: string) {
     return new Error(firstError ?? payload.message ?? fallback);
 }
 
-/** A failed upload or delete also raises the admin-wide failure toast. */
-async function submissionError(response: Response, fallback: string) {
-    const error = await requestError(response, fallback);
-    notifySubmissionFailure(error.message);
+/** A failed upload or delete also raises the admin-wide failure toast, with the shared message rule. */
+async function submissionError(response: Response) {
+    const payload = (await response.json().catch(() => ({}))) as ErrorPayload;
+    const message = serverFailureMessage(response.status, payload);
+    notifySubmissionFailure(message);
 
-    return error;
+    return new Error(message);
 }
 
 async function submit(url: string, init: RequestInit) {
@@ -96,10 +98,7 @@ export async function uploadManagementAttachment(
     });
 
     if (!response.ok) {
-        throw await submissionError(
-            response,
-            'No se pudo adjuntar el comprobante.',
-        );
+        throw await submissionError(response);
     }
 
     const payload = (await response.json()) as {
@@ -125,9 +124,6 @@ export async function deleteManagementAttachment(
     );
 
     if (!response.ok) {
-        throw await submissionError(
-            response,
-            'No se pudo eliminar el comprobante.',
-        );
+        throw await submissionError(response);
     }
 }

@@ -9,28 +9,50 @@ import {
 /**
  * Toasts every Inertia submission (any non-GET visit) that fails: validation errors, error statuses
  * and lost connections. Page navigations and polling keep Inertia's default handling.
+ *
+ * Error-status and connection events do not say which visit failed. When only submissions are in
+ * flight the failure is theirs: the toast replaces Inertia's handling. When a GET is in flight too,
+ * Inertia keeps its default handling and the toast is decided when the failed visit finishes.
  */
 export function useSubmissionFailureToast(): void {
     useEffect(() => {
-        const submissions = new Set<string>();
-        const submitting = () => submissions.size > 0;
+        const inFlight = new Map<string, boolean>();
+        let unattributed: string | null = null;
+        const onlySubmissions = () =>
+            inFlight.size > 0 && [...inFlight.values()].every(Boolean);
+
+        function failed(event: Event, message: string, preventModal: boolean) {
+            if (onlySubmissions()) {
+                notifySubmissionFailure(message);
+
+                if (preventModal) {
+                    event.preventDefault();
+                }
+            } else if (inFlight.size > 0) {
+                unattributed = message;
+            }
+        }
 
         const listeners = [
             router.on('start', (event) => {
                 const visit = event.detail.visit;
-
-                if (visit.method !== 'get') {
-                    submissions.add(visit.id);
-                }
+                inFlight.set(visit.id, visit.method !== 'get');
             }),
             router.on('finish', (event) => {
-                submissions.delete(event.detail.visit.id);
+                const id = event.detail.visit.id;
+
+                // The failure event fires just before its own visit finishes.
+                if (unattributed !== null && inFlight.get(id)) {
+                    notifySubmissionFailure(unattributed);
+                }
+
+                unattributed = null;
+                inFlight.delete(id);
             }),
             router.on('error', (event) => {
-                if (
-                    !event.detail.visitId ||
-                    !submissions.has(event.detail.visitId)
-                ) {
+                const visitId = event.detail.visitId;
+
+                if (!visitId || !inFlight.get(visitId)) {
                     return;
                 }
 
@@ -41,28 +63,17 @@ export function useSubmissionFailureToast(): void {
                         : submissionFailureMessage(422),
                 );
             }),
-            router.on('httpException', (event) => {
-                if (!submitting()) {
-                    return;
-                }
-
-                notifySubmissionFailure(
+            router.on('httpException', (event) =>
+                failed(
+                    event,
                     submissionFailureMessage(event.detail.response.status),
-                );
-
-                // The toast replaces Inertia's error-page modal; local development keeps the modal.
-                if (!import.meta.env.DEV) {
-                    event.preventDefault();
-                }
-            }),
-            router.on('networkError', (event) => {
-                if (!submitting()) {
-                    return;
-                }
-
-                notifySubmissionFailure(OFFLINE_SUBMISSION_MESSAGE);
-                event.preventDefault();
-            }),
+                    // Local development keeps Inertia's error-page modal.
+                    !import.meta.env.DEV,
+                ),
+            ),
+            router.on('networkError', (event) =>
+                failed(event, OFFLINE_SUBMISSION_MESSAGE, true),
+            ),
         ];
 
         return () => listeners.forEach((off) => off());

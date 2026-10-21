@@ -23,7 +23,8 @@ import type {
 import {
     notifySubmissionFailure,
     OFFLINE_SUBMISSION_MESSAGE,
-    submissionFailureMessage,
+    serverFailureMessage,
+    UNEXPECTED_RESPONSE_MESSAGE,
 } from '@/lib/submission-failure';
 
 const selectClass =
@@ -179,15 +180,16 @@ export default function FloorEditor({
                 notifySubmissionFailure(
                     'Otro administrador guardó este plano antes.',
                 );
-            } else if (!response.ok || !data.area) {
+            } else if (!response.ok) {
+                const reason = serverFailureMessage(response.status, data);
                 setErrors(data.errors || {});
+                setMessage(`${reason} El borrador se conserva.`);
+                notifySubmissionFailure(reason);
+            } else if (!data.area) {
                 setMessage(
-                    data.message ||
-                        'No se pudo guardar. El borrador se conserva.',
+                    `${UNEXPECTED_RESPONSE_MESSAGE} El borrador se conserva.`,
                 );
-                notifySubmissionFailure(
-                    submissionFailureMessage(response.status),
-                );
+                notifySubmissionFailure(UNEXPECTED_RESPONSE_MESSAGE);
             } else {
                 accept(data.area);
                 setNewName('');

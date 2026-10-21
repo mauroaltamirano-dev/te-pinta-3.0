@@ -27,7 +27,7 @@ final class BuildAdminOrderFormOptions
     /**
      * Sellable products and add-ons, plus the retired ones a historical order still holds.
      *
-     * @return array{products: array<int, array<string, mixed>>, addons: mixed}
+     * @return array{products: array<int, array<string, mixed>>, addons: array<int, array<string, mixed>>}
      */
     public function catalog(?Order $historicalOrder = null): array
     {

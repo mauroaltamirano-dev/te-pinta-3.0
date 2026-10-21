@@ -32,18 +32,25 @@ const EXTRAS = 'Extras';
 
 function options(detail: TableDetail, kind: TableRoundKind): Option[] {
     if (kind === 'void') {
-        return (detail.session?.lines ?? []).map((line) => ({
-            key:
-                line.product_id !== null
-                    ? `vp${line.product_id}`
-                    : `va${line.addon_id}`,
-            id: (line.product_id ?? line.addon_id) as number,
-            addon: line.product_id === null,
-            name: line.name,
-            group: 'En la mesa',
-            max: line.quantity,
-            empanada: false,
-        }));
+        // The server sends exactly one of product_id or addon_id per line.
+        return (detail.session?.lines ?? []).flatMap((line): Option[] => {
+            const addon = line.product_id === null;
+            const id = line.product_id ?? line.addon_id;
+
+            return id === null
+                ? []
+                : [
+                      {
+                          key: `${addon ? 'va' : 'vp'}${id}`,
+                          id,
+                          addon,
+                          name: line.name,
+                          group: 'En la mesa',
+                          max: line.quantity,
+                          empanada: false,
+                      },
+                  ];
+        });
     }
 
     return [
@@ -76,9 +83,15 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
 export function RoundComposer({ detail }: { detail: TableDetail }) {
     const session = detail.session;
     const [requestedKind, setKind] = useState<TableRoundKind>('order');
-    // A table charged, cancelled or emptied elsewhere (polling) has nothing to void: back to ordering.
+    // A table charged, cancelled or emptied elsewhere (polling) has nothing to void: back to ordering,
+    // and it stays there when the table fills again.
     const kind: TableRoundKind =
         session && session.lines.length > 0 ? requestedKind : 'order';
+
+    if (kind !== requestedKind) {
+        setKind(kind);
+    }
+
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [note, setNote] = useState('');
     const [group, setGroup] = useState<string | null>(null);
@@ -135,7 +148,14 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
             quantity: quantities[option.key],
             addon: option.addon,
         }));
-        const draft = JSON.stringify([kind, lines, note.trim()]);
+        // The same draft for the same next round is a retry; once that round exists, it is a new round.
+        const draft = JSON.stringify([
+            session?.id ?? null,
+            nextRound,
+            kind,
+            lines,
+            note.trim(),
+        ]);
 
         if (roundKey.current?.draft !== draft) {
             roundKey.current = { key: newRoundKey(), draft };

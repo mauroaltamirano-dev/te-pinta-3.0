@@ -60,7 +60,7 @@ final readonly class TableServiceBoard
                 'lines' => $this->lines($session),
             ],
             'products' => fn (): array => $loadCatalog()['products'],
-            'addons' => fn (): mixed => $loadCatalog()['addons'],
+            'addons' => fn (): array => $loadCatalog()['addons'],
             'can_cashier' => $cashier,
             'payment_methods' => array_map(fn (PaymentMethod $method): string => $method->value, PaymentMethod::cases()),
             // Charging delivers the order, which Inventory blocks for these products: warn before the money is counted.
