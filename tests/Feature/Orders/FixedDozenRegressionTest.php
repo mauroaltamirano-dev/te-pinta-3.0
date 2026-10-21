@@ -333,7 +333,7 @@ final class FixedDozenRegressionTest extends TestCase
     private function settingsPayload(int $percent): array
     {
         return [
-            'empanada_unit_surcharge_percent' => $percent, 'delivery_fee' => (int) OrderSetting::integer(OrderSettingKey::DeliveryFee),
+            'empanada_unit_surcharge_percent' => $percent, 'combined_dozen_discount_percent' => 20, 'delivery_fee' => (int) OrderSetting::integer(OrderSettingKey::DeliveryFee),
             'whatsapp_order_phone' => '+54 9 11 1234-5678', 'raw_price_discounts' => ['dozen' => 2000],
             'addons' => OrderAddon::query()->orderBy('sort_order')->get()->map(fn (OrderAddon $addon): array => [
                 'id' => $addon->id, 'name' => $addon->name, 'price' => $addon->price, 'is_available' => $addon->is_available, 'sort_order' => $addon->sort_order,

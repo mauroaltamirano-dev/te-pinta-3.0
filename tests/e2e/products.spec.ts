@@ -92,6 +92,9 @@ test('configuración presenta el recargo por unidad y solo el descuento crudo de
         page.getByRole('heading', { name: 'Configuración de pedidos' }),
     ).toBeVisible();
     await expect(page.getByLabel('Recargo por unidad (%)')).toHaveValue('10');
+    await expect(
+        page.getByLabel('Descuento de docena combinada (%)'),
+    ).toHaveValue('20');
     await expect(page.getByLabel('Docena combinada cocinada')).toHaveCount(0);
     await expect(page.getByLabel('Docena combinada cruda')).toHaveCount(0);
     const rawDiscounts = page.getByRole('group', {

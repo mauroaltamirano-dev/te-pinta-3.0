@@ -64,6 +64,7 @@ final class OrderingSettingsManagementTest extends TestCase
             ->assertInertia(fn (Assert $page): Assert => $page
                 ->component('admin/settings/general', false)
                 ->where('orderingSettings.empanada_unit_surcharge_percent', 10)
+                ->where('orderingSettings.combined_dozen_discount_percent', 20)
                 ->where('orderingSettings.delivery_fee', 0)
                 ->where('orderingSettings.whatsapp_order_phone', '')
                 ->where('orderingSettings.raw_price_discounts.dozen', 2000)
@@ -122,6 +123,7 @@ final class OrderingSettingsManagementTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.settings.general.update'), [
                 'empanada_unit_surcharge_percent' => 10,
+                'combined_dozen_discount_percent' => 25,
                 'delivery_fee' => 2500,
                 'whatsapp_order_phone' => '+54 9 387 555-0101',
                 'raw_price_discounts' => ['dozen' => 2200],
@@ -146,6 +148,7 @@ final class OrderingSettingsManagementTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertSame(10, OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent));
+        $this->assertSame(25, OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent));
         $this->assertSame(2500, OrderSetting::integer(OrderSettingKey::DeliveryFee));
         $this->assertSame('+54 9 387 555-0101', OrderSetting::string(OrderSettingKey::WhatsappOrderPhone));
         $this->assertDatabaseHas('raw_price_discounts', ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2200]);
@@ -167,6 +170,37 @@ final class OrderingSettingsManagementTest extends TestCase
             'is_available' => false,
             'sort_order' => 1,
         ]);
+    }
+
+    public function test_combined_dozen_discount_percentage_is_saved(): void
+    {
+        $payload = $this->validPayload();
+        $payload['combined_dozen_discount_percent'] = 15;
+
+        $this->actingAs(User::factory()->administrator()->create())
+            ->put(route('admin.settings.general.update'), $payload)
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertSame(15, OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent));
+    }
+
+    public function test_combined_dozen_discount_percentage_must_be_an_integer_between_zero_and_one_hundred(): void
+    {
+        $admin = User::factory()->administrator()->create();
+
+        foreach ([-1, 101, 'veinte', 10.5, null, ''] as $invalid) {
+            $payload = $this->validPayload();
+            $payload['combined_dozen_discount_percent'] = $invalid;
+            $payload['delivery_fee'] = 900;
+
+            $this->actingAs($admin)
+                ->from(route('admin.settings.general.index'))
+                ->put(route('admin.settings.general.update'), $payload)
+                ->assertSessionHasErrors('combined_dozen_discount_percent');
+        }
+
+        $this->assertSame(20, OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent));
+        $this->assertSame(0, OrderSetting::integer(OrderSettingKey::DeliveryFee));
     }
 
     public function test_percentage_change_recalculates_every_stored_empanada_unit_price(): void
@@ -346,6 +380,7 @@ final class OrderingSettingsManagementTest extends TestCase
     {
         return [
             'empanada_unit_surcharge_percent' => 10,
+            'combined_dozen_discount_percent' => 20,
             'delivery_fee' => 0,
             'whatsapp_order_phone' => '',
             'raw_price_discounts' => ['dozen' => 2000],

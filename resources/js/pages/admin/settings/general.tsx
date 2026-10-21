@@ -11,6 +11,8 @@ import SettingsLayout from '@/layouts/settings-layout';
 interface OrderingSettings {
     /** Empty while the operator edits, so the backend rejects it instead of saving 0%. */
     empanada_unit_surcharge_percent: number | '';
+    /** Empty while the operator edits, so the backend rejects it instead of saving 0%. */
+    combined_dozen_discount_percent: number | '';
     delivery_fee: number;
     whatsapp_order_phone: string;
     /** Null when the dozen discount row is missing; the backend requires it on save. */
@@ -102,6 +104,57 @@ export default function GeneralSettings({
                                 id="empanada-unit-surcharge-error"
                                 message={
                                     form.errors.empanada_unit_surcharge_percent
+                                }
+                            />
+                        </div>
+                    </fieldset>
+                    <fieldset className="grid gap-4 rounded-lg border border-admin-border bg-admin-surface p-4">
+                        <legend className="px-1 font-semibold">
+                            Docena combinada
+                        </legend>
+                        <div className="grid gap-2 sm:max-w-xs">
+                            <Label htmlFor="combined-dozen-discount">
+                                Descuento de docena combinada (%)
+                            </Label>
+                            <Input
+                                id="combined-dozen-discount"
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="1"
+                                value={
+                                    form.data.combined_dozen_discount_percent
+                                }
+                                onChange={(event) =>
+                                    form.setData(
+                                        'combined_dozen_discount_percent',
+                                        event.target.value === ''
+                                            ? ''
+                                            : Number(event.target.value),
+                                    )
+                                }
+                                aria-invalid={Boolean(
+                                    form.errors.combined_dozen_discount_percent,
+                                )}
+                                aria-describedby={
+                                    form.errors.combined_dozen_discount_percent
+                                        ? 'combined-dozen-discount-error'
+                                        : 'combined-dozen-discount-help'
+                                }
+                                required
+                            />
+                            <p
+                                id="combined-dozen-discount-help"
+                                className="text-xs text-muted-foreground"
+                            >
+                                Doce empanadas de gustos distintos cuestan la
+                                suma de sus unidades menos este porcentaje. Los
+                                pedidos ya hechos no cambian.
+                            </p>
+                            <ErrorText
+                                id="combined-dozen-discount-error"
+                                message={
+                                    form.errors.combined_dozen_discount_percent
                                 }
                             />
                         </div>

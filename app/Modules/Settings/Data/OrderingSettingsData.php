@@ -11,6 +11,7 @@ final readonly class OrderingSettingsData
      */
     public function __construct(
         public int $empanadaUnitSurchargePercent,
+        public int $combinedDozenDiscountPercent,
         public int $deliveryFee,
         public string $whatsappOrderPhone,
         public int $dozenRawDiscount,
@@ -26,6 +27,7 @@ final readonly class OrderingSettingsData
         return new self(
             combinedHalfDozenSurcharge: $request->has('combined_half_dozen_surcharge') ? $request->integer('combined_half_dozen_surcharge') : null,
             empanadaUnitSurchargePercent: $request->integer('empanada_unit_surcharge_percent'),
+            combinedDozenDiscountPercent: $request->integer('combined_dozen_discount_percent'),
             deliveryFee: $request->integer('delivery_fee'),
             whatsappOrderPhone: trim($request->string('whatsapp_order_phone')->toString()),
             dozenRawDiscount: (int) $discounts['dozen'],

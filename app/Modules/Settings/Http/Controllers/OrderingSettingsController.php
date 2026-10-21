@@ -30,6 +30,7 @@ final class OrderingSettingsController
             'branding' => ['accent_color' => $branding->palette()->accent],
             'orderingSettings' => [
                 'empanada_unit_surcharge_percent' => OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent),
+                'combined_dozen_discount_percent' => OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent),
                 'delivery_fee' => OrderSetting::integer(OrderSettingKey::DeliveryFee),
                 'whatsapp_order_phone' => OrderSetting::string(OrderSettingKey::WhatsappOrderPhone),
                 // Only the dozen discount prices raw orders; unit and half-dozen rows are retired history.

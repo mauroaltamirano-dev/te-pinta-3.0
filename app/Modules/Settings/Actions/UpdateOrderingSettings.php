@@ -28,6 +28,7 @@ final class UpdateOrderingSettings
                 $this->updateIntegerSetting(OrderSettingKey::CombinedHalfDozenSurcharge, $data->combinedHalfDozenSurcharge);
             }
             $this->updateSurchargePercent($data->empanadaUnitSurchargePercent);
+            $this->updateIntegerSetting(OrderSettingKey::CombinedDozenDiscountPercent, $data->combinedDozenDiscountPercent);
             $this->updateIntegerSetting(OrderSettingKey::DeliveryFee, $data->deliveryFee);
 
             OrderSetting::query()->updateOrCreate(
