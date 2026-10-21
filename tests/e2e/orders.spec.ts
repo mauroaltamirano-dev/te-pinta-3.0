@@ -263,8 +263,11 @@ test('grilla y lista mantienen completa la primera fila con scroll de resultados
     await expect(
         card.getByText('6 × Humita Tucumana', { exact: true }),
     ).toBeVisible();
-    // Fixed dozen pricing: mixed flavors are separate lines, never a combined dozen with varieties.
-    await expect(card.getByText('Variedades', { exact: true })).toHaveCount(0);
+    // Twelve mixed flavors form a combined dozen that lists its varieties.
+    await expect(
+        card.getByText('1 × Docena combinada', { exact: true }),
+    ).toBeVisible();
+    await expect(card.getByText('Variedades', { exact: true })).toBeVisible();
     await expect(card.locator('img')).toHaveCount(0);
     await expect(page.getByTestId('orders-card-grid')).toHaveAttribute(
         'data-view',

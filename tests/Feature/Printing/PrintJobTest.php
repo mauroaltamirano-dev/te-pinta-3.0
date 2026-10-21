@@ -120,6 +120,41 @@ final class PrintJobTest extends TestCase
         $this->assertNull($ticket->payload['customer']);
     }
 
+    public function test_a_combined_dozen_prints_its_flavors_as_units_on_the_kitchen_ticket(): void
+    {
+        $dulce = $this->dulce();
+        $customer = Customer::query()->create(['name' => 'Ana', 'phone' => '+54 9 11 0000-0000', 'phone_normalized' => '5491100000000']);
+        // Salteña: one dozen plus 1; its last unit joins 11 dulce in a combined dozen.
+        $this->actingAs($this->cashier)->post(route('admin.orders.store'), [
+            'items' => [['product_id' => $this->salteña->id, 'quantity' => 13], ['product_id' => $this->coke->id, 'quantity' => 2], ['product_id' => $dulce->id, 'quantity' => 11]],
+            'addons' => [], 'condition' => 'cooked', 'delivery_type' => 'pickup', 'delivery_period' => 'night',
+            'delivery_date' => now()->toDateString(), 'delivery_time' => null, 'delivery_address' => null,
+            'notes' => null, 'customer_id' => $customer->id, 'payment_status' => 'unpaid',
+        ])->assertSessionHasNoErrors();
+        $order = Order::query()->latest('id')->firstOrFail();
+
+        $this->assertSame(['dozen', 'unit', 'combined_dozen'], $order->items()->orderBy('id')->get()->map(fn ($item): string => $item->getRawOriginal('pricing_mode'))->all());
+        $this->assertSame([['name' => 'Salteña', 'quantity' => 13], ['name' => 'Coca-Cola', 'quantity' => 2], ['name' => 'Dulce', 'quantity' => 11]], PrintJob::query()->sole()->payload['lines']);
+    }
+
+    public function test_a_table_bill_names_a_combined_dozen_and_its_flavors(): void
+    {
+        $dulce = $this->dulce();
+        $session = $this->round([$this->salteña->id => 6])->session;
+        $this->round([$dulce->id => 6, $this->coke->id => 1], session: $session->id);
+
+        app(IssueTableBill::class)->execute($session->refresh(), $this->cashier);
+
+        $bill = PrintJob::query()->where('kind', 'bill')->sole()->payload;
+        // (6 × 1800 + 6 × 1700) less 20% = 16800; plus 2500. The stored jsonb payload does not keep key order.
+        $this->assertEquals([
+            ['name' => 'Coca-Cola', 'detail' => null, 'quantity' => 1, 'unit_price' => 2500, 'total' => 2500],
+            ['name' => 'Docena combinada', 'detail' => '6 Dulce, 6 Salteña', 'quantity' => 12, 'unit_price' => 16800, 'total' => 16800],
+        ], $bill['lines']);
+        $this->assertSame(19300, $bill['total']);
+        $this->assertSame(['Coca-Cola', 'Dulce'], $session->rounds()->where('sequence', 2)->sole()->items()->pluck('name')->all());
+    }
+
     public function test_a_public_order_prints_only_when_staff_first_confirm_it(): void
     {
         $this->postJson(route('public.orders.store'), [
@@ -309,6 +344,15 @@ final class PrintJobTest extends TestCase
         $this->actingAs($kitchen)->postJson(route('admin.print-jobs.claim'))->assertForbidden();
         $this->actingAs($kitchen)->getJson(route('admin.print-jobs.status'))->assertForbidden();
         $this->assertSame('pending', PrintJob::query()->sole()->status);
+    }
+
+    private function dulce(): Product
+    {
+        return Product::query()->create([
+            'category_id' => $this->salteña->category_id, 'name' => 'Dulce', 'slug' => 'dulce', 'pricing_family' => 'empanada',
+            'unit_price' => EmpanadaUnitPrice::fromDozen(20000, 10), 'half_dozen_price' => 6 * 1800, 'dozen_price' => 20000,
+            'is_available' => true, 'sort_order' => 3,
+        ]);
     }
 
     /** @param array<int, int> $items */

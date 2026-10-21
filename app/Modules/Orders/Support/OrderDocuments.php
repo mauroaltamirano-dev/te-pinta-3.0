@@ -50,10 +50,16 @@ final readonly class OrderDocuments
     {
         $now = $this->businessDate->today();
         $units = [];
-        foreach ($order->items()->orderBy('id')->get() as $item) {
-            $key = $item->product_id === null ? 'n'.$item->product_name : 'p'.$item->product_id;
-            $units[$key] ??= ['name' => $item->product_name, 'quantity' => 0];
-            $units[$key]['quantity'] += $item->units_count;
+        foreach ($order->items()->with('compositions')->orderBy('id')->get() as $item) {
+            // The kitchen counts flavors: a combined dozen adds each of its parts to that flavor's units.
+            $parts = $item->compositions->isNotEmpty()
+                ? $item->compositions->sortBy('id')->map(fn ($part): array => [$part->product_id, $part->product_name, $part->quantity])->all()
+                : [[$item->product_id, $item->product_name, $item->units_count]];
+            foreach ($parts as [$productId, $name, $quantity]) {
+                $key = $productId === null ? 'n'.$name : 'p'.$productId;
+                $units[$key] ??= ['name' => $name, 'quantity' => 0];
+                $units[$key]['quantity'] += $quantity;
+            }
         }
         $addons = $order->toppings()->orderBy('id')->get()->map(fn ($topping): array => ['name' => $topping->name, 'quantity' => $topping->quantity]);
         $period = $order->delivery_period === null ? null : self::PERIODS[$order->delivery_period->value];
@@ -84,7 +90,7 @@ final readonly class OrderDocuments
     public function bill(TableSession $session, Order $order, User $actor): PrintableDocumentIssued
     {
         $now = $this->businessDate->today();
-        $lines = $order->items()->orderBy('id')->get()->map(fn (OrderItem $item): array => [
+        $lines = $order->items()->with('compositions')->orderBy('id')->get()->map(fn (OrderItem $item): array => [
             'name' => $item->product_name,
             // Customers count units; a dozen line is priced per dozen, so its detail names the packs.
             'detail' => $this->packs($item),
@@ -116,6 +122,10 @@ final readonly class OrderDocuments
     private function packs(OrderItem $item): ?string
     {
         $count = $item->quantity;
+        if ($item->compositions->isNotEmpty()) {
+            // A combined dozen lists its flavors, most expensive first as they were filled.
+            return $item->compositions->sortBy('id')->map(fn ($part): string => "{$part->quantity} {$part->product_name}")->implode(', ');
+        }
 
         return match ($item->getRawOriginal('pricing_mode')) {
             PricingMode::Dozen->value, PricingMode::CombinedDozen->value => $count === 1 ? '1 docena' : "{$count} docenas",

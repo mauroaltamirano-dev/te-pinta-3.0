@@ -215,6 +215,12 @@ final readonly class ConfirmTableRound
         foreach (DB::table('order_items')->where('order_id', $orderId)->whereNotNull('product_id')->get(['product_id', 'product_name']) as $item) {
             $names['p'.$item->product_id] = (string) $item->product_name;
         }
+        // A flavor sold entirely inside a combined dozen has no line of its own, only a composition part.
+        $parts = DB::table('order_item_compositions')->join('order_items', 'order_items.id', '=', 'order_item_compositions.order_item_id')
+            ->where('order_items.order_id', $orderId)->get(['order_item_compositions.product_id', 'order_item_compositions.product_name']);
+        foreach ($parts as $part) {
+            $names['p'.$part->product_id] ??= (string) $part->product_name;
+        }
         foreach (DB::table('order_toppings')->where('order_id', $orderId)->whereNotNull('order_addon_id')->get(['order_addon_id', 'name']) as $topping) {
             $names['a'.$topping->order_addon_id] = (string) $topping->name;
         }

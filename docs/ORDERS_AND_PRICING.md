@@ -210,9 +210,9 @@ Orders builds every printable document in `Support/OrderDocuments.php` and emits
 | When | Kind | Dedupe key | Content |
 | --- | --- | --- | --- |
 | A table round or void round is confirmed | `kitchen_ticket` | `table-round:{id}` | Only that round's lines (see Table service) |
-| An admin or counter (`pos`, no table) order is created | `kitchen_ticket` | `order:{id}:kitchen` | Title `Delivery`/`Retiro`/`Mostrador`, order, date and time, customer name, `Crudas (para cocinar en casa)` for raw orders, period and time, note, units per product (dozens are expanded to units) and add-ons — no prices |
+| An admin or counter (`pos`, no table) order is created | `kitchen_ticket` | `order:{id}:kitchen` | Title `Delivery`/`Retiro`/`Mostrador`, order, date and time, customer name, `Crudas (para cocinar en casa)` for raw orders, period and time, note, units per product (dozens are expanded to units and a combined dozen adds each flavor's units to that flavor) and add-ons — no prices |
 | A public order leaves `pending_confirmation` for any status except `cancelled` (status control or full edit) | `kitchen_ticket` | `order:{id}:kitchen` | Same as above; later status changes print nothing |
-| A cashier role prints a table bill | `bill` | `order:{id}:bill:v{edit_version}` | Units per product with their price (per unit, or per pack with its detail such as "1 docena"; a dozen line's `order_items.quantity` counts dozens, the bill prints `units_count`), totals and "Documento no válido como factura" |
+| A cashier role prints a table bill | `bill` | `order:{id}:bill:v{edit_version}` | Units per product with their price (per unit, or per pack with its detail such as "1 docena"; a dozen line's `order_items.quantity` counts dozens, the bill prints `units_count`; a combined dozen prints "Docena combinada" with its flavors as detail, e.g. "6 Dulce, 6 Salteña"), totals and "Documento no válido como factura" |
 
 ## Admin quick order
 

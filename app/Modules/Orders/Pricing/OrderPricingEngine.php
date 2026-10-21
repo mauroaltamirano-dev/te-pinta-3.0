@@ -177,7 +177,7 @@ final readonly class OrderPricingEngine
             cookedUnitPrice: $cookedPrice, cookedLineTotal: $cookedPrice,
             rawDiscount: $cookedPrice - $price,
             regularPriceTotal: $regular, savings: $regular - $price,
-            composition: $composition,
+            productName: 'Docena combinada', composition: $composition,
         );
     }
 
