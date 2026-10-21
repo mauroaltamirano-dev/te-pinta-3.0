@@ -169,6 +169,41 @@ Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printi
 4. Open the shortcut, log in with "Recordarme", press "Activar esta PC como estación" and then "Imprimir prueba": the ticket must come out complete and cut. If a URL or date is printed at the top or bottom, open the page once without `--kiosk-printing`, print the test with "Headers and footers" unchecked, close every window of that profile and reopen the shortcut.
 5. Keep the station window on its own, in front, never minimized or behind another window: Chrome slows down timers of hidden pages and the tickets would arrive late (the page warns when it was hidden). Turn off sleep in Windows power settings. Polling keeps the session alive; after a restart "Recordarme" logs it in again.
 
+#### Before opening (owner checklist)
+
+- **Inventory consumption for every product.** Charging a table marks its order delivered, and delivery is refused for a product without consumption configuration ("Missing inventory configuration for …"). Configure each product (recipe or "no inventory") in Inventario before the first service; the table page lists the table's products that still lack it. The 2026-10-21 rehearsal on a restored production backup found all 10 products unconfigured.
+- **Default wallet for order payments**, so a charge records its payment.
+- **Floor.** Tables come from the floor editor; only active tables of active areas can be opened. Tonight's layout can change: deactivating a table with an open session keeps it on the board until it is charged or cancelled.
+- **Members.** Each waiter needs an active `waiter` membership; owner, manager and cashier can take any table and are the only ones who print the bill, charge and cancel.
+- **Devices.** Each phone and the shop PC on the tailnet (see "Device access"), the station shortcut open and active, test print done.
+
+#### Real printer acceptance test
+
+Run on the shop PC with the Waggs printer, the station active, one waiter phone and the cashier on the PC. Every check passes only if each document prints once, complete, 80 mm wide, and cut.
+
+| # | Action | Expected |
+| --- | --- | --- |
+| P1 | "Imprimir prueba" | Test ticket, no URL or date header/footer, cut |
+| P2 | Counter order ("Mostrador") with 2 products and a note | One kitchen ticket within 5 s: "Mostrador", order number, time, big quantities, note, no prices |
+| P3 | Phone: open M1, 6 salteñas + 1 bebida, confirm | Ticket "Mesa M1 · Ronda 1", waiter's name, only those lines |
+| P4 | Phone: add 6 salteñas more, confirm | Ticket "Ronda 2" with only the 6 new salteñas; phone total = dozen price + drink |
+| P5 | Cashier (PC) adds 1 bebida to M1 | Ticket "Ronda 3" with "agregado por Cajero <name>" |
+| P6 | Phone: void 1 bebida | Void ticket for that line; total drops by one drink |
+| P7 | Phone: "Pedir la cuenta"; PC: "Imprimir cuenta" | Board shows "Pide la cuenta"; bill with "12 × Salteña", "1 docena × $ …", drinks, total and "Documento no válido como factura" |
+| P8 | PC: "Cobrar" → Efectivo | Table free; nothing printed |
+| P9 | Public web order pending → confirm in Pedidos | One kitchen ticket for it |
+| P10 | Station list: "Reimprimir" the bill | Same bill marked "REIMPRESIÓN" |
+| P11 | Reload the station window and close/reopen the shortcut during a queue of 3 rounds | Every ticket once; none twice |
+| P12 | Printer off (or out of paper), send a round, turn it on | Ticket comes out when the printer returns (Windows spooler); if not, "Reimprimir" from the list and note it |
+| P13 | Unplug the PC network for 30 s, send a round from the phone, plug back | Red "Sin conexión" alert while offline; the ticket prints after reconnecting |
+| P14 | Deactivate the station, send a round, wait 35 s | Alert "pendientes hace más de 30 segundos" and the counter in the title |
+| P15 | Log out on another tab | "Se cerró la sesión" alert with the login link |
+| P16 | Minimize the window for 1 min while sending rounds | Hidden-window warning; record how late tickets arrived; keep the window in front |
+| P17 | Two phones confirm rounds on two tables at the same time; then 10 quick rounds | Every ticket once, in confirmation order |
+| P18 | Restart Windows | Station opens at startup, still logged in and active |
+
+Record the result of each row (pass/fail, delay, photo of P3–P7 tickets) in the release log before the opening.
+
 #### Device access
 
 Phones (the waiter screens) and the shop PC reach the operational app through Tailscale Serve on the notebook (`make route-status` shows the HTTPS URL; it proxies to `127.0.0.1:8082`). It is tailnet-only: every device must have Tailscale installed, signed in to the shop tailnet and connected, and the notebook must be on. A device without Tailscale gets no answer; the station then shows "Sin conexión con el servidor". Do not change Serve or Funnel to work around a missing device: add the device to the tailnet instead.

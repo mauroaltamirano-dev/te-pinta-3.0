@@ -47,6 +47,19 @@ Decision record: [ADR 0013](decisions/0013-code-defined-roles-and-permissions.md
 - Functions called from a check constraint pin `search_path = public` (or qualify every name): `pg_restore` loads data with an empty `search_path`, so an unqualified helper call fails the restore. The floor functions are pinned by `2026_10_20_000000_pin_restaurant_floor_function_search_path.php`; a dump taken after it restores with a plain `pg_restore --exit-on-error`. A dump taken before it (every nightly dump and restore point up to the release that ships it) must be restored by sections into an empty database: `pg_restore --section=pre-data`; `ALTER FUNCTION public.restaurant_obstacles_valid(jsonb, integer, integer) SET search_path = public`; `pg_restore --section=data`; `pg_restore --section=post-data`; then either `RESET search_path` on that function (to stay on the dump's release) or run `migrate`, which pins all three functions.
 - Add an index only for a real query; do not duplicate indexes already provided by unique or foreign keys.
 
+## Table service and print queue
+
+Added only (no existing table or row changes): `2026_10_21_000000_create_table_service.php`, `2026_10_21_000100_create_print_jobs.php`. Every row carries `restaurant_id` from `app.current_restaurant_id`.
+
+| Table | Holds | Invariants |
+| --- | --- | --- |
+| `table_sessions` | One service of a dining table: its order, waiter, bill request and closure | `status` open/closed/cancelled; one open session per table (partial unique `table_sessions_one_open_per_table`); one session per order; closed or cancelled carries `closed_at`/`closed_by`, open carries neither; bill request time and member are set together |
+| `table_rounds` | Each confirmed round or void, with sequence, kind, note, confirming member and role | Unique `(table_session_id, sequence)` and `(restaurant_id, idempotency_hash)` (the HMAC of the client round key); `kind` order/void; role from the staff roles |
+| `table_round_items` | The lines of one round, with the name snapshot | Exactly one of `product_id`/`order_addon_id`; quantity 1–120 |
+| `print_jobs` | Kitchen tickets and bills with their frozen payload, claim and acknowledgement | Unique `(restaurant_id, dedupe_key)`; `kind` kitchen_ticket/bill; `status` pending/claimed/printed with matching timestamps; reprints point to the original (`reprint_of_id`) |
+
+`table_rounds` and `table_round_items` reject `UPDATE` and `DELETE` (trigger `table_service_reject_history_mutation`). `print_jobs` rejects deletes, changes to its payload and identity, and a printed job going back to the queue (`print_jobs_reject_content_change`). Foreign keys to orders, users, products and tables are `RESTRICT`, so a retired table, product or member keeps its history. Historical orders are never re-priced: a table re-prices only its own order while its session is open; a charged or cancelled session freezes it.
+
 ## Deletion and restoration
 
 - `orders` and `customers` use soft deletion (`deleted_at`). There is no force-delete route. Restoring reuses the same row, ID, snapshots and revisions.
