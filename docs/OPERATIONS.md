@@ -171,9 +171,9 @@ Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printi
 
 #### Before opening (owner checklist)
 
-- **Inventory consumption for every product.** Charging a table marks its order delivered, and delivery is refused for a product without consumption configuration ("Missing inventory configuration for …"). Configure each product (recipe or "no inventory") in Inventario before the first service; the table page lists the table's products that still lack it. The 2026-10-21 rehearsal on a restored production backup found all 10 products unconfigured.
+- **Inventory consumption for every product.** Charging a table marks its order delivered, and delivery is refused for a product without consumption configuration ("Missing inventory configuration for …"). Configure each product (recipe or "no inventory") in Inventario before the first service; the table page lists the table's products that still lack it.
 - **Default wallet for order payments**, so a charge records its payment.
-- **Floor.** Tables come from the floor editor; only active tables of active areas can be opened. Tonight's layout can change: deactivating a table with an open session keeps it on the board until it is charged or cancelled.
+- **Floor.** Tables come from the floor editor; only active tables of active areas can be opened. The layout can change during service: deactivating a table with an open session keeps it on the board until it is charged or cancelled.
 - **Members.** Each waiter needs an active `waiter` membership; owner, manager and cashier can take any table and are the only ones who print the bill, charge and cancel.
 - **Devices.** Each phone and the shop PC on the tailnet (see "Device access"), the station shortcut open and active, test print done.
 
@@ -201,6 +201,7 @@ Run on the shop PC with the Waggs printer, the station active, one waiter phone 
 | P16 | Minimize the window for 1 min while sending rounds | Hidden-window warning; record how late tickets arrived; keep the window in front |
 | P17 | Two phones confirm rounds on two tables at the same time; then 10 quick rounds | Every ticket once, in confirmation order |
 | P18 | Restart Windows | Station opens at startup, still logged in and active |
+| P19 | Phone: turn on airplane mode right after "Confirmar y enviar a cocina", turn it off | "Sin conexión" toast; the round history shows whether it was saved: if it is there, do not confirm again (a retry after the table refreshed is a new round); if not, confirm again and one ticket prints |
 
 Record the result of each row (pass/fail, delay, photo of P3–P7 tickets) in the release log before the opening.
 

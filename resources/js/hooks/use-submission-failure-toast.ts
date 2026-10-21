@@ -16,10 +16,12 @@ import {
  */
 export function useSubmissionFailureToast(): void {
     useEffect(() => {
-        const inFlight = new Map<string, boolean>();
+        // Visit id → whether that in-flight visit is a submission (non-GET).
+        const inFlightIsSubmission = new Map<string, boolean>();
         let unattributed: string | null = null;
         const onlySubmissions = () =>
-            inFlight.size > 0 && [...inFlight.values()].every(Boolean);
+            inFlightIsSubmission.size > 0 &&
+            [...inFlightIsSubmission.values()].every(Boolean);
 
         function failed(event: Event, message: string, preventModal: boolean) {
             if (onlySubmissions()) {
@@ -28,7 +30,7 @@ export function useSubmissionFailureToast(): void {
                 if (preventModal) {
                     event.preventDefault();
                 }
-            } else if (inFlight.size > 0) {
+            } else if (inFlightIsSubmission.size > 0) {
                 unattributed = message;
             }
         }
@@ -36,23 +38,23 @@ export function useSubmissionFailureToast(): void {
         const listeners = [
             router.on('start', (event) => {
                 const visit = event.detail.visit;
-                inFlight.set(visit.id, visit.method !== 'get');
+                inFlightIsSubmission.set(visit.id, visit.method !== 'get');
             }),
             router.on('finish', (event) => {
                 const id = event.detail.visit.id;
 
                 // The failure event fires just before its own visit finishes.
-                if (unattributed !== null && inFlight.get(id)) {
+                if (unattributed !== null && inFlightIsSubmission.get(id)) {
                     notifySubmissionFailure(unattributed);
                 }
 
                 unattributed = null;
-                inFlight.delete(id);
+                inFlightIsSubmission.delete(id);
             }),
             router.on('error', (event) => {
                 const visitId = event.detail.visitId;
 
-                if (!visitId || !inFlight.get(visitId)) {
+                if (!visitId || !inFlightIsSubmission.get(visitId)) {
                     return;
                 }
 
