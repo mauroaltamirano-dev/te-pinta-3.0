@@ -70,8 +70,9 @@ final class FixedDozenRegressionTest extends TestCase
             '10 dulce' => [['dulce' => 10], 'cooked', 18000],
             '13 dulce' => [['dulce' => 13], 'cooked', 21800],
             '24 dulce' => [['dulce' => 24], 'cooked', 40000],
-            '11 dulce + 1 jyq' => [['dulce' => 11, 'jyq' => 1], 'cooked', 21800],
-            '6 dulce + 3 jyq + 3 salteña' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 'cooked', 21900],
+            // Mixed remainders form a combined dozen (20% off the sum of units), replacing fixed-dozen S3.
+            '11 dulce + 1 jyq' => [['dulce' => 11, 'jyq' => 1], 'cooked', 17400],
+            '6 dulce + 3 jyq + 3 salteña' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 'cooked', 17500],
             '11 salteña' => [['salteña' => 11], 'cooked', 18700],
             'raw dozen dulce' => [['dulce' => 12], 'raw', 18000],
             'raw unit dulce' => [['dulce' => 1], 'raw', 1700],
@@ -275,7 +276,7 @@ final class FixedDozenRegressionTest extends TestCase
         $items = DB::table('order_items')->where('order_id', $order->id)->orderBy('id')->get();
         $this->assertSame(
             array_map(fn (array $line): array => [$line['pricingMode'], $line['productId'], $line['quantity'], $line['unitsCount'], $line['unitPrice'], $line['lineTotal'], $line['cookedUnitPrice'], $line['rawDiscount']], $preview['lines']),
-            $items->map(fn ($item): array => [$item->pricing_mode, (int) $item->product_id, (int) $item->quantity, (int) $item->units_count, (int) $item->unit_price, (int) $item->line_total, (int) $item->cooked_unit_price, (int) $item->raw_discount])->all(),
+            $items->map(fn ($item): array => [$item->pricing_mode, $item->product_id === null ? null : (int) $item->product_id, (int) $item->quantity, (int) $item->units_count, (int) $item->unit_price, (int) $item->line_total, (int) $item->cooked_unit_price, (int) $item->raw_discount])->all(),
         );
         $this->assertSame([2], $items->pluck('pricing_snapshot_version')->map(fn ($v): int => (int) $v)->unique()->values()->all());
         $this->assertSame($preview['rounding_adjustment'], Order::query()->findOrFail($order->id)->roundingAdjustment());

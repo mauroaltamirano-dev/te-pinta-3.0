@@ -7,7 +7,7 @@ Delivery: `ask-on-risk`, local work-unit commits only (no push/PR/merge/deploy).
 
 - S1 — Stored unit price: "Lo único que se carga es dozen_price (D) por gusto. U = D / 12 × (1 + 10%), redondeado a $100 con la mitad hacia arriba. U se GUARDA y se recalcula solo cuando cambia D o el porcentaje, nunca en cada pedido."
 - S2 — Per flavor: "cada 12 unidades del mismo gusto = D; el resto de ese gusto = cantidad × U."
-- S3 — "NO hay docena combinada ni tope. Si 11 unidades cuestan más que la docena, es intencional: el local se lo aclara al cliente."
+- S3 — "NO hay docena combinada ni tope. Si 11 unidades cuestan más que la docena, es intencional: el local se lo aclara al cliente." **Superseded (2026-10-22)** by `odd/tasks/combined-dozen-percentage.md`: mixed remainders now form a combined dozen priced by percentage; "no cap" still holds for one flavor.
 - S4 — "El porcentaje (10%) se configura en Configuración. El unitario de empanadas se muestra calculado, no editable."
 - S5 — "El total final se redondea una sola vez a $100, con la mitad hacia arriba."
 - S6 — "Para cocinar en casa: docena cruda = D − descuento de docena (raw_price_discounts dozen = 2000) y después la misma fórmula. Los descuentos unit/half_dozen dejan de usarse, pero sus filas se conservan."

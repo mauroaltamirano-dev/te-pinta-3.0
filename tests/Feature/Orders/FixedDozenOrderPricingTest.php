@@ -68,8 +68,6 @@ final class FixedDozenOrderPricingTest extends TestCase
             '10 dulce = 18.000' => [['dulce' => 10], 18000],
             '13 dulce = 21.800' => [['dulce' => 13], 21800],
             '24 dulce = 40.000' => [['dulce' => 24], 40000],
-            '11 dulce + 1 JyQ = 21.800' => [['dulce' => 11, 'jyq' => 1], 21800],
-            '6 dulce + 3 JyQ + 3 salteña = 21.900' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 21900],
             '11 salteña = 18.700 (above its 18.000 dozen, no cap)' => [['salteña' => 11], 18700],
         ];
     }
@@ -86,17 +84,36 @@ final class FixedDozenOrderPricingTest extends TestCase
         $this->assertNotContains('combined_dozen', array_map(fn (PricingLine $line): string => $line->pricingMode, $quote->lines));
     }
 
-    public function test_each_flavor_takes_its_own_dozens_and_prices_the_rest_as_units(): void
+    public function test_each_flavor_takes_its_own_dozens_before_remainders_combine(): void
     {
         $quote = $this->engine()->quote($this->items(['dulce' => 13, 'jyq' => 6, 'salteña' => 6]), OrderCondition::Cooked);
 
+        // Remainders 1 dulce, 6 JyQ, 6 salteña: JyQ, dulce and 5 salteña fill the combined dozen; 1 salteña stays a unit.
         $this->assertSame([
             ['dozen', $this->flavors['dulce']->id, 1, 12, 20000, 20000],
-            ['unit', $this->flavors['dulce']->id, 1, 1, 1800, 1800],
-            ['unit', $this->flavors['jyq']->id, 6, 6, 2000, 12000],
-            ['unit', $this->flavors['salteña']->id, 6, 6, 1700, 10200],
+            ['unit', $this->flavors['salteña']->id, 1, 1, 1700, 1700],
+            ['combined_dozen', null, 1, 12, 17840, 17840],
         ], array_map(fn (PricingLine $line): array => [$line->pricingMode, $line->productId, $line->quantity, $line->unitsCount, $line->unitPrice, $line->lineTotal], $quote->lines));
-        $this->assertSame(44000, $quote->total);
+        $this->assertSame(39500, $quote->total);
+    }
+
+    /** @return array<string, array{array<string, int>, int}> */
+    public static function mixedRemainderExamples(): array
+    {
+        return [
+            '11 dulce + 1 JyQ = 17.400 (combined 17.440)' => [['dulce' => 11, 'jyq' => 1], 17400],
+            '6 dulce + 3 JyQ + 3 salteña = 17.500 (combined 17.520)' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 17500],
+        ];
+    }
+
+    /** @param array<string, int> $basket */
+    #[DataProvider('mixedRemainderExamples')]
+    public function test_mixed_remainders_form_a_combined_dozen_replacing_the_fixed_dozen_rule(array $basket, int $total): void
+    {
+        $quote = $this->engine()->quote($this->items($basket), OrderCondition::Cooked);
+
+        $this->assertSame($total, $quote->total);
+        $this->assertSame(['combined_dozen'], array_map(fn (PricingLine $line): string => $line->pricingMode, $quote->lines));
     }
 
     public function test_cooking_at_home_takes_the_dozen_discount_and_then_the_same_formula(): void
@@ -201,14 +218,14 @@ final class FixedDozenOrderPricingTest extends TestCase
 
         $order = Order::query()->latest('id')->firstOrFail();
         $row = DB::table('orders')->where('id', $order->id)->first();
-        // Raw U: dulce 1700, JyQ (20000) 1800, salteña (16000) 1500 → 10200 + 5400 + 4500 = 20100.
-        $this->assertSame(20100, $preview->json('data.total'));
-        $this->assertSame([2, 20100, 20100, 21900, 1800], [(int) $row->pricing_snapshot_version, (int) $row->total, (int) $row->items_subtotal, (int) $row->items_cooked_subtotal, (int) $row->raw_discount]);
-        $this->assertSame([20100 * 12, 21900 * 12, 1800 * 12, 0], [(int) $row->product_exact_numerator_12, (int) $row->cooked_product_exact_numerator_12, (int) $row->raw_discount_exact_numerator_12, (int) $row->rounding_adjustment_numerator_1200]);
+        // Raw U: dulce 1700, JyQ (20000) 1800, salteña (16000) 1500 → 20100 × 0.8 = 16080 → 16100; cooked 21900 × 0.8 = 17520.
+        $this->assertSame(16100, $preview->json('data.total'));
+        $this->assertSame([2, 16100, 16080, 17520, 1440], [(int) $row->pricing_snapshot_version, (int) $row->total, (int) $row->items_subtotal, (int) $row->items_cooked_subtotal, (int) $row->raw_discount]);
+        $this->assertSame([16080 * 12, 17520 * 12, 1440 * 12, 20 * 1200], [(int) $row->product_exact_numerator_12, (int) $row->cooked_product_exact_numerator_12, (int) $row->raw_discount_exact_numerator_12, (int) $row->rounding_adjustment_numerator_1200]);
 
         $items = $order->items()->orderBy('id')->get();
-        $this->assertSame([PricingMode::Unit, PricingMode::Unit, PricingMode::Unit], $items->map->pricing_mode->all());
-        $this->assertSame([[1700, 1800, 600], [1800, 2000, 600], [1500, 1700, 600]], $items->map(fn ($item) => [(int) $item->unit_price, (int) $item->cooked_unit_price, (int) $item->raw_discount])->all());
+        $this->assertSame([PricingMode::CombinedDozen], $items->map->pricing_mode->all());
+        $this->assertSame([[16080, 17520, 1440]], $items->map(fn ($item) => [(int) $item->unit_price, (int) $item->cooked_unit_price, (int) $item->raw_discount])->all());
         $this->assertSame([2], DB::table('order_items')->where('order_id', $order->id)->distinct()->pluck('pricing_snapshot_version')->map(fn ($version) => (int) $version)->all());
     }
 

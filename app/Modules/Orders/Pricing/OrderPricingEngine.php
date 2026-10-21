@@ -58,9 +58,27 @@ final readonly class OrderPricingEngine
         }
 
         $lines = [];
+        $combinedLines = [];
 
-        // Fixed dozen pricing: every 12 units of one flavor sell at its dozen price; the rest at its
-        // stored unit price. There is no combined dozen and no cap: 11 units may cost more than a dozen.
+        // Every 12 units of one flavor sell at its dozen price. Empanada remainders then fill combined
+        // dozens (docs/ORDERS_AND_PRICING.md); whatever is left sells at the stored unit price.
+        $remainders = [];
+        foreach ($quantities as $productId => $quantity) {
+            if ($products[$productId]->pricingFamily === 'empanada' && $quantity % 12 > 0) {
+                $remainders[$productId] = $quantity % 12;
+            }
+        }
+        if (array_sum($remainders) >= 12) {
+            $discountPercent = OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent);
+            // The most expensive flavor enters first; equal unit prices go by product ID so snapshots are deterministic.
+            uksort($remainders, fn (int $left, int $right): int => [$products[$right]->unitPrice, $left] <=> [$products[$left]->unitPrice, $right]);
+            // Each remainder is under 12, so every combined dozen mixes more than one flavor.
+            while (array_sum($remainders) >= 12) {
+                $combinedLines[] = $this->combinedDozenLine($products, $remainders, $discountPercent);
+            }
+        }
+
+        // Without a combined dozen the lines keep the fixed-dozen order: by product, dozens before units.
         foreach ($quantities as $productId => $quantity) {
             $product = $products[$productId];
             if ($product->pricingFamily === 'empanada') {
@@ -68,12 +86,13 @@ final readonly class OrderPricingEngine
                 if ($dozens > 0) {
                     $lines[] = $this->productLine($product, 'dozen', $dozens, 12, $product->dozenPrice, $product->cookedDozenPrice);
                 }
-                $quantity %= 12;
+                $quantity = $remainders[$productId] ?? 0;
             }
             if ($quantity > 0) {
                 $lines[] = $this->productLine($product, 'unit', $quantity, 1, $product->unitPrice, $product->cookedUnitPrice);
             }
         }
+        $lines = [...$lines, ...$combinedLines];
 
         $pricedAddons = $this->priceAddons($addons);
         $productsCookedSubtotal = array_sum(array_map(fn (PricingLine $line): int => $line->cookedLineTotal, $lines));
@@ -92,7 +111,8 @@ final readonly class OrderPricingEngine
         return new OrderPriceQuote(
             $condition, $deliveryType, $lines, $pricedAddons,
             $productsCookedSubtotal, $rawDiscount,
-            $productsSubtotal, $addonsSubtotal, $shippingFee, 0,
+            $productsSubtotal, $addonsSubtotal, $shippingFee,
+            array_sum(array_map(fn (PricingLine $line): int => $line->savings, $lines)),
             $discountableSubtotal, $discountType, $discountValue, $totals->discountAmount,
             $totals->total,
             roundingAdjustment: $totals->roundingAdjustment,
@@ -117,6 +137,47 @@ final readonly class OrderPricingEngine
             rawDiscount: $quantity * ($cookedPrice - $price),
             regularPriceTotal: $quantity * $price, savings: 0,
             productId: $product->id, productName: $product->name,
+        );
+    }
+
+    /**
+     * Takes 12 units from the remainders, in their current order, and prices them as one combined dozen:
+     * Σ(quantity × U) × (1 − discount%). U is a multiple of ARS 100, so the result stays in whole pesos.
+     *
+     * @param  array<int, SellableProductPrice>  $products
+     * @param  array<int, int>  $remainders
+     */
+    private function combinedDozenLine(array $products, array &$remainders, int $discountPercent): PricingLine
+    {
+        $composition = [];
+        $regular = 0;
+        $cookedRegular = 0;
+        $missing = 12;
+        foreach ($remainders as $productId => $available) {
+            $taken = min($available, $missing);
+            $product = $products[$productId];
+            $composition[] = ['product_id' => $product->id, 'product_name' => $product->name, 'quantity' => $taken];
+            $regular += $taken * $product->unitPrice;
+            $cookedRegular += $taken * $product->cookedUnitPrice;
+            $remainders[$productId] -= $taken;
+            if ($remainders[$productId] === 0) {
+                unset($remainders[$productId]);
+            }
+            $missing -= $taken;
+            if ($missing === 0) {
+                break;
+            }
+        }
+        $price = intdiv($regular * (100 - $discountPercent), 100);
+        $cookedPrice = intdiv($cookedRegular * (100 - $discountPercent), 100);
+
+        return new PricingLine(
+            pricingMode: 'combined_dozen', quantity: 1, unitsCount: 12,
+            unitPrice: $price, lineTotal: $price,
+            cookedUnitPrice: $cookedPrice, cookedLineTotal: $cookedPrice,
+            rawDiscount: $cookedPrice - $price,
+            regularPriceTotal: $regular, savings: $regular - $price,
+            composition: $composition,
         );
     }
 

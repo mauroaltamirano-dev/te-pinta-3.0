@@ -45,7 +45,7 @@ Payment status: `unpaid`, `paid`, `not_required`. Methods: `cash`, `bank_transfe
 
 ## Snapshots and history
 
-- Creating an order persists the full quote: line name, pricing mode, block count, units, applied price, cooked reference price, raw discount, regular price and savings (`order_items`); combined-dozen parts of version-1 orders (`order_item_compositions`, none for new orders); add-ons (`order_toppings`); and on `orders` the customer name/phone, address, shipping, subtotals, savings, discount and total.
+- Creating an order persists the full quote: line name, pricing mode, block count, units, applied price, cooked reference price, raw discount, regular price and savings (`order_items`); the flavors of each combined dozen (`order_item_compositions`, version-1 and version-2 orders); add-ons (`order_toppings`); and on `orders` the customer name/phone, address, shipping, subtotals, savings, discount and total.
 - Opening an order never re-runs pricing. Changes to products, customers, add-ons or settings never alter existing orders.
 - Legacy fields `items_base_subtotal`, `cooking_surcharge`, `base_unit_price`, `base_line_total` are kept only to read old orders; new orders leave them null. New fields stay null on old orders.
 - `order_revisions` records each successful edit: admin, status, totals before/after, names of changed fields with an economic flag, optional closed-edit reason. It never stores phone, address or note values.
@@ -102,6 +102,7 @@ The engine receives final quantities per product, one condition for the whole or
 | Empanada unit `U` | `products.unit_price`, **stored**: `U = D / 12 × (1 + p%)` rounded half-up to ARS 100, `p` = `order_settings.empanada_unit_surcharge_percent` (seed 10) |
 | Empanada half dozen | `products.half_dozen_price`, **stored** as `6 × U` and recalculated with `U`; never entered and never used to price orders (6 units are priced as 6 × `U`) |
 | Raw (cook at home) | `D_raw = D − raw_price_discounts.dozen`; `U_raw` = same formula on `D_raw`, at quote time |
+| Combined dozen discount `X` | `order_settings.combined_dozen_discount_percent` (integer 0–100, seed 20), edited in Configuración |
 | `unit` product | `products.unit_price`, entered by the operator |
 | Add-on | Current `order_addons.price` of an available add-on |
 | Shipping | `delivery_fee` for `delivery`; 0 otherwise |
@@ -114,23 +115,30 @@ Retired inputs (rows kept, never read): `order_settings.combined_dozen_cooked_pr
 
 Each product has an explicit `pricing_family`: `empanada` or `unit`. It is never inferred from category, slug or name. `unit` products are priced `quantity × unit_price` with no grouping and no raw discount.
 
-### Fixed dozen algorithm (empanada products)
+### Dozen algorithm (empanada products)
 
-Per flavor, independently: every 12 units are one `dozen` line at `D`; the remainder is a `unit` line at `U`. There is no combined dozen, no half-dozen tier and no cap — 11 units can cost more than the dozen, on purpose (the restaurant explains it to the customer).
+1. Per flavor, every 12 units are one `dozen` line at `D` (or `D_raw`).
+2. While the flavors' remainders add up to 12 or more, they fill a **combined dozen**: the flavor with the highest `U` (of the order's condition) enters first, and with equal `U` the lower product ID first; it takes up to its whole remainder, then the next flavor, until 12 units. Every remainder is under 12, so a combined dozen always mixes more than one flavor. Its price is `Σ(quantity × U) × (1 − X%)`; `U` is a multiple of ARS 100, so the price stays in whole pesos.
+3. Whatever is left sells as `unit` lines at `U`. There is no half-dozen tier and no cap — 11 units of one flavor can cost more than its dozen.
 
-Required examples (D: dulce 20000, JyQ 22000, salteña 18000 → U 1800, 2000, 1700), `tests/Feature/Orders/FixedDozenOrderPricingTest.php`:
+A combined dozen is one `combined_dozen` line without a product (quantity 1, 12 units): `regular_price_total` = `Σ(quantity × U)`, `savings` = the `X%` discount, flavors in `order_item_compositions`; the quote's savings go to `orders.combined_dozen_savings`. Raw orders price it with `U_raw` and keep the cooked reference (`cooked_line_total` from the cooked `U`, `raw_discount` = cooked − applied). Lines keep product order (dozen, then unit, per product); combined dozens come last, so a basket without one quotes exactly as before. `unit` products never join a combined dozen. This replaces fixed-dozen S3 ("no combined dozen"); the retired fixed prices 17500/16000 stay unused.
+
+Required examples (`X` 20%, surcharge 25%; D: dulce 20000, JyQ 22000, salteña 18000 → U 2100, 2300, 1900), `tests/Feature/Orders/CombinedDozenPricingTest.php`:
 
 | Basket | Total |
 | --- | ---: |
 | 12 dulce | 20000 |
-| 11 dulce | 19800 |
-| 10 dulce | 18000 |
-| 13 dulce | 21800 |
-| 24 dulce | 40000 |
-| 11 dulce + 1 JyQ | 21800 |
-| 6 dulce + 3 JyQ + 3 salteña | 21900 |
-| 11 salteña | 18700 |
-| Raw dulce: dozen / unit | 18000 / 1700 |
+| 11 dulce + 1 JyQ | 20300 (combined 20320) |
+| 6 dulce + 6 JyQ | 21100 |
+| 6 dulce + 3 JyQ + 3 salteña | 20200 |
+| 5 dulce + 5 JyQ | 22000 (no dozen) |
+| 13 dulce + 11 JyQ | 41900 |
+| 8 dulce + 8 JyQ | 29800 (combined 8 JyQ + 4 dulce = 21440; 4 dulce at U) |
+| 8 dulce + 8 JyQ + 8 salteña | 40300 |
+| 11 salteña + 1 dulce | 18400 |
+| Raw 6 dulce + 6 JyQ / raw 6 + 3 + 3 | 19200 / 18200 |
+
+Single-flavor examples at the 10% seed (U 1800, 2000, 1700) stay in `tests/Feature/Orders/FixedDozenOrderPricingTest.php`: 12 dulce 20000, 11 dulce 19800, 13 dulce 21800, 24 dulce 40000, 11 salteña 18700, raw dulce dozen / unit 18000 / 1700.
 
 ### Admin discounts and totals
 
@@ -151,9 +159,9 @@ The percentage discount is kept exact (numerator over 1200) until the single rou
 | Version | Orders | Rules |
 | --- | --- | --- |
 | 1 | Created before fixed dozen pricing | Original columns only; their constraints are kept verbatim and nothing is recalculated. |
-| 2 | Every new quote (`PersistOrderQuote`) | Whole-peso lines whose exact numerators are 12 × the pesos (`applied/cooked/raw_discount_exact_numerator_12`, surcharge 0); order numerators for products, discount (over 1200), pre-round net and rounding adjustment. Database checks (`2026_10_19_000000_activate_fixed_dozen_pricing`) only accept `unit`/`dozen` lines with a product and `total = net + adjustment`. |
+| 2 | Every new quote (`PersistOrderQuote`) | Whole-peso lines whose exact numerators are 12 × the pesos (`applied/cooked/raw_discount_exact_numerator_12`, surcharge 0); order numerators for products, discount (over 1200), pre-round net and rounding adjustment. Database checks (`2026_10_19_000000_activate_fixed_dozen_pricing`, widened by `2026_10_22_000100_allow_combined_dozen_snapshots`) accept `unit`/`dozen` lines with a product or `combined_dozen` lines without a product of quantity 1 and 12 units, and `total = net + adjustment`. |
 
-Rollback of that migration refuses once version-2 history exists; it never rewrites unit prices back.
+Rollback of the fixed-dozen migration refuses once version-2 history exists; rollback of the combined-dozen widening refuses once a version-2 combined dozen exists. Neither rewrites prices.
 
 ### Limits and errors
 
@@ -178,7 +186,7 @@ open session --cancel--> order cancelled, session cancelled
 
 - One open session per table (partial unique index `table_sessions_one_open_per_table`). A session belongs to one order (`table_sessions.order_id` unique). The member who confirms the first round is the session's waiter.
 - **Rounds are immutable.** `table_rounds` and `table_round_items` reject `UPDATE`/`DELETE` (trigger `table_service_reject_history_mutation`). A correction is a `void` round with positive quantities that subtract; the running quantity of a product can never go below zero, and a void cannot empty the table (cancel it instead).
-- **Pricing.** Every round re-quotes the still-open order with `OrderPricingEngine` over the summed quantities of all rounds and replaces only that order's snapshots (`PersistOrderQuote`, one `order_revisions` row per re-quote). Fixed dozen pricing therefore applies across rounds: 6 salteñas in one round and 6 in another are one dozen (18000), not 12 × 1700. The order total is the table's provisional total. Engine limits apply to the sums (120 per product).
+- **Pricing.** Every round re-quotes the still-open order with `OrderPricingEngine` over the summed quantities of all rounds and replaces only that order's snapshots (`PersistOrderQuote`, one `order_revisions` row per re-quote). Dozen pricing therefore applies across rounds: 6 salteñas in one round and 6 in another are one dozen (18000), not 12 × 1700, and mixed remainders of different rounds can form a combined dozen. The order total is the table's provisional total. Engine limits apply to the sums (120 per product).
 - **Stale screens.** A round sends the session the client was showing (`null` for a free table). If that session was charged, cancelled, or the table was opened meanwhile, the round is rejected; it never silently opens a new session. A round key (HMAC-stored, unique) makes a retried confirmation return the same round; the same key with other lines is rejected.
 - **Generic order actions** (`UpdateOrder`, `UpdateOrderStatus`, `UpdateOrderPaymentStatus`, trash) refuse an order whose table session is open (`Support/OpenTableOrders`). After the charge the order follows the regular closed-order rules.
 - **Charge** sets `paid` with the method and `delivered` in one transaction; the payment and consumption listeners run inside it, so a missing wallet or a product without consumption configuration leaves the table open and unpaid. `Inventory\Queries\ProductsWithoutConsumption` lists the products that would block it. Charging prints nothing.
@@ -216,7 +224,7 @@ Orders builds every printable document in `Support/OrderDocuments.php` and emits
 
 ## Change checklist
 
-1. Change line building only in `OrderPricingEngine` and keep `tests/Feature/Orders/FixedDozenOrderPricingTest.php` (required examples) green.
+1. Change line building only in `OrderPricingEngine` and keep `tests/Feature/Orders/CombinedDozenPricingTest.php` and `FixedDozenOrderPricingTest.php` (required examples) green.
 2. Keep product price access behind `ProductPriceProvider` and the unit formula in `EmpanadaUnitPrice` (mirrored by the migration SQL and `features/products/utils.ts` for display).
 3. Never recalculate stored snapshots; a new persisted shape needs a new snapshot version, constraints and tests.
 4. Update this document.

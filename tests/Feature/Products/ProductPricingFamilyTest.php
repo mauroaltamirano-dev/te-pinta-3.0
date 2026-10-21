@@ -53,7 +53,7 @@ final class ProductPricingFamilyTest extends TestCase
         return $cases;
     }
 
-    public function test_mixed_quote_prices_each_empanada_flavor_alone_and_keeps_unit_items_authoritative(): void
+    public function test_mixed_quote_combines_empanada_flavors_and_keeps_unit_items_authoritative(): void
     {
         $category = $this->category();
         $criolla = $this->product($category, 'Criolla', 'criolla', 1_200, 6_600, 12_000, 'empanada');
@@ -73,14 +73,14 @@ final class ProductPricingFamilyTest extends TestCase
         $cooked = app(OrderPricingEngine::class)->quote($items, OrderCondition::Cooked);
         $raw = app(OrderPricingEngine::class)->quote($items, OrderCondition::Raw);
 
-        // No combined dozen: 6 × 1200 + 6 × 1700 + 6000 + 7000 + 8000.
-        $this->assertSame(['unit', 'unit', 'unit', 'unit', 'unit'], array_column($cooked->toArray()['lines'], 'pricingMode'));
-        $this->assertSame(38_400, $cooked->total);
+        // Unit items keep product order; the 12 empanadas form a combined dozen: (6 × 1700 + 6 × 1200) × 0.8 = 13920.
+        $this->assertSame(['unit', 'unit', 'unit', 'combined_dozen'], array_column($cooked->toArray()['lines'], 'pricingMode'));
+        $this->assertSame(34_900, $cooked->total);
         $this->assertSame(0, $cooked->rawDiscount);
-        // Raw U from D - 2000: Criolla 10000 → 900, JyQ 15000 → 1400.
-        $this->assertSame(34_800, $raw->total);
-        $this->assertSame(3_600, $raw->rawDiscount);
-        $this->assertSame([0, 0, 0], array_column(array_slice($raw->toArray()['lines'], 2), 'rawDiscount'));
+        // Raw U from D - 2000: Criolla 10000 → 900, JyQ 15000 → 1400; (8400 + 5400) × 0.8 = 11040.
+        $this->assertSame(32_000, $raw->total);
+        $this->assertSame(2_880, $raw->rawDiscount);
+        $this->assertSame([0, 0, 0], array_column(array_slice($raw->toArray()['lines'], 0, 3), 'rawDiscount'));
     }
 
     public function test_unit_items_cannot_complete_an_underfilled_empanada_combined_dozen(): void

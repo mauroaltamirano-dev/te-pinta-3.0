@@ -220,7 +220,7 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->assertSame(0, $resource['items'][0]['raw_discount']);
     }
 
-    public function test_cooked_mixed_flavors_sell_per_flavor_without_a_combined_dozen(): void
+    public function test_public_checkout_sells_twelve_cooked_mixed_flavors_as_a_combined_dozen(): void
     {
         $secondProduct = Product::query()->create([
             'category_id' => $this->product->category_id,
@@ -241,13 +241,15 @@ final class OrderCheckoutHttpTest extends TestCase
 
         $response = $this->postJson(route('public.orders.store'), $payload);
         $response->assertCreated()
-            ->assertJsonPath('data.items_cooked_subtotal', 21600)
+            // 12 × 1800 = 21600 less the 20% combined discount = 17280 → 17300.
+            ->assertJsonPath('data.items_cooked_subtotal', 17280)
             ->assertJsonPath('data.raw_discount', 0)
-            ->assertJsonPath('data.total', 21600);
+            ->assertJsonPath('data.total', 17300);
         $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with('items')->firstOrFail();
-        $this->assertSame([['unit', 0], ['unit', 0]], $order->items->map(fn ($item) => [$item->pricing_mode->value, (int) $item->raw_discount])->all());
+        $this->assertSame([['combined_dozen', 0, 4320]], $order->items->map(fn ($item) => [$item->pricing_mode->value, (int) $item->raw_discount, (int) $item->savings])->all());
+        $this->assertSame(4320, (int) $order->combined_dozen_savings);
     }
 
     public function test_admin_summary_formats_a_structured_combined_order_for_whatsapp_copy(): void

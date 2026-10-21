@@ -74,23 +74,24 @@ final class OrderPricingEngineTest extends TestCase
         $this->assertSame(6, array_sum(array_column($quote->toArray()['lines'], 'quantity')));
     }
 
-    public function test_mixed_flavors_never_combine_into_a_dozen(): void
+    public function test_twelve_mixed_flavors_fill_one_combined_dozen(): void
     {
         [$a, $b, $c] = [$this->product('A'), $this->product('B'), $this->product('C')];
         $quote = $this->engine()->quote($this->items([$a, 6], [$b, 3], [$c, 3]), OrderCondition::Raw);
 
-        $this->assertSame(['unit', 'unit', 'unit'], array_column($quote->toArray()['lines'], 'pricingMode'));
-        $this->assertSame([[], [], []], array_column($quote->toArray()['lines'], 'composition'));
-        // Raw U = (18000 - 2000) / 12 × 1.1 → 1500.
-        $this->assertSame(12 * 1500, $quote->total);
+        $this->assertSame(['combined_dozen'], array_column($quote->toArray()['lines'], 'pricingMode'));
+        $this->assertSame([[$a->id, 6], [$b->id, 3], [$c->id, 3]], array_map(fn (array $part): array => [$part['product_id'], $part['quantity']], $quote->lines[0]->composition));
+        // Raw U = (18000 - 2000) / 12 × 1.1 → 1500; 12 × 1500 less the 20% combined discount.
+        $this->assertSame(14400, $quote->total);
     }
 
-    public function test_twenty_four_varied_items_stay_per_flavor_in_stable_product_order(): void
+    public function test_twenty_four_varied_items_keep_stable_product_order_before_the_combined_dozen(): void
     {
         [$a, $b, $c] = [$this->product('A'), $this->product('B'), $this->product('C')];
         $quote = $this->engine()->quote($this->items([$c, 2], [$b, 11], [$a, 12]), OrderCondition::Raw);
 
-        $this->assertSame([['dozen', $a->id, 1], ['unit', $b->id, 11], ['unit', $c->id, 2]], array_map(
+        // Equal unit prices: B (lower ID) fills the combined dozen before C; one C is left as a unit.
+        $this->assertSame([['dozen', $a->id, 1], ['unit', $c->id, 1], ['combined_dozen', null, 1]], array_map(
             fn ($line): array => [$line->pricingMode, $line->productId, $line->quantity],
             $quote->lines,
         ));
@@ -108,7 +109,8 @@ final class OrderPricingEngineTest extends TestCase
         $this->assertSame(1800, $unit->total);
         $this->assertSame(10800, $six->total);
         $this->assertSame(18000, $dozen->total);
-        $this->assertSame(21600, $mixed->total);
+        // 6 + 6 mixed is a combined dozen: 21600 less 20% = 17280 → 17300.
+        $this->assertSame(17300, $mixed->total);
     }
 
     public function test_cooked_quotes_have_no_raw_discount(): void
@@ -121,7 +123,7 @@ final class OrderPricingEngineTest extends TestCase
 
         $this->assertSame([1800, 0, 1800], [$unit->lines[0]->cookedLineTotal, $unit->lines[0]->rawDiscount, $unit->total]);
         $this->assertSame([18000, 0, 18000], [$dozen->lines[0]->cookedLineTotal, $dozen->lines[0]->rawDiscount, $dozen->total]);
-        $this->assertSame([21600, 0, 21600], [$mixed->productsCookedSubtotal, $mixed->rawDiscount, $mixed->productsSubtotal]);
+        $this->assertSame([17280, 0, 17280], [$mixed->productsCookedSubtotal, $mixed->rawDiscount, $mixed->productsSubtotal]);
     }
 
     public function test_raw_quotes_snapshot_cooked_base_and_positive_discount(): void
