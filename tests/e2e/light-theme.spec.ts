@@ -162,8 +162,11 @@ test.describe.serial('Restaurant light theme', () => {
                 exact: true,
             })
             .click();
+        // The admin-wide failure toast repeats the reason; the field keeps its own message.
         await expect(
-            page.getByText(/El color de acento no se distingue/),
+            page
+                .getByLabel('Identidad del restaurante')
+                .getByText(/El color de acento no se distingue/),
         ).toBeVisible();
         await expect(input).toHaveAttribute('aria-invalid', 'true');
         await expect(page.locator('html')).toHaveCSS(

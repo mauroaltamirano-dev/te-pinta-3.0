@@ -23,9 +23,22 @@ export function submissionFailureMessage(status: number): string {
     }
 }
 
+// Laravel's default messages are English and say nothing the status message does not.
+const GENERIC_SERVER_MESSAGES = new Set([
+    'Server Error',
+    'Service Unavailable',
+    'Not Found',
+    'Forbidden',
+    'Unauthenticated.',
+    'This action is unauthorized.',
+    'CSRF token mismatch.',
+    'Page Expired',
+    'Too Many Attempts.',
+]);
+
 /**
- * Reason to show for a failed JSON request: the first validation error, the message of a 422, or a
- * message per status (Laravel's own messages for other statuses are English, for example "Server Error").
+ * Reason to show for a failed JSON request: the first validation error, the server's own message (for
+ * example a public quote that is not available), or a message per status instead of Laravel's defaults.
  */
 export function serverFailureMessage(
     status: number,
@@ -34,10 +47,13 @@ export function serverFailureMessage(
     const firstError = payload.errors
         ? Object.values(payload.errors).flat()[0]
         : undefined;
+    const message = payload.message?.trim();
 
     return (
         firstError ??
-        (status === 422 ? payload.message : undefined) ??
+        (message && !GENERIC_SERVER_MESSAGES.has(message)
+            ? message
+            : undefined) ??
         submissionFailureMessage(status)
     );
 }
