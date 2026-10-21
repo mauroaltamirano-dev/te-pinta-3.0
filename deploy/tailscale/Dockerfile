@@ -22,6 +22,7 @@ FROM ${SAIL_IMAGE} AS runtime
 WORKDIR /var/www/html
 
 COPY --from=build --chown=sail:sail /var/www/html /var/www/html
+COPY deploy/tailscale/php-security.ini /etc/php/8.5/cli/conf.d/99-tepinta-security.ini
 
 RUN rm -rf public/storage \
     && ln -s /var/www/html/storage/app/public public/storage \

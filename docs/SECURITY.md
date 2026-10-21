@@ -121,3 +121,4 @@ The destination number comes from `order_settings.whatsapp_order_phone`; no real
 - [ ] Guest/admin, price-tampering, public-field, idempotency and rate-limit tests pass.
 - [ ] Tailscale Serve and Funnel routes verified explicitly (`make route-status`, `make media-route-status`).
 - [ ] Known dependency advisories triaged (`make audit`).
+- [ ] Release image runs a patched PHP and loads `deploy/tailscale/php-security.ini` (upload progress off, upload limits 10M/12M).
