@@ -21,7 +21,7 @@ final class UpdateDiningAreaLayout
             $existing = $locked->tables()->get()->keyBy('id');
             $ids = array_map('intval', array_column($data['tables'], 'id'));
             if (count($ids) !== count(array_unique($ids)) || count($ids) !== $existing->count() || array_diff($ids, $existing->keys()->all()) !== []) {
-                throw ValidationException::withMessages(['tables' => 'Incluye todas las mesas existentes de esta área; desactivá en lugar de eliminar.']);
+                throw ValidationException::withMessages(['tables' => 'Incluí todas las mesas existentes de esta área. Si una mesa ya no se usa, desactivala en lugar de eliminarla.']);
             }
             $obstacles = array_map(function (array $obstacle): array {
                 foreach (['x', 'y', 'width', 'height'] as $key) {

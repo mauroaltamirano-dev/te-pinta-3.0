@@ -478,7 +478,7 @@ export default function FloorEditor({
                 )}
                 {!draft ? (
                     <p className="rounded-xl border border-admin-border bg-admin-surface p-6 text-admin-text-secondary">
-                        Crea un área para empezar. No hay mesas preconfiguradas.
+                        Creá un área para empezar. No hay mesas preconfiguradas.
                     </p>
                 ) : (
                     <>
@@ -533,8 +533,8 @@ export default function FloorEditor({
                                 />
                                 {canManage && (
                                     <p className="text-xs text-pretty text-admin-text-secondary">
-                                        Arrastra en escritorio o selecciona y
-                                        ajusta los campos. Las superposiciones
+                                        Arrastrá en escritorio o seleccioná y
+                                        ajustá los campos. Las superposiciones
                                         están permitidas; los límites del área
                                         se validan al guardar.
                                     </p>

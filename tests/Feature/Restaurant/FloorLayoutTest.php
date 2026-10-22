@@ -168,7 +168,8 @@ final class FloorLayoutTest extends TestCase
         $this->actingAs($this->admin());
         $this->putJson("/admin/restaurant/areas/{$area->id}/layout", $this->layout($area, [$this->table()]))->assertOk();
         $id = DiningTable::query()->sole()->id;
-        $this->putJson("/admin/restaurant/areas/{$area->id}/layout", $this->layout($area->fresh()))->assertUnprocessable();
+        $this->putJson("/admin/restaurant/areas/{$area->id}/layout", $this->layout($area->fresh()))->assertUnprocessable()
+            ->assertJsonPath('errors.tables.0', 'Incluí todas las mesas existentes de esta área. Si una mesa ya no se usa, desactivala en lugar de eliminarla.');
         $this->putJson("/admin/restaurant/areas/{$foreign->id}/layout", $this->layout($foreign, [$this->table(['id' => $id])]))->assertUnprocessable();
         $this->assertDatabaseCount('dining_tables', 1);
     }

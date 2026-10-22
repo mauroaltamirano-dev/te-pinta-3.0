@@ -9,7 +9,10 @@ import type {
     PolicyPayload,
     PolicyPresentation,
 } from '@/features/inventory/costing/types';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitName,
+} from '@/features/inventory/presentation';
 
 type Item = {
     id: number;
@@ -99,7 +102,7 @@ export default function CostingPolicies({
             <div className="grid gap-3">
                 {policies.length === 0 && (
                     <p role="status">
-                        No hay políticas. Crea una política y asignala
+                        No hay políticas. Creá una política y asignala
                         explícitamente a un producto.
                     </p>
                 )}
@@ -354,9 +357,7 @@ export default function CostingPolicies({
                                                         key={u.id}
                                                         value={u.id}
                                                     >
-                                                        {u.code === 'unit'
-                                                            ? 'Unidad'
-                                                            : u.code}
+                                                        {inventoryUnitName(u)}
                                                     </option>
                                                 ))}
                                         </select>

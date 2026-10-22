@@ -351,8 +351,8 @@ export default function CurrentCosting({
             ) : (
                 <p role="status">
                     {products.length
-                        ? 'Selecciona un producto para ver su costo y la configuración pendiente.'
-                        : 'No hay productos. Crea un producto desde la configuración del catálogo.'}
+                        ? 'Seleccioná un producto para ver su costo y la configuración pendiente.'
+                        : 'No hay productos. Creá un producto desde la configuración del catálogo.'}
                 </p>
             )}
             <p className="text-sm">
