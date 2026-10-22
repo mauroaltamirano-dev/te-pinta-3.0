@@ -102,6 +102,33 @@ test('un envío demasiado grande muestra un solo aviso', async ({ page }) => {
     ]);
 });
 
+test('un envío demasiado grande sin mensaje del servidor igual avisa', async ({
+    page,
+}) => {
+    await page.goto('/login');
+    // A proxy can answer 413 with a body that is not the app's JSON object.
+    await page.route('**/login', (route) =>
+        route.request().method() === 'POST'
+            ? route.fulfill({
+                  status: 413,
+                  contentType: 'application/json',
+                  body: 'null',
+              })
+            : route.continue(),
+    );
+
+    await page
+        .getByLabel('Correo electrónico')
+        .fill('playwright-admin@example.test');
+    await page.locator('#password').fill('playwright-password');
+    await page
+        .getByRole('button', { name: 'Iniciar sesión', exact: true })
+        .click();
+    await expect(page.locator('[data-sonner-toast]')).toHaveText([
+        'El archivo es demasiado grande.',
+    ]);
+});
+
 test('un envío sin conexión muestra el aviso', async ({ page }) => {
     const table = createTable();
     await logIn(page);

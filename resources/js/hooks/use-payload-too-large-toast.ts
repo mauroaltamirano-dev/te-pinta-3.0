@@ -23,7 +23,8 @@ export function usePayloadTooLargeToast(): void {
 
             event.preventDefault();
             const message =
-                typeof response.data === 'object'
+                // A proxy may answer with an empty or non-object body.
+                response.data !== null && typeof response.data === 'object'
                     ? response.data.message
                     : undefined;
             notifySubmissionFailure(
