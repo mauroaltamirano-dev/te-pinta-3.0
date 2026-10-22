@@ -95,7 +95,7 @@ export default function FloorEditor({
         const stop = router.on('before', (event) => {
             if (
                 !window.confirm(
-                    'Hay cambios sin guardar. ¿Quieres salir y descartarlos?',
+                    'Hay cambios sin guardar. ¿Querés salir y descartarlos?',
                 )
             ) {
                 event.preventDefault();
@@ -130,7 +130,7 @@ export default function FloorEditor({
             create &&
             dirty &&
             !window.confirm(
-                'Hay cambios sin guardar. ¿Quieres descartarlos y crear otra área?',
+                'Hay cambios sin guardar. ¿Querés descartarlos y crear otra área?',
             )
         ) {
             return;
@@ -175,7 +175,7 @@ export default function FloorEditor({
             if (response.status === 409) {
                 setConflict(true);
                 setMessage(
-                    'Otro administrador guardó este plano. Tu borrador se conserva: copia tus ajustes antes de recargar.',
+                    'Otro administrador guardó este plano. Tu borrador se conserva: copiá tus ajustes antes de recargar.',
                 );
                 notifySubmissionFailure(
                     'Otro administrador guardó este plano antes.',
@@ -197,7 +197,7 @@ export default function FloorEditor({
             }
         } catch {
             setMessage(
-                'No se pudo conectar. El borrador se conserva; vuelve a intentar.',
+                'No se pudo conectar. El borrador se conserva; volvé a intentar.',
             );
             notifySubmissionFailure(OFFLINE_SUBMISSION_MESSAGE);
         } finally {
@@ -342,7 +342,7 @@ export default function FloorEditor({
         if (
             dirty &&
             !window.confirm(
-                'Hay cambios sin guardar. ¿Quieres descartarlos y cambiar de área?',
+                'Hay cambios sin guardar. ¿Querés descartarlos y cambiar de área?',
             )
         ) {
             return;
@@ -358,7 +358,7 @@ export default function FloorEditor({
         if (
             dirty &&
             !window.confirm(
-                'La recarga descartará tu borrador. ¿Quieres continuar?',
+                'La recarga descartará tu borrador. ¿Querés continuar?',
             )
         ) {
             return;
@@ -379,7 +379,7 @@ export default function FloorEditor({
                         </h1>
                         <p className="mt-1 text-sm text-pretty text-admin-text-secondary">
                             {canManage
-                                ? 'Configuración física del salón. Selecciona una mesa para editarla.'
+                                ? 'Configuración física del salón. Seleccioná una mesa para editarla.'
                                 : 'Distribución del salón en modo lectura.'}
                         </p>
                     </div>

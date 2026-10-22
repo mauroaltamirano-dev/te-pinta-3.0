@@ -16,12 +16,12 @@ final class UpdateDiningAreaLayout
         return DB::transaction(function () use ($area, $data): DiningArea {
             $locked = DiningArea::query()->lockForUpdate()->findOrFail($area->id);
             if ($locked->layout_version !== (int) $data['expected_version']) {
-                throw new ConflictHttpException('El plano cambió. Conserva tus cambios y recarga para reconciliar.');
+                throw new ConflictHttpException('El plano cambió. Conservá tus cambios y recargá para reconciliar.');
             }
             $existing = $locked->tables()->get()->keyBy('id');
             $ids = array_map('intval', array_column($data['tables'], 'id'));
             if (count($ids) !== count(array_unique($ids)) || count($ids) !== $existing->count() || array_diff($ids, $existing->keys()->all()) !== []) {
-                throw ValidationException::withMessages(['tables' => 'Incluye todas las mesas existentes de esta área; desactiva en lugar de eliminar.']);
+                throw ValidationException::withMessages(['tables' => 'Incluye todas las mesas existentes de esta área; desactivá en lugar de eliminar.']);
             }
             $obstacles = array_map(function (array $obstacle): array {
                 foreach (['x', 'y', 'width', 'height'] as $key) {

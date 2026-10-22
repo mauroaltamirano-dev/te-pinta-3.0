@@ -141,7 +141,8 @@ final class FloorLayoutTest extends TestCase
         $this->actingAs($this->admin())->putJson("/admin/restaurant/areas/{$area->id}/layout", $draft)->assertOk()->assertJsonPath('area.layout_version', 1);
         $draft['name'] = 'Stale administrator';
         $draft['tables'][0]['position_x'] = '0.5';
-        $this->putJson("/admin/restaurant/areas/{$area->id}/layout", $draft)->assertConflict()->assertJsonPath('code', 'layout_conflict');
+        $this->putJson("/admin/restaurant/areas/{$area->id}/layout", $draft)->assertConflict()->assertJsonPath('code', 'layout_conflict')
+            ->assertJsonPath('message', 'El plano cambió. Conservá tus cambios y recargá para reconciliar.');
         $this->assertSame('Test dining room', $area->fresh()->name);
         $this->assertSame('0.2000', DiningTable::query()->sole()->position_x);
     }
