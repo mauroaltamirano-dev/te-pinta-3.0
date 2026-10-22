@@ -17,7 +17,11 @@ export default function CreateRecipe(props: RecipeOptions) {
                     .
                 </p>
             )}
-            <RecipeForm {...props} path="/admin/inventory/recipes" create />
+            <RecipeForm
+                {...props}
+                path="/admin/inventory/recipes"
+                mode="create"
+            />
         </section>
     );
 }

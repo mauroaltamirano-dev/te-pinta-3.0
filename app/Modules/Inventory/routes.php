@@ -25,6 +25,8 @@ Route::get('/inventory/recipes/create', [RecipeController::class, 'create'])->mi
 Route::post('/inventory/recipes', [RecipeController::class, 'store'])->middleware('can:inventory.manage')->name('inventory.recipes.store');
 Route::get('/inventory/recipes/{recipe}', [RecipeController::class, 'show'])->middleware('can:inventory.view')->name('inventory.recipes.show');
 Route::post('/inventory/recipes/{recipe}/versions', [RecipeController::class, 'storeVersion'])->middleware('can:inventory.manage')->name('inventory.recipes.versions.store');
+Route::put('/inventory/recipes/{recipe}/current-version', [RecipeController::class, 'correct'])->middleware('can:inventory.manage')->name('inventory.recipes.correct');
+Route::post('/inventory/recipes/{recipe}/retire', [RecipeController::class, 'retire'])->middleware('can:inventory.manage')->name('inventory.recipes.retire');
 Route::get('/inventory/production', [ProductionController::class, 'index'])->middleware('can:inventory.view')->name('inventory.production.index');
 Route::get('/inventory/production/create', [ProductionController::class, 'create'])->middleware('can:inventory.manage')->name('inventory.production.create');
 Route::post('/inventory/production', [ProductionController::class, 'store'])->middleware('can:inventory.manage')->name('inventory.production.store');

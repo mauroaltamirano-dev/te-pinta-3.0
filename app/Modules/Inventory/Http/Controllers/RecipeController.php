@@ -2,14 +2,18 @@
 
 namespace App\Modules\Inventory\Http\Controllers;
 
+use App\Modules\Inventory\Actions\CorrectRecipe;
 use App\Modules\Inventory\Actions\CreateRecipe;
 use App\Modules\Inventory\Actions\CreateRecipeVersion;
+use App\Modules\Inventory\Actions\RetireRecipe;
 use App\Modules\Inventory\Data\RecipeIngredientData;
 use App\Modules\Inventory\Data\RecipeVersionData;
+use App\Modules\Inventory\Http\Requests\CorrectRecipeRequest;
 use App\Modules\Inventory\Http\Requests\StoreRecipeRequest;
 use App\Modules\Inventory\Http\Requests\StoreRecipeVersionRequest;
 use App\Modules\Inventory\Models\InventoryItem;
 use App\Modules\Inventory\Models\InventoryUnit;
+use App\Modules\Inventory\Models\ProductionBatch;
 use App\Modules\Inventory\Models\Recipe;
 use App\Modules\Inventory\Models\RecipeVersion;
 use App\Modules\Inventory\Queries\BuildRecipeCurrentCost;
@@ -70,13 +74,32 @@ final class RecipeController
             return $version;
         });
 
-        return Inertia::render('admin/inventory/recipes/show', ['recipe' => $recipe, 'versions' => $versions, 'version_view' => $view, 'items' => $this->items('recipe_input_enabled'), 'outputItems' => $this->items('production_output_enabled'), 'units' => $this->units()]);
+        $canCorrect = $recipe->is_active && $recipe->versions()->where('is_active', true)
+            ->whereNotIn('id', ProductionBatch::query()->select('recipe_version_id'))->exists();
+
+        return Inertia::render('admin/inventory/recipes/show', ['recipe' => $recipe, 'versions' => $versions, 'version_view' => $view, 'can_correct' => $canCorrect, 'items' => $this->items('recipe_input_enabled'), 'outputItems' => $this->items('production_output_enabled'), 'units' => $this->units()]);
     }
 
     public function storeVersion(StoreRecipeVersionRequest $request, Recipe $recipe, CreateRecipeVersion $action): RedirectResponse
     {
         $v = $request->validated();
         $action->execute($recipe->id, $this->versionData($v), $request->user()->id);
+
+        return to_route('admin.inventory.recipes.show', $recipe);
+    }
+
+    public function correct(CorrectRecipeRequest $request, Recipe $recipe, CorrectRecipe $action): RedirectResponse
+    {
+        $v = $request->validated();
+        $action->execute($recipe->id, (string) $v['name'], $this->versionData($v), $request->user()->id);
+
+        return to_route('admin.inventory.recipes.show', $recipe);
+    }
+
+    public function retire(Request $request, Recipe $recipe, RetireRecipe $action): RedirectResponse
+    {
+        Gate::authorize('create', InventoryItem::class);
+        $action->execute($recipe->id, $request->user()->id);
 
         return to_route('admin.inventory.recipes.show', $recipe);
     }

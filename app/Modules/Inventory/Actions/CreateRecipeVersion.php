@@ -22,7 +22,7 @@ final class CreateRecipeVersion
             DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['inventory:recipe-graph']);
             $recipe = Recipe::query()->lockForUpdate()->findOrFail($recipeId);
             if (! $recipe->is_active) {
-                throw ValidationException::withMessages(['recipe' => 'Recipe is inactive.']);
+                throw ValidationException::withMessages(['recipe' => 'Esta receta está retirada y no admite versiones nuevas. Si necesitás la fórmula, creá una receta nueva.']);
             }
             $existingVersions = RecipeVersion::query()
                 ->where('recipe_id', $recipe->id)
@@ -40,38 +40,38 @@ final class CreateRecipeVersion
             $unitIds = collect($data->ingredients)->pluck('unitId')->push($data->outputUnitId)->unique()->sort()->values();
             $units = InventoryUnit::query()->whereKey($unitIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             if ($items->count() !== $ids->count() || $units->count() !== $unitIds->count()) {
-                throw ValidationException::withMessages(['recipe' => 'Unknown item or unit.']);
+                throw ValidationException::withMessages(['recipe' => 'Algún insumo o unidad de la receta ya no existe. Recargá la página y elegilos de nuevo.']);
             }
             foreach ($items as $item) {
                 if (! $item->is_active || ! $item->tracks_stock) {
-                    throw ValidationException::withMessages(['recipe' => 'Only active stock-tracked items can be used.']);
+                    throw ValidationException::withMessages(['recipe' => 'Solo se pueden usar insumos activos que controlan stock. Revisá los insumos elegidos.']);
                 }
             }
             $output = $items[$data->outputInventoryItemId];
             if (! $output->production_output_enabled) {
-                throw ValidationException::withMessages(['output_inventory_item_id' => 'Item is not enabled as a production output.']);
+                throw ValidationException::withMessages(['output_inventory_item_id' => 'Este insumo no tiene activada «Salida de producción». Activala en el insumo o elegí otro.']);
             }
             $expected = $this->converter->toBase($output, $units[$data->outputUnitId], $data->expectedOutputQuantity);
             $ingredientIds = [];
             foreach ($data->ingredients as $i => $ingredient) {
                 if (isset($ingredientIds[$ingredient->inventoryItemId])) {
-                    throw ValidationException::withMessages(["ingredients.$i.inventory_item_id" => 'Ingredient is duplicated.']);
+                    throw ValidationException::withMessages(["ingredients.$i.inventory_item_id" => 'Este ingrediente está repetido. Dejalo una sola vez y sumá las cantidades.']);
                 }
                 if ($ingredient->inventoryItemId === $output->id) {
-                    throw ValidationException::withMessages(["ingredients.$i.inventory_item_id" => 'Output cannot be its own ingredient.']);
+                    throw ValidationException::withMessages(["ingredients.$i.inventory_item_id" => 'El insumo que produce la receta no puede ser también su ingrediente.']);
                 }
                 $ingredientIds[$ingredient->inventoryItemId] = true;
                 if (! $items[$ingredient->inventoryItemId]->recipe_input_enabled) {
-                    throw ValidationException::withMessages(["ingredients.$i.inventory_item_id" => 'Item is not enabled as a recipe ingredient.']);
+                    throw ValidationException::withMessages(["ingredients.$i.inventory_item_id" => 'Este insumo no tiene activado «Usar en recetas». Activalo en el insumo o elegí otro.']);
                 }
                 $this->converter->toBase($items[$ingredient->inventoryItemId], $units[$ingredient->unitId], $ingredient->quantity);
             }
             if ($ingredientIds === []) {
-                throw ValidationException::withMessages(['ingredients' => 'At least one ingredient is required.']);
+                throw ValidationException::withMessages(['ingredients' => 'Agregá al menos un ingrediente.']);
             }
             foreach (array_keys($ingredientIds) as $id) {
                 if ($this->wouldCreateCycle($output->id, $id, $recipe->id)) {
-                    throw ValidationException::withMessages(['ingredients' => 'This version would create an active recipe cycle.']);
+                    throw ValidationException::withMessages(['ingredients' => 'Esta fórmula formaría un círculo entre recetas (un insumo terminaría siendo ingrediente de sí mismo). Revisá los ingredientes.']);
                 }
             }
             if ($activeVersionIds !== []) {

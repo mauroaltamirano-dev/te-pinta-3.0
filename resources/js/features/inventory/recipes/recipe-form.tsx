@@ -13,15 +13,17 @@ export function RecipeForm({
     units,
     path,
     initial,
-    create = false,
+    initialName = '',
+    mode = 'version',
 }: RecipeOptions & {
     path: string;
     initial?: RecipeVersion;
-    create?: boolean;
+    initialName?: string;
+    mode?: 'create' | 'version' | 'correct';
 }) {
     const [search, setSearch] = useState('');
     const form = useForm({
-        name: '',
+        name: initialName,
         output_inventory_item_id: String(
             initial?.output_inventory_item_id ?? '',
         ),
@@ -53,10 +55,25 @@ export function RecipeForm({
             className="grid gap-5"
             onSubmit={(e) => {
                 e.preventDefault();
-                form.post(path);
+
+                if (mode === 'correct') {
+                    form.put(path);
+                } else {
+                    form.post(path);
+                }
+            }}
+            onKeyDown={(e) => {
+                // A stray Enter in a field must not save a sealed formula; only the button submits.
+                if (
+                    e.key === 'Enter' &&
+                    e.target instanceof HTMLElement &&
+                    ['INPUT', 'SELECT'].includes(e.target.tagName)
+                ) {
+                    e.preventDefault();
+                }
             }}
         >
-            {create && (
+            {mode !== 'version' && (
                 <FormField
                     id="recipe-name"
                     label="Nombre de la receta"
@@ -309,8 +326,9 @@ export function RecipeForm({
                 </div>
             )}
             <p className="text-sm text-admin-text-secondary">
-                La fórmula guardada es inmutable. Los cambios crean una nueva
-                versión y retiran la anterior.
+                {mode === 'correct'
+                    ? 'Esta versión todavía no se usó en producción: la corrección la reemplaza sin dejar historial.'
+                    : 'Una vez usada en producción, la fórmula no se puede corregir: los cambios crean una nueva versión y retiran la anterior.'}
             </p>
             <Button
                 type="submit"
@@ -322,9 +340,11 @@ export function RecipeForm({
             >
                 {form.processing
                     ? 'Guardando…'
-                    : create
-                      ? 'Crear receta'
-                      : 'Guardar nueva versión'}
+                    : {
+                          create: 'Crear receta',
+                          version: 'Guardar nueva versión',
+                          correct: 'Guardar corrección',
+                      }[mode]}
             </Button>
         </form>
     );

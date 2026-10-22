@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
@@ -15,13 +15,28 @@ export default function ShowRecipe({
     recipe,
     versions,
     version_view,
+    can_correct,
+    errors,
     ...options
 }: RecipeOptions & {
     recipe: Recipe;
     versions: RecipePage;
     version_view: 'current' | 'retired';
+    can_correct: boolean;
+    errors?: Record<string, string>;
 }) {
-    const [editing, setEditing] = useState(false);
+    const [editing, setEditing] = useState<'version' | 'correct' | null>(null);
+    const toggle = (mode: 'version' | 'correct') =>
+        setEditing(editing === mode ? null : mode);
+    const retire = () => {
+        if (
+            window.confirm(
+                `¿Retirar la receta ${recipe.name}? No se podrá usar en producción ni tener versiones nuevas. Su historial seguirá visible en «Retiradas».`,
+            )
+        ) {
+            router.post(`/admin/inventory/recipes/${recipe.id}/retire`);
+        }
+    };
 
     return (
         <section className="grid gap-6 text-admin-text-primary">
@@ -30,6 +45,19 @@ export default function ShowRecipe({
             <h1 className="text-2xl font-semibold text-balance">
                 {recipe.name}
             </h1>
+            {recipe.is_active ? (
+                <div>
+                    <Button variant="outline" onClick={retire}>
+                        Retirar receta
+                    </Button>
+                </div>
+            ) : (
+                <p role="status">
+                    Receta retirada: no se puede usar en producción ni tener
+                    versiones nuevas. Su historial sigue en «Retiradas».
+                </p>
+            )}
+            {errors?.recipe && <p role="alert">{errors.recipe}</p>}
             <nav
                 aria-label="Versiones de receta"
                 className="flex flex-wrap gap-4"
@@ -141,21 +169,36 @@ export default function ShowRecipe({
                                     Registrar producción
                                 </Link>
                             </Button>
+                            {can_correct && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => toggle('correct')}
+                                    aria-expanded={editing === 'correct'}
+                                >
+                                    Corregir receta
+                                </Button>
+                            )}
                             <Button
                                 variant="outline"
-                                onClick={() => setEditing(!editing)}
-                                aria-expanded={editing}
+                                onClick={() => toggle('version')}
+                                aria-expanded={editing === 'version'}
                             >
                                 Crear nueva versión
                             </Button>
                         </div>
                     )}
-                    {v.is_active && editing && (
+                    {v.is_active && editing !== null && (
                         <RecipeForm
-                            key={v.id}
+                            key={`${v.id}-${editing}`}
                             {...options}
                             initial={v}
-                            path={`/admin/inventory/recipes/${recipe.id}/versions`}
+                            initialName={recipe.name}
+                            mode={editing}
+                            path={
+                                editing === 'correct'
+                                    ? `/admin/inventory/recipes/${recipe.id}/current-version`
+                                    : `/admin/inventory/recipes/${recipe.id}/versions`
+                            }
                         />
                     )}
                 </article>

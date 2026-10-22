@@ -101,7 +101,8 @@ final class ProductionRecoveryConstraintTest extends TestCase
     public function test_database_rejects_recipe_history_delete_and_incorrect_expected_conversion(): void
     {
         [$admin,$input,$output,$v,$unit] = $this->fixture();
-        $this->rejected(fn () => $v->delete(), '55000', 'immutable');
+        // An unused formula may be deleted only together with its ingredients (see RecipeLifecycleTest).
+        $this->rejected(fn () => $v->delete(), '23001', 'inventory_recipe_ingredients');
         $this->rejected(fn () => DB::table('inventory_recipe_versions')->insert(['recipe_id' => $v->recipe_id, 'version' => 2, 'recipe_name_snapshot' => $v->recipe_name_snapshot, 'output_inventory_item_id' => $output->id, 'output_unit_id' => $unit->id, 'expected_output_quantity' => 1, 'expected_output_base_quantity' => 2, 'created_by' => $admin->id]), '23514', 'conversion');
     }
 
