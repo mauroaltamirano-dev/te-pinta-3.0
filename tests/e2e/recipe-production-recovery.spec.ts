@@ -58,11 +58,11 @@ test('administrator versions a recipe, transfers actual production cost and reve
         await page.goto('/admin/management/purchases/create');
         await page.getByLabel('Proveedor', { exact: true }).fill(categoryName);
         await page
-            .getByLabel('Insumo', { exact: true })
+            .getByLabel('Insumo 1', { exact: true })
             .selectOption({ label: names[index] });
-        await page.getByLabel('Cantidad', { exact: true }).fill('1');
+        await page.getByLabel('Cantidad 1', { exact: true }).fill('1');
         await page
-            .getByLabel('Precio en pesos enteros', { exact: true })
+            .getByLabel('Precio 1', { exact: true })
             .fill(String(price));
         await page
             .getByRole('button', { name: 'Confirmar compra', exact: true })

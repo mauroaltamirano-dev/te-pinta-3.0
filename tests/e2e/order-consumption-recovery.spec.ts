@@ -42,11 +42,11 @@ test('administrator versions physical consumption and fulfills an order once', a
     await page.goto('/admin/management/purchases/create');
     await page.getByLabel('Proveedor', { exact: true }).fill(name);
     await page
-        .getByLabel('Insumo', { exact: true })
+        .getByLabel('Insumo 1', { exact: true })
         .selectOption({ label: name });
-    await page.getByLabel('Cantidad', { exact: true }).fill('1');
+    await page.getByLabel('Cantidad 1', { exact: true }).fill('1');
     await page
-        .getByLabel('Precio en pesos enteros', { exact: true })
+        .getByLabel('Precio 1', { exact: true })
         .fill('10000');
     await page
         .getByRole('button', { name: 'Confirmar compra', exact: true })
@@ -64,8 +64,8 @@ test('administrator versions physical consumption and fulfills an order once', a
     ).toBeVisible();
     await page.getByRole('button', { name: 'Agregar componente' }).click();
     await page
-        .getByLabel('Item 1', { exact: true })
-        .selectOption({ label: `${name} · ${name} · semi_finished` });
+        .getByLabel('Insumo 1', { exact: true })
+        .selectOption({ label: `${name} · ${name} · Semielaborado` });
     await page.getByLabel('Cantidad 1', { exact: true }).fill('55.000000');
     await page
         .getByLabel('Unidad 1', { exact: true })

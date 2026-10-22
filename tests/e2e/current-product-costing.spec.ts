@@ -109,11 +109,11 @@ test('current costing configures exact packaging, estimates family prices and ke
         await page.goto('/admin/management/purchases/create');
         await page.getByLabel('Proveedor', { exact: true }).fill(name);
         await page
-            .getByLabel('Insumo', { exact: true })
+            .getByLabel('Insumo 1', { exact: true })
             .selectOption({ label: `${name} ${kind}` });
-        await page.getByLabel('Cantidad', { exact: true }).fill('1');
+        await page.getByLabel('Cantidad 1', { exact: true }).fill('1');
         await page
-            .getByLabel('Precio en pesos enteros', { exact: true })
+            .getByLabel('Precio 1', { exact: true })
             .fill(kind === 'packaging' ? '700' : '10000');
         await page
             .getByRole('button', { name: 'Confirmar compra', exact: true })
@@ -133,8 +133,8 @@ test('current costing configures exact packaging, estimates family prices and ke
         .getByRole('link', { name: 'Configurar consumo físico', exact: true })
         .click();
     await page.getByRole('button', { name: 'Agregar componente' }).click();
-    await page.getByLabel('Item 1', { exact: true }).selectOption({
-        label: `${name} semi_finished · ${name} · semi_finished`,
+    await page.getByLabel('Insumo 1', { exact: true }).selectOption({
+        label: `${name} semi_finished · ${name} · Semielaborado`,
     });
     await page.getByLabel('Cantidad 1', { exact: true }).fill('55');
     await page

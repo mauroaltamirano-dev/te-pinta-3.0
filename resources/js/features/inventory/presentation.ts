@@ -76,3 +76,49 @@ export function inventoryUnitName(
         unit.code
     );
 }
+
+export const itemKinds: Record<string, string> = {
+    raw_material: 'Materia prima',
+    semi_finished: 'Semielaborado',
+    finished: 'Producto terminado',
+    packaging: 'Packaging',
+    consumable: 'Consumible',
+    other: 'Otro',
+};
+
+export function inventoryItemKindLabel(kind: string | null): string {
+    return kind ? (itemKinds[kind] ?? kind) : 'Clasificación pendiente';
+}
+
+/** Exact decimal × integer on the string, so display never drifts from the backend. */
+export function multiplyDecimal(value: string, factor: bigint): string | null {
+    const match = /^(\d+)(?:\.(\d+))?$/.exec(value.trim());
+
+    if (!match) {
+        return null;
+    }
+
+    const [, integer, fraction = ''] = match;
+    const product = (BigInt(integer + fraction) * factor)
+        .toString()
+        .padStart(fraction.length + 1, '0');
+    const cut = product.length - fraction.length;
+
+    return editableDecimal(
+        fraction ? `${product.slice(0, cut)}.${product.slice(cut)}` : product,
+    );
+}
+
+/** Live example for a consumption quantity, which is always per 1 sold unit. */
+export function consumptionExample(
+    quantity: string,
+    unit: DisplayUnit,
+): string | null {
+    const dozen = multiplyDecimal(quantity, 12n);
+
+    if (dozen === null || !quantity.trim()) {
+        return null;
+    }
+
+    return `Una docena descuenta 12 × ${formatInventoryQuantity(quantity, unit)} = ${formatInventoryQuantity(dozen, unit)}`;
+}

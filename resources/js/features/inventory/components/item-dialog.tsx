@@ -9,7 +9,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { inventoryUnitName } from '../presentation';
+import { inventoryUnitName, itemKinds } from '../presentation';
 import type {
     InventoryCategory,
     InventoryItem,
@@ -18,14 +18,6 @@ import type {
 } from '../types';
 import { FormField } from './form-field';
 
-export const itemKinds: Record<string, string> = {
-    raw_material: 'Materia prima',
-    semi_finished: 'Semielaborado',
-    finished: 'Producto terminado',
-    packaging: 'Packaging',
-    consumable: 'Consumible',
-    other: 'Otro',
-};
 const selectClass =
     'h-10 w-full rounded-md border border-input bg-background px-3 text-sm';
 

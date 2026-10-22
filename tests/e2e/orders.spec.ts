@@ -810,7 +810,7 @@ test.describe('edición administrativa segura', () => {
             .click();
         await expect(
             page.getByText(
-                'Sin inventario explícito: costo físico conocido igual a cero.',
+                'Sin consumo de stock: este producto no descuenta insumos al entregarse.',
                 { exact: true },
             ),
         ).toBeVisible();

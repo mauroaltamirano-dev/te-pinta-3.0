@@ -1,10 +1,19 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
+    consumptionExample,
     formatInventoryQuantity,
+    inventoryItemKindLabel,
     inventoryUnitName,
 } from '@/features/inventory/presentation';
+
+const selectClass =
+    'h-10 w-full min-w-0 rounded-md border bg-admin-canvas px-3 text-sm';
+const cellLabelClass = 'text-xs text-admin-text-secondary md:sr-only';
+const componentColumns = 'md:grid-cols-[minmax(12rem,2fr)_10rem_10rem_2.75rem]';
 
 type Unit = { id: number; code: string; family: string };
 type Item = {
@@ -64,7 +73,7 @@ export default function ProductConsumption({
             })) ?? [],
     });
     const eligible = items.filter((i) =>
-        `${i.name} ${i.category.name} ${i.kind}`
+        `${i.name} ${i.category.name} ${i.kind} ${inventoryItemKindLabel(i.kind)}`
             .toLocaleLowerCase()
             .includes(search.toLocaleLowerCase()),
     );
@@ -95,14 +104,16 @@ export default function ProductConsumption({
             </h1>
             <p>
                 {!definition
-                    ? 'Falta configuración: no se conoce el consumo y la entrega quedará bloqueada.'
+                    ? 'Falta configuración: todavía no se sabe qué insumos usa este producto y sus pedidos no se van a poder entregar.'
                     : definition.mode === 'no_inventory'
-                      ? 'Sin inventario explícito: costo físico conocido igual a cero.'
-                      : 'Consumo configurado: se descuenta al entregar el pedido.'}
+                      ? 'Sin consumo de stock: este producto no descuenta insumos al entregarse.'
+                      : 'Consumo configurado: los insumos se descuentan al entregar el pedido.'}
             </p>
             <p>
-                Se consumen los componentes configurados. No se expanden recetas
-                ni se modifican precios de venta.
+                Cargá cuánto de cada insumo usa 1 unidad vendida (por ejemplo, 1
+                empanada), no el valor por docena: al vender una docena se
+                multiplica por 12. Los rellenos hechos con receta se descuentan
+                tal cual, sin desarmar la receta.
             </p>
             {definition?.mode === 'consume' && (
                 <>
@@ -180,30 +191,41 @@ export default function ProductConsumption({
                                 }
                             >
                                 <option value="consume">
-                                    Consumir inventario
+                                    Descuenta insumos del stock
                                 </option>
                                 <option value="no_inventory">
-                                    Sin inventario (decisión explícita)
+                                    No usa insumos con stock
                                 </option>
                             </select>
                         </label>
                     )}
                     {form.data.mode === 'no_inventory' ? (
                         <p>
-                            Esto registra cero físico conocido, no configuración
-                            pendiente. El modo no podrá cambiar después.
+                            Elegí esto sólo si el producto realmente no usa
+                            insumos con stock. Después no se va a poder cambiar.
                         </p>
                     ) : (
                         <>
                             <label>
-                                Buscar por nombre, categoría o clasificación
+                                Buscar insumo por nombre, categoría o
+                                clasificación
                                 <input
                                     className="block w-full rounded border p-2"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
                             </label>
+                            <div
+                                aria-hidden="true"
+                                className={`hidden gap-3 border-b border-admin-border px-2 pb-2 text-xs font-medium text-admin-text-secondary md:grid ${componentColumns}`}
+                            >
+                                <span>Insumo</span>
+                                <span>Cantidad por unidad vendida</span>
+                                <span>Unidad</span>
+                                <span />
+                            </div>
                             {form.data.components.map((c, index) => {
+                                const n = index + 1;
                                 const item = items.find(
                                     (i) => String(i.id) === c.inventory_item_id,
                                 );
@@ -215,18 +237,31 @@ export default function ProductConsumption({
                                     ) || !item
                                         ? eligible
                                         : [item, ...eligible];
+                                const unit = units.find(
+                                    (u) => String(u.id) === c.unit_id,
+                                );
+                                const example = unit
+                                    ? consumptionExample(c.quantity, unit.code)
+                                    : null;
 
                                 return (
-                                    <fieldset
+                                    <div
                                         key={index}
-                                        className="grid gap-2 rounded border p-3"
+                                        role="group"
+                                        aria-label={`Componente ${n}`}
+                                        className={`grid grid-cols-2 gap-3 rounded-lg border border-admin-border bg-admin-surface p-3 md:items-start md:rounded-none md:border-0 md:border-b md:bg-transparent md:px-2 ${componentColumns}`}
                                     >
-                                        <legend>Componente {index + 1}</legend>
-                                        <label>
-                                            Item
+                                        <div className="col-span-2 grid gap-1 md:col-span-1">
+                                            <label
+                                                htmlFor={`component-item-${index}`}
+                                                className={cellLabelClass}
+                                            >
+                                                Insumo
+                                            </label>
                                             <select
-                                                aria-label={`Item ${index + 1}`}
-                                                className="block w-full rounded border p-2"
+                                                id={`component-item-${index}`}
+                                                aria-label={`Insumo ${n}`}
+                                                className={selectClass}
                                                 value={c.inventory_item_id}
                                                 onChange={(e) => {
                                                     const selected = items.find(
@@ -245,7 +280,7 @@ export default function ProductConsumption({
                                                 }}
                                             >
                                                 <option value="">
-                                                    Elegir item apto
+                                                    Elegir insumo
                                                 </option>
                                                 {choices.map((i) => (
                                                     <option
@@ -254,16 +289,23 @@ export default function ProductConsumption({
                                                     >
                                                         {i.name} ·{' '}
                                                         {i.category.name} ·{' '}
-                                                        {i.kind}
+                                                        {inventoryItemKindLabel(
+                                                            i.kind,
+                                                        )}
                                                     </option>
                                                 ))}
                                             </select>
-                                        </label>
-                                        <label>
-                                            Cantidad por unidad vendida
-                                            <input
-                                                aria-label={`Cantidad ${index + 1}`}
-                                                className="block w-full rounded border p-2"
+                                        </div>
+                                        <div className="grid gap-1">
+                                            <label
+                                                htmlFor={`component-quantity-${index}`}
+                                                className={cellLabelClass}
+                                            >
+                                                Cantidad por unidad vendida
+                                            </label>
+                                            <Input
+                                                id={`component-quantity-${index}`}
+                                                aria-label={`Cantidad ${n}`}
                                                 inputMode="decimal"
                                                 value={c.quantity}
                                                 onChange={(e) =>
@@ -273,12 +315,18 @@ export default function ProductConsumption({
                                                     })
                                                 }
                                             />
-                                        </label>
-                                        <label>
-                                            Unidad
+                                        </div>
+                                        <div className="grid gap-1">
+                                            <label
+                                                htmlFor={`component-unit-${index}`}
+                                                className={cellLabelClass}
+                                            >
+                                                Unidad
+                                            </label>
                                             <select
-                                                aria-label={`Unidad ${index + 1}`}
-                                                className="block w-full rounded border p-2"
+                                                id={`component-unit-${index}`}
+                                                aria-label={`Unidad ${n}`}
+                                                className={selectClass}
                                                 value={c.unit_id}
                                                 onChange={(e) =>
                                                     change(index, {
@@ -306,22 +354,36 @@ export default function ProductConsumption({
                                                         </option>
                                                     ))}
                                             </select>
-                                        </label>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() =>
-                                                form.setData(
-                                                    'components',
-                                                    form.data.components.filter(
-                                                        (_, n) => n !== index,
-                                                    ),
-                                                )
-                                            }
-                                        >
-                                            Quitar componente {index + 1}
-                                        </Button>
-                                    </fieldset>
+                                        </div>
+                                        <div className="col-span-2 flex justify-end md:col-span-1">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label={`Quitar componente ${n}`}
+                                                title={`Quitar componente ${n}`}
+                                                onClick={() =>
+                                                    form.setData(
+                                                        'components',
+                                                        form.data.components.filter(
+                                                            (_, i) =>
+                                                                i !== index,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 aria-hidden="true" />
+                                            </Button>
+                                        </div>
+                                        {example && (
+                                            <p
+                                                className="col-span-2 text-sm text-admin-text-secondary md:col-span-4"
+                                                data-testid={`consumption-example-${n}`}
+                                            >
+                                                {example}
+                                            </p>
+                                        )}
+                                    </div>
                                 );
                             })}
                             <Button
@@ -359,8 +421,8 @@ export default function ProductConsumption({
                     </Button>
                     {definition && (
                         <p>
-                            La versión anterior se retira sin cambiar pedidos
-                            históricos.
+                            Al guardar, la versión actual pasa a «Retiradas»;
+                            los pedidos ya entregados no cambian.
                         </p>
                     )}
                 </form>

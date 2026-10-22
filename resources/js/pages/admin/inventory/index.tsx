@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { adminBreadcrumbRoot } from '@/features/admin-navigation/model';
 import { CategoryDialog } from '@/features/inventory/components/category-dialog';
-import {
-    ItemDialog,
-    itemKinds,
-} from '@/features/inventory/components/item-dialog';
+import { ItemDialog } from '@/features/inventory/components/item-dialog';
 import { PresentationDialog } from '@/features/inventory/components/presentation-dialog';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    itemKinds,
+} from '@/features/inventory/presentation';
 import type {
     InventoryCategory,
     InventoryItem,

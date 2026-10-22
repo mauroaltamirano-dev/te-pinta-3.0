@@ -76,6 +76,7 @@ Outflow types: `purchase` (Compra), `expense` (Gasto), `personal_withdrawal` (Re
 - One request UUID (canonicalized to lowercase) plus a normalized payload fingerprint identifies a creation; an advisory lock serializes it; matching retries return the same purchase, conflicting reuse is rejected.
 - The selected active wallet receives one negative entry for subtotal + shipping. Stock effects are described in [INVENTORY.md](INVENTORY.md#purchases-stock-side).
 - Reversal (`POST .../purchases/{purchase}/reverse`) compensates money and stock atomically; generic financial reversal of a purchase is rejected.
+- The create form shows each line's subtotal and an always-visible summary (items + shipping = total) for display only; the backend recomputes every amount and rejects a per-unit price whose line total has centavos.
 - The list filters by date, wallet, supplier/search and confirmed/reversed before pagination.
 
 ### Attachments

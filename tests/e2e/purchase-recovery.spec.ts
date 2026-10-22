@@ -40,14 +40,14 @@ test('administrator records and reverses a rich purchase through its canonical r
         .click();
     await page.getByLabel('Proveedor', { exact: true }).fill(name);
     await page
-        .getByLabel('Insumo', { exact: true })
+        .getByLabel('Insumo 1', { exact: true })
         .selectOption({ label: name });
-    await page.getByLabel('Cantidad', { exact: true }).fill('2');
+    await page.getByLabel('Cantidad 1', { exact: true }).fill('2');
     await page
-        .getByLabel('Precio en pesos enteros', { exact: true })
+        .getByLabel('Precio 1', { exact: true })
         .fill('4300');
     await page
-        .getByLabel('Envío en pesos enteros', { exact: true })
+        .getByLabel('Envío', { exact: true })
         .fill('300');
     await page
         .getByRole('button', { name: 'Confirmar compra', exact: true })

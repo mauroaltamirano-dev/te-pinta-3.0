@@ -41,11 +41,11 @@ test('administrator previews a physical count, records loss and reverses exact h
     await page.goto('/admin/management/purchases/create');
     await page.getByLabel('Proveedor', { exact: true }).fill(name);
     await page
-        .getByLabel('Insumo', { exact: true })
+        .getByLabel('Insumo 1', { exact: true })
         .selectOption({ label: name });
-    await page.getByLabel('Cantidad', { exact: true }).fill('12');
+    await page.getByLabel('Cantidad 1', { exact: true }).fill('12');
     await page
-        .getByLabel('Precio en pesos enteros', { exact: true })
+        .getByLabel('Precio 1', { exact: true })
         .fill('48000');
     await page
         .getByRole('button', { name: 'Confirmar compra', exact: true })
