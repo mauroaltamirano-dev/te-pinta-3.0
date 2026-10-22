@@ -75,7 +75,8 @@ final class RecipeController
         });
 
         $canCorrect = $recipe->is_active && $recipe->versions()->where('is_active', true)
-            ->whereNotIn('id', ProductionBatch::query()->select('recipe_version_id'))->exists();
+            ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from((new ProductionBatch)->getTable())
+                ->whereColumn('recipe_version_id', 'inventory_recipe_versions.id'))->exists();
         $needsFirstVersion = $recipe->is_active && ! $recipe->versions()->where('is_active', true)->exists();
 
         return Inertia::render('admin/inventory/recipes/show', ['recipe' => $recipe, 'versions' => $versions, 'version_view' => $view, 'can_correct' => $canCorrect, 'needs_first_version' => $needsFirstVersion, 'items' => $this->items('recipe_input_enabled'), 'outputItems' => $this->items('production_output_enabled'), 'units' => $this->units()]);

@@ -236,7 +236,7 @@ final class RecipeLifecycleTest extends TestCase
         $this->assertSame(1, $recipe->versions()->count());
 
         $this->expectException(QueryException::class);
-        DB::table('inventory_recipes')->insert(['name' => 'RELLENO CRIOLLA DULCE', 'is_active' => true, 'created_by' => $admin->id, 'restaurant_id' => $replacement->restaurant_id, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('inventory_recipes')->insert(['name' => 'RELLENO CRIOLLA DULCE', 'is_active' => true, 'created_by' => $admin->id, 'restaurant_id' => DB::table('inventory_recipes')->where('id', $replacement->id)->value('restaurant_id'), 'created_at' => now(), 'updated_at' => now()]);
     }
 
     public function test_an_active_recipe_without_versions_can_load_its_first_version_or_be_retired(): void
@@ -260,6 +260,34 @@ final class RecipeLifecycleTest extends TestCase
         $this->post('/admin/inventory/recipes/'.$abandoned->id.'/retire')->assertSessionHasNoErrors();
         $this->assertFalse($abandoned->fresh()->is_active);
         $this->get('/admin/inventory/recipes/'.$abandoned->id)->assertInertia(fn (AssertableInertia $p) => $p->where('needs_first_version', false));
+    }
+
+    public function test_a_correction_can_take_a_retired_recipe_name(): void
+    {
+        [$admin, $onion, , $output, $retired] = $this->fixture(withStock: false);
+        $this->actingAs($admin)->post('/admin/inventory/recipes/'.$retired->id.'/retire')->assertSessionHasNoErrors();
+        [, $onion2, , $output2, $draft] = $this->fixture(prefix: 'B ', withStock: false);
+
+        $this->put('/admin/inventory/recipes/'.$draft->id.'/current-version', ['name' => ' relleno criolla dulce '] + $this->formula($output2, $onion2))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('relleno criolla dulce', $draft->fresh()->name);
+        $this->assertSame('Relleno Criolla Dulce', $retired->fresh()->name);
+    }
+
+    public function test_production_of_a_corrected_formula_asks_to_reload_instead_of_failing(): void
+    {
+        [$admin, $onion, , $output, $recipe, $replaced] = $this->fixture(withStock: false);
+        $this->actingAs($admin)->put('/admin/inventory/recipes/'.$recipe->id.'/current-version', ['name' => $recipe->name] + $this->formula($output, $onion))
+            ->assertSessionHasNoErrors();
+
+        try {
+            $this->produce($admin, $replaced);
+            $this->fail('A replaced formula was used for production.');
+        } catch (ValidationException $e) {
+            $this->assertSame(['recipe_version_id' => ['Esa versión de la receta ya no está vigente. Recargá la página y elegí la versión actual.']], $e->errors());
+            $this->assertSame(0, ProductionBatch::query()->count());
+        }
     }
 
     public function test_staff_cannot_retire_or_correct_recipes(): void
