@@ -48,7 +48,7 @@ final class RecipeLifecycleTest extends TestCase
         $this->assertSame(2, $version->ingredients()->count());
         $this->get('/admin/inventory/recipes/'.$recipe->id)->assertInertia(fn (AssertableInertia $p) => $p->where('recipe.is_active', false)->where('versions.total', 0));
         $this->get('/admin/inventory/recipes/'.$recipe->id.'?view=retired')->assertInertia(fn (AssertableInertia $p) => $p->where('versions.total', 1)->where('versions.data.0.id', $version->id));
-        $this->get('/admin/inventory/recipes')->assertInertia(fn (AssertableInertia $p) => $p->where('recipes.data.0.is_active', false));
+        $this->get('/admin/inventory/recipes?view=retired')->assertInertia(fn (AssertableInertia $p) => $p->where('recipes.data.0.is_active', false));
         $this->get('/admin/inventory/production/create')->assertInertia(fn (AssertableInertia $p) => $p->has('versions', 0));
 
         $this->post('/admin/inventory/recipes/'.$recipe->id.'/retire')->assertSessionHasErrors(['recipe' => 'Esta receta ya está retirada.']);
@@ -215,6 +215,21 @@ final class RecipeLifecycleTest extends TestCase
 
         $this->expectException(QueryException::class);
         DB::table('inventory_recipe_ingredients')->where('recipe_version_id', $used->id)->update(['quantity' => '3']);
+    }
+
+    public function test_recipe_list_shows_active_recipes_by_default_and_retired_ones_on_their_own_tab(): void
+    {
+        [$admin, , , , $retired] = $this->fixture(withStock: false);
+        $this->actingAs($admin)->post('/admin/inventory/recipes/'.$retired->id.'/retire')->assertSessionHasNoErrors();
+        $active = app(CreateRecipe::class)->execute('Criolla Salada', $admin->id);
+
+        $this->get('/admin/inventory/recipes')->assertInertia(fn (AssertableInertia $p) => $p->component('admin/inventory/recipes/index')
+            ->where('view', 'active')->where('recipes.total', 1)->where('recipes.data.0.id', $active->id));
+        $this->get('/admin/inventory/recipes?view=retired')->assertInertia(fn (AssertableInertia $p) => $p
+            ->where('view', 'retired')->where('recipes.total', 1)->where('recipes.data.0.id', $retired->id)->where('recipes.data.0.is_active', false));
+        $this->get('/admin/inventory/recipes?view=invalid')->assertInertia(fn (AssertableInertia $p) => $p->where('view', 'active')->where('recipes.total', 1));
+        $this->assertTrue($active->fresh()->is_active);
+        $this->assertFalse($retired->fresh()->is_active);
     }
 
     public function test_a_retired_recipe_name_can_be_reused(): void

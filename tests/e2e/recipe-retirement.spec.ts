@@ -107,4 +107,26 @@ test('administrator corrects an unused recipe without history and retires it', a
     ).toHaveCount(0);
     await page.goto('/admin/inventory/production/create');
     await expect(page.getByText(`Salteña vieja ${suffix}`)).toHaveCount(0);
+
+    await page.goto('/admin/inventory/recipes');
+    const tabs = page.getByRole('navigation', { name: 'Estado de recetas' });
+    await expect(
+        tabs.getByRole('link', { name: 'Activas', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(
+        page.getByRole('link', { name: `Salteña vieja ${suffix}` }),
+    ).toHaveCount(0);
+    await tabs.getByRole('link', { name: 'Retiradas', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/inventory\/recipes\?view=retired$/);
+    await expect(
+        page.getByRole('link', { name: `Salteña vieja ${suffix}` }),
+    ).toBeVisible();
+    await expect(page.getByRole('article')).toContainText('Retirada');
+
+    if (process.env.SCREEN_DIR) {
+        await page.screenshot({
+            path: `${process.env.SCREEN_DIR}/after-recipes-retired-${suffix}.png`,
+            fullPage: true,
+        });
+    }
 });

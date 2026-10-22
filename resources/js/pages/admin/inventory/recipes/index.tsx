@@ -3,7 +3,13 @@ import { Button } from '@/components/ui/button';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
 import type { Recipe } from '@/features/inventory/recipes/types';
 import type { Pagination } from '@/features/inventory/types';
-export default function Recipes({ recipes }: { recipes: Pagination<Recipe> }) {
+export default function Recipes({
+    recipes,
+    view,
+}: {
+    recipes: Pagination<Recipe>;
+    view: 'active' | 'retired';
+}) {
     return (
         <section className="grid gap-6 text-admin-text-primary">
             <Head title="Recetas" />
@@ -16,10 +22,26 @@ export default function Recipes({ recipes }: { recipes: Pagination<Recipe> }) {
                     </Link>
                 </Button>
             </header>
+            <nav
+                aria-label="Estado de recetas"
+                className="flex flex-wrap gap-4"
+            >
+                {(['active', 'retired'] as const).map((tab) => (
+                    <Link
+                        key={tab}
+                        className="inline-flex min-h-11 items-center underline"
+                        aria-current={view === tab ? 'page' : undefined}
+                        href={`/admin/inventory/recipes?view=${tab}`}
+                    >
+                        {tab === 'active' ? 'Activas' : 'Retiradas'}
+                    </Link>
+                ))}
+            </nav>
             {!recipes.data.length && (
                 <p role="status">
-                    Todavía no hay recetas. Para registrar producción, se
-                    necesita una fórmula con ingredientes y salida esperada.
+                    {view === 'active'
+                        ? 'Todavía no hay recetas activas. Para registrar producción, se necesita una fórmula con ingredientes y salida esperada.'
+                        : 'No hay recetas retiradas.'}
                 </p>
             )}
             {recipes.data.map((r) => (
@@ -34,8 +56,9 @@ export default function Recipes({ recipes }: { recipes: Pagination<Recipe> }) {
                         {r.name}
                     </Link>
                     <p>
-                        {r.versions_count} versiones ·{' '}
-                        {r.is_active ? 'Activa' : 'Inactiva'}
+                        {r.versions_count}{' '}
+                        {r.versions_count === 1 ? 'versión' : 'versiones'} ·{' '}
+                        {r.is_active ? 'Activa' : 'Retirada'}
                     </p>
                 </article>
             ))}
@@ -43,6 +66,7 @@ export default function Recipes({ recipes }: { recipes: Pagination<Recipe> }) {
                 path="/admin/inventory/recipes"
                 current={recipes.current_page}
                 last={recipes.last_page}
+                view={view}
             />
         </section>
     );

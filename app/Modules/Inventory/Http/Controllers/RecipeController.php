@@ -30,8 +30,11 @@ final class RecipeController
     public function index(Request $request): Response
     {
         Gate::authorize('viewAny', InventoryItem::class);
+        $view = $request->query('view') === 'retired' ? 'retired' : 'active';
+        $recipes = Recipe::query()->where('is_active', $view === 'active')->withCount('versions')->latest()->paginate(20)->appends(['view' => $view])
+            ->through(fn (Recipe $r) => ['id' => $r->id, 'name' => $r->name, 'is_active' => $r->is_active, 'versions_count' => $r->versions_count]);
 
-        return Inertia::render('admin/inventory/recipes/index', ['recipes' => Recipe::query()->withCount('versions')->latest()->paginate(20)->through(fn (Recipe $r) => ['id' => $r->id, 'name' => $r->name, 'is_active' => $r->is_active, 'versions_count' => $r->versions_count])]);
+        return Inertia::render('admin/inventory/recipes/index', ['recipes' => $recipes, 'view' => $view]);
     }
 
     public function create(Request $request): Response
