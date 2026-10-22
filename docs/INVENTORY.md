@@ -22,6 +22,7 @@ Code: `app/Modules/Inventory/`. All routes are under `/admin/inventory` and requ
 - An item's measurement (unit family, base unit, precision) becomes immutable once physical history or dependent presentations exist. Inputs exceeding the item's precision are rejected, never rounded.
 - Optional `reference_mass_grams_per_unit` on count items helps compare mass (six eggs at 60 g = 360 g) but never changes count stock.
 - **Purchase presentations** (`inventory_purchase_presentations`) describe how an item is bought (for example a 25 kg bag) with exact contents in a compatible unit.
+- The item list on `/admin/inventory` is filtered on the server by the query params `category` (category id), `kind` and `search` (case- and accent-insensitive name substring, at most 100 characters). Unknown or malformed values are ignored rather than rejected, because the URL is shareable. Filters never change the valuation summary, which always covers every item. Item and category saves redirect back to the filtered URL, so filters survive an edit.
 
 ## Stock movements and cost layers
 

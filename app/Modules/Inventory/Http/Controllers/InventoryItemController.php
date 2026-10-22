@@ -20,7 +20,7 @@ final class InventoryItemController
     ): RedirectResponse {
         $createItem->execute($this->data($request));
 
-        return to_route('admin.inventory.index')->with('success', 'Item de inventario creado.');
+        return back(fallback: route('admin.inventory.index'))->with('success', 'Item de inventario creado.');
     }
 
     public function update(
@@ -30,7 +30,7 @@ final class InventoryItemController
     ): RedirectResponse {
         $updateItem->execute($inventoryItem, $this->data($request));
 
-        return to_route('admin.inventory.index')->with('success', 'Item de inventario actualizado.');
+        return back(fallback: route('admin.inventory.index'))->with('success', 'Item de inventario actualizado.');
     }
 
     private function data(FormRequest $request): InventoryItemData

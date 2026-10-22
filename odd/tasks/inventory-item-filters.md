@@ -1,0 +1,26 @@
+# Inventory item filters
+
+Objective: filter the item list on `/admin/inventory` by category, classification and name, with filters in the URL. Branch `feat/inventory-item-filters` from `main` at `13275ee`, worktree `~/workspaces/tepinta3.0-worktrees/inventory-item-filters`. Delivery: local branch only; no merge to `main`, push or deploy without the user's OK ("se deploya aparte de la combinada"). Test runner: PHPUnit (`php artisan test`) against a private throwaway Postgres (`tepinta-inv-filters-pg`, 127.0.0.1:55494, config through environment variables, no `.env`), Playwright for e2e.
+
+## Specs
+
+- S1 — "Chips de categoría que filtran la lista ("Todas" por defecto); editar categoría pasa a un ícono/botón aparte."
+- S2 — "Filtro por clasificación (materia prima, semielaborado, packaging, etc.)." Options are the six existing kinds of `itemKinds`.
+- S3 — "Buscador por nombre." Case-insensitive substring of the item name (assumption: accent-insensitive too, so "saltenas" finds "Salteñas").
+- S4 — "Filtros en la URL (query params) para que sobrevivan a editar un insumo y volver." Query params `category`, `kind`, `search`; item and category create/update redirect back to the filtered URL.
+- S5 — "Si la lista está paginada, filtrar en el backend, no solo en el cliente." The item list is not paginated (`InventoryStockBalanceQuery::forItems()` returns every item); filtering is still done on the backend, because the URL is the source of truth and the server validates it. The valuation summary stays computed over all items.
+- S6 — "ODD test-first, Playwright del flujo."
+
+## Tasks
+
+- T1 — S4, S5, S3: backend validates and applies `category`/`kind`/`search`, echoes them in `filters`; item and category store/update redirect `back()` with fallback to the index. Route: inline. Status: done (commit pending).
+- T2 — S1, S2, S3, S4: page filter bar (category chips with separate edit button, classification select, name search, clear filters, empty-result message); history pagination keeps item filters. Route: inline. Status: done (commit pending).
+- T3 — S6: Playwright spec for the filter flow, including surviving an item edit; docs `docs/INVENTORY.md`. Route: inline. Status: done (commit pending).
+
+## Log
+
+- L1 (2026-10-22) — User request: "Feature nueva: filtros en la lista de insumos de /admin/inventory (resources/js/pages/admin/inventory/index.tsx). Hoy no hay filtro ni buscador, y los botones de categoría abren el editor. Worktree en ~/workspaces/tepinta3.0-worktrees/inventory-item-filters, rama feat/inventory-item-filters desde main. Specs: - Chips de categoría que filtran la lista ("Todas" por defecto); editar categoría pasa a un ícono/botón aparte. - Filtro por clasificación (materia prima, semielaborado, packaging, etc.). - Buscador por nombre. - Filtros en la URL (query params) para que sobrevivan a editar un insumo y volver. - Si la lista está paginada, filtrar en el backend, no solo en el cliente. ODD test-first, Playwright del flujo. Sin merge a main, push ni deploy sin mi OK: se deploya aparte de la combinada."
+- L2 — Exploration: `InventoryItemController` and `InventoryCategoryController` redirect with `to_route('admin.inventory.index')`, which drops the query string; only the inventory page dialogs post to them. Writing `.env` is denied by the user's rules, so test config goes through environment variables. Baseline `InventoryAdminHttpTest`: 7 passed.
+- L3 — T1 RED: 3 new `InventoryAdminHttpTest` cases failed for the expected reasons (unfiltered list; missing `filters.category`; redirect to `/admin/inventory` without query). GREEN after server-side filtering in `InventoryController` and `back(fallback: route('admin.inventory.index'))` in item/category store/update; one assertion of mine was wrong ("sal" correctly also matches "Relleno Salteñas") and was fixed. Decision: invalid filter values are ignored, not 422, because a GET validation failure redirects back to the same URL and can loop.
+- L4 — T2/T3: filter bar follows existing idioms (`quick-order-catalog` chips with `aria-pressed`, `customers/index` submit search). E2E RED: `inventory-item-filters.spec.ts` failed against `main`'s sources (temporarily checked out, then restored by patch) at the "Todas" chip; GREEN on chromium and mobile-chromium.
+- L5 — Checks: inventory e2e specs (new + foundation, costing, visual primitives, recipe/production, adjustments) 51 passed, 1 skipped. Full PHPUnit 986/992; the 6 errors are `GD extension is not installed` on host PHP (Instagram, Management attachments/overview, Product images), environmental and untouched (same as combined-dozen-percentage L19). PHPStan, Pint, ESLint, Prettier, tsc and build clean.

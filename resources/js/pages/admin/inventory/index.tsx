@@ -1,7 +1,10 @@
 import { router, usePage } from '@inertiajs/react';
+import { Pencil, Search } from 'lucide-react';
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { AdminPageShell } from '@/components/shared/admin-page-shell';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { adminBreadcrumbRoot } from '@/features/admin-navigation/model';
 import { CategoryDialog } from '@/features/inventory/components/category-dialog';
 import {
@@ -25,7 +28,12 @@ interface Props {
     items: InventoryItem[];
     units: InventoryUnit[];
     transactions: Pagination<InventoryTransaction>;
-    filters: { transaction_id: number | null };
+    filters: {
+        transaction_id: number | null;
+        category: number | null;
+        kind: string | null;
+        search: string;
+    };
     valuation: {
         confident_value: number;
         fully_valued: number;
@@ -72,17 +80,50 @@ export default function Inventory({
         item: InventoryItem;
         presentation?: PurchasePresentation;
     } | null>(null);
-    const visitPage = (page: number) =>
+    const [search, setSearch] = useState(filters.search);
+    const itemFiltersActive = Boolean(
+        filters.category || filters.kind || filters.search,
+    );
+    const visitInventory = (
+        query: Partial<Omit<Props['filters'], 'transaction_id'>> & {
+            page?: number;
+            transaction_id?: number | null;
+        } = {},
+    ) => {
+        const next = {
+            category: filters.category,
+            kind: filters.kind,
+            search: filters.search,
+            transaction_id: filters.transaction_id,
+            ...query,
+        };
+
         router.get(
             '/admin/inventory',
-            {
-                page,
-                ...(filters.transaction_id
-                    ? { transaction_id: filters.transaction_id }
-                    : {}),
-            },
-            { preserveScroll: true },
+            Object.fromEntries(
+                Object.entries(next).filter(([, value]) => value),
+            ),
+            { preserveState: true, preserveScroll: true, replace: true },
         );
+    };
+    const filterItems = (
+        query: Partial<Omit<Props['filters'], 'transaction_id'>>,
+    ) =>
+        visitInventory({
+            ...query,
+            ...(transactions.current_page > 1
+                ? { page: transactions.current_page }
+                : {}),
+        });
+    const visitPage = (page: number) => visitInventory({ page });
+    const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        filterItems({ search: search.trim() });
+    };
+    const clearItemFilters = () => {
+        setSearch('');
+        filterItems({ category: null, kind: null, search: '' });
+    };
 
     return (
         <AdminPageShell
@@ -130,16 +171,51 @@ export default function Inventory({
             <section className="grid gap-3">
                 <h2 className="text-lg font-semibold">Categorías</h2>
                 {categories.length ? (
-                    <div className="flex flex-wrap gap-2">
+                    <div
+                        role="group"
+                        aria-label="Filtrar insumos por categoría"
+                        className="flex flex-wrap gap-2"
+                    >
+                        <Button
+                            variant={filters.category ? 'outline' : 'default'}
+                            aria-pressed={!filters.category}
+                            onClick={() => filterItems({ category: null })}
+                        >
+                            Todas
+                        </Button>
                         {categories.map((category) => (
-                            <Button
+                            <div
                                 key={category.id}
-                                variant="outline"
-                                onClick={() => setCategoryEditor(category)}
+                                className="flex items-center"
                             >
-                                {category.name}
-                                {!category.is_active && ' (inactiva)'}
-                            </Button>
+                                <Button
+                                    variant={
+                                        filters.category === category.id
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    aria-pressed={
+                                        filters.category === category.id
+                                    }
+                                    className="rounded-r-none"
+                                    onClick={() =>
+                                        filterItems({ category: category.id })
+                                    }
+                                >
+                                    {category.name}
+                                    {!category.is_active && ' (inactiva)'}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label={`Editar categoría ${category.name}`}
+                                    title="Editar categoría"
+                                    className="rounded-l-none border-l-0"
+                                    onClick={() => setCategoryEditor(category)}
+                                >
+                                    <Pencil />
+                                </Button>
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -150,6 +226,50 @@ export default function Inventory({
             </section>
             <section className="grid gap-3">
                 <h2 className="text-lg font-semibold">Insumos</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                    <form
+                        onSubmit={submitSearch}
+                        role="search"
+                        className="flex min-w-0 flex-1 basis-64 gap-2"
+                    >
+                        <div className="relative min-w-0 flex-1">
+                            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-admin-text-tertiary" />
+                            <Input
+                                type="search"
+                                aria-label="Buscar insumos por nombre"
+                                placeholder="Buscar por nombre"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                className="pl-9"
+                            />
+                        </div>
+                        <Button type="submit" variant="outline">
+                            Buscar
+                        </Button>
+                    </form>
+                    <select
+                        aria-label="Clasificación"
+                        value={filters.kind ?? ''}
+                        onChange={(event) =>
+                            filterItems({ kind: event.target.value || null })
+                        }
+                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                        <option value="">Todas las clasificaciones</option>
+                        {Object.entries(itemKinds).map(([value, label]) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                    {itemFiltersActive && (
+                        <Button variant="ghost" onClick={clearItemFilters}>
+                            Limpiar filtros
+                        </Button>
+                    )}
+                </div>
                 {items.length ? (
                     <div className="grid gap-4 lg:grid-cols-2">
                         {items.map((item) => (
@@ -253,6 +373,10 @@ export default function Inventory({
                             </article>
                         ))}
                     </div>
+                ) : itemFiltersActive ? (
+                    <p className="text-sm text-admin-text-secondary">
+                        Ningún insumo coincide con los filtros.
+                    </p>
                 ) : (
                     <p className="text-sm text-admin-text-secondary">
                         Todavía no hay insumos. Definí las unidades y
@@ -266,7 +390,9 @@ export default function Inventory({
                     {filters.transaction_id && (
                         <Button
                             variant="outline"
-                            onClick={() => router.get('/admin/inventory')}
+                            onClick={() =>
+                                visitInventory({ transaction_id: null })
+                            }
                         >
                             Ver todo el historial
                         </Button>

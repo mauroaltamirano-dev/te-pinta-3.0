@@ -17,7 +17,7 @@ final class InventoryCategoryController
     ): RedirectResponse {
         $createCategory->execute($request->string('name')->toString());
 
-        return to_route('admin.inventory.index')->with('success', 'Categoría de inventario creada.');
+        return back(fallback: route('admin.inventory.index'))->with('success', 'Categoría de inventario creada.');
     }
 
     public function update(
@@ -31,6 +31,6 @@ final class InventoryCategoryController
             $request->boolean('is_active'),
         );
 
-        return to_route('admin.inventory.index')->with('success', 'Categoría de inventario actualizada.');
+        return back(fallback: route('admin.inventory.index'))->with('success', 'Categoría de inventario actualizada.');
     }
 }

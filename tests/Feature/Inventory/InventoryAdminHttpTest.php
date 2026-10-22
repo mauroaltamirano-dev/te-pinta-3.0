@@ -257,6 +257,90 @@ final class InventoryAdminHttpTest extends TestCase
                 ->where('transactions.total', 1));
     }
 
+    public function test_index_filters_items_by_category_classification_and_name_on_the_server(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $meats = $this->category();
+        $fillings = $this->category(['name' => 'Rellenos']);
+        $this->item($meats, ['name' => 'Roast beef', 'kind' => 'raw_material']);
+        $this->item($meats, ['name' => 'Grasa', 'kind' => 'raw_material']);
+        $this->item($fillings, ['name' => 'Relleno Salteñas', 'kind' => 'semi_finished']);
+        $this->item($fillings, ['name' => 'Sal', 'kind' => null]);
+        $names = fn (array $query): array => collect($this->actingAs($admin)
+            ->get(route('admin.inventory.index', $query))
+            ->assertOk()
+            ->viewData('page')['props']['items'])->pluck('name')->all();
+
+        $this->assertSame(['Grasa', 'Relleno Salteñas', 'Roast beef', 'Sal'], $names([]));
+        $this->assertSame(['Grasa', 'Roast beef'], $names(['category' => $meats->id]));
+        $this->assertSame(['Relleno Salteñas'], $names(['kind' => 'semi_finished']));
+        $this->assertSame(['Relleno Salteñas', 'Sal'], $names(['search' => 'SAL']));
+        $this->assertSame(['Relleno Salteñas'], $names(['search' => ' saltenas ']));
+        $this->assertSame([], $names(['category' => $meats->id, 'kind' => 'semi_finished']));
+        $this->assertSame(['Grasa'], $names(['category' => $meats->id, 'search' => 'gra', 'kind' => null]));
+
+        $this->actingAs($admin)
+            ->get(route('admin.inventory.index', ['category' => $fillings->id, 'kind' => 'raw_material', 'search' => 'ro']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.category', $fillings->id)
+                ->where('filters.kind', 'raw_material')
+                ->where('filters.search', 'ro')
+                ->where('filters.transaction_id', null)
+                ->where('items', [])
+                ->where('valuation.zero', 4));
+    }
+
+    public function test_index_ignores_invalid_item_filters_instead_of_redirecting(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->category();
+        $this->item($category, ['name' => 'Roast beef', 'kind' => 'raw_material']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.inventory.index', ['category' => 999999, 'kind' => 'bogus', 'search' => ['x']]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.category', null)
+                ->where('filters.kind', null)
+                ->where('filters.search', '')
+                ->where('items.0.name', 'Roast beef'));
+    }
+
+    public function test_item_and_category_saves_return_to_the_filtered_list(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $category = $this->category();
+        $grams = $this->unit('g');
+        $item = $this->item($category, ['name' => 'Roast beef', 'kind' => 'raw_material']);
+        $filtered = route('admin.inventory.index', ['category' => $category->id, 'kind' => 'raw_material', 'search' => 'roast']);
+
+        $this->actingAs($admin)->from($filtered)
+            ->patch(route('admin.inventory.items.update', $item), $this->itemPayload($category, [
+                'name' => 'Roast beef editado',
+                'base_unit_id' => $grams->id,
+                'default_input_unit_id' => $grams->id,
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect($filtered);
+        $this->assertSame('Roast beef editado', $item->fresh()->name);
+
+        $this->actingAs($admin)->from($filtered)
+            ->post(route('admin.inventory.items.store'), $this->itemPayload($category, [
+                'name' => 'Grasa',
+                'base_unit_id' => $grams->id,
+                'default_input_unit_id' => $grams->id,
+            ]))
+            ->assertRedirect($filtered);
+
+        $this->actingAs($admin)->from($filtered)
+            ->patch(route('admin.inventory.categories.update', $category), ['name' => 'Carnes rojas', 'is_active' => true])
+            ->assertRedirect($filtered);
+
+        $this->actingAs($admin)->from($filtered)
+            ->post(route('admin.inventory.categories.store'), ['name' => 'Verduras'])
+            ->assertRedirect($filtered);
+    }
+
     /** @param array<string, mixed> $overrides */
     private function category(array $overrides = []): InventoryCategory
     {
