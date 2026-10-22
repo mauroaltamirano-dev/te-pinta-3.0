@@ -13,9 +13,9 @@ Objective: filter the item list on `/admin/inventory` by category, classificatio
 
 ## Tasks
 
-- T1 — S4, S5, S3: backend validates and applies `category`/`kind`/`search`, echoes them in `filters`; item and category store/update redirect `back()` with fallback to the index. Route: inline. Status: done (commit pending).
-- T2 — S1, S2, S3, S4: page filter bar (category chips with separate edit button, classification select, name search, clear filters, empty-result message); history pagination keeps item filters. Route: inline. Status: done (commit pending).
-- T3 — S6: Playwright spec for the filter flow, including surviving an item edit; docs `docs/INVENTORY.md`. Route: inline. Status: done (commit pending).
+- T1 — S4, S5, S3: backend validates and applies `category`/`kind`/`search`, echoes them in `filters`; item and category store/update redirect `back()` with fallback to the index. Route: inline. Status: done, commit `8763f48`.
+- T2 — S1, S2, S3, S4: page filter bar (category chips with separate edit button, classification select, name search, clear filters, empty-result message); history pagination keeps item filters. Route: inline. Status: done, commit `8763f48`.
+- T3 — S6: Playwright spec for the filter flow, including surviving an item edit; docs `docs/INVENTORY.md`. Route: inline. Status: done, commit `8763f48`.
 
 ## Log
 
@@ -24,3 +24,4 @@ Objective: filter the item list on `/admin/inventory` by category, classificatio
 - L3 — T1 RED: 3 new `InventoryAdminHttpTest` cases failed for the expected reasons (unfiltered list; missing `filters.category`; redirect to `/admin/inventory` without query). GREEN after server-side filtering in `InventoryController` and `back(fallback: route('admin.inventory.index'))` in item/category store/update; one assertion of mine was wrong ("sal" correctly also matches "Relleno Salteñas") and was fixed. Decision: invalid filter values are ignored, not 422, because a GET validation failure redirects back to the same URL and can loop.
 - L4 — T2/T3: filter bar follows existing idioms (`quick-order-catalog` chips with `aria-pressed`, `customers/index` submit search). E2E RED: `inventory-item-filters.spec.ts` failed against `main`'s sources (temporarily checked out, then restored by patch) at the "Todas" chip; GREEN on chromium and mobile-chromium.
 - L5 — Checks: inventory e2e specs (new + foundation, costing, visual primitives, recipe/production, adjustments) 51 passed, 1 skipped. Full PHPUnit 986/992; the 6 errors are `GD extension is not installed` on host PHP (Instagram, Management attachments/overview, Product images), environmental and untouched (same as combined-dozen-percentage L19). PHPStan, Pint, ESLint, Prettier, tsc and build clean.
+- L6 — Work-unit commit `8763f48` (+429/−23, 8 files). Native assess (`--base-ref main --committed-only`): medium, `review_due` false, `under_budget`; no review started. Branch is local only: no merge, push or deploy until the user says so (deploys separately from the combined dozen).
