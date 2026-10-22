@@ -15,6 +15,7 @@ final class StoreRecipeRequest extends FormRequest
     /** @return array<string,list<string>> */
     public function rules(): array
     {
-        return ['name' => ['required', 'string', 'max:160', 'unique:inventory_recipes,name']] + (new StoreRecipeVersionRequest)->rules();
+        // Name uniqueness (case-insensitive, active recipes only) is enforced by CreateRecipe under its lock.
+        return ['name' => ['required', 'string', 'max:160']] + (new StoreRecipeVersionRequest)->rules();
     }
 }

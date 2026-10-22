@@ -1,7 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitLabel,
+} from '@/features/inventory/presentation';
 import { PageLinks } from '@/features/inventory/recipes/page-links';
 import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import { RecipeForm } from '@/features/inventory/recipes/recipe-form';
@@ -16,6 +19,7 @@ export default function ShowRecipe({
     versions,
     version_view,
     can_correct,
+    needs_first_version,
     errors,
     ...options
 }: RecipeOptions & {
@@ -23,6 +27,7 @@ export default function ShowRecipe({
     versions: RecipePage;
     version_view: 'current' | 'retired';
     can_correct: boolean;
+    needs_first_version: boolean;
     errors?: Record<string, string>;
 }) {
     const [editing, setEditing] = useState<'version' | 'correct' | null>(null);
@@ -78,9 +83,18 @@ export default function ShowRecipe({
             {!versions.data.length && (
                 <p role="status">
                     {version_view === 'current'
-                        ? 'No hay una versión vigente.'
+                        ? needs_first_version
+                            ? 'Esta receta todavía no tiene fórmula. Cargá la primera versión para poder usarla en producción, o retirala si no la vas a usar.'
+                            : 'No hay una versión vigente.'
                         : 'No hay versiones retiradas.'}
                 </p>
+            )}
+            {needs_first_version && version_view === 'current' && (
+                <RecipeForm
+                    {...options}
+                    mode="first"
+                    path={`/admin/inventory/recipes/${recipe.id}/versions`}
+                />
             )}
             {versions.data.map((v) => (
                 <article
@@ -146,7 +160,7 @@ export default function ShowRecipe({
                             {money(
                                 v.current_cost.estimated_cost_per_output_unit,
                             )}{' '}
-                            / {v.output_unit.symbol}
+                            / {inventoryUnitLabel('1', v.output_unit)}
                         </p>
                         <p>
                             Cobertura:{' '}

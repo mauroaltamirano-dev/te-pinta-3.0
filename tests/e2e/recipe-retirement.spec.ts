@@ -69,6 +69,15 @@ test('administrator corrects an unused recipe without history and retires it', a
     await page
         .getByRole('button', { name: 'Corregir receta', exact: true })
         .click();
+    await expect(
+        page.getByLabel('Salida esperada', { exact: true }),
+    ).toHaveValue('2');
+    await expect(page.getByLabel('Cantidad 1', { exact: true })).toHaveValue(
+        '1',
+    );
+    await expect(
+        page.getByLabel('Unidad 1', { exact: true }).locator('option:checked'),
+    ).toHaveText('Kilogramo');
     await page
         .getByLabel('Nombre de la receta')
         .fill(`Salteña vieja ${suffix}`);

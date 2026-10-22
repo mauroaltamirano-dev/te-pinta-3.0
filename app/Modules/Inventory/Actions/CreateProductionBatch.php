@@ -44,9 +44,13 @@ final class CreateProductionBatch
                 return $existing->load('transaction.movements.costLayer', 'allocations');
             }
             $recipeId = RecipeVersion::query()->whereKey($data->recipeVersionId)->value('recipe_id');
-            $recipe = Recipe::query()->lockForUpdate()->findOrFail((int) $recipeId);
-            $v = RecipeVersion::query()->with('ingredients')->lockForUpdate()->findOrFail($data->recipeVersionId);
-            if (! $recipe->is_active || ! $v->is_active || ! $v->is_sealed) {
+            $recipe = $recipeId === null ? null : Recipe::query()->lockForUpdate()->find((int) $recipeId);
+            // A correction may have replaced this unused version between the read and the lock.
+            $v = RecipeVersion::query()->with('ingredients')->lockForUpdate()->find($data->recipeVersionId);
+            if ($recipe !== null && ! $recipe->is_active) {
+                throw ValidationException::withMessages(['recipe_version_id' => 'Esta receta está retirada y ya no se puede usar en producción. Elegí otra receta.']);
+            }
+            if ($recipe === null || $v === null || ! $v->is_active || ! $v->is_sealed) {
                 throw ValidationException::withMessages(['recipe_version_id' => 'Esa versión de la receta ya no está vigente. Recargá la página y elegí la versión actual.']);
             }
             $ids = $v->ingredients->pluck('inventory_item_id')->push($v->output_inventory_item_id)->unique()->sort()->values();

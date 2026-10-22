@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
+import {
+    editableDecimal,
+    inventoryUnitName,
+} from '@/features/inventory/presentation';
 import type { RecipeOptions, RecipeVersion } from './types';
 
 const selectClass =
@@ -19,7 +23,7 @@ export function RecipeForm({
     path: string;
     initial?: RecipeVersion;
     initialName?: string;
-    mode?: 'create' | 'version' | 'correct';
+    mode?: 'create' | 'first' | 'version' | 'correct';
 }) {
     const [search, setSearch] = useState('');
     const form = useForm({
@@ -28,11 +32,13 @@ export function RecipeForm({
             initial?.output_inventory_item_id ?? '',
         ),
         output_unit_id: String(initial?.output_unit_id ?? ''),
-        expected_output_quantity: initial?.expected_output_quantity ?? '',
+        expected_output_quantity: editableDecimal(
+            initial?.expected_output_quantity ?? '',
+        ),
         ingredients: initial?.ingredients.map((i) => ({
             inventory_item_id: String(i.inventory_item_id),
             unit_id: String(i.unit_id),
-            quantity: i.quantity,
+            quantity: editableDecimal(i.quantity),
         })) ?? [{ inventory_item_id: '', unit_id: '', quantity: '' }],
     });
     const output = outputItems.find(
@@ -73,7 +79,7 @@ export function RecipeForm({
                 }
             }}
         >
-            {mode !== 'version' && (
+            {(mode === 'create' || mode === 'correct') && (
                 <FormField
                     id="recipe-name"
                     label="Nombre de la receta"
@@ -158,7 +164,7 @@ export function RecipeForm({
                             .filter((u) => u.family === output?.unit_family)
                             .map((u) => (
                                 <option key={u.id} value={u.id}>
-                                    {u.code}
+                                    {inventoryUnitName(u)}
                                 </option>
                             ))}
                     </select>
@@ -273,7 +279,7 @@ export function RecipeForm({
                                         )
                                         .map((u) => (
                                             <option key={u.id} value={u.id}>
-                                                {u.code}
+                                                {inventoryUnitName(u)}
                                             </option>
                                         ))}
                                 </select>
@@ -343,6 +349,7 @@ export function RecipeForm({
                     : {
                           create: 'Crear receta',
                           version: 'Guardar nueva versión',
+                          first: 'Guardar primera versión',
                           correct: 'Guardar corrección',
                       }[mode]}
             </Button>

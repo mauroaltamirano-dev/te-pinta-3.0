@@ -59,7 +59,8 @@ final class RecipeLifecycleTest extends TestCase
         try {
             $this->produce($admin, $version);
             $this->fail('A retired recipe was used for production.');
-        } catch (ValidationException) {
+        } catch (ValidationException $e) {
+            $this->assertSame(['recipe_version_id' => ['Esta receta está retirada y ya no se puede usar en producción. Elegí otra receta.']], $e->errors());
             $this->assertSame(0, ProductionBatch::query()->count());
         }
     }
@@ -171,7 +172,7 @@ final class RecipeLifecycleTest extends TestCase
         app(CreateRecipe::class)->execute('Masa', $admin->id);
 
         $this->actingAs($admin)->put('/admin/inventory/recipes/'.$recipe->id.'/current-version', ['name' => ' masa '] + $this->formula($output, $onion))
-            ->assertSessionHasErrors(['name' => 'Ya existe una receta con ese nombre (puede estar retirada). Elegí otro nombre.']);
+            ->assertSessionHasErrors(['name' => 'Ya existe una receta activa con ese nombre. Elegí otro nombre o retirá la otra receta.']);
         $this->put('/admin/inventory/recipes/'.$recipe->id.'/current-version', ['name' => 'Relleno'] + $this->formula($output, $output))
             ->assertSessionHasErrors('ingredients.0.inventory_item_id');
 
@@ -214,6 +215,51 @@ final class RecipeLifecycleTest extends TestCase
 
         $this->expectException(QueryException::class);
         DB::table('inventory_recipe_ingredients')->where('recipe_version_id', $used->id)->update(['quantity' => '3']);
+    }
+
+    public function test_a_retired_recipe_name_can_be_reused(): void
+    {
+        [$admin, $onion, , $output, $recipe] = $this->fixture(withStock: false);
+
+        $this->actingAs($admin)->post('/admin/inventory/recipes', ['name' => ' relleno criolla dulce '] + $this->formula($output, $onion))
+            ->assertSessionHasErrors(['name' => 'Ya existe una receta activa con ese nombre. Elegí otro nombre o retirá la otra receta.']);
+        $this->assertSame(1, Recipe::query()->count());
+
+        $this->post('/admin/inventory/recipes/'.$recipe->id.'/retire')->assertSessionHasNoErrors();
+        $this->post('/admin/inventory/recipes', ['name' => 'Relleno Criolla Dulce'] + $this->formula($output, $onion))->assertSessionHasNoErrors();
+
+        $replacement = Recipe::query()->whereKeyNot($recipe->id)->sole();
+        $this->assertTrue($replacement->is_active);
+        $this->assertSame('Relleno Criolla Dulce', $replacement->name);
+        $this->assertSame(1, $replacement->versions()->count());
+        $this->assertFalse($recipe->fresh()->is_active);
+        $this->assertSame(1, $recipe->versions()->count());
+
+        $this->expectException(QueryException::class);
+        DB::table('inventory_recipes')->insert(['name' => 'RELLENO CRIOLLA DULCE', 'is_active' => true, 'created_by' => $admin->id, 'restaurant_id' => $replacement->restaurant_id, 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    public function test_an_active_recipe_without_versions_can_load_its_first_version_or_be_retired(): void
+    {
+        [$admin, $onion, , $output] = $this->fixture(withStock: false);
+        $empty = Recipe::query()->create(['name' => 'Criolla Salada', 'created_by' => $admin->id]);
+
+        $this->actingAs($admin)->get('/admin/inventory/recipes/'.$empty->id)
+            ->assertInertia(fn (AssertableInertia $p) => $p->where('needs_first_version', true)->where('can_correct', false)->where('versions.total', 0));
+        $this->post('/admin/inventory/recipes/'.$empty->id.'/versions', $this->formula($output, $onion, '3'))
+            ->assertRedirect('/admin/inventory/recipes/'.$empty->id)
+            ->assertSessionHasNoErrors();
+
+        $first = $empty->versions()->sole();
+        $this->assertSame(1, $first->version);
+        $this->assertTrue($first->is_active);
+        $this->assertSame('Criolla Salada', $first->recipe_name_snapshot);
+        $this->get('/admin/inventory/recipes/'.$empty->id)->assertInertia(fn (AssertableInertia $p) => $p->where('needs_first_version', false)->where('can_correct', true));
+
+        $abandoned = Recipe::query()->create(['name' => 'Criolla Vieja', 'created_by' => $admin->id]);
+        $this->post('/admin/inventory/recipes/'.$abandoned->id.'/retire')->assertSessionHasNoErrors();
+        $this->assertFalse($abandoned->fresh()->is_active);
+        $this->get('/admin/inventory/recipes/'.$abandoned->id)->assertInertia(fn (AssertableInertia $p) => $p->where('needs_first_version', false));
     }
 
     public function test_staff_cannot_retire_or_correct_recipes(): void

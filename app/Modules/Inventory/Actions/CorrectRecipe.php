@@ -36,8 +36,8 @@ final class CorrectRecipe
             if ($current === null || ProductionBatch::query()->where('recipe_version_id', $current->id)->exists()) {
                 throw ValidationException::withMessages(['recipe' => 'Esta versión ya se usó en producción y no se puede corregir. Usá «Crear nueva versión» para cambiar la fórmula.']);
             }
-            if (Recipe::query()->whereKeyNot($recipe->id)->whereRaw('lower(btrim(name)) = lower(btrim(?))', [$name])->exists()) {
-                throw ValidationException::withMessages(['name' => 'Ya existe una receta con ese nombre (puede estar retirada). Elegí otro nombre.']);
+            if (Recipe::query()->whereKeyNot($recipe->id)->where('is_active', true)->whereRaw('lower(btrim(name)) = lower(btrim(?))', [$name])->exists()) {
+                throw ValidationException::withMessages(['name' => 'Ya existe una receta activa con ese nombre. Elegí otro nombre o retirá la otra receta.']);
             }
 
             RecipeIngredient::query()->where('recipe_version_id', $current->id)->delete();

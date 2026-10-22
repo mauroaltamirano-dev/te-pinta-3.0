@@ -17,8 +17,8 @@ final class CreateRecipe
 
         return DB::transaction(function () use ($name, $adminId): Recipe {
             DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['inventory:recipe-name']);
-            if (Recipe::query()->whereRaw('lower(btrim(name)) = lower(btrim(?))', [$name])->exists()) {
-                throw ValidationException::withMessages(['name' => 'Ya existe una receta con ese nombre (puede estar retirada). Elegí otro nombre.']);
+            if (Recipe::query()->where('is_active', true)->whereRaw('lower(btrim(name)) = lower(btrim(?))', [$name])->exists()) {
+                throw ValidationException::withMessages(['name' => 'Ya existe una receta activa con ese nombre. Elegí otro nombre o retirá la otra receta.']);
             }
 
             return Recipe::query()->create(['name' => $name, 'created_by' => $adminId]);
