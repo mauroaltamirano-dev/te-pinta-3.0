@@ -3,7 +3,10 @@ import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitName,
+} from '@/features/inventory/presentation';
 import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import type { InventoryUnit } from '@/features/inventory/types';
 import { formatCost as money } from '@/lib/format';
@@ -266,7 +269,7 @@ export function AdjustmentForm({
                             .filter((u) => u.family === item?.unit_family)
                             .map((u) => (
                                 <option key={u.id} value={u.id}>
-                                    {u.code}
+                                    {inventoryUnitName(u)}
                                 </option>
                             ))}
                     </select>

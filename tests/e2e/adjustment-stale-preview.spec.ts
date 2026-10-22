@@ -34,7 +34,7 @@ async function openForm(page: Page) {
     await page
         .locator('#adjustment-inventory_item_id')
         .selectOption({ label: `${firstItem} · ${category}` });
-    await page.locator('#adjustment-unit_id').selectOption({ label: 'g' });
+    await page.locator('#adjustment-unit_id').selectOption({ label: 'Gramo' });
     await page.locator('#adjustment-quantity').fill('100');
     await page.locator('#adjustment-explicit_total_cost').fill('1000');
 }
@@ -139,7 +139,9 @@ const changes: [string, (page: Page) => Promise<unknown>][] = [
     [
         'unit',
         (page) =>
-            page.locator('#adjustment-unit_id').selectOption({ label: 'kg' }),
+            page
+                .locator('#adjustment-unit_id')
+                .selectOption({ label: 'Kilogramo' }),
     ],
     [
         'date',

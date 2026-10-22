@@ -24,6 +24,14 @@ export function formatDecimalQuantity(value: string, locale = 'es-AR'): string {
     return `${isZero ? '' : sign}${groupedInteger}${fraction ? `${decimalSeparator}${fraction}` : ''}`;
 }
 
+/** Prefills an editable field: drops trailing zeros but keeps the dot the backend expects. */
+export function editableDecimal(value: string): string {
+    return value
+        .trim()
+        .replace(/(\.\d*?)0+$/, '$1')
+        .replace(/\.$/, '');
+}
+
 export function formatInventoryQuantity(
     value: string,
     unit: DisplayUnit,
@@ -34,19 +42,26 @@ export function formatInventoryQuantity(
     return `${quantity} ${inventoryUnitLabel(value, unit)}`;
 }
 
+// Count units are labelled by code; their stored symbols are English ("half dozen").
+const countUnitLabels: Record<string, [string, string]> = {
+    unit: ['unidad', 'unidades'],
+    half_dozen: ['media docena', 'medias docenas'],
+    dozen: ['docena', 'docenas'],
+};
+
 export function inventoryUnitLabel(value: string, unit: DisplayUnit): string {
     const code = typeof unit === 'string' ? unit : unit.code;
     const symbol = typeof unit === 'string' ? unit : unit.symbol;
+    const labels =
+        countUnitLabels[code] ?? countUnitLabels[symbol.replace(' ', '_')];
     const magnitude = value.trim().replace(/^[+-]/, '').replace(/\.0+$/, '');
 
-    return code === 'unit' || symbol === 'unit'
-        ? magnitude === '1'
-            ? 'unidad'
-            : 'unidades'
-        : symbol;
+    return labels ? labels[magnitude === '1' ? 0 : 1] : symbol;
 }
 
-export function inventoryUnitName(unit: InventoryUnit): string {
+export function inventoryUnitName(
+    unit: Pick<InventoryUnit, 'code'> & { name?: string },
+): string {
     return (
         {
             g: 'Gramo',
@@ -56,6 +71,8 @@ export function inventoryUnitName(unit: InventoryUnit): string {
             unit: 'Unidad',
             half_dozen: 'Media docena',
             dozen: 'Docena',
-        }[unit.code] ?? unit.name
+        }[unit.code] ??
+        unit.name ??
+        unit.code
     );
 }

@@ -10,7 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitLabel,
+} from '@/features/inventory/presentation';
 import {
     costCoverageLabels,
     productionWarningLabels,
@@ -60,7 +63,7 @@ export default function ShowProduction({
                 <p>
                     Costo histórico por unidad real:{' '}
                     {money(b.historical_cost_per_output_unit)} /{' '}
-                    {b.output_unit.symbol}
+                    {inventoryUnitLabel('1', b.output_unit)}
                 </p>
                 <p>{costCoverageLabels[b.cost_coverage]}</p>
                 <p className="text-sm text-admin-text-secondary">

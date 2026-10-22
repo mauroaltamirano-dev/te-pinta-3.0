@@ -1,7 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitName,
+} from '@/features/inventory/presentation';
 
 type Unit = { id: number; code: string; family: string };
 type Item = {
@@ -297,7 +300,9 @@ export default function ProductConsumption({
                                                             key={u.id}
                                                             value={u.id}
                                                         >
-                                                            {u.code}
+                                                            {inventoryUnitName(
+                                                                u,
+                                                            )}
                                                         </option>
                                                     ))}
                                             </select>

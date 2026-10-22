@@ -69,7 +69,7 @@ test('administrator versions physical consumption and fulfills an order once', a
     await page.getByLabel('Cantidad 1', { exact: true }).fill('55.000000');
     await page
         .getByLabel('Unidad 1', { exact: true })
-        .selectOption({ label: 'g' });
+        .selectOption({ label: 'Gramo' });
     await page.getByRole('button', { name: 'Guardar configuración' }).click();
     await expect(page.getByText('Versión 1 · Actual')).toBeVisible();
     await expect(page.locator('article')).toContainText('55 g');

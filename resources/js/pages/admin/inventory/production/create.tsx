@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitName,
+} from '@/features/inventory/presentation';
 import { costCoverageLabels } from '@/features/inventory/recipes/presentation';
 import type { RecipeVersion } from '@/features/inventory/recipes/types';
 import type { InventoryUnit } from '@/features/inventory/types';
@@ -167,7 +170,7 @@ export default function CreateProduction({
                                 )
                                 .map((u) => (
                                     <option key={u.id} value={u.id}>
-                                        {u.code}
+                                        {inventoryUnitName(u)}
                                     </option>
                                 ))}
                         </select>

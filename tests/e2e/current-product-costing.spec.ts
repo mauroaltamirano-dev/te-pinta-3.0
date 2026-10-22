@@ -139,7 +139,7 @@ test('current costing configures exact packaging, estimates family prices and ke
     await page.getByLabel('Cantidad 1', { exact: true }).fill('55');
     await page
         .getByLabel('Unidad 1', { exact: true })
-        .selectOption({ label: 'g' });
+        .selectOption({ label: 'Gramo' });
     await page.getByRole('button', { name: 'Guardar configuración' }).click();
     await expect(page.getByText('Versión 1 · Actual')).toBeVisible();
     await page.goto('/admin/inventory/costing-policies');

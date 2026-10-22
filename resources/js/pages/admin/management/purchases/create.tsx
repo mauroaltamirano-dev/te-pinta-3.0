@@ -2,7 +2,10 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/features/inventory/components/form-field';
-import { formatInventoryQuantity } from '@/features/inventory/presentation';
+import {
+    formatInventoryQuantity,
+    inventoryUnitName,
+} from '@/features/inventory/presentation';
 import { ManagementSectionNavigation } from '@/features/management/components/management-section-navigation';
 import type { PurchaseOptions } from '@/features/purchases/types';
 interface Line {
@@ -231,7 +234,7 @@ export default function CreatePurchase({
                                                 key={`u${u.id}`}
                                                 value={`u:${u.id}`}
                                             >
-                                                {u.name}
+                                                {inventoryUnitName(u)}
                                             </option>
                                         ))}
                                     {item?.presentations
