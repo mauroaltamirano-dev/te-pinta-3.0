@@ -1,13 +1,16 @@
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { toast } from 'sonner';
+import {
+    notifySubmissionFailure,
+    PAYLOAD_TOO_LARGE_MESSAGE,
+} from '@/lib/submission-failure';
 
 const PAYLOAD_TOO_LARGE = 413;
-const FALLBACK_MESSAGE = 'El archivo es demasiado grande.';
 
 /**
  * Shows a request body rejected by the PHP size limit as a toast instead of
- * Inertia's error dialog, keeping the form and its input on screen.
+ * Inertia's error dialog, keeping the form and its input on screen. It shares the failed-submission
+ * toast, so the admin panel's own failure toast replaces it instead of adding a second one.
  */
 export function usePayloadTooLargeToast(): void {
     useEffect(() => {
@@ -23,8 +26,10 @@ export function usePayloadTooLargeToast(): void {
                 typeof response.data === 'object'
                     ? response.data.message
                     : undefined;
-            toast.error(
-                typeof message === 'string' ? message : FALLBACK_MESSAGE,
+            notifySubmissionFailure(
+                typeof message === 'string'
+                    ? message
+                    : PAYLOAD_TOO_LARGE_MESSAGE,
             );
         });
     }, []);

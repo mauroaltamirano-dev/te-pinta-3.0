@@ -81,6 +81,27 @@ test('un envío que el servidor rechaza muestra el aviso en lugar de la página 
     await expect(page.getByLabel('Cantidad de Salteña')).toHaveText('6');
 });
 
+test('un envío demasiado grande muestra un solo aviso', async ({ page }) => {
+    const table = createTable();
+    await logIn(page);
+    await page.goto(`/admin/tables/${table}`);
+    await page.route('**/admin/tables/*/rounds', (route) =>
+        route.fulfill({
+            status: 413,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                message: 'El archivo es demasiado grande.',
+            }),
+        }),
+    );
+
+    await sendRound(page);
+    // The 413 toast and the failed-submission toast share one slot.
+    await expect(page.locator('[data-sonner-toast]')).toHaveText([
+        'El archivo es demasiado grande.',
+    ]);
+});
+
 test('un envío sin conexión muestra el aviso', async ({ page }) => {
     const table = createTable();
     await logIn(page);

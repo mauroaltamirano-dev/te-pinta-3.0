@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 export const OFFLINE_SUBMISSION_MESSAGE =
     'Sin conexión con el servidor. Revisá si se guardó antes de reintentar.';
 
+// PHP rejects a body over post_max_size before routing, so no field can be named.
+export const PAYLOAD_TOO_LARGE_MESSAGE = 'El archivo es demasiado grande.';
+
 export const UNEXPECTED_RESPONSE_MESSAGE =
     'Respuesta inesperada del servidor. Revisá si se guardó antes de reintentar.';
 
@@ -12,6 +15,8 @@ export function submissionFailureMessage(status: number): string {
     switch (status) {
         case 403:
             return 'No tenés permiso para hacer esto.';
+        case 413:
+            return PAYLOAD_TOO_LARGE_MESSAGE;
         case 419:
             return 'La sesión venció. Recargá la página e iniciá sesión de nuevo.';
         case 422:
