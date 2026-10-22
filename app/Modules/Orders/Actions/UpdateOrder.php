@@ -68,7 +68,7 @@ final readonly class UpdateOrder
                 || $locked->discount_type !== $data->discountType
                 || $locked->discount_value !== $data->discountValue;
             if ($economicChange && $this->fulfillment->hasEvidence($locked->id)) {
-                throw ValidationException::withMessages(['items' => 'Inventory fulfillment evidence prevents economic edits.']);
+                throw ValidationException::withMessages(['items' => 'El pedido ya descontó inventario al entregarse, así que no se pueden cambiar productos, precios ni descuentos. Si necesitás corregirlo, cancelalo y creá un pedido nuevo.']);
             }
             if ($wasPaid && $economicChange) {
                 throw ValidationException::withMessages([

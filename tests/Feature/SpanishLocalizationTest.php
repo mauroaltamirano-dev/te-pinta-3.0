@@ -12,7 +12,7 @@ final class SpanishLocalizationTest extends TestCase
         $validator = Validator::make([], ['name' => ['required']]);
 
         $this->assertSame('es', app()->getLocale());
-        $this->assertSame('El campo name es obligatorio.', $validator->errors()->first('name'));
+        $this->assertSame('El campo nombre es obligatorio.', $validator->errors()->first('name'));
         $this->assertSame('Las credenciales ingresadas no son correctas.', __('auth.failed'));
         $this->assertSame('Te enviamos el enlace para restablecer tu contraseña.', __('passwords.sent'));
     }

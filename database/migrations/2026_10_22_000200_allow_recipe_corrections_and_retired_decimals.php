@@ -39,6 +39,7 @@ SQL);
             .$this->recipeGuard(allowUnusedDeletion: false).$this->itemGuard(activeOnlyPrecision: false));
     }
 
+    /** @return literal-string */
     private function recipeGuard(bool $allowUnusedDeletion): string
     {
         $ingredientDelete = $allowUnusedDeletion ? <<<'SQL'
@@ -121,6 +122,7 @@ END; \$\$;
 SQL;
     }
 
+    /** @return literal-string */
     private function itemGuard(bool $activeOnlyPrecision): string
     {
         $measurement = $activeOnlyPrecision ? <<<'SQL'

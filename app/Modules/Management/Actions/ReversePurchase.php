@@ -25,13 +25,13 @@ final class ReversePurchase
     public function execute(Purchase $purchase, ReversalData $data, int $adminId): PurchaseReversal
     {
         if (trim((string) $data->description) === '') {
-            throw ValidationException::withMessages(['description' => 'A reversal reason is required.']);
+            throw ValidationException::withMessages(['description' => 'Ingresá el motivo de la reversión.']);
         }
         $reversal = DB::transaction(function () use ($purchase, $data, $adminId): PurchaseReversal {
             $locked = Purchase::query()->with(['financialTransaction.entries', 'inventoryTransaction.movements.costLayer'])
                 ->lockForUpdate()->findOrFail($purchase->id);
             if (PurchaseReversal::query()->where('purchase_id', $locked->id)->exists()) {
-                throw ValidationException::withMessages(['purchase' => 'The purchase has already been reversed.']);
+                throw ValidationException::withMessages(['purchase' => 'Esta compra ya fue revertida. Recargá la página para ver su estado.']);
             }
 
             Wallet::query()->whereKey($locked->wallet_id)->lockForUpdate()->firstOrFail();

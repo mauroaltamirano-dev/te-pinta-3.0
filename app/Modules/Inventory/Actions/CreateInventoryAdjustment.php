@@ -40,7 +40,7 @@ final class CreateInventoryAdjustment
             $existing = InventoryAdjustment::query()->where('idempotency_key', $key)->first();
             if ($existing !== null) {
                 if (! hash_equals($existing->request_fingerprint, $fingerprint)) {
-                    throw ValidationException::withMessages(['idempotency_key' => 'This key belongs to a different adjustment payload.']);
+                    throw ValidationException::withMessages(['idempotency_key' => 'Este ajuste ya se registró con otros datos. Recargá la página para cargar uno nuevo.']);
                 }
 
                 return $existing->load('transaction.movements.costLayer');
@@ -48,7 +48,7 @@ final class CreateInventoryAdjustment
             $item = $this->lockedItem($data);
             $p = $this->plan($data, $item);
             if (! $p['can_confirm']) {
-                throw ValidationException::withMessages(['quantity' => 'The observed count does not change stock.']);
+                throw ValidationException::withMessages(['quantity' => 'El conteo es igual al stock actual, así que no hay nada que ajustar. Revisá la cantidad contada.']);
             }
             $a = InventoryAdjustment::query()->create(['inventory_item_id' => $item->id, 'unit_id' => $data->unitId, 'type' => $data->type, 'quantity' => $p['quantity'], 'delta' => $p['delta'], 'stock_before' => $p['current_stock'], 'physical_count' => $p['physical_count'], 'effective_date' => $data->effectiveDate, 'created_by' => $actor, 'note' => trim($data->note ?? '') ?: null, 'idempotency_key' => $key, 'request_fingerprint' => $fingerprint, 'cost_total' => $p['cost_total'], 'cost_status' => $p['cost_status'], 'cost_coverage' => $p['cost_coverage'], 'cost_basis_quantity' => $p['cost_basis_quantity'], 'cost_basis_total' => $p['cost_basis_total'], 'cost_method' => $p['cost_method'], 'cost_fallback' => $p['cost_fallback'], 'warnings' => $p['warnings']]);
             $t = InventoryTransaction::query()->create(['type' => 'adjustment', 'source_type' => 'adjustment', 'source_id' => 'inventory-adjustment:'.$a->id, 'effective_date' => $data->effectiveDate, 'created_by' => $actor]);
@@ -66,7 +66,7 @@ final class CreateInventoryAdjustment
     {
         $i = InventoryItem::query()->lockForUpdate()->find($d->inventoryItemId);
         if ($i === null || ! $i->is_active || ! $i->tracks_stock) {
-            throw ValidationException::withMessages(['inventory_item_id' => 'Choose an active stock-tracked item.']);
+            throw ValidationException::withMessages(['inventory_item_id' => 'Elegí un insumo activo que controle stock.']);
         }
 
         return $i;
@@ -75,13 +75,13 @@ final class CreateInventoryAdjustment
     private function normalize(InventoryAdjustmentData $d): string
     {
         if (! Str::isUuid($d->idempotencyKey) || ! in_array($d->type, ['count_correction', 'waste', 'damage', 'expiry', 'manual_adjustment'], true)) {
-            throw ValidationException::withMessages(['type' => 'A valid adjustment type and UUID are required.']);
+            throw ValidationException::withMessages(['type' => 'Elegí un tipo de ajuste válido. Si el error sigue, recargá la página.']);
         }
         if (mb_strlen(trim($d->note ?? '')) > 240) {
-            throw ValidationException::withMessages(['note' => 'The note may not exceed 240 characters.']);
+            throw ValidationException::withMessages(['note' => 'La nota puede tener hasta 240 caracteres. Acortala.']);
         }
         if ($d->explicitTotalCost !== null && $d->explicitTotalCost < 0) {
-            throw ValidationException::withMessages(['explicit_total_cost' => 'Explicit cost must be non-negative integer pesos.']);
+            throw ValidationException::withMessages(['explicit_total_cost' => 'El costo total debe ser un monto en pesos enteros, cero o mayor.']);
         }
         try {
             return DecimalMath::normalize($d->quantity, 6);
@@ -96,12 +96,12 @@ final class CreateInventoryAdjustment
         $q = $this->normalize($d);
         $unit = InventoryUnit::query()->find($d->unitId);
         if ($unit === null || $unit->family !== $item->unit_family) {
-            throw ValidationException::withMessages(['unit_id' => 'Use a compatible unit.']);
+            throw ValidationException::withMessages(['unit_id' => 'Elegí una unidad compatible con la medida del insumo.']);
         }
         $isCount = $d->type === 'count_correction';
         $sign = DecimalMath::compare($q, '0');
         if (($isCount && $sign < 0) || (! $isCount && $sign === 0) || (! in_array($d->type, ['count_correction', 'manual_adjustment'], true) && $sign < 0)) {
-            throw ValidationException::withMessages(['quantity' => 'Counts must be non-negative; losses require a positive quantity.']);
+            throw ValidationException::withMessages(['quantity' => 'Revisá la cantidad: un conteo no puede ser negativo y una pérdida necesita una cantidad mayor que cero.']);
         }
         $base = $sign === 0 ? '0.000000' : $this->converter->toBase($item, $unit, ltrim($q, '-'));
         $stock = DecimalMath::normalize((string) $item->stockMovements()->sum('quantity'), 6);
@@ -109,11 +109,11 @@ final class CreateInventoryAdjustment
         $delta = DecimalMath::normalize($delta, 6);
         $result = DecimalMath::subtract($stock, DecimalMath::subtract('0', $delta));
         if (strlen(ltrim(explode('.', ltrim($delta, '-'))[0], '0')) > 14 || strlen(ltrim(explode('.', ltrim($result, '-'))[0], '0')) > 14) {
-            throw ValidationException::withMessages(['quantity' => 'Resulting inventory quantity exceeds the supported range.']);
+            throw ValidationException::withMessages(['quantity' => 'El stock resultante es demasiado grande. Revisá la cantidad y la unidad.']);
         }
         $direction = DecimalMath::compare($delta, '0');
         if ($d->explicitTotalCost !== null && $direction <= 0) {
-            throw ValidationException::withMessages(['explicit_total_cost' => 'Explicit cost applies only to a stock increase.']);
+            throw ValidationException::withMessages(['explicit_total_cost' => 'El costo total solo se carga cuando el ajuste suma stock. Dejalo vacío para este ajuste.']);
         }
         $basis = $this->allocator->valuationsFor([$item->id])[$item->id];
         $classification = $this->valuation->classify(true, $stock, $basis['basis_quantity'], $basis['basis_cost']);
@@ -161,7 +161,7 @@ final class CreateInventoryAdjustment
         }
         $cq = $cost === null ? $basis['basis_quantity'] : DecimalMath::subtract($basis['basis_quantity'], DecimalMath::subtract('0', $delta));
         if ($cost !== null && (($cost > 0 && $basis['basis_cost'] > PHP_INT_MAX - $cost) || ($cost < 0 && $basis['basis_cost'] < PHP_INT_MIN - $cost))) {
-            throw ValidationException::withMessages(['explicit_total_cost' => 'Projected cost exceeds the supported integer range.']);
+            throw ValidationException::withMessages(['explicit_total_cost' => 'El costo resultante es demasiado grande. Revisá el costo total ingresado.']);
         }
         $cv = $cost === null ? $basis['basis_cost'] : $basis['basis_cost'] + $cost;
         $resultVal = $this->valuation->classify(true, $result, $cq, $cv);

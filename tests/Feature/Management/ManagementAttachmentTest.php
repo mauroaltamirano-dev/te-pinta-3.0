@@ -136,8 +136,8 @@ final class ManagementAttachmentTest extends TestCase
                 ->postJson($this->collectionUrl(), ['file' => $file])
                 ->assertUnprocessable()
                 ->assertExactJson([
-                    'message' => 'El archivo file no se pudo subir.',
-                    'errors' => ['file' => ['El archivo file no se pudo subir.']],
+                    'message' => 'El archivo adjunto no se pudo subir.',
+                    'errors' => ['file' => ['El archivo adjunto no se pudo subir.']],
                 ]);
         } finally {
             @unlink($path);

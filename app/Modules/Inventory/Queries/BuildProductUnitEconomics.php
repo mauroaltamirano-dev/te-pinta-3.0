@@ -40,7 +40,7 @@ final readonly class BuildProductUnitEconomics
     {
         $product = Product::query()->whereKey($product->id)->firstOrFail();
         if ($unitQuantity < 1 || $unitQuantity > 120 || ($product->pricing_family === ProductPricingFamily::Empanada && $unitQuantity !== 1)) {
-            throw ValidationException::withMessages(['quantity' => 'Choose 1–120 units for a unit-priced product; empanadas use their standard presentations.']);
+            throw ValidationException::withMessages(['quantity' => 'Elegí entre 1 y 120 unidades para un producto por unidad; las empanadas se calculan con sus presentaciones estándar.']);
         }
         $d = ProductInventoryConsumptionDefinition::query()->where('product_id', $product->id)->with('currentVersion')->first();
         $physical = $d->mode ?? 'missing_config';

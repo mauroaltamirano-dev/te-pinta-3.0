@@ -350,7 +350,7 @@ final class ProductManagementTest extends TestCase
             'image' => UploadedFile::fake()->image('five-megabytes.jpg')->size(5 * 1024),
         ]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['image' => 'El archivo image no puede superar 4096 kilobytes.']);
+            ->assertJsonValidationErrors(['image' => 'El archivo imagen no puede superar 4096 kilobytes.']);
 
         $this->assertDatabaseCount('products', 0);
     }

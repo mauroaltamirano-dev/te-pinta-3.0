@@ -16,7 +16,7 @@ final class AssignProductCostingPolicy
             if ($policyId !== null) {
                 $p = CostingPolicy::query()->whereKey($policyId)->lockForUpdate()->first();
                 if ($p === null || ! $p->is_active) {
-                    throw ValidationException::withMessages(['costing_policy_id' => 'Choose an active costing policy.']);
+                    throw ValidationException::withMessages(['costing_policy_id' => 'Elegí una política de costo activa.']);
                 }
             }
             DB::table('inventory_product_costing_policies')->where('product_id', $productId)->delete();

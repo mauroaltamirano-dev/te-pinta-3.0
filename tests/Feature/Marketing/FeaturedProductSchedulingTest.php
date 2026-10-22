@@ -192,8 +192,8 @@ final class FeaturedProductSchedulingTest extends TestCase
             'headline' => '<strong>Recomendación</strong>',
             'short_copy' => '<script>alert("x")</script>',
         ]))->assertSessionHasErrors([
-            'headline' => 'El campo headline debe contener texto plano, sin HTML.',
-            'short_copy' => 'El campo short copy debe contener texto plano, sin HTML.',
+            'headline' => 'El campo título debe contener texto plano, sin HTML.',
+            'short_copy' => 'El campo texto corto debe contener texto plano, sin HTML.',
         ]);
 
         $this->assertDatabaseCount('marketing_featured_products', 0);

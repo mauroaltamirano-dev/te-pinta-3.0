@@ -42,19 +42,19 @@ final class StoreManagementAttachmentRequest extends FormRequest
             $extension = strtolower($file->getClientOriginalExtension());
             $mime = $file->getMimeType();
             if (mb_strlen($name) > 255 || $name === '' || preg_match('/[\\x00-\\x1F\\x7F\\\\\/]/u', $name) === 1) {
-                $validator->errors()->add('file', 'El nombre del archivo no es válido.');
+                $validator->errors()->add('file', 'El nombre del archivo no es válido. Renombralo y volvé a subirlo.');
 
                 return;
             }
             if (! isset(self::MIME_BY_EXTENSION[$extension]) || ! is_string($mime) || ! in_array($mime, self::MIME_BY_EXTENSION[$extension], true)) {
-                $validator->errors()->add('file', 'La extensión no coincide con el contenido real del archivo.');
+                $validator->errors()->add('file', 'La extensión no coincide con el contenido real del archivo. Subí un PDF, JPG, PNG o WEBP sin renombrar su extensión.');
 
                 return;
             }
 
             $path = $file->getRealPath();
             if ($path === false || ! $this->hasValidSignature($path, $mime)) {
-                $validator->errors()->add('file', 'El contenido del archivo no es válido.');
+                $validator->errors()->add('file', 'El contenido del archivo no es válido. Subí un PDF, JPG, PNG o WEBP que se abra correctamente.');
             }
         });
     }

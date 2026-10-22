@@ -27,7 +27,7 @@ final class CreateProductionBatch
     public function execute(ProductionBatchData $data, int $adminId): ProductionBatch
     {
         if (! Str::isUuid($data->idempotencyKey)) {
-            throw ValidationException::withMessages(['idempotency_key' => 'A valid UUID is required.']);
+            throw ValidationException::withMessages(['idempotency_key' => 'El formulario no es válido. Recargá la página y volvé a intentarlo.']);
         }
         $key = strtolower($data->idempotencyKey);
         $quantity = DecimalMath::normalize($data->actualOutputQuantity, 6);
@@ -38,7 +38,7 @@ final class CreateProductionBatch
             $existing = ProductionBatch::query()->where('idempotency_key', $key)->first();
             if ($existing !== null) {
                 if (! hash_equals($existing->fingerprint, $fingerprint)) {
-                    throw ValidationException::withMessages(['idempotency_key' => 'This key belongs to a different production payload.']);
+                    throw ValidationException::withMessages(['idempotency_key' => 'Esta producción ya se registró con otros datos. Recargá la página para cargar una nueva.']);
                 }
 
                 return $existing->load('transaction.movements.costLayer', 'allocations');
@@ -47,12 +47,12 @@ final class CreateProductionBatch
             $recipe = Recipe::query()->lockForUpdate()->findOrFail((int) $recipeId);
             $v = RecipeVersion::query()->with('ingredients')->lockForUpdate()->findOrFail($data->recipeVersionId);
             if (! $recipe->is_active || ! $v->is_active || ! $v->is_sealed) {
-                throw ValidationException::withMessages(['recipe_version_id' => 'Use the current sealed recipe version.']);
+                throw ValidationException::withMessages(['recipe_version_id' => 'Esa versión de la receta ya no está vigente. Recargá la página y elegí la versión actual.']);
             }
             $ids = $v->ingredients->pluck('inventory_item_id')->push($v->output_inventory_item_id)->unique()->sort()->values();
             $items = InventoryItem::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             if ($items->contains(fn (InventoryItem $i): bool => ! $i->is_active || ! $i->tracks_stock)) {
-                throw ValidationException::withMessages(['recipe_version_id' => 'All production items must be active and stock-tracked.']);
+                throw ValidationException::withMessages(['recipe_version_id' => 'Algún insumo de la receta está inactivo o no controla stock. Revisá esos insumos en Inventario.']);
             }
             $output = $items->get($v->output_inventory_item_id);
             $unit = InventoryUnit::query()->findOrFail($data->outputUnitId);

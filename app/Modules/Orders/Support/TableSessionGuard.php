@@ -17,11 +17,11 @@ final class TableSessionGuard
     public function lockOpen(TableSession $session, User $actor, bool $cashierOnly): TableSession
     {
         if (! $actor->canUsePos() || ($cashierOnly && ! $actor->canOperateCashier())) {
-            throw new AuthorizationException('The actor cannot perform this table action.');
+            throw new AuthorizationException('No tenés permiso para esta acción de la mesa. Pedile a caja o a un administrador que la haga.');
         }
         $locked = TableSession::query()->lockForUpdate()->findOrFail($session->id);
         if ($locked->waiter_id !== $actor->id && ! $actor->canOperateCashier()) {
-            throw new AuthorizationException('Only the table waiter or a cashier role can act on this table.');
+            throw new AuthorizationException('Solo el mozo de la mesa o caja pueden operar esta mesa. Pedile al mozo asignado o a caja que lo haga.');
         }
         if ($locked->status !== TableSessionStatus::Open) {
             throw ValidationException::withMessages(['table' => 'Esta mesa ya fue cobrada o cerrada. Actualizá la pantalla.']);

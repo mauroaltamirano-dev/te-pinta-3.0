@@ -53,14 +53,14 @@ final class UpdateInventoryItemRequest extends FormRequest
             $defaultUnit = InventoryUnit::query()->find($this->integer('default_input_unit_id'));
 
             if ($baseUnit !== null && (! $baseUnit->is_base || $baseUnit->family->value !== $family)) {
-                $validator->errors()->add('base_unit_id', 'La unidad base debe ser la unidad base de la familia seleccionada.');
+                $validator->errors()->add('base_unit_id', 'La unidad base no corresponde al tipo de medida elegido. Elegí la unidad base de esa medida.');
             }
 
             if ($defaultUnit !== null && $defaultUnit->family->value !== $family) {
-                $validator->errors()->add('default_input_unit_id', 'La unidad de ingreso debe pertenecer a la familia seleccionada.');
+                $validator->errors()->add('default_input_unit_id', 'La unidad de carga no corresponde al tipo de medida elegido. Elegí una unidad de esa medida.');
             }
             if ($this->filled('reference_mass_grams_per_unit') && $family !== UnitFamily::Count->value) {
-                $validator->errors()->add('reference_mass_grams_per_unit', 'El peso de referencia sólo se aplica a unidades contables.');
+                $validator->errors()->add('reference_mass_grams_per_unit', 'El peso de referencia solo se usa en insumos que se cuentan por unidad. Dejalo vacío para esta medida.');
             }
         }];
     }

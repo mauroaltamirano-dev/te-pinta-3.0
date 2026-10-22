@@ -22,14 +22,14 @@ final readonly class ConfigureProductInventoryConsumption
         return DB::transaction(function () use ($productId, $mode, $components, $adminId): ProductInventoryConsumptionDefinition {
             $product = DB::table('products')->where('id', $productId)->whereNull('deleted_at')->lockForUpdate()->first();
             if ($product === null || ! in_array($mode, ['consume', 'no_inventory'], true)) {
-                throw ValidationException::withMessages(['mode' => 'Choose a product and an explicit consumption mode.']);
+                throw ValidationException::withMessages(['mode' => 'Elegí si el producto consume insumos o no usa inventario.']);
             }
             $d = ProductInventoryConsumptionDefinition::query()->where('product_id', $productId)->lockForUpdate()->first();
             if ($d !== null && $d->mode !== $mode) {
-                throw ValidationException::withMessages(['mode' => 'The explicit mode cannot change after creation.']);
+                throw ValidationException::withMessages(['mode' => 'El modo de consumo de este producto ya está definido y no se puede cambiar. Si necesitás cambiarlo, consultá al responsable del sistema.']);
             }
             if (($mode === 'no_inventory' && $components !== []) || ($mode === 'consume' && $components === [])) {
-                throw ValidationException::withMessages(['components' => 'Consume requires components; no inventory requires none.']);
+                throw ValidationException::withMessages(['components' => 'Si el producto consume insumos, agregá al menos un componente; si no usa inventario, quitá los componentes.']);
             }
             $d ??= ProductInventoryConsumptionDefinition::query()->create(['product_id' => $productId, 'mode' => $mode, 'created_by' => $adminId]);
             if ($mode === 'no_inventory') {
@@ -38,7 +38,7 @@ final readonly class ConfigureProductInventoryConsumption
             $versions = $d->versions()->orderBy('id')->lockForUpdate()->get();
             $ids = array_column($components, 'inventory_item_id');
             if (count(array_unique($ids)) !== count($ids)) {
-                throw ValidationException::withMessages(['components' => 'An inventory item may appear only once.']);
+                throw ValidationException::withMessages(['components' => 'Cada insumo puede aparecer una sola vez. Uní las cantidades en una sola línea.']);
             }
             $items = InventoryItem::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             $units = InventoryUnit::query()->whereKey(array_column($components, 'unit_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
@@ -47,7 +47,7 @@ final readonly class ConfigureProductInventoryConsumption
                 $i = $items->get($c['inventory_item_id']);
                 $u = $units->get($c['unit_id']);
                 if ($i === null || $u === null || ! $i->is_active || ! $i->tracks_stock || ! $i->order_consumption_enabled) {
-                    throw ValidationException::withMessages(['components' => 'Choose active sale-consumption eligible inventory items.']);
+                    throw ValidationException::withMessages(['components' => 'Elegí insumos activos, que controlen stock y tengan habilitado "Consumo al vender".']);
                 }
                 try {
                     $q = DecimalMath::normalize($c['quantity'], 6);

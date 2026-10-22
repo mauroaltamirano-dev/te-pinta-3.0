@@ -285,7 +285,7 @@ final class InstagramManagementController
         $validated = $request->validate(['days' => ['required', 'integer', Rule::in([30])]]);
         $count = $archive->execute($validated['days']);
 
-        return back()->with('success', "{$count} publication(s) archived.");
+        return back()->with('success', "{$count} publicación(es) archivada(s).");
     }
 
     public function retryPublication(Request $request, InstagramStoryPublication $publication, RetryInstagramStoryPublication $retry): RedirectResponse

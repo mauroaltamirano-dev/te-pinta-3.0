@@ -12,7 +12,7 @@ final class UnitConverter
     public function toBase(InventoryItem $item, InventoryUnit $inputUnit, string $quantity): string
     {
         if ($item->unit_family !== $inputUnit->family) {
-            throw ValidationException::withMessages(['unit_id' => 'The unit must belong to the item unit family.']);
+            throw ValidationException::withMessages(['unit_id' => 'La unidad elegida no corresponde a la medida del insumo. Elegí una unidad de la misma medida.']);
         }
 
         try {
@@ -22,16 +22,16 @@ final class UnitConverter
         }
 
         if ($baseQuantity[0] === '-' || trim(str_replace('.', '', $baseQuantity), '0') === '') {
-            throw ValidationException::withMessages(['quantity' => 'The quantity must be positive.']);
+            throw ValidationException::withMessages(['quantity' => 'La cantidad debe ser mayor que cero. Ingresá una cantidad positiva.']);
         }
 
         $fraction = explode('.', $baseQuantity, 2)[1] ?? '';
         if (trim(substr($fraction, $item->quantity_precision), '0') !== '') {
-            throw ValidationException::withMessages(['quantity' => 'The converted quantity exceeds the item precision.']);
+            throw ValidationException::withMessages(['quantity' => 'La cantidad tiene más decimales de los que admite el insumo. Redondeala o usá otra unidad.']);
         }
 
         if (strlen(ltrim(explode('.', $baseQuantity, 2)[0], '0')) > 14) {
-            throw ValidationException::withMessages(['quantity' => 'The converted quantity is too large.']);
+            throw ValidationException::withMessages(['quantity' => 'La cantidad es demasiado grande. Revisá el número y la unidad elegida.']);
         }
 
         return $baseQuantity;

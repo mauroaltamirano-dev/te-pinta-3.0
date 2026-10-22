@@ -18,20 +18,20 @@ final class PurchasePresentationValidator
         $item = InventoryItem::query()->find($data->inventoryItemId);
         $unit = InventoryUnit::query()->find($data->contentUnitId);
         if ($item === null || (! $item->is_active && $current?->inventory_item_id !== $item->id)) {
-            throw ValidationException::withMessages(['inventory_item_id' => 'The inventory item must be active.']);
+            throw ValidationException::withMessages(['inventory_item_id' => 'El insumo está inactivo. Elegí un insumo activo.']);
         }
         if ($unit === null) {
-            throw ValidationException::withMessages(['content_unit_id' => 'The content unit is invalid.']);
+            throw ValidationException::withMessages(['content_unit_id' => 'La unidad del contenido no existe. Elegí una unidad de la lista.']);
         }
         if (trim($data->name) === '') {
-            throw ValidationException::withMessages(['name' => 'The presentation name is required.']);
+            throw ValidationException::withMessages(['name' => 'Ingresá un nombre para la presentación.']);
         }
         if (PurchasePresentation::query()
             ->where('inventory_item_id', $item->id)
             ->when($current !== null, fn ($query) => $query->whereKeyNot($current->id))
             ->whereRaw('lower(name) = lower(?)', [trim($data->name)])
             ->exists()) {
-            throw ValidationException::withMessages(['name' => 'The presentation name is already in use for this item.']);
+            throw ValidationException::withMessages(['name' => 'Este insumo ya tiene una presentación con ese nombre. Usá otro nombre.']);
         }
         $this->converter->toBase($item, $unit, $data->contentQuantity);
 

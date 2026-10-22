@@ -22,7 +22,7 @@ final class ReverseFinancialTransaction
                 'managementOrderPayment.distribution.financialTransaction.reversal',
             ])->lockForUpdate()->findOrFail($original->id);
             if ($locked->type === FinancialTransactionType::Purchase) {
-                throw ValidationException::withMessages(['transaction' => 'Reverse rich purchases through their coordinated Purchase workflow.']);
+                throw ValidationException::withMessages(['transaction' => 'Este movimiento pertenece a una compra. Revertilo con "Revertir compra" desde el detalle de la compra.']);
             }
             if ($locked->type === FinancialTransactionType::Reversal) {
                 throw ValidationException::withMessages(['transaction' => 'Una reversión no puede volver a revertirse.']);

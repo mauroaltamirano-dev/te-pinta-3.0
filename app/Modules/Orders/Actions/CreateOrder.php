@@ -35,7 +35,7 @@ final readonly class CreateOrder
         if ($source === OrderSource::Pos) {
             $actor = $adminId === null ? null : User::query()->find($adminId);
             if ($actor === null || ! $actor->canUsePos() || ($data->paymentStatus === PaymentStatus::Paid && ! $actor->canOperateCashier())) {
-                throw new AuthorizationException('The actor cannot create this POS order.');
+                throw new AuthorizationException('No tenés permiso para crear este pedido. Pedile acceso a un administrador.');
             }
         }
         $data->assertContext($source);

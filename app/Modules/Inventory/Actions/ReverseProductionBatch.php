@@ -19,13 +19,13 @@ final class ReverseProductionBatch
     public function execute(int $batchId, CarbonImmutable $date, string $reason, int $adminId): ProductionReversal
     {
         if (trim($reason) === '' || mb_strlen($reason) > 240) {
-            throw ValidationException::withMessages(['reason' => 'A reversal reason of at most 240 characters is required.']);
+            throw ValidationException::withMessages(['reason' => 'Ingresá un motivo de hasta 240 caracteres.']);
         }
 
         return DB::transaction(function () use ($batchId, $date, $reason, $adminId): ProductionReversal {
             $b = ProductionBatch::query()->with('transaction.movements.costLayer', 'allocations')->lockForUpdate()->findOrFail($batchId);
             if ($b->reversal()->exists()) {
-                throw ValidationException::withMessages(['production' => 'Production is already reversed.']);
+                throw ValidationException::withMessages(['production' => 'Esta producción ya fue revertida. Recargá la página para ver su estado.']);
             }
             $original = $b->transaction;
             $ids = $original->movements->pluck('inventory_item_id')->unique()->sort()->values();

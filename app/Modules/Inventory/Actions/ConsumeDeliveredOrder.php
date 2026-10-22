@@ -23,12 +23,12 @@ final readonly class ConsumeDeliveredOrder
         return DB::transaction(function () use ($orderId, $date, $actor): OrderInventoryConsumption {
             $order = DB::table('orders')->where('id', $orderId)->lockForUpdate()->first();
             if ($order === null || $order->status !== 'delivered') {
-                throw ValidationException::withMessages(['status' => 'Inventory consumption requires a delivered order.']);
+                throw ValidationException::withMessages(['status' => 'El pedido todavía no figura como entregado, así que no puede descontar inventario. Recargá la página y revisá su estado.']);
             }
             $existing = OrderInventoryConsumption::query()->where('order_id', $orderId)->first();
             if ($existing !== null) {
                 if ($existing->reversal()->exists()) {
-                    throw ValidationException::withMessages(['status' => 'A reversed delivery cannot consume again.']);
+                    throw ValidationException::withMessages(['status' => 'La entrega de este pedido ya fue revertida y no puede volver a descontar inventario. Creá un pedido nuevo.']);
                 }
 
                 return $existing->load('components', 'transaction.movements', 'transaction.costLayers');
@@ -41,19 +41,19 @@ final readonly class ConsumeDeliveredOrder
                 $parts = $compositions->get($line->id);
                 foreach ($parts ?? [$line] as $part) {
                     if ($part->product_id === null) {
-                        throw ValidationException::withMessages(['status' => 'An order line has no product configuration identity.']);
+                        throw ValidationException::withMessages(['status' => 'Una línea del pedido no tiene un producto asociado. Revisá los productos del pedido.']);
                     }
                     $id = (int) $part->product_id;
                     $q = $parts === null ? (int) $line->units_count : (int) $part->quantity;
                     if ($q <= 0) {
-                        throw ValidationException::withMessages(['status' => 'Commercial units must be positive.']);
+                        throw ValidationException::withMessages(['status' => 'Una línea del pedido tiene cantidad cero. Revisá las cantidades del pedido.']);
                     }
                     $sold[$id] ??= ['product_id' => $id, 'name' => (string) $part->product_name, 'units' => 0];
                     $sold[$id]['units'] += $q;
                 }
             }
             if ($sold === []) {
-                throw ValidationException::withMessages(['status' => 'An empty order has no fulfillment definition.']);
+                throw ValidationException::withMessages(['status' => 'El pedido no tiene productos. Agregá productos antes de entregarlo.']);
             }
             ksort($sold);
             // Lock identity even if no definition exists: configuration uses the same order.
@@ -64,7 +64,7 @@ final readonly class ConsumeDeliveredOrder
             foreach ($sold as $id => $s) {
                 $d = $definitions->get($id);
                 if ($d === null) {
-                    throw ValidationException::withMessages(['status' => 'Missing inventory configuration for '.$s['name'].'. Configure consumption or explicitly no inventory.']);
+                    throw ValidationException::withMessages(['status' => 'Falta configurar el consumo físico de '.$s['name'].'. Configuralo (con componentes o sin inventario) y volvé a marcar el pedido como entregado.']);
                 }
                 $v = $d->currentVersion()->lockForUpdate()->first();
                 $snapshots[] = [...$s, 'mode' => $d->mode, 'version_id' => $v?->id];
@@ -72,7 +72,7 @@ final readonly class ConsumeDeliveredOrder
                     continue;
                 }
                 if ($v === null || ! $v->is_active || ! $v->is_sealed || ! $v->components()->exists()) {
-                    throw ValidationException::withMessages(['status' => 'Inventory configuration is incomplete for '.$s['name'].'.']);
+                    throw ValidationException::withMessages(['status' => 'El consumo físico de '.$s['name'].' está incompleto. Revisá su configuración y volvé a marcar el pedido como entregado.']);
                 }
                 foreach ($v->components as $component) {
                     $rows[] = ['product_id' => $id, 'product_name_snapshot' => $s['name'], 'consumption_version_id' => $v->id, 'definition_component_id' => $component->id, 'inventory_item_id' => $component->inventory_item_id, 'quantity' => $component->quantity, 'unit_id' => $component->unit_id, 'component_base_quantity' => $component->base_quantity, 'commercial_quantity' => $s['units'], 'consumed_base_quantity' => DecimalMath::multiply($component->base_quantity, (string) $s['units'], 6)];
@@ -83,7 +83,7 @@ final readonly class ConsumeDeliveredOrder
             $items = InventoryItem::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             foreach ($items as $i) {
                 if (! $i->is_active || ! $i->tracks_stock || ! $i->order_consumption_enabled) {
-                    throw ValidationException::withMessages(['status' => 'All consumption components must remain sale eligible.']);
+                    throw ValidationException::withMessages(['status' => 'Algún insumo del consumo físico está inactivo, no controla stock o no tiene habilitado "Consumo al vender". Revisá esos insumos en Inventario.']);
                 }
             }
             $c = OrderInventoryConsumption::query()->create(['order_id' => $orderId, 'effective_date' => $date, 'created_by' => $actor, 'products_snapshot' => $snapshots, 'total_cost' => 0, 'cost_coverage' => 'complete', 'warnings' => []]);

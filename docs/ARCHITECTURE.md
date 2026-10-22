@@ -107,6 +107,10 @@ Every business row carries a NOT NULL `restaurant_id` whose column default is th
 
 `Core/Branding/RestaurantBranding` reads and updates only the restaurant selected by `RestaurantContext`; it has no business-module dependencies. Settings owns its administrative HTTP write surface, under the same authorization as existing general settings. `BrandingServiceProvider` lazily supplies the root view; Inertia shares validated palette values for subsequent navigation. The provider performs no database access during console boot or migrations. See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) and [ADR 0014](decisions/0014-light-theme-restaurant-branding.md).
 
+## User-facing language
+
+The product is Spanish-only (`APP_LOCALE=es`). Every message a user can see — validation errors, flash messages, authorization messages, error pages — is Spanish with voseo ("Revisá", "Elegí") and says what to do next. Messages are hardcoded at their source; framework texts come from `lang/es/validation.php` (every framework key, plus Spanish field names in `attributes`) and `lang/es.json` (default error pages and the generic authorization message). Internal invariant exceptions that are never rendered (pricing allocators, audit data) stay in English and surface as a generic 500. `ValidationMessageTranslationTest` and `SpanishErrorPagesTest` fail when a framework key would show raw.
+
 ## Access model
 
 - A user reaches `/admin` only through an active membership (`restaurant_user`) in the current restaurant. The membership's role is one of six code-defined roles (`owner`, `manager`, `cashier`, `waiter`, `kitchen`, `accountant`); `Identity\Enums\Role::permissions()` maps each to code-defined permissions (`Identity\Enums\Permission`), registered as Gate abilities of the same name.

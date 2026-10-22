@@ -16,7 +16,7 @@ final class ReverseInventoryAdjustment
     public function execute(int $id, CarbonImmutable $date, string $note, int $actor): InventoryAdjustment
     {
         if (trim($note) === '' || mb_strlen($note) > 240) {
-            throw ValidationException::withMessages(['note' => 'A reversal reason of at most 240 characters is required.']);
+            throw ValidationException::withMessages(['note' => 'Ingresá un motivo de hasta 240 caracteres.']);
         }
 
         return DB::transaction(function () use ($id, $date, $note, $actor): InventoryAdjustment {
@@ -24,7 +24,7 @@ final class ReverseInventoryAdjustment
             InventoryItem::query()->lockForUpdate()->findOrFail($itemId);
             $original = InventoryAdjustment::query()->with('transaction.movements.costLayer')->lockForUpdate()->findOrFail($id);
             if ($original->reversal_of_id !== null || $original->reversal()->exists()) {
-                throw ValidationException::withMessages(['adjustment' => 'The adjustment is already reversed or is a reversal.']);
+                throw ValidationException::withMessages(['adjustment' => 'Este ajuste ya fue revertido o es una reversión. Recargá la página para ver su estado.']);
             }
             $delta = DecimalMath::subtract('0', $original->delta);
             $stock = DecimalMath::normalize((string) DB::table('inventory_stock_movements')->where('inventory_item_id', $itemId)->sum('quantity'), 6);

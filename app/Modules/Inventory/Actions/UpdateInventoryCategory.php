@@ -11,7 +11,7 @@ final class UpdateInventoryCategory
     {
         $name = trim($name);
         if (InventoryCategory::query()->whereKeyNot($category->id)->whereRaw('lower(name) = lower(?)', [$name])->exists()) {
-            throw ValidationException::withMessages(['name' => 'The inventory category name is already in use.']);
+            throw ValidationException::withMessages(['name' => 'Ya existe una categoría de inventario con ese nombre. Usá otro nombre.']);
         }
 
         $category->update(['name' => $name, 'is_active' => $isActive]);

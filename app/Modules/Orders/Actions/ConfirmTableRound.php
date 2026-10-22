@@ -48,7 +48,7 @@ final readonly class ConfirmTableRound
     public function execute(int $diningTableId, ?int $expectedSessionId, TableRoundKind $kind, array $items, array $addons, ?string $note, string $roundKey, User $actor): TableRound
     {
         if (! $actor->canUsePos()) {
-            throw new AuthorizationException('The actor cannot take tables.');
+            throw new AuthorizationException('No tenés permiso para tomar mesas. Pedile acceso a un administrador.');
         }
         $products = $this->lines($items, 'product_id', 'items');
         $extras = $this->lines($addons, 'addon_id', 'addons');
@@ -117,7 +117,7 @@ final readonly class ConfirmTableRound
             $names = [];
         } else {
             if ($session->waiter_id !== $actor->id && ! $actor->canOperateCashier()) {
-                throw new AuthorizationException('Only the table waiter or a cashier role can add to this table.');
+                throw new AuthorizationException('Solo el mozo de la mesa o caja pueden agregar pedidos a esta mesa. Pedile al mozo asignado o a caja que lo haga.');
             }
             $names = $this->requote($session, $kind, $products, $extras, $actor);
             $session->update(['bill_requested_at' => null, 'bill_requested_by' => null]);

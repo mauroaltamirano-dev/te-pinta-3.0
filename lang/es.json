@@ -1,0 +1,11 @@
+{
+    "Unauthorized": "No autorizado",
+    "Payment Required": "Pago requerido",
+    "Forbidden": "Acceso denegado",
+    "Not Found": "Página no encontrada",
+    "Page Expired": "La página expiró. Recargala y volvé a intentar.",
+    "Too Many Requests": "Demasiados intentos. Esperá un momento y volvé a intentar.",
+    "Server Error": "Error del servidor. Volvé a intentar en unos minutos.",
+    "Service Unavailable": "Servicio no disponible. Volvé a intentar en unos minutos.",
+    "This action is unauthorized.": "Esta acción no está autorizada. Si la necesitás, pedile acceso al responsable del sistema."
+}

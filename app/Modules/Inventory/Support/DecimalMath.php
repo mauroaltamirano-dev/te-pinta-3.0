@@ -57,7 +57,7 @@ final class DecimalMath
         [$numeratorSign, $numeratorDigits, $numeratorScale] = self::parse($numerator);
         [$denominatorSign, $denominatorDigits, $denominatorScale] = self::parse($denominator);
         if (trim($denominatorDigits, '0') === '') {
-            throw new InvalidArgumentException('Cost quantity must be positive.');
+            throw new InvalidArgumentException('No se pudo calcular el costo porque la cantidad de referencia es cero. Revisá la cantidad o cargá el costo a mano.');
         }
 
         $sign = ($amount < 0 ? -1 : 1) * $numeratorSign * $denominatorSign;
@@ -68,7 +68,7 @@ final class DecimalMath
             $quotient = self::addOne($quotient);
         }
         if (self::compareUnsigned($quotient, (string) PHP_INT_MAX) > 0) {
-            throw new InvalidArgumentException('Rounded cost exceeds the supported integer range.');
+            throw new InvalidArgumentException('El costo calculado es demasiado grande. Revisá la cantidad y el costo.');
         }
 
         return $sign * (int) $quotient;
@@ -84,7 +84,7 @@ final class DecimalMath
     public static function allocateIntegerByRatios(int $amount, array $quantities): array
     {
         if ($amount < 0 || $quantities === []) {
-            throw new InvalidArgumentException('Cost allocation expects a non-negative amount and quantities.');
+            throw new InvalidArgumentException('No se pudo repartir el costo: el monto y las cantidades deben ser positivos. Revisá los datos cargados.');
         }
 
         $scale = 0;
@@ -92,7 +92,7 @@ final class DecimalMath
         foreach ($quantities as $quantity) {
             [$sign, $digits, $quantityScale] = self::parse($quantity);
             if ($sign < 0 || trim($digits, '0') === '') {
-                throw new InvalidArgumentException('Cost allocation quantities must be positive.');
+                throw new InvalidArgumentException('No se pudo repartir el costo: todas las cantidades deben ser mayores que cero. Revisá los datos cargados.');
             }
             $scale = max($scale, $quantityScale);
             $parsed[] = [$digits, $quantityScale];
@@ -106,7 +106,7 @@ final class DecimalMath
             $denominator = self::addUnsigned($denominator, $numerator);
         }
         if ($denominator === '0') {
-            throw new InvalidArgumentException('Cost allocation quantities must have a positive sum.');
+            throw new InvalidArgumentException('No se pudo repartir el costo: las cantidades suman cero. Revisá los datos cargados.');
         }
 
         $allocations = [];
@@ -115,7 +115,7 @@ final class DecimalMath
         foreach ($numerators as $index => $numerator) {
             [$share, $remainder] = self::divideUnsigned(self::multiplyUnsigned((string) $amount, $numerator), $denominator);
             if (self::compareUnsigned($share, (string) PHP_INT_MAX) > 0) {
-                throw new InvalidArgumentException('Cost allocation exceeds the supported integer range.');
+                throw new InvalidArgumentException('El costo a repartir es demasiado grande. Revisá la cantidad y el costo.');
             }
             $allocations[$index] = (int) $share;
             $remainders[$index] = $remainder;
@@ -141,7 +141,7 @@ final class DecimalMath
         if ($scale > $outputScale) {
             $discarded = substr($digits, -($scale - $outputScale));
             if (trim($discarded, '0') !== '') {
-                throw new InvalidArgumentException('Decimal result cannot be represented at the requested precision.');
+                throw new InvalidArgumentException('La cantidad tiene demasiados decimales. Redondeala a menos decimales.');
             }
             $digits = substr($digits, 0, max(1, strlen($digits) - ($scale - $outputScale)));
         } elseif ($scale < $outputScale) {
@@ -158,7 +158,7 @@ final class DecimalMath
         if ($scale > $outputScale) {
             $discarded = substr($digits, -($scale - $outputScale));
             if (trim($discarded, '0') !== '') {
-                throw new InvalidArgumentException('Decimal value exceeds the requested precision.');
+                throw new InvalidArgumentException('La cantidad tiene demasiados decimales. Usá como máximo 6 decimales.');
             }
             $digits = substr($digits, 0, max(1, strlen($digits) - ($scale - $outputScale)));
         } elseif ($scale < $outputScale) {
@@ -171,12 +171,12 @@ final class DecimalMath
     public static function divideIntegerByDecimal(int $numerator, string $denominator, int $outputScale): string
     {
         if ($numerator < 0 || $outputScale < 0) {
-            throw new InvalidArgumentException('Cost division expects non-negative values and scale.');
+            throw new InvalidArgumentException('No se pudo calcular el costo unitario con valores negativos. Revisá la cantidad y el costo.');
         }
 
         [$sign, $denominatorDigits, $denominatorScale] = self::parse($denominator);
         if ($sign < 0 || trim($denominatorDigits, '0') === '') {
-            throw new InvalidArgumentException('Cost quantity must be positive.');
+            throw new InvalidArgumentException('No se pudo calcular el costo porque la cantidad de referencia es cero. Revisá la cantidad o cargá el costo a mano.');
         }
 
         $scaledNumerator = (string) $numerator.str_repeat('0', $denominatorScale + $outputScale);
@@ -193,7 +193,7 @@ final class DecimalMath
     {
         $value = trim($value);
         if (! preg_match('/^([+-]?)(\d+)(?:\.(\d+))?$/', $value, $matches)) {
-            throw new InvalidArgumentException('Invalid decimal value.');
+            throw new InvalidArgumentException('El número no es válido. Ingresá solo dígitos y, si hace falta, un punto decimal.');
         }
 
         $fraction = $matches[3] ?? '';

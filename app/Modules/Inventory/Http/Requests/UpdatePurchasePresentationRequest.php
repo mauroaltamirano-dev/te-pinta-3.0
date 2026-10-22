@@ -44,7 +44,7 @@ final class UpdatePurchasePresentationRequest extends FormRequest
             }
 
             if ($item->unit_family !== $unit->family) {
-                $validator->errors()->add('content_unit_id', 'La unidad de contenido debe pertenecer a la familia del item.');
+                $validator->errors()->add('content_unit_id', 'La unidad del contenido no corresponde a la medida del insumo. Elegí una unidad de la misma medida.');
 
                 return;
             }

@@ -35,11 +35,11 @@ final class CreatePurchase
     public function execute(PurchaseData $data, int $adminId): Purchase
     {
         if (! Str::isUuid($data->idempotencyKey) || $data->lines === [] || count($data->lines) > 100 || $data->shippingAmount < 0 || $data->shippingAmount > 999999999999) {
-            throw ValidationException::withMessages(['purchase' => 'Invalid purchase identity, lines or shipping amount.']);
+            throw ValidationException::withMessages(['purchase' => 'La compra debe tener entre 1 y 100 líneas y un envío en pesos, cero o mayor. Revisá los datos y, si sigue fallando, recargá la página.']);
         }
         foreach ($data->lines as $line) {
             if ($line->priceAmount < 0 || $line->priceAmount > 999999999999) {
-                throw ValidationException::withMessages(['lines' => 'Line price must be non-negative integer pesos within the supported range.']);
+                throw ValidationException::withMessages(['lines' => 'Cada precio debe ser un monto en pesos enteros, cero o mayor. Revisá los precios de las líneas.']);
             }
         }
         // PostgreSQL UUID identity ignores case; locks and physical source text must share it.
@@ -133,7 +133,7 @@ final class CreatePurchase
                         }
                     }
                     if (DecimalMath::compare($baseQuantity, '99999999999999.999999') > 0 || trim(substr(explode('.', $baseQuantity)[1] ?? '', $item->quantity_precision), '0') !== '') {
-                        throw ValidationException::withMessages(["lines.{$index}.quantity" => 'Normalized quantity exceeds the item range or precision.']);
+                        throw ValidationException::withMessages(["lines.{$index}.quantity" => 'La cantidad supera el máximo o los decimales que admite el insumo. Revisá la cantidad y la unidad.']);
                     }
                     $normalized[] = compact('line', 'item', 'presentation', 'inputUnit', 'quantity', 'baseQuantity', 'lineTotal');
                 }
