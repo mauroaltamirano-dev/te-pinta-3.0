@@ -60,6 +60,17 @@ Added only (no existing table or row changes): `2026_10_21_000000_create_table_s
 
 `table_rounds` and `table_round_items` reject `UPDATE` and `DELETE` (trigger `table_service_reject_history_mutation`). `print_jobs` rejects deletes, changes to its payload and identity, and a printed job going back to the queue (`print_jobs_reject_content_change`). Foreign keys to orders, users, products and tables are `RESTRICT`, so a retired table, product or member keeps its history. Historical orders are never re-priced: a table re-prices only its own order while its session is open; a charged or cancelled session freezes it.
 
+## Product subcategories
+
+Added only (no existing row is rewritten): `2026_10_23_000000_create_product_subcategories.php`.
+
+| Table / column | Holds | Invariants |
+| --- | --- | --- |
+| `product_subcategories` | Optional filters inside one category (Empanadas > Clásicas): name, slug, order, active flag | `restaurant_id` from the session setting; unique `(id, category_id)`; slug unique per `(restaurant_id, category_id)`; name unique per category ignoring case (`product_subcategories_name_unique`); `sort_order >= 0`; `category_id` is `RESTRICT` and never changes |
+| `products.subcategory_id` | Nullable; existing products start with null | Composite foreign key `products_subcategory_matches_category (subcategory_id, category_id) → product_subcategories (id, category_id)`: a product's subcategory always belongs to its own category; a null subcategory is not checked |
+
+A subcategory is only a filter: pricing, order snapshots, inventory consumption and sellability never read it. Rollback refuses once any subcategory exists.
+
 ## Deletion and restoration
 
 - `orders` and `customers` use soft deletion (`deleted_at`). There is no force-delete route. Restoring reuses the same row, ID, snapshots and revisions.

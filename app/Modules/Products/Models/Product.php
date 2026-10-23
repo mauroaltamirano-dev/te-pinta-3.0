@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property int $id
  * @property int $category_id
+ * @property int|null $subcategory_id
  * @property ProductPricingFamily $pricing_family
  * @property string $name
  * @property string $slug
@@ -29,7 +30,7 @@ final class Product extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'category_id', 'pricing_family', 'name', 'slug', 'description', 'long_description', 'public_ingredients', 'image_path', 'sort_order',
+        'category_id', 'subcategory_id', 'pricing_family', 'name', 'slug', 'description', 'long_description', 'public_ingredients', 'image_path', 'sort_order',
         'unit_price', 'half_dozen_price', 'dozen_price', 'is_available',
     ];
 
@@ -49,6 +50,12 @@ final class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /** @return BelongsTo<ProductSubcategory, $this> */
+    public function subcategory(): BelongsTo
+    {
+        return $this->belongsTo(ProductSubcategory::class, 'subcategory_id');
     }
 
     /** @return BelongsToMany<Tag, $this> */
