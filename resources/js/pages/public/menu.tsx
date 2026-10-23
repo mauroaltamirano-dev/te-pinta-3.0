@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/orders/cart-context';
 import type { PublicProduct } from '@/features/orders/types';
+import {
+    filterBySubcategory,
+    subcategoriesOf,
+} from '@/features/products/subcategory-filter';
 
 const money = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -16,6 +20,7 @@ export default function Menu() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [category, setCategory] = useState('all');
+    const [subcategory, setSubcategory] = useState('all');
     const { items, addProduct, setProductQuantity, count } = useCart();
 
     useEffect(() => {
@@ -46,10 +51,18 @@ export default function Menu() {
             ),
         [products],
     );
-    const visible =
+    const inCategory =
         category === 'all'
             ? products
             : products.filter((product) => product.category.slug === category);
+    // Subcategories narrow one category; "Todas" offers none.
+    const subcategories =
+        category === 'all' ? [] : subcategoriesOf(inCategory, subcategoryOf);
+    const visible = filterBySubcategory(inCategory, subcategoryOf, subcategory);
+    const selectCategory = (slug: string) => {
+        setCategory(slug);
+        setSubcategory('all');
+    };
 
     return (
         <>
@@ -109,7 +122,7 @@ export default function Menu() {
                                 variant="outline"
                                 aria-pressed={category === 'all'}
                                 className="min-h-11 shrink-0 rounded-full border-public-ink/20 bg-white px-5 text-public-ink shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:border-public-canvas aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink"
-                                onClick={() => setCategory('all')}
+                                onClick={() => selectCategory('all')}
                             >
                                 Todas
                             </Button>
@@ -121,12 +134,34 @@ export default function Menu() {
                                     variant="outline"
                                     aria-pressed={category === item.slug}
                                     className="min-h-11 shrink-0 rounded-full border-public-ink/20 bg-white px-5 text-public-ink shadow-none transition-colors hover:bg-public-earth-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:border-public-canvas aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-earth-ink"
-                                    onClick={() => setCategory(item.slug)}
+                                    onClick={() => selectCategory(item.slug)}
                                 >
                                     {item.name}
                                 </Button>
                             ))}
                         </div>
+                        {subcategories.length > 0 && (
+                            <div
+                                role="group"
+                                aria-label="Subcategorías del menú"
+                                className="mt-2 flex gap-2 overflow-x-auto pb-1"
+                            >
+                                {[
+                                    { key: 'all', name: 'Todas' },
+                                    ...subcategories,
+                                ].map((item) => (
+                                    <button
+                                        key={item.key}
+                                        type="button"
+                                        aria-pressed={subcategory === item.key}
+                                        onClick={() => setSubcategory(item.key)}
+                                        className="min-h-10 shrink-0 rounded-full px-4 text-sm text-public-ink underline-offset-4 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink aria-[pressed=true]:bg-public-ink aria-[pressed=true]:text-white aria-[pressed=true]:hover:no-underline"
+                                    >
+                                        {item.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -165,9 +200,16 @@ export default function Menu() {
                         >
                             {category === 'all'
                                 ? 'Todo el menú'
-                                : categories.find(
-                                      (item) => item.slug === category,
-                                  )?.name}
+                                : [
+                                      categories.find(
+                                          (item) => item.slug === category,
+                                      )?.name,
+                                      subcategories.find(
+                                          (item) => item.key === subcategory,
+                                      )?.name,
+                                  ]
+                                      .filter(Boolean)
+                                      .join(' · ')}
                             <span className="ml-2 text-public-earth-ink">
                                 · {visible.length}{' '}
                                 {visible.length === 1 ? 'opción' : 'opciones'}
@@ -413,5 +455,14 @@ export default function Menu() {
                 )}
             </section>
         </>
+    );
+}
+
+function subcategoryOf(product: PublicProduct) {
+    return (
+        product.subcategory && {
+            ...product.subcategory,
+            key: product.subcategory.slug,
+        }
     );
 }

@@ -219,6 +219,7 @@ Orders builds every printable document in `Support/OrderDocuments.php` and emits
 `/admin` is the quick-order screen ([ADR 0001](decisions/0001-admin-home-is-quick-order.md)); `/admin/orders/create` is the full-page alternative.
 
 - Product cards add 12, 6 or 1 unit to an in-memory draft; nothing is persisted until final confirmation.
+- Category tabs and, when the chosen category has subcategories, a second row of subcategory chips filter the cards (the round composer of a table does the same). Subcategories are display filters only: the engine never reads them and a combined dozen mixes flavors of any subcategory.
 - Both screens share `features/orders/hooks/use-admin-order-draft.ts` (draft state, preview sequencing, stale-response protection, submit lock), `admin-order-details-fields.tsx` and `PriceSummary`, which calls `POST /admin/orders/price-preview`.
 - Confirmation posts to `POST /admin/orders` (`StoreAdminOrderRequest` → `CreateOrder`). Quick order receives a JSON confirmation with the backend-generated ticket; the full form receives an Inertia redirect.
 

@@ -16,9 +16,9 @@ Objective: optional product subcategories used only as a filter (public menu, Mo
 ## Tasks
 
 - T1 — S1, S3, S6: migration `product_subcategories` + `products.subcategory_id` with a composite foreign key, model, DB tests. Route: inline. Risk: item 1 (production migration). Status: done (commit `09f39cd`).
-- T2 — S1, S2, S7: subcategory create/update (requests, actions, routes) and management inside the categories dialog. Route: inline. Status: pending.
-- T3 — S3, S5: product assignment (request, data, actions, form) and products screen improvements. Route: inline. Status: pending.
-- T4 — S2, S4: subcategory in the public catalog and admin order catalog payloads; filters in public menu, quick order and round composer; pricing-unchanged test. Route: inline. Status: pending.
+- T2 — S1, S2, S7: subcategory create/update (requests, actions, routes) and management inside the categories dialog. Route: inline. Status: done (commit `97af9e9`).
+- T3 — S3, S5: product assignment (request, data, actions, form) and products screen improvements. Route: inline. Status: done (commit `97af9e9`).
+- T4 — S2, S4: subcategory in the public catalog and admin order catalog payloads; filters in public menu, quick order and round composer; pricing-unchanged test. Route: inline. Status: done (commit 3).
 - T5 — S8: e2e desktop/mobile, screenshots, docs, full checks. Route: inline. Status: pending.
 
 ## Log
@@ -37,3 +37,4 @@ Objective: optional product subcategories used only as a filter (public menu, Mo
   6. Subcategory chips plus "Sin subcategoría" with its count: after the migration every product starts without one, and this chip is the worklist for assigning them.
   7. Each row shows "Categoría › Subcategoría", and the form offers "Subcategoría (opcional)" limited to the chosen category (changing category clears it; inactive ones are offered only to the product that already has it).
   8. "Gestionar categorías" manages each category's subcategories inline (name, order, active), and its description says that subcategories only filter.
+- L6 — T4 evidence: PHPUnit `tests/Feature/Products` + `tests/Feature/Orders` 329/329 (includes the pricing test: 6 + 6 of two subcategories form one combined dozen with the same total as without subcategories). `node --test` helper 6/6. New e2e `category-subcategories.spec.ts` 8/8 (chromium, mobile-chromium). Existing specs that touch these screens (products, orders, marketing, public-product-admin-parity, order-consumption-recovery, purchase-and-consumption-forms, admin-quick-order, counter-order, table-service, public-menu): 64 passed, 20 skipped by project, 0 failed. Shared code touched: `UniqueSlug::for` gains an optional scope (existing callers pass none), `BuildAdminOrderFormOptions::catalog` adds `subcategory` and loads categories once instead of one query per product (same products, order and fields otherwise), `PublicProductResource` adds `subcategory`; existing payload fields are unchanged.

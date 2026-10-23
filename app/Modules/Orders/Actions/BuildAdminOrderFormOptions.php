@@ -8,6 +8,7 @@ use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Support\OrderBusinessDate;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
 
 final class BuildAdminOrderFormOptions
@@ -43,9 +44,13 @@ final class BuildAdminOrderFormOptions
                         $query->where('is_available', true)->whereNull('deleted_at');
                     });
             })
-            ->orderBy('sort_order')->orderBy('id')->get()
-            ->map(function (Product $product) use ($quantities): array {
-                $category = Category::query()->withTrashed()->findOrFail($product->category_id);
+            ->with('subcategory')
+            ->orderBy('sort_order')->orderBy('id')->get();
+        $categories = Category::query()->withTrashed()->whereIn('id', $products->pluck('category_id')->unique())->get()->keyBy('id');
+
+        $products = $products
+            ->map(function (Product $product) use ($quantities, $categories): array {
+                $category = $categories->get($product->category_id) ?? throw new ModelNotFoundException;
                 $sellable = $product->deleted_at === null && $product->is_available && $category->deleted_at === null && $category->is_active;
 
                 return [
@@ -55,6 +60,12 @@ final class BuildAdminOrderFormOptions
                     'pricing_family' => $product->pricing_family->value,
                     'image_url' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
                     'category' => ['id' => $category->id, 'name' => $category->name],
+                    // A filter only, like on the public menu: an inactive subcategory is not offered.
+                    'subcategory' => $product->subcategory?->is_active ? [
+                        'id' => $product->subcategory->id,
+                        'name' => $product->subcategory->name,
+                        'sort_order' => $product->subcategory->sort_order,
+                    ] : null,
                     'unit_price' => $product->unit_price,
                     'half_dozen_price' => $product->half_dozen_price,
                     'dozen_price' => $product->dozen_price,

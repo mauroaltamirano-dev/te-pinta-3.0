@@ -17,6 +17,8 @@ export interface PublicProduct {
     public_ingredients: string | null;
     image_url: string | null;
     category: { slug: string; name: string };
+    /** A filter only; null when the product has none or it is inactive. */
+    subcategory: { slug: string; name: string; sort_order: number } | null;
     tags: Array<{ slug: string; name: string }>;
     pricing_family: 'empanada' | 'unit';
     prices: { unit: number; half_dozen: number | null; dozen: number | null };

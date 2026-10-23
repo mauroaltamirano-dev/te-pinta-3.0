@@ -12,6 +12,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    filterBySubcategory,
+    subcategoriesOf,
+} from '@/features/products/subcategory-filter';
+import type { SubcategoryOption } from '@/features/products/subcategory-filter';
 import { newRoundKey } from '@/features/tables/round-key';
 import type { TableDetail, TableRoundKind } from '@/features/tables/types';
 import { cn } from '@/lib/utils';
@@ -23,6 +28,8 @@ interface Option {
     addon: boolean;
     name: string;
     group: string;
+    /** A filter inside the group (category); never sent with the round. */
+    subcategory: SubcategoryOption<number> | null;
     /** Void mode: what the table has of it. */
     max: number;
     empanada: boolean;
@@ -46,6 +53,7 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
                           addon,
                           name: line.name,
                           group: 'En la mesa',
+                          subcategory: null,
                           max: line.quantity,
                           empanada: false,
                       },
@@ -62,6 +70,10 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
                 addon: false,
                 name: product.name,
                 group: product.category.name,
+                subcategory: product.subcategory && {
+                    ...product.subcategory,
+                    key: product.subcategory.id,
+                },
                 max: 120,
                 empanada: product.pricing_family === 'empanada',
             })),
@@ -73,10 +85,15 @@ function options(detail: TableDetail, kind: TableRoundKind): Option[] {
                 addon: true,
                 name: addon.name,
                 group: EXTRAS,
+                subcategory: null,
                 max: 120,
                 empanada: false,
             })),
     ];
+}
+
+function subcategoryOf(option: Option) {
+    return option.subcategory;
 }
 
 /** Draft of one round (or void) for a table; confirming sends only these lines to the kitchen. */
@@ -95,6 +112,7 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [note, setNote] = useState('');
     const [group, setGroup] = useState<string | null>(null);
+    const [subcategory, setSubcategory] = useState<number | 'all'>('all');
     const [search, setSearch] = useState('');
     const [reviewing, setReviewing] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -104,11 +122,20 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
     const available = useMemo(() => options(detail, kind), [detail, kind]);
     const groups = [...new Set(available.map((option) => option.group))];
     const term = search.trim().toLocaleLowerCase('es-AR');
-    const visible = available.filter(
+    const inGroup = available.filter(
+        (option) => group === null || option.group === group,
+    );
+    // Subcategories narrow one category; "Todo" offers none.
+    const subcategories =
+        group === null ? [] : subcategoriesOf(inGroup, subcategoryOf);
+    const visible = filterBySubcategory(
+        inGroup,
+        subcategoryOf,
+        subcategory,
+    ).filter(
         (option) =>
-            (group === null || option.group === group) &&
-            (term === '' ||
-                option.name.toLocaleLowerCase('es-AR').includes(term)),
+            term === '' ||
+            option.name.toLocaleLowerCase('es-AR').includes(term),
     );
     const chosen = available.filter((option) => quantities[option.key] > 0);
     const units = chosen.reduce(
@@ -139,6 +166,7 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
         setKind(next);
         setQuantities({});
         setGroup(null);
+        setSubcategory('all');
         setSearch('');
     }
 
@@ -251,7 +279,10 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
                                 key={value ?? 'all'}
                                 type="button"
                                 aria-pressed={group === value}
-                                onClick={() => setGroup(value)}
+                                onClick={() => {
+                                    setGroup(value);
+                                    setSubcategory('all');
+                                }}
                                 className={cn(
                                     'h-9 shrink-0 rounded-full border border-admin-border px-3 text-sm',
                                     group === value &&
@@ -262,6 +293,32 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
                             </button>
                         ))}
                     </nav>
+                    {subcategories.length > 0 && (
+                        <div
+                            role="group"
+                            aria-label="Subcategorías"
+                            className="-mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-1"
+                        >
+                            {[
+                                { key: 'all' as const, name: 'Todas' },
+                                ...subcategories,
+                            ].map((value) => (
+                                <button
+                                    key={value.key}
+                                    type="button"
+                                    aria-pressed={subcategory === value.key}
+                                    onClick={() => setSubcategory(value.key)}
+                                    className={cn(
+                                        'h-9 shrink-0 rounded-full border border-dashed border-admin-border px-3 text-sm',
+                                        subcategory === value.key &&
+                                            'border-solid border-admin-accent text-admin-accent-text',
+                                    )}
+                                >
+                                    {value.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </>
             )}
 
@@ -281,7 +338,9 @@ export function RoundComposer({ detail }: { detail: TableDetail }) {
                                 <span className="text-xs text-muted-foreground">
                                     {kind === 'void'
                                         ? `En la mesa: ${option.max}`
-                                        : option.group}
+                                        : option.subcategory
+                                          ? `${option.group} · ${option.subcategory.name}`
+                                          : option.group}
                                 </span>
                             </span>
                             {option.empanada && (
