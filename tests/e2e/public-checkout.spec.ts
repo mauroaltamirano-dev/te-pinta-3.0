@@ -119,7 +119,7 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
     const desktopHeroBounds = await hero.boundingBox();
     expect(desktopHeroBounds?.height).toBeLessThanOrEqual(250);
     const card = page.getByTestId('public-product-card').first();
-    await expect(card.locator('h2')).toHaveClass(/font-serif/);
+    await expect(card.locator('h3')).toHaveClass(/font-serif/);
     const cardMediaBounds = await card
         .getByTestId('public-product-media')
         .boundingBox();
@@ -132,7 +132,7 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
         (element) => getComputedStyle(element).backgroundColor,
     );
     const cardCopyColors = await card
-        .locator('p, dt, dd, h2 a')
+        .locator('p, dt, dd, h3 a')
         .evaluateAll((elements) =>
             elements.map((element) => getComputedStyle(element).color),
         );
@@ -283,7 +283,7 @@ test('checkout público hidrata la fecha mínima desde options.today', async ({
                     : '',
             };
         });
-    expect(labelColors.foreground).toBe('rgb(255, 255, 255)');
+    expect(labelColors.foreground).toBe('rgb(129, 55, 44)');
     expect(
         contrastRatio(labelColors.foreground, labelColors.background),
     ).toBeGreaterThanOrEqual(4.5);

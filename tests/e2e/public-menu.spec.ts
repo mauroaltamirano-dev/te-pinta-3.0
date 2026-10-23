@@ -40,8 +40,8 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
         return { foreground: styles.color, background: styles.backgroundColor };
     });
     expect(cardColors).toEqual({
-        foreground: 'rgb(255, 255, 255)',
-        background: 'rgb(184, 79, 63)',
+        foreground: 'rgb(27, 27, 27)',
+        background: 'rgb(255, 255, 255)',
     });
     expect(
         contrastRatio(cardColors.foreground, cardColors.background),
@@ -52,7 +52,7 @@ test('menu filters categories and keeps quick-add cart quantities accurate', asy
     }));
     expect(heroColors).toEqual({
         foreground: 'rgb(255, 255, 255)',
-        background: 'rgb(184, 79, 63)',
+        background: 'rgb(27, 27, 27)',
     });
     expect(
         contrastRatio(heroColors.foreground, heroColors.background),

@@ -137,7 +137,7 @@ test('el menú público filtra por subcategoría dentro de una categoría', asyn
     await subcategories.getByRole('button', { name: 'Dulces' }).click();
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText('Criolla Dulce');
-    await expect(page.getByText('Clásicas · Dulces')).toBeVisible();
+    await expect(cards.first()).toContainText('Clásicas · Dulces');
 
     await subcategories.getByRole('button', { name: 'Todas' }).click();
     await expect(cards).toHaveCount(4);
