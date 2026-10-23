@@ -33,14 +33,14 @@ function PublicShell({ children }: PropsWithChildren) {
             >
                 Ir al contenido
             </a>
-            <header className="relative z-10 bg-background">
+            <header className="relative z-30 bg-public-canvas text-white">
                 <nav
-                    className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-3 px-4 sm:px-8 lg:min-h-22 lg:px-12"
+                    className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-8 lg:min-h-20 lg:px-12"
                     aria-label="Navegación pública"
                 >
                     <Link
                         href="/"
-                        className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white"
                         aria-label="Te Pinta, inicio"
                     >
                         <img
@@ -48,10 +48,10 @@ function PublicShell({ children }: PropsWithChildren) {
                             alt=""
                             width="120"
                             height="80"
-                            className="h-12 w-auto max-w-32 object-contain sm:h-15 sm:max-w-40"
+                            className="h-11 w-auto max-w-28 object-contain sm:h-13 sm:max-w-36"
                         />
                     </Link>
-                    <div className="flex items-center gap-1 sm:gap-3">
+                    <div className="flex items-center gap-1 sm:gap-2">
                         {navigation.map((item) => (
                             <Link
                                 key={item.href}
@@ -59,27 +59,15 @@ function PublicShell({ children }: PropsWithChildren) {
                                 aria-current={
                                     pathname === item.href ? 'page' : undefined
                                 }
-                                className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-[current=page]:bg-public-earth aria-[current=page]:text-public-ink sm:inline-flex"
+                                className="relative inline-flex min-h-11 items-center px-3 text-sm font-semibold tracking-wide text-white transition-colors after:absolute after:inset-x-3 after:bottom-2 after:h-0.5 after:scale-x-0 after:rounded-full after:bg-white after:transition-transform hover:after:scale-x-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-[current=page]:after:scale-x-100 sm:px-4 sm:after:inset-x-4"
                             >
                                 {item.label}
                             </Link>
                         ))}
-                        <Link
-                            href="/menu"
-                            aria-current={
-                                pathname === '/menu' ? 'page' : undefined
-                            }
-                            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold transition-colors hover:bg-public-earth hover:text-public-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-[current=page]:bg-public-earth aria-[current=page]:text-public-ink sm:hidden"
-                        >
-                            Menú
-                        </Link>
                     </div>
                 </nav>
             </header>
-            <main
-                id="main-content"
-                className={`flex-1 ${pathname === '/menu' ? 'bg-public-earth' : ''}`}
-            >
+            <main id="main-content" className="flex-1">
                 {children}
             </main>
             {showFloatingCart && (
@@ -100,49 +88,67 @@ function PublicShell({ children }: PropsWithChildren) {
             )}
             <footer className="bg-public-ink text-white">
                 <div
-                    className={`mx-auto grid max-w-7xl gap-8 px-4 pt-10 sm:grid-cols-[1fr_auto] sm:items-end sm:px-8 lg:px-12 ${showFloatingCart ? 'pb-28' : 'pb-10'}`}
+                    className={`mx-auto grid max-w-7xl gap-8 px-4 pt-12 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr] lg:px-12 ${showFloatingCart ? 'pb-28' : 'pb-12'}`}
                 >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start gap-4">
                         <img
                             src="/images/brand/logo-blanco.png"
                             alt=""
                             width="64"
                             height="64"
                             loading="lazy"
-                            className="size-14 shrink-0 object-contain"
+                            className="size-12 shrink-0 object-contain"
                         />
                         <div>
-                            <p className="font-serif text-2xl font-bold">
+                            <p className="font-serif text-2xl font-semibold">
                                 Te Pinta
                             </p>
-                            <p className="mt-1 max-w-sm text-sm text-white/75">
-                                Elegí tus empanadas y armá tu pedido desde el
-                                menú.
+                            <p className="mt-2 max-w-xs text-sm leading-6 text-white/70">
+                                Elegí del menú, armá tu pedido y confirmalo por
+                                WhatsApp.
                             </p>
                         </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-5 text-sm font-semibold">
-                        <Link
-                            href="/menu"
-                            className="inline-flex min-h-11 items-center gap-1 hover:text-public-earth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-earth"
-                        >
-                            Ver menú{' '}
-                            <ArrowUpRight
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                        </Link>
-                        <Link
-                            href="/cart"
-                            className="inline-flex min-h-11 items-center gap-1 hover:text-public-earth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-earth"
-                        >
-                            Mi carrito{' '}
-                            <ArrowUpRight
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                        </Link>
+                    <div>
+                        <p className="text-xs font-semibold tracking-[0.16em] text-white/55 uppercase">
+                            Cómo pedir
+                        </p>
+                        <ul className="mt-3 space-y-1.5 text-sm text-white/80">
+                            <li>Cocinadas o para cocinar en casa</li>
+                            <li>Retiro o envío a domicilio</li>
+                            <li>Confirmación por WhatsApp</li>
+                        </ul>
                     </div>
+                    <nav aria-label="Enlaces del pie">
+                        <p className="text-xs font-semibold tracking-[0.16em] text-white/55 uppercase">
+                            Explorar
+                        </p>
+                        <ul className="mt-1 text-sm font-semibold">
+                            {[
+                                { label: 'Ver menú', href: '/menu' },
+                                { label: 'Mi carrito', href: '/cart' },
+                            ].map((item) => (
+                                <li key={item.href}>
+                                    <Link
+                                        href={item.href}
+                                        className="inline-flex min-h-11 items-center gap-1 hover:text-white/75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                    >
+                                        {item.label}
+                                        <ArrowUpRight
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                </div>
+                <div className="border-t border-white/10">
+                    <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/50 sm:px-8 lg:px-12">
+                        © {new Date().getFullYear()} Te Pinta. Los precios se
+                        confirman al revisar el carrito.
+                    </p>
                 </div>
             </footer>
         </div>

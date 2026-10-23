@@ -1,5 +1,6 @@
-import { ImageIcon, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ProductImagePlaceholder } from '@/features/products/components/product-image-placeholder';
 import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FeaturedProductPublicView } from '../types';
@@ -33,17 +34,7 @@ export function FeaturedProductCard({
                             loading="lazy"
                         />
                     ) : (
-                        <div className="grid size-full place-items-center bg-secondary">
-                            <div className="grid size-20 place-items-center rounded-full border border-border bg-background text-primary">
-                                <ImageIcon
-                                    className="size-9"
-                                    aria-hidden="true"
-                                />
-                                <span className="sr-only">
-                                    Sin imagen del producto
-                                </span>
-                            </div>
-                        </div>
+                        <ProductImagePlaceholder />
                     )}
                 </div>
                 <div className="flex min-w-0 flex-col justify-center p-6 @xl:p-8 @3xl:p-12">
@@ -55,7 +46,7 @@ export function FeaturedProductCard({
                             {featured.headline}
                         </p>
                     )}
-                    <h3 className="mt-2 font-display text-4xl leading-[0.95] font-black tracking-tight text-balance @xl:text-5xl">
+                    <h3 className="mt-2 font-serif text-4xl leading-[1] font-semibold tracking-tight text-balance @xl:text-5xl">
                         {featured.product.name}
                     </h3>
                     {copy && (

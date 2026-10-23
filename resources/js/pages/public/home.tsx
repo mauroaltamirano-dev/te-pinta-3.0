@@ -1,9 +1,21 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowRight, MessageCircle, ShoppingBag } from 'lucide-react';
+import {
+    ArrowRight,
+    Bike,
+    Flame,
+    MessageCircle,
+    ShoppingBag,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FeaturedProductCard } from '@/features/marketing/components/featured-product-card';
 import type { FeaturedProductPublicView } from '@/features/marketing/types';
 import { useCart } from '@/features/orders/cart-context';
+
+const highlights = [
+    { icon: Flame, text: 'Cocinadas o para cocinar en casa' },
+    { icon: Bike, text: 'Retiro o envío a domicilio' },
+    { icon: MessageCircle, text: 'Confirmás tu pedido por WhatsApp' },
+];
 
 const orderSteps = [
     {
@@ -60,7 +72,7 @@ export default function Home({
                             />
                             Empanadas Te Pinta
                         </p>
-                        <h1 className="mt-6 font-serif text-[clamp(3.4rem,7vw,7rem)] leading-[0.93] font-bold tracking-[-0.055em] text-balance">
+                        <h1 className="mt-6 font-serif text-[clamp(3.2rem,6.5vw,6.25rem)] leading-[0.95] font-semibold tracking-[-0.035em] text-balance">
                             Te pinta{' '}
                             <span className="text-public-earth">una</span>{' '}
                             empanada.
@@ -87,6 +99,26 @@ export default function Home({
             </section>
 
             <section
+                aria-label="Cómo trabajamos"
+                className="border-b border-border bg-white text-public-ink"
+            >
+                <ul className="mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:grid-cols-3 sm:px-8 lg:px-12">
+                    {highlights.map(({ icon: Icon, text }) => (
+                        <li
+                            key={text}
+                            className="flex items-center gap-3 text-sm font-medium"
+                        >
+                            <Icon
+                                className="size-5 shrink-0 text-public-canvas"
+                                aria-hidden="true"
+                            />
+                            {text}
+                        </li>
+                    ))}
+                </ul>
+            </section>
+
+            <section
                 className="bg-public-earth text-public-ink"
                 aria-labelledby="home-menu-title"
             >
@@ -97,7 +129,7 @@ export default function Home({
                         </p>
                         <h2
                             id="home-menu-title"
-                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl"
+                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl"
                         >
                             Algo rico para cada antojo.
                         </h2>
@@ -122,7 +154,7 @@ export default function Home({
                     ) : (
                         <Link
                             href="/menu"
-                            className="group relative flex min-h-60 items-end overflow-hidden rounded-[2rem] bg-public-ink p-7 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:min-h-80 sm:p-10"
+                            className="group relative flex min-h-60 items-end overflow-hidden rounded-2xl bg-public-ink p-7 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:min-h-80 sm:p-10"
                         >
                             <img
                                 src="/images/brand/hero.png"
@@ -131,7 +163,7 @@ export default function Home({
                                 className="absolute inset-0 size-full object-cover object-right opacity-65 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
                             />
                             <span className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
-                            <span className="relative flex w-full items-end justify-between gap-4 font-serif text-3xl font-bold sm:text-4xl">
+                            <span className="relative flex w-full items-end justify-between gap-4 font-serif text-3xl font-semibold sm:text-4xl">
                                 Explorá nuestras variedades.
                                 <ArrowRight
                                     className="size-7 shrink-0"
@@ -143,41 +175,44 @@ export default function Home({
                 </div>
             </section>
 
-            <section className="text-white" aria-labelledby="steps-title">
+            <section
+                className="bg-white text-public-ink"
+                aria-labelledby="steps-title"
+            >
                 <div className="mx-auto grid max-w-7xl gap-9 px-4 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:gap-12 lg:px-12">
                     <div>
-                        <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
+                        <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
                             Cómo pedir
                         </p>
                         <h2
                             id="steps-title"
-                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.02] font-bold tracking-tight sm:text-5xl"
+                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl"
                         >
                             Un pedido, tres pasos.
                         </h2>
                     </div>
-                    <ol className="grid gap-4 sm:grid-cols-3">
+                    <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6">
                         {orderSteps.map((step) => {
                             const Icon = step.icon;
 
                             return (
                                 <li
                                     key={step.number}
-                                    className="rounded-2xl bg-card p-5 text-card-foreground shadow-sm sm:p-6"
+                                    className="border-t-2 border-public-ink pt-5"
                                 >
-                                    <span className="flex size-12 items-center justify-center rounded-full bg-secondary text-public-earth-ink">
+                                    <span className="flex items-center justify-between">
+                                        <span className="font-serif text-4xl font-semibold text-public-canvas tabular-nums">
+                                            {step.number}
+                                        </span>
                                         <Icon
-                                            className="size-6"
+                                            className="size-5 text-public-ink/60"
                                             aria-hidden="true"
                                         />
                                     </span>
-                                    <span className="mt-6 block text-xs font-bold tracking-widest text-public-earth-ink">
-                                        {step.number}
-                                    </span>
-                                    <h3 className="mt-2 font-serif text-2xl font-bold">
+                                    <h3 className="mt-4 text-lg font-semibold">
                                         {step.title}
                                     </h3>
-                                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
                                         {step.detail}
                                     </p>
                                 </li>
@@ -193,7 +228,7 @@ export default function Home({
                         <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-85">
                             ¿Ya elegiste?
                         </p>
-                        <h2 className="mt-2 max-w-2xl font-serif text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
+                        <h2 className="mt-2 max-w-2xl font-serif text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
                             Lo rico está a un pedido de distancia.
                         </h2>
                     </div>
