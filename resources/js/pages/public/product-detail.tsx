@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/orders/cart-context';
 import type { PublicProduct } from '@/features/orders/types';
+import { ProductImagePlaceholder } from '@/features/products/components/product-image-placeholder';
 
 const money = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -70,14 +71,14 @@ export default function ProductDetail({
                 <meta property="og:url" content={seo.url} />
                 {seo.image && <meta property="og:image" content={seo.image} />}
             </Head>
-            <article className="mx-auto max-w-7xl px-4 pt-7 pb-32 sm:px-8 sm:pt-12 sm:pb-20 lg:px-12">
+            <article className="mx-auto max-w-7xl px-4 pt-7 pb-32 text-public-ink sm:px-8 sm:pt-12 sm:pb-20 lg:px-12">
                 <nav
                     className="mb-7 flex items-center justify-between gap-4"
                     aria-label="Producto"
                 >
                     <Link
                         href="/menu"
-                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline"
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-public-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" />{' '}
                         Volver al menú
@@ -85,7 +86,7 @@ export default function ProductDetail({
                     <Button
                         type="button"
                         variant="outline"
-                        className="min-h-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90"
+                        className="min-h-11 rounded-full border-public-ink/25 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                         onClick={share}
                     >
                         <Share2 aria-hidden="true" /> Compartir
@@ -97,42 +98,40 @@ export default function ProductDetail({
                     </p>
                 )}
                 <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] lg:gap-14">
-                    <div className="aspect-[4/3] overflow-hidden rounded-[2rem] bg-secondary lg:aspect-square">
+                    <div className="aspect-[4/3] overflow-hidden rounded-3xl border border-border bg-secondary lg:aspect-square">
                         {product.image_url ? (
                             <img
                                 src={product.image_url}
                                 alt={product.name}
+                                width="960"
+                                height="960"
+                                fetchPriority="high"
                                 className="size-full object-cover"
                             />
                         ) : (
-                            <div
-                                className="relative grid size-full place-items-center overflow-hidden text-public-earth-ink"
-                                aria-hidden="true"
-                            >
-                                <span className="absolute size-[75%] rounded-full border border-primary/25" />
-                                <span className="absolute size-[55%] rounded-full border border-primary/35" />
-                                <span className="relative font-display text-8xl font-black">
-                                    {product.name
-                                        .charAt(0)
-                                        .toLocaleUpperCase('es-AR')}
-                                </span>
-                            </div>
+                            <ProductImagePlaceholder />
                         )}
                     </div>
                     <div className="min-w-0 lg:pt-4">
-                        <p className="text-xs font-bold tracking-[0.2em] text-white uppercase">
+                        <p className="text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
                             {product.category.name}
+                            {product.subcategory && (
+                                <span className="text-muted-foreground">
+                                    {' '}
+                                    · {product.subcategory.name}
+                                </span>
+                            )}
                         </p>
-                        <h1 className="mt-3 font-display text-5xl leading-none font-black tracking-tight sm:text-6xl">
+                        <h1 className="mt-3 font-serif text-5xl leading-none font-semibold tracking-tight sm:text-6xl">
                             {product.name}
-                            <span className="text-public-earth">.</span>
+                            <span className="text-public-canvas">.</span>
                         </h1>
                         {product.tags.length > 0 && (
                             <div className="mt-5 flex flex-wrap gap-2">
                                 {product.tags.map((tag) => (
                                     <span
                                         key={tag.slug}
-                                        className="rounded-full border border-white/35 px-3 py-1.5 text-xs font-semibold"
+                                        className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground"
                                     >
                                         {tag.name}
                                     </span>
@@ -140,34 +139,34 @@ export default function ProductDetail({
                             </div>
                         )}
                         {product.description && (
-                            <p className="mt-6 text-lg leading-7">
+                            <p className="mt-6 text-lg leading-7 text-public-ink/85">
                                 {product.description}
                             </p>
                         )}
                         {product.long_description && (
-                            <p className="mt-4 text-sm leading-7 whitespace-pre-line text-white">
+                            <p className="mt-4 text-sm leading-7 whitespace-pre-line text-muted-foreground">
                                 {product.long_description}
                             </p>
                         )}
                         {product.public_ingredients && (
-                            <section className="mt-7 border-t border-white/35 pt-6">
-                                <h2 className="font-display text-xl font-bold">
+                            <section className="mt-7 border-t border-border pt-6">
+                                <h2 className="font-serif text-xl font-semibold">
                                     Ingredientes
                                 </h2>
-                                <p className="mt-2 text-sm leading-6 whitespace-pre-line text-white">
+                                <p className="mt-2 text-sm leading-6 whitespace-pre-line text-muted-foreground">
                                     {product.public_ingredients}
                                 </p>
                             </section>
                         )}
                         <section
-                            className="mt-7 border-t border-white/35 pt-6"
+                            className="mt-7 border-t border-border pt-6"
                             aria-label={
                                 product.pricing_family === 'empanada'
                                     ? 'Precios cocinados'
                                     : 'Precio por unidad'
                             }
                         >
-                            <h2 className="text-xs font-bold tracking-[0.16em] text-white uppercase">
+                            <h2 className="text-xs font-bold tracking-[0.16em] text-muted-foreground uppercase">
                                 {product.pricing_family === 'empanada'
                                     ? 'Precios cocinados'
                                     : 'Precio'}
@@ -180,19 +179,19 @@ export default function ProductDetail({
                                 }`}
                             >
                                 <div>
-                                    <dt className="text-white">
+                                    <dt className="text-muted-foreground">
                                         {product.pricing_family === 'empanada'
                                             ? 'Unidad'
                                             : 'Por unidad'}
                                     </dt>
-                                    <dd className="mt-1 font-bold tabular-nums">
+                                    <dd className="mt-1 text-lg font-semibold tabular-nums">
                                         {money.format(product.prices.unit)}
                                     </dd>
                                 </div>
                                 {product.pricing_family === 'empanada' && (
                                     <>
                                         <div>
-                                            <dt className="text-white">
+                                            <dt className="text-muted-foreground">
                                                 Media docena
                                             </dt>
                                             <dd className="mt-1 font-bold tabular-nums">
@@ -202,7 +201,7 @@ export default function ProductDetail({
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className="text-white">
+                                            <dt className="text-muted-foreground">
                                                 Docena
                                             </dt>
                                             <dd className="mt-1 font-bold tabular-nums">
@@ -214,14 +213,14 @@ export default function ProductDetail({
                                     </>
                                 )}
                             </dl>
-                            <p className="mt-3 text-xs text-white">
+                            <p className="mt-3 text-xs text-muted-foreground">
                                 El total se calcula y confirma al revisar el
                                 carrito.
                             </p>
                         </section>
                         {product.is_available ? (
                             <section
-                                className="mt-7 border-t border-white/35 pt-6"
+                                className="mt-7 border-t border-border pt-6"
                                 aria-label="Agregar al carrito"
                             >
                                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -233,7 +232,7 @@ export default function ProductDetail({
                                             type="button"
                                             variant="outline"
                                             size="icon"
-                                            className="size-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70"
+                                            className="size-11 rounded-full border-public-ink/25 bg-white text-public-ink hover:border-public-ink hover:bg-white disabled:opacity-50"
                                             aria-label="Disminuir cantidad"
                                             disabled={quantity <= 1}
                                             onClick={() =>
@@ -254,7 +253,7 @@ export default function ProductDetail({
                                             type="button"
                                             variant="outline"
                                             size="icon"
-                                            className="size-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70"
+                                            className="size-11 rounded-full border-public-ink/25 bg-white text-public-ink hover:border-public-ink hover:bg-white disabled:opacity-50"
                                             aria-label="Aumentar cantidad"
                                             onClick={() =>
                                                 setQuantity(
@@ -269,7 +268,7 @@ export default function ProductDetail({
                                 <Button
                                     type="button"
                                     size="lg"
-                                    className="mt-5 hidden min-h-12 w-full rounded-full bg-public-ink text-white hover:bg-public-ink/90 sm:flex"
+                                    className="mt-5 hidden min-h-12 w-full rounded-full bg-public-canvas text-white hover:bg-public-earth-ink sm:flex"
                                     onClick={() =>
                                         addProduct(product.slug, quantity)
                                     }
@@ -289,7 +288,7 @@ export default function ProductDetail({
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="min-h-11 rounded-full bg-public-ink text-white hover:bg-public-ink/90"
+                                            className="min-h-11 rounded-full border-public-ink/25 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                             onClick={() =>
                                                 setProductQuantity(
                                                     product.slug,
@@ -313,7 +312,7 @@ export default function ProductDetail({
                         <Button
                             asChild
                             variant="outline"
-                            className="mt-5 min-h-11 w-full rounded-full bg-public-earth text-public-ink hover:bg-white"
+                            className="mt-5 min-h-11 w-full rounded-full border-public-ink/25 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                         >
                             <Link href="/cart">Ver carrito</Link>
                         </Button>
@@ -321,11 +320,11 @@ export default function ProductDetail({
                 </div>
             </article>
             {product.is_available && (
-                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/35 bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgb(27_27_27_/_0.24)] backdrop-blur-sm sm:hidden">
+                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgb(27_27_27_/_0.08)] backdrop-blur-sm sm:hidden">
                     <Button
                         type="button"
                         size="lg"
-                        className="min-h-12 w-full rounded-full bg-public-ink text-white hover:bg-public-ink/90"
+                        className="min-h-12 w-full rounded-full bg-public-canvas text-white hover:bg-public-earth-ink"
                         onClick={() => addProduct(product.slug, quantity)}
                     >
                         <ShoppingBag aria-hidden="true" /> Agregar {quantity} al

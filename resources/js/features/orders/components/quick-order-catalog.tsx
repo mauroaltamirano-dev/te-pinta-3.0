@@ -1,6 +1,10 @@
 import { ImageIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AdminModuleNavigation } from '@/components/shared/admin-module-navigation';
+import {
+    filterBySubcategory,
+    subcategoriesOf,
+} from '@/features/products/subcategory-filter';
 import { formatMoney } from '@/lib/format';
 import type { AdminProductOption } from '../admin-order-types';
 import type { AdminOrderDraft } from '../hooks/use-admin-order-draft';
@@ -27,12 +31,30 @@ export function QuickOrderCatalog({
         [products],
     );
     const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
-    const visibleProducts =
+    const [activeSubcategory, setActiveSubcategory] = useState<number | 'all'>(
+        'all',
+    );
+    const categoryProducts =
         activeCategory === 'all'
             ? products
             : products.filter(
                   (product) => product.category.id === activeCategory,
               );
+    // Subcategories only narrow one category; "Todas" (every category) offers none.
+    const subcategories =
+        activeCategory === 'all'
+            ? []
+            : subcategoriesOf(categoryProducts, subcategoryOption);
+    const visibleProducts = filterBySubcategory(
+        categoryProducts,
+        subcategoryOption,
+        activeSubcategory,
+    );
+
+    const selectCategory = (category: number | 'all') => {
+        setActiveCategory(category);
+        setActiveSubcategory('all');
+    };
 
     return (
         <section className="min-w-0 px-3 py-4 sm:p-6 lg:h-screen lg:overflow-y-auto">
@@ -58,7 +80,7 @@ export function QuickOrderCatalog({
                 <button
                     type="button"
                     aria-pressed={activeCategory === 'all'}
-                    onClick={() => setActiveCategory('all')}
+                    onClick={() => selectCategory('all')}
                     className={`shrink-0 border-b-2 px-0.5 pb-3 text-sm font-medium ${
                         activeCategory === 'all'
                             ? 'border-admin-accent text-admin-accent-text'
@@ -72,7 +94,7 @@ export function QuickOrderCatalog({
                         key={category.id}
                         type="button"
                         aria-pressed={activeCategory === category.id}
-                        onClick={() => setActiveCategory(category.id)}
+                        onClick={() => selectCategory(category.id)}
                         className={`shrink-0 border-b-2 px-0.5 pb-3 text-sm font-medium ${
                             activeCategory === category.id
                                 ? 'border-admin-accent text-admin-accent-text'
@@ -83,6 +105,31 @@ export function QuickOrderCatalog({
                     </button>
                 ))}
             </nav>
+
+            {subcategories.length > 0 && (
+                <div
+                    role="group"
+                    aria-label="Subcategorías"
+                    className="-mt-2 mb-5 flex gap-2 overflow-x-auto pb-1 sm:-mt-3 sm:mb-6"
+                >
+                    {[
+                        { key: 'all' as const, name: 'Todas' },
+                        ...subcategories,
+                    ].map((subcategory) => (
+                        <button
+                            key={subcategory.key}
+                            type="button"
+                            aria-pressed={activeSubcategory === subcategory.key}
+                            onClick={() =>
+                                setActiveSubcategory(subcategory.key)
+                            }
+                            className="h-9 shrink-0 rounded-full border border-admin-border px-3.5 text-sm font-medium text-admin-text-secondary transition-colors aria-[pressed=true]:border-admin-accent aria-[pressed=true]:bg-admin-accent aria-[pressed=true]:text-admin-on-accent"
+                        >
+                            {subcategory.name}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             <div className="mb-5 flex items-end justify-between gap-3 sm:mb-7 sm:gap-4">
                 <div>
@@ -148,7 +195,9 @@ export function QuickOrderCatalog({
                                     </span>
                                 </span>
                                 <span className="mt-1 hidden text-xs text-admin-text-tertiary sm:block">
-                                    {product.category.name}
+                                    {product.subcategory
+                                        ? `${product.category.name} · ${product.subcategory.name}`
+                                        : product.category.name}
                                 </span>
                                 <div
                                     className={`mt-auto grid w-full gap-1 pt-2 sm:gap-2 sm:pt-3 ${product.pricing_family === 'empanada' ? 'grid-cols-3' : 'grid-cols-1'}`}
@@ -185,5 +234,14 @@ export function QuickOrderCatalog({
                 </div>
             )}
         </section>
+    );
+}
+
+function subcategoryOption(product: AdminProductOption) {
+    return (
+        product.subcategory && {
+            ...product.subcategory,
+            key: product.subcategory.id,
+        }
     );
 }

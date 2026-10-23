@@ -25,6 +25,8 @@ final readonly class ProductData
         public bool $isAvailable,
         public int $sortOrder,
         public bool $removeImage,
+        /** A filter only: never read by pricing or sellability. */
+        public ?int $subcategoryId = null,
     ) {}
 
     public static function fromRequest(FormRequest $request): self
@@ -33,6 +35,7 @@ final readonly class ProductData
         $description = $validated['description'] ?? null;
         $longDescription = $validated['long_description'] ?? null;
         $publicIngredients = $validated['public_ingredients'] ?? null;
+        $subcategoryId = $validated['subcategory_id'] ?? null;
         $pricingFamily = ProductPricingFamily::from($validated->string('pricing_family')->toString());
         $unitPrice = $pricingFamily === ProductPricingFamily::Unit ? $validated->integer('unit_price') : null;
 
@@ -43,6 +46,7 @@ final readonly class ProductData
             longDescription: is_string($longDescription) && $longDescription !== '' ? $longDescription : null,
             publicIngredients: is_string($publicIngredients) && $publicIngredients !== '' ? $publicIngredients : null,
             categoryId: $validated->integer('category_id'),
+            subcategoryId: $subcategoryId === null ? null : (int) $subcategoryId,
             tagIds: $validated->collect('tags')->map(fn (mixed $id): int => (int) $id)->all(),
             pricingFamily: $pricingFamily,
             unitPrice: $unitPrice,

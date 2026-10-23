@@ -1,9 +1,18 @@
+export interface ProductSubcategory {
+    id: number;
+    name: string;
+    slug: string;
+    sort_order: number;
+    is_active: boolean;
+}
+
 export interface ProductCategory {
     id: number;
     name: string;
     slug: string;
     sort_order: number;
     is_active: boolean;
+    subcategories: ProductSubcategory[];
 }
 
 export interface ProductTag {
@@ -21,6 +30,7 @@ export interface Product {
     public_ingredients: string | null;
     image_url: string | null;
     category_id: number;
+    subcategory_id: number | null;
     pricing_family: 'empanada' | 'unit';
     tags: ProductTag[];
     unit_price: number;

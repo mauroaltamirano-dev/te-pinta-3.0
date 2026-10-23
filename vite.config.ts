@@ -32,6 +32,14 @@ export default defineConfig({
                     weights: [400, 500, 600],
                     optimizedFallbacks: false,
                 }),
+                // Public editorial headings only: bundled into /build/assets (allowed by the public
+                // gateway) and not preloaded, so admin pages never download it.
+                bunny('Fraunces', {
+                    weights: [600],
+                    subsets: ['latin'],
+                    preload: false,
+                    optimizedFallbacks: false,
+                }),
             ],
         }),
         inertia(),

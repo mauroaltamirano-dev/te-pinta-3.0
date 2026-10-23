@@ -15,7 +15,7 @@ final class PublicProductDetailController
         $product = Product::query()
             ->where('slug', $slug)
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
-            ->with(['category', 'tags' => fn ($query) => $query->orderBy('name')])
+            ->with(['category', 'subcategory', 'tags' => fn ($query) => $query->orderBy('name')])
             ->firstOrFail();
 
         $publicProduct = (new PublicProductResource($product))->resolve($request);

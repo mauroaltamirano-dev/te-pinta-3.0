@@ -14,7 +14,8 @@ Covers the public site and checkout (`PublicSite`, `Products`, `Orders`), featur
 | `POST /checkout/price-preview` | Backend quote (throttle 20/min) |
 | `POST /checkout/orders` | Create the order (throttle 5/min) |
 
-- Products are publicly sellable only when available, not soft-deleted, and in an active, non-deleted category. Public product data: slug, name, pricing family, description, long description, public ingredients, image URL, category and tags (slug and name), and prices (unit; half-dozen, stored as six units, and dozen only for `empanada`). No internal IDs.
+- Products are publicly sellable only when available, not soft-deleted, and in an active, non-deleted category. Public product data: slug, name, pricing family, description, long description, public ingredients, image URL, category and tags (slug and name), subcategory (slug, name and order; null when the product has none or it is inactive), and prices (unit; half-dozen, stored as six units, and dozen only for `empanada`). No internal IDs.
+- Subcategories are only a filter: after choosing a category that has subcategories with products, the menu offers "Todas" plus those subcategories. They never affect prices, the combined dozen or sellability; deactivating a subcategory hides its filter while its products stay on the menu, and deactivating the parent category hides the products as before.
 - `long_description` and `public_ingredients` are editorial text managed in Products; they are not derived from recipes or stock.
 - Product image URLs are same-origin `/storage/products/...` paths built only from validated basenames, so the public and private origins each serve images from their own host.
 - The cart lives in the browser's `sessionStorage` (`features/orders/cart-context.tsx`). Prices shown are informative; the backend re-prices on preview and creation.

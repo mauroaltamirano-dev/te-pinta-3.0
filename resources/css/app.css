@@ -39,6 +39,7 @@
     --font-display:
         'Arial Narrow', 'Avenir Next Condensed', ui-sans-serif, sans-serif;
     --font-orders: 'Barlow', var(--font-sans);
+    --font-serif: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -188,9 +189,10 @@
 }
 
 .public-theme {
-    --background: var(--color-public-canvas);
-    --foreground: #ffffff;
-    --card: var(--color-public-earth);
+    /* Light surfaces and ink text; the red canvas is reserved for navigation and actions. */
+    --background: var(--color-public-earth);
+    --foreground: var(--color-public-ink);
+    --card: #ffffff;
     --card-foreground: var(--color-public-ink);
     --popover: var(--card);
     --popover-foreground: var(--color-public-ink);
@@ -198,17 +200,17 @@
     --primary-foreground: var(--brand-on-accent);
     --secondary: color-mix(
         in srgb,
-        var(--color-public-canvas) 14%,
+        var(--color-public-ink) 6%,
         var(--color-public-earth)
     );
     --secondary-foreground: var(--color-public-ink);
     --muted: var(--secondary);
-    --muted-foreground: #60423c;
+    --muted-foreground: #575250;
     --accent: var(--secondary);
     --accent-foreground: var(--color-public-ink);
     --border: color-mix(
         in srgb,
-        var(--color-public-ink) 20%,
+        var(--color-public-ink) 14%,
         var(--color-public-earth)
     );
     --input: var(--border);
@@ -537,20 +539,6 @@
         justify-content: flex-end;
         max-width: var(--admin-form-width);
     }
-}
-
-.public-theme .public-menu-card {
-    --card: var(--color-public-canvas);
-    --card-foreground: #ffffff;
-    --muted: color-mix(in srgb, white 16%, var(--color-public-canvas));
-    --muted-foreground: #ffffff;
-    --border: color-mix(in srgb, white 30%, var(--color-public-canvas));
-
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-border: var(--border);
 }
 
 @layer utilities {

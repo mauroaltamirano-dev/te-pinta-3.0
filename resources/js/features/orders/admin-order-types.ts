@@ -15,6 +15,8 @@ export interface AdminProductOption {
     description: string | null;
     image_url: string | null;
     category: { id: number; name: string };
+    /** A filter only; null when the product has none or it is inactive. */
+    subcategory: { id: number; name: string; sort_order: number } | null;
     pricing_family: 'empanada' | 'unit';
     unit_price: number;
     half_dozen_price: number;

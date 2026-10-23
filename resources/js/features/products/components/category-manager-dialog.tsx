@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import type { ProductCategory } from '../types';
+import type { ProductCategory, ProductSubcategory } from '../types';
 
 interface CategoryManagerDialogProps {
     open: boolean;
@@ -38,7 +38,9 @@ export function CategoryManagerDialog({
                     <DialogDescription>
                         Las categorías se ordenan manualmente. Las inactivas y
                         sus productos siguen disponibles en administración, pero
-                        no aparecen en el menú público.
+                        no se venden ni aparecen en el menú público. Las
+                        subcategorías solo sirven para filtrar: no cambian
+                        precios ni disponibilidad.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -83,30 +85,158 @@ function CategoryRow({ category }: { category: ProductCategory }) {
     };
 
     return (
-        <form
-            onSubmit={submit}
-            className="grid gap-3 rounded-lg border border-border/80 bg-card/45 p-4 sm:grid-cols-[1fr_7rem_auto_auto] sm:items-end"
+        <section
+            aria-label={`Categoría ${category.name}`}
+            className="flex flex-col gap-3 rounded-lg border border-border/80 bg-card/45 p-4"
         >
-            <div className="flex flex-col gap-2">
-                <Label htmlFor={nameId}>Nombre</Label>
+            <form
+                onSubmit={submit}
+                className="grid gap-3 sm:grid-cols-[1fr_7rem_auto_auto] sm:items-end"
+            >
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor={nameId}>Nombre</Label>
+                    <Input
+                        id={nameId}
+                        value={form.data.name}
+                        onChange={(event) =>
+                            form.setData('name', event.target.value)
+                        }
+                        aria-invalid={Boolean(form.errors.name)}
+                        aria-describedby={
+                            form.errors.name ? `${nameId}-error` : undefined
+                        }
+                        required
+                    />
+                    <FieldError
+                        id={`${nameId}-error`}
+                        message={form.errors.name}
+                    />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor={orderId}>Orden</Label>
+                    <Input
+                        id={orderId}
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={form.data.sort_order}
+                        onChange={(event) =>
+                            form.setData('sort_order', event.target.value)
+                        }
+                        aria-invalid={Boolean(form.errors.sort_order)}
+                        aria-describedby={
+                            form.errors.sort_order
+                                ? `${orderId}-error`
+                                : undefined
+                        }
+                        required
+                    />
+                    <FieldError
+                        id={`${orderId}-error`}
+                        message={form.errors.sort_order}
+                    />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="flex h-9 items-center gap-2 text-sm">
+                        <Checkbox
+                            id={activeId}
+                            checked={form.data.is_active}
+                            onCheckedChange={(checked) =>
+                                form.setData('is_active', checked === true)
+                            }
+                            aria-invalid={Boolean(form.errors.is_active)}
+                            aria-describedby={
+                                form.errors.is_active
+                                    ? `${activeId}-error`
+                                    : undefined
+                            }
+                            aria-required="true"
+                        />
+                        Activa
+                    </label>
+                    <FieldError
+                        id={`${activeId}-error`}
+                        message={form.errors.is_active}
+                    />
+                </div>
+                <Button
+                    type="submit"
+                    variant="secondary"
+                    disabled={form.processing}
+                >
+                    {form.processing && (
+                        <LoaderCircle
+                            data-icon="inline-start"
+                            className="animate-spin"
+                        />
+                    )}
+                    Actualizar
+                </Button>
+            </form>
+            <SubcategoryList category={category} />
+        </section>
+    );
+}
+
+function SubcategoryList({ category }: { category: ProductCategory }) {
+    return (
+        <div className="flex flex-col gap-2 border-l-2 border-admin-border pl-3 sm:ml-1">
+            <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Subcategorías de {category.name}
+            </h3>
+            {category.subcategories.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                    Sin subcategorías: los productos se filtran solo por
+                    categoría.
+                </p>
+            )}
+            {category.subcategories.map((subcategory) => (
+                <SubcategoryRow
+                    key={subcategory.id}
+                    subcategory={subcategory}
+                />
+            ))}
+            <CreateSubcategoryForm category={category} />
+        </div>
+    );
+}
+
+function SubcategoryFields({
+    idPrefix,
+    form,
+}: {
+    idPrefix: string;
+    form: ReturnType<
+        typeof useForm<{ name: string; sort_order: string; is_active: boolean }>
+    >;
+}) {
+    return (
+        <>
+            <div className="flex flex-col gap-1">
                 <Input
-                    id={nameId}
+                    id={`${idPrefix}-name`}
+                    aria-label="Nombre de la subcategoría"
                     value={form.data.name}
                     onChange={(event) =>
                         form.setData('name', event.target.value)
                     }
                     aria-invalid={Boolean(form.errors.name)}
                     aria-describedby={
-                        form.errors.name ? `${nameId}-error` : undefined
+                        form.errors.name ? `${idPrefix}-name-error` : undefined
                     }
+                    placeholder="Nombre de la subcategoría"
                     required
+                    className="h-8"
                 />
-                <FieldError id={`${nameId}-error`} message={form.errors.name} />
+                <FieldError
+                    id={`${idPrefix}-name-error`}
+                    message={form.errors.name}
+                />
             </div>
-            <div className="flex flex-col gap-2">
-                <Label htmlFor={orderId}>Orden</Label>
+            <div className="flex flex-col gap-1">
                 <Input
-                    id={orderId}
+                    id={`${idPrefix}-order`}
+                    aria-label="Orden de la subcategoría"
                     type="number"
                     min="0"
                     step="1"
@@ -116,50 +246,105 @@ function CategoryRow({ category }: { category: ProductCategory }) {
                     }
                     aria-invalid={Boolean(form.errors.sort_order)}
                     aria-describedby={
-                        form.errors.sort_order ? `${orderId}-error` : undefined
+                        form.errors.sort_order
+                            ? `${idPrefix}-order-error`
+                            : undefined
                     }
                     required
+                    className="h-8"
                 />
                 <FieldError
-                    id={`${orderId}-error`}
+                    id={`${idPrefix}-order-error`}
                     message={form.errors.sort_order}
                 />
             </div>
-            <div className="flex flex-col gap-1">
-                <label className="flex h-9 items-center gap-2 text-sm">
-                    <Checkbox
-                        id={activeId}
-                        checked={form.data.is_active}
-                        onCheckedChange={(checked) =>
-                            form.setData('is_active', checked === true)
-                        }
-                        aria-invalid={Boolean(form.errors.is_active)}
-                        aria-describedby={
-                            form.errors.is_active
-                                ? `${activeId}-error`
-                                : undefined
-                        }
-                        aria-required="true"
-                    />
-                    Activa
-                </label>
-                <FieldError
-                    id={`${activeId}-error`}
-                    message={form.errors.is_active}
+            <label className="flex h-8 items-center gap-2 text-xs">
+                <Checkbox
+                    checked={form.data.is_active}
+                    onCheckedChange={(checked) =>
+                        form.setData('is_active', checked === true)
+                    }
+                    aria-label="Subcategoría activa"
                 />
-            </div>
+                Activa
+            </label>
+        </>
+    );
+}
+
+function SubcategoryRow({ subcategory }: { subcategory: ProductSubcategory }) {
+    const form = useForm({
+        name: subcategory.name,
+        sort_order: subcategory.sort_order.toString(),
+        is_active: subcategory.is_active,
+    });
+
+    const submit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        form.put(`/admin/settings/subcategories/${subcategory.id}`, {
+            preserveScroll: true,
+        });
+    };
+
+    return (
+        <form
+            onSubmit={submit}
+            aria-label={`Subcategoría ${subcategory.name}`}
+            className="grid gap-2 sm:grid-cols-[1fr_5rem_auto_auto] sm:items-start"
+        >
+            <SubcategoryFields
+                idPrefix={`subcategory-${subcategory.id}`}
+                form={form}
+            />
             <Button
                 type="submit"
+                size="sm"
                 variant="secondary"
                 disabled={form.processing}
             >
-                {form.processing && (
-                    <LoaderCircle
-                        data-icon="inline-start"
-                        className="animate-spin"
-                    />
-                )}
-                Actualizar
+                Guardar
+            </Button>
+        </form>
+    );
+}
+
+function CreateSubcategoryForm({ category }: { category: ProductCategory }) {
+    const form = useForm({
+        name: '',
+        sort_order: (category.subcategories.length + 1).toString(),
+        is_active: true,
+    });
+
+    const submit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        form.post(`/admin/settings/categories/${category.id}/subcategories`, {
+            preserveScroll: true,
+            onSuccess: () =>
+                form.setData({
+                    name: '',
+                    sort_order: (category.subcategories.length + 2).toString(),
+                    is_active: true,
+                }),
+        });
+    };
+
+    return (
+        <form
+            onSubmit={submit}
+            aria-label={`Agregar subcategoría a ${category.name}`}
+            className="grid gap-2 sm:grid-cols-[1fr_5rem_auto_auto] sm:items-start"
+        >
+            <SubcategoryFields
+                idPrefix={`new-subcategory-${category.id}`}
+                form={form}
+            />
+            <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                disabled={form.processing}
+            >
+                Agregar subcategoría
             </Button>
         </form>
     );

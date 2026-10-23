@@ -32,4 +32,10 @@ final class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /** @return HasMany<ProductSubcategory, $this> */
+    public function subcategories(): HasMany
+    {
+        return $this->hasMany(ProductSubcategory::class);
+    }
 }

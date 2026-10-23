@@ -150,7 +150,7 @@ test.describe.serial('Restaurant light theme', () => {
         await page.reload();
         await expect(input).toHaveValue('#1f6f4a');
         await page.goto('/menu');
-        await expect(page.locator('.public-shell')).toHaveCSS(
+        await expect(page.locator('.public-shell > header')).toHaveCSS(
             'background-color',
             'rgb(31, 111, 74)',
         );

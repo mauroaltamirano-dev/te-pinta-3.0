@@ -31,6 +31,7 @@ final class CreateProduct
             return DB::transaction(function () use ($data, $imagePath): Product {
                 $product = Product::query()->create([
                     'category_id' => $data->categoryId,
+                    'subcategory_id' => $data->subcategoryId,
                     'pricing_family' => $data->pricingFamily,
                     'name' => $data->name,
                     'slug' => $data->slug ?? $this->uniqueSlug->for('products', $data->name),

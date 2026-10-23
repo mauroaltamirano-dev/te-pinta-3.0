@@ -67,7 +67,7 @@ test('product detail is shareable and adds a selected quantity without blocking 
                     : '',
             };
         });
-    expect(categoryColors.foreground).toBe('rgb(255, 255, 255)');
+    expect(categoryColors.foreground).toBe('rgb(129, 55, 44)');
     expect(
         contrastRatio(categoryColors.foreground, categoryColors.background),
     ).toBeGreaterThanOrEqual(4.5);

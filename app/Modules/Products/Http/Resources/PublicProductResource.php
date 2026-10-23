@@ -28,6 +28,12 @@ final class PublicProductResource extends JsonResource
                 'slug' => $this->category->slug,
                 'name' => $this->category->name,
             ],
+            // A filter only; an inactive subcategory is hidden while its products stay on the menu.
+            'subcategory' => $this->subcategory?->is_active ? [
+                'slug' => $this->subcategory->slug,
+                'name' => $this->subcategory->name,
+                'sort_order' => $this->subcategory->sort_order,
+            ] : null,
             'tags' => $this->tags->map(fn ($tag): array => [
                 'slug' => $tag->slug,
                 'name' => $tag->name,

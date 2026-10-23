@@ -19,7 +19,7 @@ final class PublicProductCatalogController
             ->where('products.is_available', true)
             ->where('categories.is_active', true)
             ->whereNull('categories.deleted_at')
-            ->with(['category', 'tags' => fn ($query) => $query->orderBy('name')])
+            ->with(['category', 'subcategory', 'tags' => fn ($query) => $query->orderBy('name')])
             ->orderBy('categories.sort_order')
             ->orderBy('products.sort_order')
             ->orderBy('products.id')

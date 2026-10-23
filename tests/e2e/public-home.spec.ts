@@ -89,8 +89,8 @@ test('public home presents the brand and leads directly to the menu', async ({
         };
     });
     expect(palette).toEqual({
-        foreground: 'rgb(255, 255, 255)',
-        canvas: 'rgb(184, 79, 63)',
+        foreground: 'rgb(27, 27, 27)',
+        canvas: 'rgb(241, 241, 241)',
     });
     expect(
         contrastRatio(palette.foreground, palette.canvas),
@@ -102,18 +102,15 @@ test('public home presents the brand and leads directly to the menu', async ({
             exact: true,
         });
         const activeNavigationColors = await activeNavigation.evaluate(
-            (link) => {
-                const styles = getComputedStyle(link);
-
-                return {
-                    foreground: styles.color,
-                    background: styles.backgroundColor,
-                };
-            },
+            (link) => ({
+                foreground: getComputedStyle(link).color,
+                background: getComputedStyle(link.closest('header')!)
+                    .backgroundColor,
+            }),
         );
         expect(activeNavigationColors).toEqual({
-            foreground: 'rgb(27, 27, 27)',
-            background: 'rgb(241, 241, 241)',
+            foreground: 'rgb(255, 255, 255)',
+            background: 'rgb(184, 79, 63)',
         });
         expect(
             contrastRatio(
@@ -126,16 +123,11 @@ test('public home presents the brand and leads directly to the menu', async ({
             name: 'Menú',
             exact: true,
         });
-        const mobileMenuColors = await mobileMenu.evaluate((link) => {
-            const shell = link.closest('.public-shell');
-
-            return {
-                foreground: getComputedStyle(link).color,
-                background: shell
-                    ? getComputedStyle(shell).backgroundColor
-                    : '',
-            };
-        });
+        const mobileMenuColors = await mobileMenu.evaluate((link) => ({
+            foreground: getComputedStyle(link).color,
+            background: getComputedStyle(link.closest('header')!)
+                .backgroundColor,
+        }));
         expect(mobileMenuColors).toEqual({
             foreground: 'rgb(255, 255, 255)',
             background: 'rgb(184, 79, 63)',

@@ -13,6 +13,7 @@ use App\Modules\Products\Http\Requests\UpdateProductRequest;
 use App\Modules\Products\Http\Resources\AdminProductResource;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\ProductSubcategory;
 use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Models\Tag;
 use Illuminate\Http\RedirectResponse;
@@ -38,9 +39,20 @@ final class ProductManagementController
 
         return Inertia::render('admin/products/index', [
             'categories' => Category::query()
+                ->with(['subcategories' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')])
                 ->orderBy('sort_order')
                 ->orderBy('id')
-                ->get(['id', 'name', 'slug', 'sort_order', 'is_active']),
+                ->get(['id', 'name', 'slug', 'sort_order', 'is_active'])
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'sort_order' => $category->sort_order,
+                    'is_active' => $category->is_active,
+                    'subcategories' => $category->subcategories
+                        ->map(fn (ProductSubcategory $subcategory): array => $subcategory->only(['id', 'name', 'slug', 'sort_order', 'is_active']))
+                        ->all(),
+                ]),
             'products' => $products
                 ->map(fn (Product $product): array => (new AdminProductResource($product))->resolve($request))
                 ->all(),
