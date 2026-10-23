@@ -237,26 +237,26 @@ export default function Cart() {
                 <header className="mb-8 border-b border-border pb-8 sm:mb-10 sm:pb-10">
                     <Link
                         href="/menu"
-                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline"
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-public-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" />{' '}
                         Volver al menú
                     </Link>
-                    <p className="mt-5 text-xs font-bold tracking-[0.2em] text-white uppercase">
+                    <p className="mt-5 text-xs font-bold tracking-[0.2em] text-public-earth-ink uppercase">
                         Tu pedido · Paso final
                     </p>
-                    <h1 className="mt-3 font-display text-5xl leading-none font-black tracking-tight sm:text-6xl">
-                        Tu carrito<span className="text-public-earth">.</span>
+                    <h1 className="mt-3 font-serif text-5xl leading-none font-semibold tracking-tight sm:text-6xl">
+                        Tu carrito<span className="text-public-canvas">.</span>
                     </h1>
-                    <p className="mt-4 max-w-2xl text-sm leading-6 text-white sm:text-base">
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                         Revisá lo que elegiste, completá tus datos y abrí
                         WhatsApp para enviar el mensaje. El pedido queda
                         pendiente de confirmación.
                     </p>
                 </header>
                 {!cart.items.length ? (
-                    <div className="mx-auto max-w-xl rounded-[2rem] border border-border bg-card px-6 py-16 text-center text-card-foreground sm:px-10">
-                        <h2 className="font-display text-3xl font-bold">
+                    <div className="mx-auto max-w-xl rounded-3xl border border-border bg-card px-6 py-16 text-center text-card-foreground sm:px-10">
+                        <h2 className="font-serif text-3xl font-semibold">
                             Todavía no elegiste nada.
                         </h2>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -280,12 +280,12 @@ export default function Cart() {
                         className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:items-start lg:gap-10"
                     >
                         <div className="grid min-w-0 gap-6">
-                            <Card className="min-w-0 overflow-hidden rounded-[1.75rem] border-border bg-card shadow-none">
+                            <Card className="min-w-0 overflow-hidden rounded-2xl border-border bg-card shadow-none">
                                 <CardHeader>
                                     <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
                                         01 · Revisá tu elección
                                     </p>
-                                    <CardTitle className="font-display text-2xl">
+                                    <CardTitle className="font-serif text-2xl font-semibold">
                                         Productos
                                     </CardTitle>
                                 </CardHeader>
@@ -307,7 +307,7 @@ export default function Cart() {
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                className="mt-3 min-h-11 bg-public-earth text-public-ink hover:bg-white"
+                                                className="mt-3 min-h-11 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                                 onClick={() => {
                                                     setLoadingOptions(true);
                                                     setOptionsError('');
@@ -361,7 +361,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        className="size-11 bg-public-earth text-public-ink hover:bg-white"
+                                                        className="size-11 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                                         aria-label={`Quitar una unidad de ${product?.name ?? item.product_slug}`}
                                                         onClick={() =>
                                                             cart.setProductQuantity(
@@ -383,7 +383,7 @@ export default function Cart() {
                                                         type="button"
                                                         size="icon"
                                                         variant="outline"
-                                                        className="size-11 bg-public-earth text-public-ink hover:bg-white"
+                                                        className="size-11 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                                         disabled={
                                                             !product &&
                                                             !loadingOptions &&
@@ -471,7 +471,7 @@ export default function Cart() {
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="outline"
-                                                                className="size-11 bg-public-earth text-public-ink hover:bg-white"
+                                                                className="size-11 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                                                 aria-label={`Quitar un adicional ${addon.name}`}
                                                                 onClick={() =>
                                                                     cart.setAddonQuantity(
@@ -490,7 +490,7 @@ export default function Cart() {
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="outline"
-                                                                className="size-11 bg-public-earth text-public-ink hover:bg-white"
+                                                                className="size-11 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                                                 aria-label={`Agregar un adicional ${addon.name}`}
                                                                 onClick={() =>
                                                                     cart.setAddonQuantity(
@@ -520,7 +520,7 @@ export default function Cart() {
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                className="min-h-11 shrink-0 bg-public-earth text-public-ink hover:bg-white"
+                                                className="min-h-11 shrink-0 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                                 onClick={() =>
                                                     cart.setAddonQuantity(
                                                         addon.addon_slug,
@@ -534,12 +534,12 @@ export default function Cart() {
                                     ))}
                                 </CardContent>
                             </Card>
-                            <Card className="rounded-[1.75rem] border-border bg-card shadow-none">
+                            <Card className="rounded-2xl border-border bg-card shadow-none">
                                 <CardHeader>
                                     <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
                                         02 · Para contactarte
                                     </p>
-                                    <CardTitle className="font-display text-2xl">
+                                    <CardTitle className="font-serif text-2xl font-semibold">
                                         Tus datos
                                     </CardTitle>
                                 </CardHeader>
@@ -564,12 +564,12 @@ export default function Cart() {
                                     />
                                 </CardContent>
                             </Card>
-                            <Card className="rounded-[1.75rem] border-border bg-card shadow-none">
+                            <Card className="rounded-2xl border-border bg-card shadow-none">
                                 <CardHeader>
                                     <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
                                         03 · Cómo lo recibís
                                     </p>
-                                    <CardTitle className="font-display text-2xl">
+                                    <CardTitle className="font-serif text-2xl font-semibold">
                                         Entrega
                                     </CardTitle>
                                 </CardHeader>
@@ -589,7 +589,7 @@ export default function Cart() {
                                             aria-pressed={
                                                 deliveryType === 'pickup'
                                             }
-                                            className="min-h-11 rounded-full bg-public-earth px-6 text-public-ink hover:bg-white aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-canvas/90"
+                                            className="min-h-11 rounded-full border-public-ink/20 bg-white px-6 text-public-ink hover:border-public-ink hover:bg-white aria-[pressed=true]:border-public-canvas aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-canvas/90"
                                             onClick={() =>
                                                 setDeliveryType('pickup')
                                             }
@@ -606,7 +606,7 @@ export default function Cart() {
                                             aria-pressed={
                                                 deliveryType === 'delivery'
                                             }
-                                            className="min-h-11 rounded-full bg-public-earth px-6 text-public-ink hover:bg-white aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-canvas/90"
+                                            className="min-h-11 rounded-full border-public-ink/20 bg-white px-6 text-public-ink hover:border-public-ink hover:bg-white aria-[pressed=true]:border-public-canvas aria-[pressed=true]:bg-public-canvas aria-[pressed=true]:text-white aria-[pressed=true]:hover:bg-public-canvas/90"
                                             onClick={() =>
                                                 setDeliveryType('delivery')
                                             }
@@ -688,7 +688,7 @@ export default function Cart() {
                             className="grid min-w-0 content-start gap-4 lg:sticky lg:top-6"
                             aria-label="Resumen y finalización"
                         >
-                            <p className="text-xs font-bold tracking-[0.16em] text-white uppercase">
+                            <p className="text-xs font-bold tracking-[0.16em] text-public-earth-ink uppercase">
                                 04 · Revisá el total
                             </p>
                             <PriceSummary
@@ -707,7 +707,7 @@ export default function Cart() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="mt-3 min-h-11 bg-public-earth text-public-ink hover:bg-white"
+                                        className="mt-3 min-h-11 border-public-ink/20 bg-white text-public-ink hover:border-public-ink hover:bg-white"
                                         onClick={() =>
                                             setQuoteRetry((value) => value + 1)
                                         }
@@ -728,13 +728,13 @@ export default function Cart() {
                                 type="submit"
                                 size="lg"
                                 disabled={!canSubmit}
-                                className="hidden min-h-12 rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70 sm:inline-flex"
+                                className="hidden min-h-12 rounded-full bg-public-canvas text-white hover:bg-public-earth-ink disabled:opacity-60 sm:inline-flex"
                             >
                                 {submitting
                                     ? 'Creando pedido…'
                                     : 'Confirmar y abrir WhatsApp'}
                             </Button>
-                            <p className="text-xs leading-5 text-white">
+                            <p className="text-xs leading-5 text-muted-foreground">
                                 Al continuar, guardamos el pedido y abrimos
                                 WhatsApp con un mensaje preparado. Tenés que
                                 enviarlo vos; no queda confirmado
@@ -744,14 +744,14 @@ export default function Cart() {
                     </form>
                 )}
                 {cart.items.length > 0 && (
-                    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/35 bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
+                    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgb(27_27_27_/_0.08)] backdrop-blur-sm sm:hidden">
                         <div className="mx-auto max-w-7xl">
                             <Button
                                 form="public-checkout"
                                 type="submit"
                                 size="lg"
                                 disabled={!canSubmit}
-                                className="min-h-12 w-full rounded-full bg-public-ink text-white hover:bg-public-ink/90 disabled:opacity-70"
+                                className="min-h-12 w-full rounded-full bg-public-canvas text-white hover:bg-public-earth-ink disabled:opacity-60"
                             >
                                 {submitting
                                     ? 'Creando pedido…'
