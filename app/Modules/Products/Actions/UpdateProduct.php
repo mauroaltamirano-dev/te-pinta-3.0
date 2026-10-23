@@ -36,6 +36,7 @@ final class UpdateProduct
                     : $this->unitPrices->forDozen($data->dozenPrice));
                 $product->update([
                     'category_id' => $data->categoryId,
+                    'subcategory_id' => $data->subcategoryId,
                     'pricing_family' => $data->pricingFamily,
                     'name' => $data->name,
                     'slug' => $data->slug ?? $product->slug,

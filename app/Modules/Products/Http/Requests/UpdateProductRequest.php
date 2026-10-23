@@ -4,6 +4,8 @@ namespace App\Modules\Products\Http\Requests;
 
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Enums\ProductPricingFamily;
+use App\Modules\Products\Models\Product;
+use App\Modules\Products\Rules\AssignableSubcategory;
 use App\Modules\Products\Rules\CookedPriceSupportsRawDiscount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,6 +33,7 @@ final class UpdateProductRequest extends FormRequest
             'image' => ['nullable', 'file', 'mimetypes:image/jpeg,image/png,image/webp', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'max:4096'],
             'remove_image' => ['sometimes', 'boolean'],
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
+            'subcategory_id' => ['nullable', 'integer', new AssignableSubcategory($this->input('category_id'), $this->currentSubcategoryId())],
             'tags' => ['sometimes', 'array', 'max:50'],
             'tags.*' => ['required', 'integer', 'distinct', 'exists:tags,id'],
             'pricing_family' => ['required', Rule::enum(ProductPricingFamily::class)],
@@ -56,12 +59,20 @@ final class UpdateProductRequest extends FormRequest
         ];
     }
 
+    private function currentSubcategoryId(): ?int
+    {
+        $product = $this->route('product');
+
+        return $product instanceof Product ? $product->subcategory_id : null;
+    }
+
     protected function prepareForValidation(): void
     {
         $this->merge([
             'description' => $this->input('description') ?: null,
             'long_description' => $this->input('long_description') ?: null,
             'public_ingredients' => $this->input('public_ingredients') ?: null,
+            'subcategory_id' => $this->input('subcategory_id') ?: null,
             'tags' => $this->input('tags', []),
         ]);
     }

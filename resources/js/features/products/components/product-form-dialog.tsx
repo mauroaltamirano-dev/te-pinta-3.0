@@ -36,6 +36,8 @@ interface ProductFormData {
     long_description: string;
     public_ingredients: string;
     category_id: string;
+    /** Empty: no subcategory. */
+    subcategory_id: string;
     pricing_family: 'empanada' | 'unit';
     tags: number[];
     unit_price: string;
@@ -53,8 +55,11 @@ interface ProductFormDialogProps {
     categories: ProductCategory[];
     tags: ProductTag[];
     defaultCategoryId: number | null;
+    defaultSubcategoryId: number | null;
     empanadaUnitSurchargePercent: number;
 }
+
+const NO_SUBCATEGORY = 'none';
 
 export function ProductFormDialog({
     open,
@@ -63,6 +68,7 @@ export function ProductFormDialog({
     categories,
     tags,
     defaultCategoryId,
+    defaultSubcategoryId,
     empanadaUnitSurchargePercent,
 }: ProductFormDialogProps) {
     const form = useForm<ProductFormData>({
@@ -76,6 +82,9 @@ export function ProductFormDialog({
             product?.category_id.toString() ??
             defaultCategoryId?.toString() ??
             '',
+        subcategory_id: product
+            ? (product.subcategory_id?.toString() ?? '')
+            : (defaultSubcategoryId?.toString() ?? ''),
         tags: product?.tags.map((tag) => tag.id) ?? [],
         unit_price: product?.unit_price.toString() ?? '',
         dozen_price: product?.dozen_price.toString() ?? '',
@@ -85,6 +94,15 @@ export function ProductFormDialog({
         remove_image: false,
     });
     const [confirmingDelete, setConfirmingDelete] = useState(false);
+    // Active subcategories of the chosen category, plus the inactive one the product already has.
+    const subcategoryOptions = (
+        categories.find(
+            (category) => category.id.toString() === form.data.category_id,
+        )?.subcategories ?? []
+    ).filter(
+        (subcategory) =>
+            subcategory.is_active || subcategory.id === product?.subcategory_id,
+    );
     const imageInputRef = useRef<HTMLInputElement>(null);
     const removeButtonRef = useRef<HTMLButtonElement>(null);
     const deleteConfirmationRef = useRef<HTMLDivElement>(null);
@@ -424,7 +442,15 @@ export function ProductFormDialog({
                                     value={form.data.category_id}
                                     required
                                     onValueChange={(value) =>
-                                        form.setData('category_id', value)
+                                        // A subcategory belongs to one category: changing it clears the choice.
+                                        form.setData((data) => ({
+                                            ...data,
+                                            category_id: value,
+                                            subcategory_id:
+                                                value === data.category_id
+                                                    ? data.subcategory_id
+                                                    : '',
+                                        }))
                                     }
                                 >
                                     <SelectTrigger
@@ -457,6 +483,70 @@ export function ProductFormDialog({
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                            </FormField>
+
+                            <FormField
+                                id="product-subcategory"
+                                label="Subcategoría (opcional)"
+                                error={form.errors.subcategory_id}
+                            >
+                                <Select
+                                    value={
+                                        form.data.subcategory_id ||
+                                        NO_SUBCATEGORY
+                                    }
+                                    disabled={subcategoryOptions.length === 0}
+                                    onValueChange={(value) =>
+                                        form.setData(
+                                            'subcategory_id',
+                                            value === NO_SUBCATEGORY
+                                                ? ''
+                                                : value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger
+                                        id="product-subcategory"
+                                        className="w-full"
+                                        aria-invalid={Boolean(
+                                            form.errors.subcategory_id,
+                                        )}
+                                        aria-describedby={
+                                            form.errors.subcategory_id
+                                                ? 'product-subcategory-error'
+                                                : 'product-subcategory-hint'
+                                        }
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value={NO_SUBCATEGORY}>
+                                                Sin subcategoría
+                                            </SelectItem>
+                                            {subcategoryOptions.map(
+                                                (subcategory) => (
+                                                    <SelectItem
+                                                        key={subcategory.id}
+                                                        value={subcategory.id.toString()}
+                                                    >
+                                                        {subcategory.name}
+                                                        {!subcategory.is_active &&
+                                                            ' (inactiva)'}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <p
+                                    id="product-subcategory-hint"
+                                    className="text-xs text-muted-foreground"
+                                >
+                                    {subcategoryOptions.length === 0
+                                        ? 'Esta categoría no tiene subcategorías.'
+                                        : 'Solo sirve para filtrar; no cambia precios.'}
+                                </p>
                             </FormField>
 
                             <FormField

@@ -19,6 +19,7 @@ final class AdminProductResource extends JsonResource
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
+            'subcategory_id' => $this->subcategory_id,
             'pricing_family' => $pricingFamily->value,
             'name' => $this->name,
             'slug' => $this->slug,

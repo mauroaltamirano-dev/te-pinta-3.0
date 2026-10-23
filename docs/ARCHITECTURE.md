@@ -29,7 +29,7 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 | `Core` | `ProductPriceProvider` contract + `SellableProductPrice`, `PublicIdentifier`, `RestaurantContext` (tenancy), `TestingDatabaseGuard`, `Branding` (validated restaurant accent palette) |
 | `Shared` | `AssignRequestId` (request ID in log context) and `LogAdminRequest` (`admin.request.completed`) middleware |
 | `Identity` | Users, per-restaurant memberships (`restaurant_user`), code-defined roles and permissions, `restaurant.member` middleware, user management (`/admin/users`), `admin:create` console command |
-| `Products` | Categories, products, tags, availability, pricing family (`empanada`/`unit`), cooked base prices, raw-price discounts, public catalog and product detail |
+| `Products` | Categories, optional subcategories (filter only), products, tags, availability, pricing family (`empanada`/`unit`), cooked base prices, raw-price discounts, public catalog and product detail |
 | `Customers` | Customer profiles, phone normalization, search, history, soft delete and restore |
 | `Orders` | Order creation (admin, public checkout, POS), editing, snapshots, revisions, status and payment transitions, pricing engine, table service (sessions, immutable rounds, bill, charge), WhatsApp link |
 | `Settings` | Admin write surface for restaurant branding, ordering settings, raw-price discounts and add-ons (`/admin/settings/general`) |

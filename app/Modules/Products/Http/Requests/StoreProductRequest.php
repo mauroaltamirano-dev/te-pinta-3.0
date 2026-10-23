@@ -5,6 +5,7 @@ namespace App\Modules\Products\Http\Requests;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
+use App\Modules\Products\Rules\AssignableSubcategory;
 use App\Modules\Products\Rules\CookedPriceSupportsRawDiscount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -41,6 +42,7 @@ final class StoreProductRequest extends FormRequest
             'description' => $this->input('description') ?: null,
             'long_description' => $this->input('long_description') ?: null,
             'public_ingredients' => $this->input('public_ingredients') ?: null,
+            'subcategory_id' => $this->input('subcategory_id') ?: null,
             'tags' => $this->input('tags', []),
         ]);
     }
@@ -60,6 +62,7 @@ final class StoreProductRequest extends FormRequest
             'public_ingredients' => ['nullable', 'string', 'max:2000'],
             'image' => ['nullable', 'file', 'mimetypes:image/jpeg,image/png,image/webp', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'max:4096'],
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
+            'subcategory_id' => ['nullable', 'integer', new AssignableSubcategory($this->input('category_id'), null)],
             'tags' => ['sometimes', 'array', 'max:50'],
             'tags.*' => ['required', 'integer', 'distinct', 'exists:tags,id'],
             'pricing_family' => ['required', Rule::enum(ProductPricingFamily::class)],
