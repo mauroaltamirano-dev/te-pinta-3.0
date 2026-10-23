@@ -60,15 +60,30 @@ final class ProductSubcategoryDatabaseTest extends TestCase
         $this->assertNull($product->refresh()->subcategory_id);
     }
 
-    public function test_the_same_subcategory_name_can_exist_under_different_categories_but_not_twice_in_one(): void
+    public function test_the_same_subcategory_name_and_slug_can_exist_under_different_categories(): void
     {
         $empanadas = $this->category('Empanadas');
         $pizzas = $this->category('Pizzas');
         ProductSubcategory::query()->create(['category_id' => $empanadas->id, 'name' => 'Especiales', 'slug' => 'especiales', 'sort_order' => 1, 'is_active' => true]);
         ProductSubcategory::query()->create(['category_id' => $pizzas->id, 'name' => 'Especiales', 'slug' => 'especiales', 'sort_order' => 1, 'is_active' => true]);
 
-        $this->expectException(QueryException::class);
-        ProductSubcategory::query()->create(['category_id' => $empanadas->id, 'name' => 'Especiales 2', 'slug' => 'especiales', 'sort_order' => 2, 'is_active' => true]);
+        $this->assertSame(2, DB::table('product_subcategories')->where('slug', 'especiales')->count());
+    }
+
+    public function test_postgresql_rejects_the_same_name_in_one_category_ignoring_case(): void
+    {
+        $empanadas = $this->category('Empanadas');
+        ProductSubcategory::query()->create(['category_id' => $empanadas->id, 'name' => 'Especiales', 'slug' => 'especiales', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->assertConstraintViolation('product_subcategories_name_unique', fn () => ProductSubcategory::query()->create(['category_id' => $empanadas->id, 'name' => 'ESPECIALES', 'slug' => 'especiales-2', 'sort_order' => 2, 'is_active' => true]));
+    }
+
+    public function test_postgresql_rejects_the_same_slug_in_one_category(): void
+    {
+        $empanadas = $this->category('Empanadas');
+        ProductSubcategory::query()->create(['category_id' => $empanadas->id, 'name' => 'Especiales', 'slug' => 'especiales', 'sort_order' => 1, 'is_active' => true]);
+
+        $this->assertConstraintViolation('product_subcategories_slug_unique', fn () => ProductSubcategory::query()->create(['category_id' => $empanadas->id, 'name' => 'Especiales 2', 'slug' => 'especiales', 'sort_order' => 2, 'is_active' => true]));
     }
 
     public function test_postgresql_rejects_a_negative_subcategory_order(): void
@@ -123,5 +138,18 @@ final class ProductSubcategoryDatabaseTest extends TestCase
             'is_available' => true,
             'sort_order' => 1,
         ]);
+    }
+
+    private function assertConstraintViolation(string $constraint, callable $write): void
+    {
+        try {
+            $write();
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString($constraint, $exception->getMessage());
+
+            return;
+        }
+
+        $this->fail("Expected a violation of {$constraint}.");
     }
 }
