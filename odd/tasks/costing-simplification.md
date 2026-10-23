@@ -12,12 +12,16 @@ Objective: current product costing falls back to the active recipe estimate for 
 
 ## Tasks
 
-- T1 — S1, S5: recipe fallback in `BuildProductUnitEconomics` + PHPUnit. Route: inline.
-- T2 — S2, S4: next steps payload + costing page rewrite. Route: inline.
-- T3 — S3, S4: packaging editor in plain language, overhead as %. Route: inline.
-- T4 — S5: e2e desktop/mobile, screenshots, docs, full checks. Route: inline.
+- [x] T1 — S1, S5: recipe fallback in `BuildProductUnitEconomics` + `next_steps` + PHPUnit. Route: inline. Commit `b7a588d`.
+- [x] T2 — S2, S4: costing page rewrite. Route: inline. Commit `29ab9c8`.
+- [x] T3 — S3, S4: packaging editor in plain language, overhead as %. Route: inline. Commit `29ab9c8`.
+- [x] T4 — S5: e2e desktop/mobile, screenshots, docs, full checks. Route: inline. Commits `b7a588d`, `29ab9c8`.
 
 ## Log
 
 - L1 (2026-10-23) — User request (verbatim, from the coordination chat): "ya tengo los precios cargados, pero no me muestra el costo por docena, unidad, etc, también pasa lo mismo que la otra sección, es muy confuso todo, muchos datos e info, para un cliente no lo va a entender y va a ser tedioso". Scope agreed in S1–S5.
 - L2 — Route inline for every task: no Writer trigger (one coherent change, no parallel independent units). Before screenshots captured with a throwaway spec using `tests/e2e/support/costing-fixture.ts` (filling with recipe but no production, dozen box never bought): every presentation shows "No disponible" and "Cobertura directa: 50 %".
+- L3 — T1: RED observed (9 tests: `incomplete` instead of `complete`, missing `cost_source`/`next_steps`), then GREEN 9/9. The costing read runs in `REPEATABLE READ READ ONLY`, where PostgreSQL rejects the `FOR SHARE` in `BuildRecipeCurrentCost`; added `buildMany(..., lockItems: false)`. The read-only test was proven to fail with the lock on ("read-only transaction"). Fallback scope: kind `semi_finished`, warning unknown/zero/partial/negative/warning layers, exactly one active recipe, complete recipe; one level only; insufficient stock of a fully valued item stays unreliable (not a valuation problem).
+- L4 — T2/T3: "Política" is now "Packaging y gastos" in the UI and backend messages; routes, tables and payload keys unchanged (no data model change). Overhead input is a percentage ("12,5" → 1250 bp) with `percentToBasisPoints`. `?edit={id}` opens the editor from the costing page and from next steps.
+- L5 — Checks: PHPUnit full suite in `sail-8.5/app` 1026 passed (8245 assertions). Pint, PHPStan, ESLint, Prettier, tsc, `node --test tests/frontend/*.test.mjs` (33 pass), build clean. Costing e2e specs 6/6 (chromium, mobile-chromium). Before/after screenshots in the session scratchpad (`screens/`), not committed.
+- L6 — Full Playwright: 227 passed, 52 skipped, 17 failed. All 17 fail in fixture setup on the host PHP without GD (`InstagramPlaywrightFixture` → "Call to undefined function imagecreatetruecolor()", `ManagementOverviewSeeder`), the same 17 as previous features; costing specs passed inside the suite. Final after screenshots captured. Container `tepinta-costing-simpl-pg` left running; empty `.env` left in the worktree for the sail run. Next step: user review of screenshots, then merge/deploy decision.
