@@ -17,7 +17,9 @@ final class TableServiceController
 {
     public function index(Request $request, TableServiceBoard $board): Response
     {
-        return Inertia::render('admin/tables/index', ['tables' => $board->tables($this->actor($request))]);
+        $tables = $board->tables($this->actor($request));
+
+        return Inertia::render('admin/tables/index', ['tables' => $tables, 'areas' => $board->floor($tables)]);
     }
 
     public function show(Request $request, int $table, TableServiceBoard $board): Response

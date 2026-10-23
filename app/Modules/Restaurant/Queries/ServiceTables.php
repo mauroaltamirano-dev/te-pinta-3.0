@@ -7,7 +7,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
-/** Read access to dining tables for table service, without exposing floor geometry. */
+/** Read access to dining tables for table service; floor geometry is exposed read-only, for drawing the board. */
 final readonly class ServiceTables
 {
     public function __construct(private RestaurantContext $restaurant) {}
@@ -27,6 +27,33 @@ final readonly class ServiceTables
         usort($tables, fn (array $a, array $b): int => strnatcasecmp($a['code'], $b['code']) ?: $a['id'] <=> $b['id']);
 
         return $tables;
+    }
+
+    /**
+     * The floor of the given tables, to draw them as the editor placed them: their areas (by id, with
+     * obstacles) and only those tables' geometry. Coordinates are fractions of the area, as stored.
+     *
+     * @param  list<int>  $tableIds
+     * @return list<array{id: int, name: string, width: int, height: int, obstacles: list<array<string, mixed>>, tables: list<array{id: int, shape: string, x: string, y: string, width: string, height: string, rotation: int}>}>
+     */
+    public function floor(array $tableIds): array
+    {
+        $tables = DB::table('dining_tables')->where('restaurant_id', $this->restaurant->id())->whereIn('id', $tableIds)->orderBy('id')
+            ->get(['id', 'dining_area_id', 'shape', 'position_x', 'position_y', 'width', 'height', 'rotation'])->groupBy('dining_area_id');
+
+        return array_values(DB::table('dining_areas')->where('restaurant_id', $this->restaurant->id())->whereIn('id', $tables->keys()->all())->orderBy('id')
+            ->get(['id', 'name', 'width', 'height', 'obstacles'])
+            ->map(fn (stdClass $area): array => [
+                'id' => (int) $area->id, 'name' => (string) $area->name, 'width' => (int) $area->width, 'height' => (int) $area->height,
+                'obstacles' => array_values(array_map(
+                    fn (array $obstacle): array => array_intersect_key($obstacle, array_flip(['type', 'x', 'y', 'width', 'height', 'label'])),
+                    json_decode((string) $area->obstacles, true, flags: JSON_THROW_ON_ERROR),
+                )),
+                'tables' => array_values($tables->get($area->id)->map(fn (stdClass $table): array => [
+                    'id' => (int) $table->id, 'shape' => (string) $table->shape, 'x' => (string) $table->position_x, 'y' => (string) $table->position_y,
+                    'width' => (string) $table->width, 'height' => (string) $table->height, 'rotation' => (int) $table->rotation,
+                ])->all()),
+            ])->all());
     }
 
     /** @return array{id: int, code: string, area: string, available: bool}|null */

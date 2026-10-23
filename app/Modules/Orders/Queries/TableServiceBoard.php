@@ -24,7 +24,7 @@ final readonly class TableServiceBoard
         private ProductsWithoutConsumption $withoutConsumption,
     ) {}
 
-    /** @return list<array<string, mixed>> */
+    /** @return list<array{id: int, code: string, area: string, available: bool, session: array<string, mixed>|null}> */
     public function tables(User $viewer): array
     {
         $sessions = TableSession::query()->where('status', TableSessionStatus::Open)->with(['waiter:id,name', 'order:id,total'])->get()->keyBy('dining_table_id');
@@ -33,6 +33,17 @@ final readonly class TableServiceBoard
             ...$table,
             'session' => ($session = $sessions->get($table['id'])) === null ? null : $this->summary($session, $viewer),
         ], $this->tables->listed(array_values($sessions->keys()->map(fn ($id): int => (int) $id)->all())));
+    }
+
+    /**
+     * Where the board's tables sit on the floor, read-only.
+     *
+     * @param  list<array{id: int}>  $tables  rows of tables()
+     * @return list<array<string, mixed>>
+     */
+    public function floor(array $tables): array
+    {
+        return $this->tables->floor(array_map(fn (array $table): int => $table['id'], $tables));
     }
 
     /** @return array<string, mixed>|null null when the table does not exist */

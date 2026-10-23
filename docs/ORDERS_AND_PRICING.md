@@ -173,7 +173,7 @@ At least one product; at most 50 distinct products per request, each once, quant
 
 ## Table service
 
-Code: `Actions/ConfirmTableRound.php`, `RequestTableBill.php`, `IssueTableBill.php`, `ChargeTableSession.php`, `CancelTableSession.php`, `Support/TableSessionGuard.php`, `Support/OrderDocuments.php`. Tables come from the floor editor (`Restaurant`); `Restaurant\Queries\ServiceTables` locks one without exposing geometry.
+Code: `Actions/ConfirmTableRound.php`, `RequestTableBill.php`, `IssueTableBill.php`, `ChargeTableSession.php`, `CancelTableSession.php`, `Support/TableSessionGuard.php`, `Support/OrderDocuments.php`. Tables come from the floor editor (`Restaurant`); `Restaurant\Queries\ServiceTables` lists and locks them, and exposes their floor geometry read-only (`floor()`) so the board can draw the plan.
 
 ```text
 free table --first round--> open session + POS order (dine_in, cooked, waiting, unpaid)
@@ -195,7 +195,7 @@ open session --cancel--> order cancelled, session cancelled
 
   | Route | Page / effect |
   | --- | --- |
-  | `GET /admin/tables` | `admin/tables/index`: active tables of active areas plus any deactivated table that still has an open session, in natural code order (M1, M2, M10); waiter, provisional total and bill flag per open table. Polls every 10 s. |
+  | `GET /admin/tables` | `admin/tables/index`: active tables of active areas plus any deactivated table that still has an open session, in natural code order (M1, M2, M10); waiter, provisional total and bill flag per open table; `areas`: the floor of the listed tables only (area size and obstacles, each table's shape, position, size and rotation as fractions of its area), drawn as the default view with a list toggle. Polls `tables` and `areas` every 10 s. |
   | `GET /admin/tables/{table}` | `admin/tables/show`: provisional total, current lines, rounds (time in the business time zone, "Agregado por <Rol> <Nombre>"), round composer (order or void), and for owner/manager/cashier the missing-consumption warning for the table's products. |
   | `POST /admin/tables/{table}/rounds` | `ConfirmTableRound` with `expected_session_id`, `kind`, `items`, `addons`, `note` (≤ 300) and a client-generated `round_key` (UUID) reused when the same draft is retried. |
   | `POST /admin/table-sessions/{session}/bill-request` | `RequestTableBill` (waiter of the table or a cashier role). |

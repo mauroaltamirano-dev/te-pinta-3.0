@@ -17,6 +17,7 @@ use App\Modules\Products\Pricing\EmpanadaUnitPrice;
 use App\Modules\Restaurant\Models\DiningArea;
 use App\Modules\Restaurant\Models\DiningTable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -76,6 +77,41 @@ final class TableServiceHttpTest extends TestCase
                 ->where('tables.2.session.total', 4000)
                 ->where('tables.2.session.opened_at', now()->setTimezone((string) config('orders.timezone'))->format('H:i'))
                 ->where('tables.0.session', null));
+    }
+
+    public function test_the_board_draws_the_floor_of_the_listed_tables_without_changing_it(): void
+    {
+        $this->area->update(['obstacles' => [['type' => 'rectangle', 'x' => '0.0500', 'y' => '0.8000', 'width' => '0.4000', 'height' => '0.1200', 'label' => 'Barra']]]);
+        $this->table->update(['shape' => 'circle', 'position_x' => '0.2000', 'position_y' => '0.3000', 'width' => '0.0625', 'height' => '0.1000']);
+        $this->addTable('M4', active: false);
+        $patio = DiningArea::query()->create(['name' => 'Patio', 'width' => 1200, 'height' => 600, 'is_active' => true]);
+        $kept = $patio->tables()->create([
+            'code' => 'P1', 'shape' => 'rectangle', 'position_x' => '0.5000', 'position_y' => '0.2500',
+            'width' => '0.1000', 'height' => '0.2000', 'rotation' => 45, 'is_active' => true,
+        ]);
+        $this->round($this->waiter, $kept, [$this->beer->id => 1]);
+        $patio->update(['is_active' => false]);
+        DiningArea::query()->create(['name' => 'Terraza', 'width' => 800, 'height' => 800, 'is_active' => true])->tables()->create([
+            'code' => 'T1', 'shape' => 'rectangle', 'position_x' => '0.1000', 'position_y' => '0.1000', 'width' => '0.1000', 'height' => '0.1000', 'rotation' => 0, 'is_active' => false,
+        ]);
+        $layout = DB::table('dining_areas')->orderBy('id')->get(['id', 'layout_version', 'updated_at'])->all();
+
+        $this->actingAs($this->waiter)->get(route('admin.tables.index'))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('admin/tables/index')
+                ->where('tables', fn ($tables): bool => collect($tables)->pluck('code')->all() === ['M1', 'P1'])
+                // Only areas with a listed table: the empty Terraza is left out, the deactivated Patio keeps its open table.
+                ->where('areas', [
+                    [
+                        'id' => $this->area->id, 'name' => 'Vereda', 'width' => 1600, 'height' => 1000,
+                        'obstacles' => [['type' => 'rectangle', 'x' => '0.0500', 'y' => '0.8000', 'width' => '0.4000', 'height' => '0.1200', 'label' => 'Barra']],
+                        'tables' => [['id' => $this->table->id, 'shape' => 'circle', 'x' => '0.2000', 'y' => '0.3000', 'width' => '0.0625', 'height' => '0.1000', 'rotation' => 0]],
+                    ],
+                    [
+                        'id' => $patio->id, 'name' => 'Patio', 'width' => 1200, 'height' => 600, 'obstacles' => [],
+                        'tables' => [['id' => $kept->id, 'shape' => 'rectangle', 'x' => '0.5000', 'y' => '0.2500', 'width' => '0.1000', 'height' => '0.2000', 'rotation' => 45]],
+                    ],
+                ]));
+        $this->assertEquals($layout, DB::table('dining_areas')->orderBy('id')->get(['id', 'layout_version', 'updated_at'])->all());
     }
 
     public function test_a_waiter_opens_a_table_and_six_plus_six_salteñas_cost_one_dozen(): void
