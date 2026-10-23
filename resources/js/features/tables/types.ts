@@ -3,6 +3,7 @@ import type {
     AdminProductOption,
 } from '@/features/orders/admin-order-types';
 import type { PaymentMethod } from '@/features/orders/types';
+import type { FloorObstacle, FloorShape } from '@/features/restaurant/types';
 
 export interface ServiceTable {
     id: number;
@@ -60,4 +61,25 @@ export interface TableDetail {
     can_cashier: boolean;
     payment_methods: PaymentMethod[];
     missing_consumption: string[];
+}
+
+/** A table's place on the floor, as the floor editor stored it: fractions of its area. */
+export interface FloorTableSpot {
+    id: number;
+    shape: FloorShape;
+    x: string;
+    y: string;
+    width: string;
+    height: string;
+    rotation: number;
+}
+
+/** An area of the board's floor, with only the tables the board lists. */
+export interface TableFloorArea {
+    id: number;
+    name: string;
+    width: number;
+    height: number;
+    obstacles: Array<Omit<FloorObstacle, 'key'>>;
+    tables: FloorTableSpot[];
 }
