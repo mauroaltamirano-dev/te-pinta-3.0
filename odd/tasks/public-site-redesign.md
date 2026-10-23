@@ -12,9 +12,9 @@ Objective: a more professional public site (home, menu, product detail, cart) wi
 
 ## Tasks
 
-- T1 — S1, S2: typography and public theme foundation (light surfaces, red as accent), header and footer, product placeholder. Route: inline. Status: done (commit A).
-- T2 — S1, S4: menu as a "carta": light cards, sections per category and subcategory when showing everything, clear prices, compact quick-add. Route: inline. Status: done (commit B).
-- T3 — S1, S4: home, product detail and cart aligned to the new foundation (home ships with T1). Route: inline. Status: done (commit C).
+- T1 — S1, S2: typography and public theme foundation (light surfaces, red as accent), header and footer, product placeholder. Route: inline. Status: done (commit `081a871`).
+- T2 — S1, S4: menu as a "carta": light cards, sections per category and subcategory when showing everything, clear prices, compact quick-add. Route: inline. Status: done (commit `85807b9`).
+- T3 — S1, S4: home, product detail and cart aligned to the new foundation (home ships with T1). Route: inline. Status: done (commit `dc43314`).
 - T4 — S3, S5: SEO/performance pass, e2e updates, screenshots, docs, full checks. Route: inline. Status: done (this logbook commit; spec updates ship with T1–T3).
 
 ## Log
