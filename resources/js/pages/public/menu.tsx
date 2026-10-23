@@ -122,6 +122,7 @@ export default function Menu() {
                             className="mt-3 font-serif text-5xl leading-none font-semibold tracking-tight sm:text-6xl"
                         >
                             Nuestro menú
+                            <span className="text-public-canvas">.</span>
                         </h1>
                         <p className="mt-4 text-sm leading-6 text-white/80 sm:text-base">
                             Precios de productos cocinados. Sumá por docena,
