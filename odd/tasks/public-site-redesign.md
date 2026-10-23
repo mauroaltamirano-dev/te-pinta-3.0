@@ -1,6 +1,6 @@
 # Public site redesign
 
-Objective: a more professional public site (home, menu, product detail, cart) within the stored palette, without new routes, endpoints or external assets. Branch `feat/public-site-redesign`, chained on `feat/category-subcategories` at `2292cb3`, same worktree and test runtime (`odd/tasks/category-subcategories.md` header). Delivery: local feature-branch chain, no push, merge or deploy. Test policy (stored decision `public/restaurant-redesign-2026-10/testing`): strict TDD only for changed behavior; visual units get desktop/mobile e2e and before/after screenshots, no brittle class or position tests.
+Objective: a more professional public site (home, menu, product detail, cart) within the stored palette, without new routes, endpoints or external assets. Branch `feat/public-site-redesign`, chained on `feat/category-subcategories` at `1bb7e0c` (rebased from `2292cb3`), same worktree and test runtime (`odd/tasks/category-subcategories.md` header). Delivery: local feature-branch chain, no push, merge or deploy. Test policy (stored decision `public/restaurant-redesign-2026-10/testing`): strict TDD only for changed behavior; visual units get desktop/mobile e2e and before/after screenshots, no brittle class or position tests.
 
 ## Specs
 
@@ -12,9 +12,9 @@ Objective: a more professional public site (home, menu, product detail, cart) wi
 
 ## Tasks
 
-- T1 — S1, S2: typography and public theme foundation (light surfaces, red as accent), header and footer, product placeholder. Route: inline. Status: done (commit `081a871`).
-- T2 — S1, S4: menu as a "carta": light cards, sections per category and subcategory when showing everything, clear prices, compact quick-add. Route: inline. Status: done (commit `85807b9`).
-- T3 — S1, S4: home, product detail and cart aligned to the new foundation (home ships with T1). Route: inline. Status: done (commit `dc43314`).
+- T1 — S1, S2: typography and public theme foundation (light surfaces, red as accent), header and footer, product placeholder. Route: inline. Status: done (commit `6482bc2`).
+- T2 — S1, S4: menu as a "carta": light cards, sections per category and subcategory when showing everything, clear prices, compact quick-add. Route: inline. Status: done (commit `d90e209`).
+- T3 — S1, S4: home, product detail and cart aligned to the new foundation (home ships with T1). Route: inline. Status: done (commit `e9e353a`).
 - T4 — S3, S5: SEO/performance pass, e2e updates, screenshots, docs, full checks. Route: inline. Status: done (this logbook commit; spec updates ship with T1–T3).
 
 ## Log
