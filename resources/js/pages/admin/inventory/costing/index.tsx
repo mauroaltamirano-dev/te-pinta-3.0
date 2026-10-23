@@ -1,75 +1,193 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { AdminPageShell } from '@/components/shared/admin-page-shell';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { percentage } from '@/features/inventory/costing/types';
-import type { CostLine, Economics } from '@/features/inventory/costing/types';
+import {
+    percentage,
+    presentationName,
+} from '@/features/inventory/costing/types';
+import type {
+    CostLine,
+    Economics,
+    EconomicsPresentation,
+} from '@/features/inventory/costing/types';
 import { formatInventoryQuantity } from '@/features/inventory/presentation';
 import { formatMoney } from '@/lib/format';
 
 type PolicyOption = { id: number; name: string };
-const statusNames = {
-    complete: 'Costo completo',
-    incomplete: 'Costo incompleto',
-    unreliable: 'Costo no confiable',
-};
-const physicalNames = {
-    consume: 'Consume inventario',
-    no_inventory: 'Sin consumo físico',
-    missing_config: 'Consumo sin configurar',
-};
-const reasons: Record<string, string> = {
-    consumption_missing: 'Configurar consumo físico.',
-    policy_missing: 'Asignar una política de costo.',
-    policy_inactive: 'La política asignada está inactiva.',
-    packaging_missing:
-        'Configurar packaging o declarar que no se requiere para esta presentación.',
-    direct_cost_incomplete:
-        'Falta valoración actual de componentes del consumo.',
-    direct_cost_unreliable: 'La valoración del consumo no es confiable.',
-    packaging_cost_incomplete:
-        'Falta valoración actual o un item de packaging dejó de ser elegible.',
-    packaging_cost_unreliable: 'La valoración del packaging no es confiable.',
-    pricing_unavailable: 'No hay un precio vendible disponible en el backend.',
-    no_current_valuation: 'Valoración actual desconocida',
-    negative_stock: 'Stock negativo',
-    partial_valuation: 'Valoración parcial',
-    unreliable_valuation: 'Valoración no confiable',
-    insufficient_stock: 'Stock insuficiente para una estimación confiable',
-    packaging_item_ineligible: 'Item de packaging inactivo o no elegible',
-};
-function money(value: number | null) {
-    return value === null ? 'No disponible' : formatMoney(value);
+const selectClass =
+    'w-full rounded-md border border-admin-border bg-admin-surface p-2';
+
+/** Price, cost, profit and percentage of one presentation; null is "not known yet", never zero. */
+function figures(p: EconomicsPresentation) {
+    return {
+        name: presentationName(p.pricing_mode, p.commercial_quantity),
+        price:
+            p.selling_price === null
+                ? 'Sin precio'
+                : formatMoney(p.selling_price),
+        cost:
+            p.estimated_total_cost === null
+                ? 'Falta'
+                : formatMoney(p.estimated_total_cost),
+        profit:
+            p.estimated_margin === null ? '—' : formatMoney(p.estimated_margin),
+        percent:
+            p.estimated_margin_percentage_bps === null
+                ? '—'
+                : percentage(p.estimated_margin_percentage_bps),
+        loss: (p.estimated_margin ?? 0) < 0,
+    };
 }
-function CostComponents({
-    title,
-    lines,
-}: {
-    title: string;
-    lines: CostLine[];
-}) {
-    if (!lines.length) {
-        return null;
-    }
+
+function EconomicsTable({ economics: e }: { economics: Economics }) {
+    const rows = e.presentations.map((p) => ({
+        key: p.commercial_quantity,
+        ...figures(p),
+    }));
+    const lossClass = (loss: boolean) => (loss ? 'text-destructive' : '');
 
     return (
-        <details className="min-w-0">
-            <summary className="cursor-pointer">{title}</summary>
-            <ul className="mt-2 grid gap-2">
-                {lines.map((l) => (
-                    <li key={l.inventory_item_id} className="break-words">
-                        {l.item_name}:{' '}
-                        {formatInventoryQuantity(l.quantity, l.unit_code)} ·{' '}
-                        {money(l.estimated_cost)}
-                        {l.warning && (
-                            <span> · {reasons[l.warning] ?? l.warning}</span>
-                        )}
+        <>
+            <table className="hidden w-full text-left sm:table">
+                <caption className="sr-only">
+                    Precio, costo y ganancia de {e.product_name}
+                </caption>
+                <thead>
+                    <tr className="border-b border-admin-border text-sm text-admin-text-secondary">
+                        <th scope="col" className="py-2 font-medium">
+                            Venta
+                        </th>
+                        <th scope="col" className="py-2 text-right font-medium">
+                            Precio
+                        </th>
+                        <th scope="col" className="py-2 text-right font-medium">
+                            Costo
+                        </th>
+                        <th scope="col" className="py-2 text-right font-medium">
+                            Ganancia
+                        </th>
+                        <th scope="col" className="py-2 text-right font-medium">
+                            %
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((r) => (
+                        <tr
+                            key={r.key}
+                            className="border-b border-admin-border last:border-0"
+                            data-testid="costing-row"
+                        >
+                            <th scope="row" className="py-3 font-semibold">
+                                {r.name}
+                            </th>
+                            <td className="py-3 text-right">{r.price}</td>
+                            <td className="py-3 text-right">{r.cost}</td>
+                            <td
+                                className={`py-3 text-right ${lossClass(r.loss)}`}
+                            >
+                                {r.profit}
+                            </td>
+                            <td
+                                className={`py-3 text-right ${lossClass(r.loss)}`}
+                            >
+                                {r.percent}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <ul className="grid gap-3 sm:hidden" aria-label={e.product_name}>
+                {rows.map((r) => (
+                    <li
+                        key={r.key}
+                        className="rounded-md border border-admin-border p-3"
+                        data-testid="costing-card"
+                    >
+                        <h3 className="font-semibold">{r.name}</h3>
+                        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                            {[
+                                ['Precio', r.price, ''],
+                                ['Costo', r.cost, ''],
+                                ['Ganancia', r.profit, lossClass(r.loss)],
+                                ['%', r.percent, lossClass(r.loss)],
+                            ].map(([label, value, className]) => (
+                                <div
+                                    key={label}
+                                    className="flex justify-between gap-2"
+                                >
+                                    <dt className="text-admin-text-secondary">
+                                        {label}
+                                    </dt>
+                                    <dd className={className}>{value}</dd>
+                                </div>
+                            ))}
+                        </dl>
                     </li>
                 ))}
             </ul>
+        </>
+    );
+}
+
+function lineText(line: CostLine) {
+    const cost =
+        line.estimated_cost === null
+            ? 'falta su costo'
+            : formatMoney(line.estimated_cost);
+
+    return `${line.item_name} · ${formatInventoryQuantity(line.quantity, line.unit_code)} · ${cost}${line.cost_source === 'recipe' ? ' (estimado por receta)' : ''}`;
+}
+
+function CostBreakdown({ economics: e }: { economics: Economics }) {
+    const overhead = e.costing_policy?.overhead_basis_points ?? null;
+
+    return (
+        <details className="min-w-0">
+            <summary className="cursor-pointer font-medium">
+                Ver de qué se compone el costo
+            </summary>
+            <div className="mt-3 grid gap-4 lg:grid-cols-3">
+                {e.presentations.map((p) => (
+                    <section key={p.commercial_quantity} className="min-w-0">
+                        <h3 className="font-semibold">
+                            {presentationName(
+                                p.pricing_mode,
+                                p.commercial_quantity,
+                            )}
+                        </h3>
+                        <ul className="mt-1 grid gap-1 text-sm break-words">
+                            {p.direct_components.map((l) => (
+                                <li key={`d${l.inventory_item_id}`}>
+                                    {lineText(l)}
+                                </li>
+                            ))}
+                            {p.packaging_components.map((l) => (
+                                <li key={`p${l.inventory_item_id}`}>
+                                    {lineText(l)}
+                                </li>
+                            ))}
+                            {p.packaging_status === 'none' && (
+                                <li>No lleva caja ni envoltorio</li>
+                            )}
+                            {overhead !== null && (
+                                <li>
+                                    Gastos generales ({percentage(overhead)})
+                                    {p.overhead_estimate !== null &&
+                                        ` · ${formatMoney(p.overhead_estimate)}`}
+                                </li>
+                            )}
+                        </ul>
+                    </section>
+                ))}
+            </div>
         </details>
     );
 }
+
 function ProductEconomics({
     economics: e,
     policies,
@@ -82,198 +200,169 @@ function ProductEconomics({
     });
 
     return (
-        <div className="grid gap-5">
-            <header>
-                <h2 className="text-xl font-semibold">{e.product_name}</h2>
-                <p>
-                    Familia de precio:{' '}
-                    {e.pricing_family === 'empanada' ? 'Empanada' : 'Unidad'} ·{' '}
-                    {physicalNames[e.physical_status]}
-                </p>
-                <p>
-                    Política:{' '}
-                    {e.costing_policy?.name ?? 'Sin política asignada'}
-                    {e.policy_status === 'inactive' && ' (inactiva)'}
-                </p>
-                <Link
-                    className="underline"
-                    href={`/admin/inventory/product-consumption/${e.product_id}`}
-                >
-                    Configurar consumo físico
-                </Link>
-            </header>
-            <form
-                className="grid gap-2 sm:grid-cols-[1fr_auto]"
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    form.post(
-                        `/admin/inventory/costing-policies/assignments/${e.product_id}`,
-                    );
-                }}
-            >
-                <div>
-                    <Label htmlFor="costing-policy">
-                        Política asignada al producto
-                    </Label>
-                    <select
-                        id="costing-policy"
-                        className="w-full rounded-md border border-admin-border bg-admin-surface p-2"
-                        value={form.data.costing_policy_id ?? ''}
-                        onChange={(event) =>
-                            form.setData(
-                                'costing_policy_id',
-                                event.target.value === ''
-                                    ? null
-                                    : Number(event.target.value),
-                            )
-                        }
-                    >
-                        <option value="">Sin política</option>
-                        {e.policy_status === 'inactive' && (
-                            <option value={e.costing_policy?.id} disabled>
-                                {e.costing_policy?.name} (inactiva)
-                            </option>
-                        )}
-                        {policies.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <Button
-                    type="submit"
-                    className="self-end"
-                    disabled={form.processing}
-                >
-                    Guardar asignación
-                </Button>
-                {form.errors.costing_policy_id && (
-                    <p role="alert">{form.errors.costing_policy_id}</p>
-                )}
-            </form>
-            {e.pricing_family === 'unit' && (
-                <form
-                    className="flex flex-wrap items-end gap-2"
-                    action="/admin/inventory/costing"
-                    method="get"
-                >
-                    <input
-                        type="hidden"
-                        name="product_id"
-                        value={e.product_id}
-                    />
-                    <div>
-                        <Label htmlFor="sale-quantity">
-                            Cantidad comercial
-                        </Label>
-                        <Input
-                            id="sale-quantity"
-                            name="quantity"
-                            type="number"
-                            min={1}
-                            max={120}
-                            step={1}
-                            defaultValue={
-                                e.presentations[0].commercial_quantity
-                            }
-                            required
-                        />
-                    </div>
-                    <Button type="submit" variant="outline">
-                        Actualizar estimación
-                    </Button>
-                </form>
-            )}
-            <div className="grid min-w-0 gap-4 lg:grid-cols-3">
-                {e.presentations.map((p) => (
-                    <article
-                        key={p.commercial_quantity}
-                        className="grid min-w-0 content-start gap-3 rounded-xl border border-admin-border p-4"
-                        data-testid="economics-presentation"
-                    >
-                        <h3 className="font-semibold">
-                            {p.pricing_mode === 'half_dozen'
-                                ? 'Media docena'
-                                : p.pricing_mode === 'dozen'
-                                  ? 'Docena'
-                                  : p.commercial_quantity === 1
-                                    ? 'Unidad'
-                                    : `${p.commercial_quantity} unidades`}
-                        </h3>
-                        <p role="status">{statusNames[p.status]}</p>
-                        <dl className="grid gap-2">
-                            {[
-                                [
-                                    'Precio de venta (cocinado)',
-                                    money(p.selling_price),
-                                ],
-                                ['Costo directo', money(p.direct_cost)],
-                                ['Packaging', money(p.packaging_cost)],
-                                [
-                                    'Costos indirectos estimados',
-                                    money(p.overhead_estimate),
-                                ],
-                                [
-                                    'Costo total estimado',
-                                    money(p.estimated_total_cost),
-                                ],
-                                ['Margen estimado', money(p.estimated_margin)],
-                                [
-                                    'Margen sobre venta',
-                                    percentage(
-                                        p.estimated_margin_percentage_bps,
-                                    ),
-                                ],
-                            ].map(([label, value]) => (
-                                <div
-                                    key={label}
-                                    className="flex flex-wrap justify-between gap-x-2"
-                                >
-                                    <dt>{label}</dt>
-                                    <dd>{value}</dd>
-                                </div>
-                            ))}
-                        </dl>
-                        <p>
-                            {p.packaging_status === 'none'
-                                ? 'No requiere packaging'
-                                : p.packaging_status === 'missing'
-                                  ? 'Packaging sin configurar'
-                                  : 'Packaging configurado'}
-                        </p>
-                        <p>
-                            Cobertura directa:{' '}
-                            {percentage(p.direct_coverage.percentage_bps)} ·
-                            Packaging:{' '}
-                            {percentage(p.packaging_coverage.percentage_bps)}
-                        </p>
-                        {!!p.warnings.length && (
+        <div className="grid gap-6">
+            <Card className="admin-ui admin-panel">
+                <CardContent className="grid gap-4">
+                    <h2 className="text-xl font-semibold">{e.product_name}</h2>
+                    {e.pricing_family === 'unit' && (
+                        <form
+                            className="flex flex-wrap items-end gap-2"
+                            action="/admin/inventory/costing"
+                            method="get"
+                        >
+                            <input
+                                type="hidden"
+                                name="product_id"
+                                value={e.product_id}
+                            />
                             <div>
-                                <h4 className="font-semibold">
-                                    Para calcular con confianza:
-                                </h4>
-                                <ul className="list-inside list-disc">
-                                    {p.warnings.map((w) => (
-                                        <li key={w}>{reasons[w] ?? w}</li>
-                                    ))}
-                                </ul>
+                                <Label htmlFor="sale-quantity">
+                                    Calcular para (unidades)
+                                </Label>
+                                <Input
+                                    id="sale-quantity"
+                                    name="quantity"
+                                    type="number"
+                                    min={1}
+                                    max={120}
+                                    step={1}
+                                    defaultValue={
+                                        e.presentations[0].commercial_quantity
+                                    }
+                                    required
+                                />
                             </div>
+                            <Button type="submit" variant="outline">
+                                Calcular
+                            </Button>
+                        </form>
+                    )}
+                    <EconomicsTable economics={e} />
+                    {e.recipe_estimated_items.length > 0 && (
+                        <p
+                            className="text-sm"
+                            data-testid="recipe-estimate-note"
+                        >
+                            Estimado por receta:{' '}
+                            {e.recipe_estimated_items.join(', ')}. Todavía no
+                            hay stock con costo conocido, así que se usa lo que
+                            cuesta hoy hacer su receta.
+                        </p>
+                    )}
+                    {e.next_steps.length > 0 && (
+                        <section aria-labelledby="next-steps-title">
+                            <h3 id="next-steps-title" className="font-semibold">
+                                Para completar el costo
+                            </h3>
+                            <ul className="mt-2 grid gap-2">
+                                {e.next_steps.map((step) => (
+                                    <li key={step.text}>
+                                        {step.href.startsWith('#') ? (
+                                            <a
+                                                className="underline"
+                                                href={step.href}
+                                            >
+                                                {step.text}
+                                            </a>
+                                        ) : (
+                                            <Link
+                                                className="underline"
+                                                href={step.href}
+                                            >
+                                                {step.text}
+                                            </Link>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
+                    <CostBreakdown economics={e} />
+                </CardContent>
+            </Card>
+            <Card id="packaging-y-gastos" className="admin-ui admin-panel">
+                <CardContent className="grid gap-3">
+                    <h2 className="font-semibold">
+                        Packaging y gastos generales
+                    </h2>
+                    <form
+                        className="grid gap-2 sm:grid-cols-[1fr_auto]"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            form.post(
+                                `/admin/inventory/costing-policies/assignments/${e.product_id}`,
+                            );
+                        }}
+                    >
+                        <div>
+                            <Label htmlFor="costing-policy">
+                                ¿Qué packaging y gastos usa este producto?
+                            </Label>
+                            <select
+                                id="costing-policy"
+                                className={selectClass}
+                                value={form.data.costing_policy_id ?? ''}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'costing_policy_id',
+                                        event.target.value === ''
+                                            ? null
+                                            : Number(event.target.value),
+                                    )
+                                }
+                            >
+                                <option value="">Ninguno</option>
+                                {e.policy_status === 'inactive' && (
+                                    <option
+                                        value={e.costing_policy?.id}
+                                        disabled
+                                    >
+                                        {e.costing_policy?.name} (desactivado)
+                                    </option>
+                                )}
+                                {policies.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <Button
+                            type="submit"
+                            className="self-end"
+                            disabled={form.processing}
+                        >
+                            Guardar
+                        </Button>
+                        {form.errors.costing_policy_id && (
+                            <p role="alert">{form.errors.costing_policy_id}</p>
                         )}
-                        <CostComponents
-                            title="Componentes del costo directo"
-                            lines={p.direct_components}
-                        />
-                        <CostComponents
-                            title="Componentes de packaging"
-                            lines={p.packaging_components}
-                        />
-                    </article>
-                ))}
-            </div>
+                    </form>
+                    {e.costing_policy && (
+                        <p className="text-sm">
+                            Suma{' '}
+                            {percentage(e.costing_policy.overhead_basis_points)}{' '}
+                            de gastos generales sobre insumos y packaging.{' '}
+                            <Link
+                                className="underline"
+                                href={`/admin/inventory/costing-policies?edit=${e.costing_policy.id}`}
+                            >
+                                Editar «{e.costing_policy.name}»
+                            </Link>
+                        </p>
+                    )}
+                    <Link
+                        className="text-sm underline"
+                        href={`/admin/inventory/product-consumption/${e.product_id}`}
+                    >
+                        Editar qué insumos lleva {e.product_name}
+                    </Link>
+                </CardContent>
+            </Card>
         </div>
     );
 }
+
 export default function CurrentCosting({
     products,
     selectedProductId,
@@ -290,37 +379,23 @@ export default function CurrentCosting({
     policies: PolicyOption[];
 }) {
     return (
-        <section className="grid gap-6 text-admin-text-primary">
-            <Head title="Costo actual estimado" />
-            <header className="space-y-2">
-                <h1 className="text-2xl font-semibold">
-                    Costo actual estimado de productos
-                </h1>
-                <p>
-                    Estimación actual, no COGS histórico ni ganancia neta.
-                    Packaging no descuenta stock y los costos indirectos no
-                    registran gastos.
-                </p>
-                <nav className="flex flex-wrap gap-4">
-                    <Link
-                        className="underline"
-                        href="/admin/inventory/costing-policies"
-                    >
-                        Configurar políticas
+        <AdminPageShell
+            title="Costos y ganancias"
+            description="Cuánto te cuesta hoy cada producto y cuánto ganás con su precio actual."
+            actions={
+                <Button asChild variant="outline">
+                    <Link href="/admin/inventory/costing-policies">
+                        Packaging y gastos
                     </Link>
-                    <Link className="underline" href="/admin/settings/products">
-                        Administrar productos
-                    </Link>
-                    <Link className="underline" href="/admin/inventory">
-                        Inventario
-                    </Link>
-                </nav>
-            </header>
-            <div>
+                </Button>
+            }
+        >
+            <Head title="Costos y ganancias" />
+            <div className="admin-ui">
                 <Label htmlFor="costing-product">Producto</Label>
                 <select
                     id="costing-product"
-                    className="w-full rounded-md border border-admin-border bg-admin-surface p-2"
+                    className={selectClass}
                     value={selectedProductId ?? ''}
                     onChange={(event) =>
                         router.get(
@@ -331,13 +406,10 @@ export default function CurrentCosting({
                         )
                     }
                 >
-                    <option value="">Seleccionar producto</option>
+                    <option value="">Elegí un producto</option>
                     {products.map((p) => (
                         <option key={p.id} value={p.id}>
-                            {p.name} ·{' '}
-                            {p.pricing_family === 'empanada'
-                                ? 'Empanada'
-                                : 'Unidad'}
+                            {p.name}
                         </option>
                     ))}
                 </select>
@@ -351,16 +423,14 @@ export default function CurrentCosting({
             ) : (
                 <p role="status">
                     {products.length
-                        ? 'Seleccioná un producto para ver su costo y la configuración pendiente.'
-                        : 'No hay productos. Creá un producto desde la configuración del catálogo.'}
+                        ? 'Elegí un producto para ver cuánto cuesta y cuánto ganás.'
+                        : 'No hay productos. Creá uno desde Productos.'}
                 </p>
             )}
-            <p className="text-sm">
-                Precios del backend POS-0. El margen estimado no es resultado
-                financiero: no incorpora necesariamente impuestos, alquiler,
-                salarios, desperdicio o comisiones. El costing de carritos
-                combinados queda para un bloque posterior.
+            <p className="text-sm text-admin-text-secondary">
+                Es una estimación con los costos de hoy: no descuenta stock ni
+                registra gastos.
             </p>
-        </section>
+        </AdminPageShell>
     );
 }

@@ -62,6 +62,50 @@ async function createProduct(
     expect(status).toBe(200);
 }
 
+/** Desktop shows a table row per sale, phones a card; both carry the same text. */
+function saleRows(page: Page) {
+    return page.locator(
+        '[data-testid="costing-row"]:visible, [data-testid="costing-card"]:visible',
+    );
+}
+
+async function answerPackaging(
+    page: Page,
+    sale: string,
+    item: string | null,
+    quantity = '1',
+) {
+    const group = page.getByRole('group', {
+        name: `¿Qué caja o envoltorio lleva ${sale}?`,
+    });
+
+    if (item === null) {
+        await group.getByLabel('No lleva', { exact: true }).check();
+
+        return;
+    }
+
+    await group.getByLabel('Lleva caja o envoltorio', { exact: true }).check();
+    await page
+        .getByLabel(`Caja o envoltorio 1 para ${sale}`, { exact: true })
+        .selectOption({ label: item });
+    await page
+        .getByLabel(`Cantidad 1 para ${sale}`, { exact: true })
+        .fill(quantity);
+}
+
+async function openNewPackaging(page: Page) {
+    await page.goto('/admin/inventory/costing-policies');
+    const create = page.getByRole('button', {
+        name: 'Nuevo packaging y gastos',
+        exact: true,
+    });
+
+    if (await create.isVisible()) {
+        await create.click();
+    }
+}
+
 test('current costing configures exact packaging, estimates family prices and keeps stock unchanged', async ({
     page,
 }, info) => {
@@ -125,12 +169,12 @@ test('current costing configures exact packaging, estimates family prices and ke
     await page.goto('/admin/inventory/costing');
     await page
         .getByLabel('Producto', { exact: true })
-        .selectOption({ label: `${product} · Empanada` });
-    await expect(
-        page.getByText('Configurar consumo físico.', { exact: true }).first(),
-    ).toBeVisible();
+        .selectOption({ label: product });
     await page
-        .getByRole('link', { name: 'Configurar consumo físico', exact: true })
+        .getByRole('link', {
+            name: `Indicá qué insumos lleva ${product}.`,
+            exact: true,
+        })
         .click();
     await page.getByRole('button', { name: 'Agregar componente' }).click();
     await page.getByLabel('Insumo 1', { exact: true }).selectOption({
@@ -142,89 +186,58 @@ test('current costing configures exact packaging, estimates family prices and ke
         .selectOption({ label: 'Gramo' });
     await page.getByRole('button', { name: 'Guardar configuración' }).click();
     await expect(page.getByText('Versión 1 · Actual')).toBeVisible();
-    await page.goto('/admin/inventory/costing-policies');
-    await page.getByLabel('Nombre de la política').fill(name);
-    await page
-        .getByLabel('Costos indirectos estimados (basis points)')
-        .fill('1000');
-
-    for (const [index, quantity] of [1, 6, 12].entries()) {
-        const n = index + 1;
-        await page
-            .getByRole('button', { name: 'Agregar presentación', exact: true })
-            .click();
-        await page
-            .getByLabel(`Unidades comerciales ${n}`, { exact: true })
-            .fill(String(quantity));
-
-        if (quantity !== 1) {
-            await page
-                .getByLabel(`Packaging ${n}`, { exact: true })
-                .selectOption('components');
-            await page
-                .getByRole('button', {
-                    name: `Agregar item a presentación ${n}`,
-                    exact: true,
-                })
-                .click();
-            await page
-                .getByLabel(`Item ${n}.1`, { exact: true })
-                .selectOption({ label: `${name} packaging` });
-            await page
-                .getByLabel(`Cantidad ${n}.1`, { exact: true })
-                .fill('1.000000');
-        }
-    }
-
-    await page
-        .getByRole('button', { name: 'Guardar política', exact: true })
-        .click();
+    await openNewPackaging(page);
+    await page.getByLabel('Nombre', { exact: true }).fill(name);
+    await page.getByLabel('Gastos generales (%)').fill('10');
+    await answerPackaging(page, 'la unidad', null);
+    await answerPackaging(
+        page,
+        'la media docena',
+        `${name} packaging`,
+        '1.000000',
+    );
+    await answerPackaging(page, 'la docena', `${name} packaging`, '1.000000');
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     await expect(
-        page.getByRole('heading', { name: `${name} · Activa`, exact: true }),
+        page.getByRole('heading', { name, exact: true }),
     ).toBeVisible();
     await expect(
-        page.getByText(`${name} packaging · 1 unidad`, { exact: true }).first(),
+        page.getByText(`La media docena: 1 unidad de ${name} packaging`, {
+            exact: true,
+        }),
     ).toBeVisible();
     await page
         .getByRole('button', { name: `Editar ${name}`, exact: true })
         .click();
-    await page
-        .getByLabel('Costos indirectos estimados (basis points)')
-        .fill('2500');
-    await page
-        .getByRole('button', { name: 'Guardar política', exact: true })
-        .click();
+    await page.getByLabel('Gastos generales (%)').fill('25');
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     await expect(
-        page.getByText('Costos indirectos: 25 %', { exact: true }).first(),
+        page
+            .getByTestId('policy-summary')
+            .filter({ hasText: name })
+            .getByText('Gastos generales: 25 %', { exact: true }),
     ).toBeVisible();
     await page.goto('/admin/inventory/costing');
     await page
         .getByLabel('Producto', { exact: true })
-        .selectOption({ label: `${product} · Empanada` });
+        .selectOption({ label: product });
     await page
-        .getByLabel('Política asignada al producto')
+        .getByLabel('¿Qué packaging y gastos usa este producto?')
         .selectOption({ label: name });
-    await page.getByRole('button', { name: 'Guardar asignación' }).click();
-    const cards = page.getByTestId('economics-presentation');
-    await expect(cards).toHaveCount(3);
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+    const rows = saleRows(page);
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toContainText('Unidad');
+    await expect(rows.nth(1)).toContainText('Media docena');
+    await expect(rows.nth(2)).toContainText('Docena');
+    // 55 g at 10 pesos/g = 550, plus 25 % = 687.5, rounded once.
+    await expect(rows.nth(0)).toContainText(/688/);
+    await expect(page.getByText('Para completar el costo')).toHaveCount(0);
+    await expect(rows.filter({ hasText: 'Falta' })).toHaveCount(0);
+    await page.getByText('Ver de qué se compone el costo').click();
     await expect(
-        page.getByRole('heading', { name: 'Unidad', exact: true }),
+        page.getByText(`${name} packaging · 1 unidad`).first(),
     ).toBeVisible();
-    await expect(
-        page.getByRole('heading', { name: 'Media docena', exact: true }),
-    ).toBeVisible();
-    await expect(
-        page.getByRole('heading', { name: 'Docena', exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText('Costo completo', { exact: true })).toHaveCount(
-        3,
-    );
-    await expect(cards.first()).toContainText(/550/);
-    await cards
-        .nth(1)
-        .getByText('Componentes de packaging', { exact: true })
-        .click();
-    await expect(cards.nth(1)).toContainText('1 unidad');
     await expect(page.getByText('1000000 unit', { exact: true })).toHaveCount(
         0,
     );
@@ -233,49 +246,40 @@ test('current costing configures exact packaging, estimates family prices and ke
         viewport: innerWidth,
     }));
     expect(width.full).toBeLessThanOrEqual(width.viewport);
-    await page.screenshot({
-        path: `storage/app/aob6-costing-${info.project.name}.png`,
-        fullPage: true,
-    });
-    await page
-        .getByRole('link', { name: 'Administrar productos', exact: true })
-        .click();
-    await expect(page).toHaveURL(/\/admin\/settings\/products$/);
     await page.goto('/admin/inventory');
     const inventoryBefore = await page.locator('main').innerText();
     await page.goto('/admin/inventory/costing');
     await page
         .getByLabel('Producto', { exact: true })
-        .selectOption({ label: `${product} · Empanada` });
+        .selectOption({ label: product });
     await page.reload();
     await page.goto('/admin/inventory');
     expect(await page.locator('main').innerText()).toBe(inventoryBefore);
     expect(errors).toEqual([]);
 });
 
-test('unit-priced product has one sale presentation and explicit policy removal', async ({
+test('unit-priced product has one sale presentation and explicit packaging removal', async ({
     page,
 }, info) => {
     await login(page);
     const name = `Unit costing ${info.project.name}`;
     await createProduct(page, name, 'unit');
-    await page.goto('/admin/inventory/costing-policies');
-    await page.getByLabel('Nombre de la política').fill(name);
-    await page
-        .getByRole('button', { name: 'Agregar presentación', exact: true })
-        .click();
-    await page
-        .getByRole('button', { name: 'Guardar política', exact: true })
-        .click();
+    await openNewPackaging(page);
+    await page.getByLabel('Nombre', { exact: true }).fill(name);
+    await answerPackaging(page, 'la unidad', null);
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     await expect(
-        page.getByRole('heading', { name: `${name} · Activa`, exact: true }),
+        page.getByRole('heading', { name, exact: true }),
     ).toBeVisible();
     await page.goto('/admin/inventory/costing');
     await page
         .getByLabel('Producto', { exact: true })
-        .selectOption({ label: `${name} · Unidad` });
+        .selectOption({ label: name });
     await page
-        .getByRole('link', { name: 'Configurar consumo físico', exact: true })
+        .getByRole('link', {
+            name: `Indicá qué insumos lleva ${name}.`,
+            exact: true,
+        })
         .click();
     await page
         .getByRole('combobox', { name: 'Estado', exact: true })
@@ -284,33 +288,25 @@ test('unit-priced product has one sale presentation and explicit policy removal'
     await page.goto('/admin/inventory/costing');
     await page
         .getByLabel('Producto', { exact: true })
-        .selectOption({ label: `${name} · Unidad` });
-    await expect(page.getByTestId('economics-presentation')).toHaveCount(1);
-    await expect(
-        page.getByRole('heading', { name: 'Media docena', exact: true }),
-    ).toHaveCount(0);
-    await expect(
-        page.getByRole('heading', { name: 'Docena', exact: true }),
-    ).toHaveCount(0);
-    await page
-        .getByLabel('Política asignada al producto')
         .selectOption({ label: name });
-    await page.getByRole('button', { name: 'Guardar asignación' }).click();
+    const rows = saleRows(page);
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText('Unidad');
+    await page
+        .getByLabel('¿Qué packaging y gastos usa este producto?')
+        .selectOption({ label: name });
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+    await expect(rows).not.toContainText('Falta');
+    await expect(rows).toContainText(/2[.\s]500/);
+    await page
+        .getByLabel('¿Qué packaging y gastos usa este producto?')
+        .selectOption('');
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     await expect(
-        page.getByText('Costo completo', { exact: true }),
+        page.getByRole('link', {
+            name: `Elegí qué packaging y gastos generales usa ${name}.`,
+            exact: true,
+        }),
     ).toBeVisible();
-    await expect(page.getByTestId('economics-presentation')).toContainText(
-        /2[.\s]500/,
-    );
-    await page.getByLabel('Política asignada al producto').selectOption('');
-    await page.getByRole('button', { name: 'Guardar asignación' }).click();
-    await expect(
-        page.getByText('Sin política asignada', { exact: false }),
-    ).toBeVisible();
-    await expect(
-        page.getByText('Asignar una política de costo.', { exact: true }),
-    ).toBeVisible();
-    await expect(
-        page.getByText('Costo incompleto', { exact: true }),
-    ).toBeVisible();
+    await expect(rows).toContainText('Falta');
 });

@@ -32,7 +32,7 @@ final class CostingPolicyController
         Gate::authorize(Permission::InventoryManage->value);
         $action->execute(null, $request->all());
 
-        return to_route('admin.inventory.costing-policies.index')->with('success', 'Política de costo creada.');
+        return to_route('admin.inventory.costing-policies.index')->with('success', 'Packaging y gastos guardados.');
     }
 
     public function update(Request $request, int $costingPolicy, ConfigureCostingPolicy $action): RedirectResponse
@@ -40,7 +40,7 @@ final class CostingPolicyController
         Gate::authorize(Permission::InventoryManage->value);
         $action->execute($costingPolicy, $request->all());
 
-        return to_route('admin.inventory.costing-policies.index')->with('success', 'Política de costo actualizada.');
+        return to_route('admin.inventory.costing-policies.index')->with('success', 'Packaging y gastos guardados.');
     }
 
     public function assign(Request $request, int $product, AssignProductCostingPolicy $action): RedirectResponse
