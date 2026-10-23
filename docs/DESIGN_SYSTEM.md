@@ -35,12 +35,12 @@ Public palette (`.public-theme`, applied by `PublicLayout`):
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `public-canvas` | `--brand-accent` (default `#b84f3f`) | Home and navigation canvas; product cards on the menu |
-| `public-earth` | `#f1f1f1` | Menu canvas |
-| `public-earth-ink` | `--brand-accent-pressed` (default `#81372c`) | Small text on earth; actions on red cards |
-| `public-ink` | `#1b1b1b` | Text on earth |
+| `public-canvas` | `--brand-accent` (default `#b84f3f`) | Navigation bar, primary actions, active filters, small accents |
+| `public-earth` | `#f1f1f1` | Page background (`--background`); cards are white (`--card`) |
+| `public-earth-ink` | `--brand-accent-pressed` (default `#81372c`) | Eyebrows, links and hover of primary actions |
+| `public-ink` | `#1b1b1b` | Body text; footer and photographic hero backgrounds |
 
-White text on canvas reaches 4.97:1; ink on earth 15.25:1. Brand assets live in `public/images/brand/` (wordmark in the header, monogram in the footer).
+Red is an accent, never a large content surface: earth and white carry content, ink carries the heroes and the footer. White text on canvas reaches 4.97:1; ink on earth 15.25:1; ink on white 17.22:1; muted text (`#575250`) 6.82:1 on earth; earth-ink 7.39:1 on earth. Brand assets live in `public/images/brand/` (wordmark in the header, monogram in the footer); products without a photo show the monogram (`public/icons/te-pinta-logo.svg`) through `ProductImagePlaceholder`. Brand assets live in `public/images/brand/` (wordmark in the header, monogram in the footer).
 
 Admin roles are defined on `:root`; Tailwind v4 exposes them as semantic utilities. Shared primitives use `background`, `foreground`, `primary`, `primary-foreground`, `muted`, `border` and `ring`. Admin aliases consume the same source, including portalled dialogs and menus.
 
@@ -68,7 +68,7 @@ Measured WCAG contrast ratios: default white-on-accent **4.97:1**; accent text o
 
 Money is integer pesos formatted by `formatMoney` in `lib/format.ts` (es-AR, ARS, no decimals, e.g. `$ 16.650`); inventory costs use `formatCost`, which shows **Sin costo conocido** for an unknown cost instead of `$ 0`. Admin features import these instead of building their own `Intl.NumberFormat`.
 
-Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL licence in `resources/fonts/OFL.txt`). The root uses `font-orders`; the public shell explicitly keeps `font-sans`.
+Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL licence in `resources/fonts/OFL.txt`). The root uses `font-orders`; the public shell explicitly keeps `font-sans`. Public editorial headings use `font-serif`, Fraunces 600 (latin), bundled at build time by the `bunny()` font provider in `vite.config.ts` and served from `/build/assets/`, so there is no runtime third-party request and the public gateway allowlist is unchanged. Only weight 600 ships: serif text uses `font-semibold`, never `font-bold` or `font-black`, to avoid synthesized bold.
 
 ## Admin compositions
 
@@ -90,7 +90,9 @@ Admin typography remains Barlow 400/500/600, bundled in `resources/fonts/` (OFL 
 ## Public compositions
 
 - `PublicLayout` applies the public theme to navigation, content and footer and shows a single floating cart button (with count) on Home, menu and product detail when the cart is not empty, never on `/cart`; it respects the mobile safe area.
-- The menu has a full-width hero with a decorative illustration (`public/images/brand/bg-empanada.png`, hidden from assistive technology), serif editorial headings, and a full-width sticky category bar with filters aligned to the main container.
+- The header is the red navigation bar (Inicio, Menú); the footer is ink with brand, ordering facts and links to the menu and cart.
+- The menu is a carta: a compact ink hero with a decorative illustration (`public/images/brand/bg-empanada.png`, hidden from assistive technology), a full-width sticky white category bar (subcategory row underneath when the chosen category has them), then one section per category (serif H2) with subcategory groups (H3). Cards are white: category eyebrow, serif name linking to the detail, the dozen price first, then "+ Docena" as the primary action and "+ Media docena" / "Unidad" as secondary actions.
+- Product detail and cart use the same light surfaces; their primary action is red and secondary actions are outlined.
 - `FeaturedProductCard` (in `features/marketing/`) applies the public theme locally because the admin Marketing preview reuses it. It receives only the public-safe view model and uses the existing `Button`, `formatPesos` and `CartProvider`. Without an eligible recommendation, Home shows a photographic link to the menu, never a placeholder offer.
 
 ## Verification
