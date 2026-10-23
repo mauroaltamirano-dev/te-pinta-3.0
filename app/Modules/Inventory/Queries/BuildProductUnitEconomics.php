@@ -4,6 +4,7 @@ namespace App\Modules\Inventory\Queries;
 
 use App\Modules\Inventory\Models\CostingPolicy;
 use App\Modules\Inventory\Models\ProductInventoryConsumptionDefinition;
+use App\Modules\Inventory\Models\RecipeVersion;
 use App\Modules\Inventory\Support\DecimalMath;
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
@@ -14,10 +15,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use stdClass;
 
-/** Read-only current estimates. No recipe expansion, stock allocation or historical writes. */
+/**
+ * Read-only current estimates. No stock allocation or historical writes. Recipes are
+ * expanded only as a fallback for a semi-finished component without reliable valuation.
+ */
 final readonly class BuildProductUnitEconomics
 {
-    public function __construct(private InventoryValuationReadModel $valuation, private OrderPricingEngine $pricing) {}
+    public function __construct(
+        private InventoryValuationReadModel $valuation,
+        private OrderPricingEngine $pricing,
+        private BuildRecipeCurrentCost $recipeCost,
+        private ProductCostingNextSteps $nextSteps,
+    ) {}
 
     /** @return array<string, mixed> */
     public function build(Product $product, int $unitQuantity = 1): array
@@ -67,6 +76,7 @@ final readonly class BuildProductUnitEconomics
         }
         $ids = $direct->pluck('inventory_item_id')->merge($packaging->pluck('inventory_item_id'))->unique()->map(fn ($id): int => (int) $id)->values()->all();
         $current = $this->currentValuations(array_values($ids));
+        $recipes = $this->recipeEstimates($direct, $current);
         $modes = $product->pricing_family === ProductPricingFamily::Empanada ? [1 => 'unit', 6 => 'half_dozen', 12 => 'dozen'] : [$unitQuantity => 'unit'];
         $presentations = [];
         foreach ($modes as $q => $mode) {
@@ -74,8 +84,8 @@ final readonly class BuildProductUnitEconomics
             $packagingStatus = $rule->packaging_mode ?? 'missing';
             $presentationPackaging = $packaging->where('commercial_quantity', $q);
             $required = $this->requiredQuantities($direct, $q, $presentationPackaging);
-            $dl = $this->costLines($direct, $q, $current, false, $required);
-            $pl = $this->costLines($presentationPackaging, 1, $current, true, $required);
+            $dl = $this->costLines($direct, $q, $current, false, $required, $recipes);
+            $pl = $this->costLines($presentationPackaging, 1, $current, true, $required, []);
             $dc = $this->coverage($dl, $physical !== 'missing_config');
             $pc = $this->coverage($pl, $rule !== null);
             $knownDirect = $this->sumCost($dl);
@@ -112,11 +122,89 @@ final readonly class BuildProductUnitEconomics
                 'packaging_cost' => $packagingCost, 'known_packaging_cost' => $knownPackaging, 'packaging_coverage' => $pc,
                 'overhead_estimate' => $overhead, 'estimated_total_cost' => $total, 'estimated_margin' => $margin,
                 'estimated_margin_percentage_bps' => $margin !== null && $price > 0 ? DecimalMath::roundIntegerTimesRatio($margin, '10000', (string) $price) : null,
-                'warnings' => $warnings, 'direct_components' => $this->publicLines($dl), 'packaging_components' => $this->publicLines($pl),
+                'warnings' => $warnings, 'estimated_by_recipe' => in_array('recipe', array_column($dl, 'cost_source'), true),
+                'direct_components' => $this->publicLines($dl), 'packaging_components' => $this->publicLines($pl),
             ];
         }
+        $recipeItems = [];
+        foreach ($presentations as $presentation) {
+            foreach ($presentation['direct_components'] as $line) {
+                if ($line['cost_source'] === 'recipe' && ! in_array($line['item_name'], $recipeItems, true)) {
+                    $recipeItems[] = $line['item_name'];
+                }
+            }
+        }
+        $economics = ['product_id' => $product->id, 'product_name' => $product->name, 'pricing_family' => $product->pricing_family->value, 'condition' => 'cooked', 'physical_status' => $physical, 'policy_status' => $policyStatus, 'costing_policy' => $policy === null ? null : ['id' => $policy->id, 'name' => $policy->name, 'overhead_basis_points' => $policy->overhead_basis_points], 'presentations' => $presentations, 'recipe_estimated_items' => $recipeItems];
 
-        return ['product_id' => $product->id, 'product_name' => $product->name, 'pricing_family' => $product->pricing_family->value, 'condition' => 'cooked', 'physical_status' => $physical, 'policy_status' => $policyStatus, 'costing_policy' => $policy === null ? null : ['id' => $policy->id, 'name' => $policy->name, 'overhead_basis_points' => $policy->overhead_basis_points], 'presentations' => $presentations];
+        return $economics + ['next_steps' => $this->nextSteps->build($economics, $recipes)];
+    }
+
+    /**
+     * Current recipe estimate for each semi-finished direct component whose own
+     * valuation is not reliable. Only one active recipe may back an item.
+     *
+     * @param  Collection<int, stdClass>  $direct
+     * @param  Collection<int, stdClass>  $current
+     * @return array<int, array{status:'complete'|'incomplete'|'missing'|'ambiguous',total_cost:?int,output_base_quantity:?string,missing:list<array{name:string,kind:?string,fallback:?string}>}>
+     */
+    private function recipeEstimates(Collection $direct, Collection $current): array
+    {
+        $ids = [];
+        foreach ($direct as $component) {
+            $item = $current->get((int) $component->inventory_item_id);
+            if ($item->kind === 'semi_finished' && $this->valuationOf($item)['warning'] !== null) {
+                $ids[] = (int) $item->id;
+            }
+        }
+        if ($ids === []) {
+            return [];
+        }
+        $versions = RecipeVersion::query()->whereIn('output_inventory_item_id', $ids)->where('is_active', true)->where('is_sealed', true)
+            ->whereHas('recipe', fn ($query) => $query->where('is_active', true))->orderBy('id')->get()->groupBy('output_inventory_item_id');
+        $single = $versions->filter(fn (Collection $candidates): bool => $candidates->count() === 1)->map(fn (Collection $candidates): RecipeVersion => $candidates->first());
+        $estimates = $this->recipeCost->buildMany($single->values(), lockItems: false);
+        $ingredientIds = [];
+        foreach ($estimates as $estimate) {
+            foreach ($estimate['ingredients'] as $ingredient) {
+                $ingredientIds[] = $ingredient['inventory_item_id'];
+            }
+        }
+        $ingredients = DB::table('inventory_items')->whereIn('id', array_values(array_unique($ingredientIds)))->get(['id', 'name', 'kind'])->keyBy('id');
+        $result = [];
+        foreach ($ids as $id) {
+            $candidates = $versions->get($id);
+            if ($candidates === null || $candidates->count() > 1) {
+                $result[$id] = ['status' => $candidates === null ? 'missing' : 'ambiguous', 'total_cost' => null, 'output_base_quantity' => null, 'missing' => []];
+
+                continue;
+            }
+            $version = $candidates->first();
+            $estimate = $estimates[$version->id];
+            $missing = [];
+            foreach ($estimate['ingredients'] as $ingredient) {
+                if ($ingredient['estimated_cost'] === null) {
+                    $item = $ingredients->get($ingredient['inventory_item_id']);
+                    $missing[] = ['name' => (string) $item->name, 'kind' => $item->kind, 'fallback' => $ingredient['fallback']];
+                }
+            }
+            $complete = $estimate['estimated_total_cost'] !== null;
+            $result[$id] = ['status' => $complete ? 'complete' : 'incomplete', 'total_cost' => $estimate['estimated_total_cost'], 'output_base_quantity' => (string) $version->expected_output_base_quantity, 'missing' => $missing];
+        }
+
+        return $result;
+    }
+
+    /** @return array{coverage:string,warning:?string} */
+    private function valuationOf(stdClass $item): array
+    {
+        $coverage = $this->valuation->classify((bool) $item->tracks_stock, (string) $item->stock_quantity, (string) $item->basis_quantity, (int) $item->basis_cost)['coverage'];
+        if ($coverage === 'fully_valued' && DecimalMath::compare((string) $item->warning_quantity, '0') > 0) {
+            $coverage = 'unreliable';
+        }
+
+        return ['coverage' => $coverage, 'warning' => match ($coverage) {
+            'fully_valued' => null,'negative' => 'negative_stock','partial' => 'partial_valuation','unreliable' => 'unreliable_valuation',default => 'no_current_valuation'
+        }];
     }
 
     /** @param list<int> $ids
@@ -154,20 +242,24 @@ final readonly class BuildProductUnitEconomics
     /** @param Collection<int, stdClass> $components
      * @param Collection<int, stdClass> $current
      * @param array<int, string> $required
+     * @param array<int, array{status:string,total_cost:?int,output_base_quantity:?string}> $recipes
      * @return list<array<string,mixed>> */
-    private function costLines(Collection $components, int $multiplier, Collection $current, bool $packaging, array $required): array
+    private function costLines(Collection $components, int $multiplier, Collection $current, bool $packaging, array $required, array $recipes): array
     {
         $lines = [];
         foreach ($components as $c) {
             $i = $current->get((int) $c->inventory_item_id);
             $quantity = DecimalMath::multiply((string) $c->base_quantity, (string) $multiplier, 6);
-            $coverage = $this->valuation->classify((bool) $i->tracks_stock, (string) $i->stock_quantity, (string) $i->basis_quantity, (int) $i->basis_cost)['coverage'];
-            if ($coverage === 'fully_valued' && DecimalMath::compare((string) $i->warning_quantity, '0') > 0) {
-                $coverage = 'unreliable';
+            ['coverage' => $coverage, 'warning' => $warning] = $this->valuationOf($i);
+            $recipe = $recipes[(int) $c->inventory_item_id] ?? null;
+            if ($warning !== null && $recipe !== null && $recipe['status'] === 'complete') {
+                // The whole recipe cost spreads over its expected output; never stock-limited.
+                $lines[] = ['inventory_item_id' => (int) $c->inventory_item_id, 'item_name' => $c->item_name, 'item_kind' => $i->kind, 'quantity' => DecimalMath::multiply((string) $c->quantity, (string) $multiplier, 6), 'unit_code' => $c->unit_code, 'base_quantity' => $quantity, 'valuation_coverage' => $coverage, 'warning' => null, 'cost_source' => 'recipe',
+                    'estimated_cost' => DecimalMath::roundIntegerTimesRatio((int) $recipe['total_cost'], $quantity, (string) $recipe['output_base_quantity']),
+                    '_basis' => ['cost' => (string) $recipe['total_cost'], 'quantity' => $quantity, 'basis_quantity' => (string) $recipe['output_base_quantity']]];
+
+                continue;
             }
-            $warning = match ($coverage) {
-                'fully_valued' => null,'negative' => 'negative_stock','partial' => 'partial_valuation','unreliable' => 'unreliable_valuation',default => 'no_current_valuation'
-            };
             if ($warning === null && DecimalMath::compare($required[(int) $c->inventory_item_id], (string) $i->stock_quantity) > 0) {
                 $warning = 'insufficient_stock';
             }
@@ -175,7 +267,7 @@ final readonly class BuildProductUnitEconomics
                 $warning = 'packaging_item_ineligible';
             }
             $known = $warning === null;
-            $lines[] = ['inventory_item_id' => (int) $c->inventory_item_id, 'item_name' => $c->item_name, 'quantity' => DecimalMath::multiply((string) $c->quantity, (string) $multiplier, 6), 'unit_code' => $c->unit_code, 'base_quantity' => $quantity, 'valuation_coverage' => $coverage, 'warning' => $warning, 'estimated_cost' => $known ? DecimalMath::roundIntegerTimesRatio((int) $i->basis_cost, $quantity, (string) $i->basis_quantity) : null,
+            $lines[] = ['inventory_item_id' => (int) $c->inventory_item_id, 'item_name' => $c->item_name, 'item_kind' => $i->kind, 'quantity' => DecimalMath::multiply((string) $c->quantity, (string) $multiplier, 6), 'unit_code' => $c->unit_code, 'base_quantity' => $quantity, 'valuation_coverage' => $coverage, 'warning' => $warning, 'cost_source' => $known ? 'stock' : null, 'estimated_cost' => $known ? DecimalMath::roundIntegerTimesRatio((int) $i->basis_cost, $quantity, (string) $i->basis_quantity) : null,
                 // Retain the exact rational basis only until aggregation, not in UI.
                 '_basis' => $known ? ['cost' => (string) $i->basis_cost, 'quantity' => $quantity, 'basis_quantity' => (string) $i->basis_quantity] : null];
         }
