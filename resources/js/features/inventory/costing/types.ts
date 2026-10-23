@@ -26,11 +26,13 @@ export type Coverage = {
 export type CostLine = {
     inventory_item_id: number;
     item_name: string;
+    item_kind: string | null;
     quantity: string;
     unit_code: string;
     estimated_cost: number | null;
     valuation_coverage: string;
     warning: string | null;
+    cost_source: 'stock' | 'recipe' | null;
 };
 export type EconomicsPresentation = {
     commercial_quantity: number;
@@ -47,6 +49,7 @@ export type EconomicsPresentation = {
     estimated_margin: number | null;
     estimated_margin_percentage_bps: number | null;
     warnings: string[];
+    estimated_by_recipe: boolean;
     direct_components: CostLine[];
     packaging_components: CostLine[];
 };
@@ -62,6 +65,8 @@ export type Economics = {
         overhead_basis_points: number;
     } | null;
     presentations: EconomicsPresentation[];
+    recipe_estimated_items: string[];
+    next_steps: { text: string; href: string }[];
 };
 export function percentage(bp: number | null): string {
     if (bp === null) {
@@ -74,4 +79,34 @@ export function percentage(bp: number | null): string {
         .replace(/0+$/, '');
 
     return `${bp < 0 ? '-' : ''}${Math.trunc(abs / 100)}${fraction ? `,${fraction}` : ''} %`;
+}
+export function presentationName(
+    mode: EconomicsPresentation['pricing_mode'],
+    quantity: number,
+): string {
+    if (mode === 'dozen') {
+        return 'Docena';
+    }
+
+    if (mode === 'half_dozen') {
+        return 'Media docena';
+    }
+
+    return quantity === 1 ? 'Unidad' : `${quantity} unidades`;
+}
+/** "12,5" or "12.5" → 1250 basis points; null unless it is 0–100 % with at most two decimals. */
+export function percentToBasisPoints(input: string): number | null {
+    const match = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec(input.trim());
+
+    if (!match) {
+        return null;
+    }
+
+    const bp = Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+
+    return bp <= 10000 ? bp : null;
+}
+/** 1250 basis points → "12,5", the editable form of a percentage. */
+export function basisPointsToPercent(bp: number): string {
+    return percentage(bp).replace(' %', '');
 }

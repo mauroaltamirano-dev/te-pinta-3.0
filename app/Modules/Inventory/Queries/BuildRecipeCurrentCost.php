@@ -27,20 +27,22 @@ final class BuildRecipeCurrentCost
     /**
      * The five data reads are bounded regardless of recipe or ingredient count.
      * A full current physical valuation is required before exposing an exact cost.
+     * Read-only callers pass `$lockItems = false`: PostgreSQL rejects row locks in a
+     * READ ONLY transaction, whose snapshot already keeps the reads consistent.
      *
      * @param  iterable<RecipeVersion>  $versions
      * @return array<int, array<string, mixed>>
      */
-    public function buildMany(iterable $versions): array
+    public function buildMany(iterable $versions, bool $lockItems = true): array
     {
-        return DB::transaction(fn (): array => $this->buildLocked($versions));
+        return DB::transaction(fn (): array => $this->buildLocked($versions, $lockItems));
     }
 
     /**
      * @param  iterable<RecipeVersion>  $versions
      * @return array<int,array<string,mixed>>
      */
-    private function buildLocked(iterable $versions): array
+    private function buildLocked(iterable $versions, bool $lockItems): array
     {
         $versions = collect($versions)->keyBy('id');
         if ($versions->isEmpty()) {
@@ -55,7 +57,7 @@ final class BuildRecipeCurrentCost
         $itemIds = array_values($ingredients->flatten(1)->pluck('inventory_item_id')
             ->map(static fn (mixed $id): int => (int) $id)->unique()->all());
         $items = DB::table('inventory_items')->whereIn('id', $itemIds)
-            ->orderBy('id')->sharedLock()->get(['id', 'tracks_stock'])->keyBy('id');
+            ->orderBy('id')->when($lockItems, fn ($query) => $query->sharedLock())->get(['id', 'tracks_stock'])->keyBy('id');
         $stocks = DB::table('inventory_stock_movements')->whereIn('inventory_item_id', $itemIds)
             ->selectRaw('inventory_item_id, COALESCE(SUM(quantity), 0)::text AS quantity')
             ->groupBy('inventory_item_id')->get()->keyBy('inventory_item_id');

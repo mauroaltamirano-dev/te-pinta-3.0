@@ -178,7 +178,7 @@ const navigation: AdminNavigationGroup[] = [
                         label: 'Costos',
                         href: '/admin/inventory/costing',
                         permission: 'inventory.view',
-                        // Políticas de costo live inside Costos.
+                        // Packaging y gastos (costing policies) live inside Costos.
                         paths: ['/admin/inventory/costing-policies'],
                     },
                 ],

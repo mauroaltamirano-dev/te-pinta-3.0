@@ -33,7 +33,7 @@ final readonly class ConfigureCostingPolicy
             return DB::transaction(function () use ($id, $v): CostingPolicy {
                 $policy = $id === null ? new CostingPolicy : CostingPolicy::query()->whereKey($id)->lockForUpdate()->firstOrFail();
                 if (CostingPolicy::query()->whereRaw('lower(name) = lower(?)', [$v['name']])->when($id !== null, fn ($q) => $q->where('id', '<>', $id))->exists()) {
-                    throw ValidationException::withMessages(['name' => 'Ya existe una política de costo con ese nombre. Usá otro nombre.']);
+                    throw ValidationException::withMessages(['name' => 'Ya existe un packaging y gastos con ese nombre. Usá otro nombre.']);
                 }
                 $all = [];
                 foreach ($v['presentations'] as $presentation) {
@@ -46,17 +46,17 @@ final readonly class ConfigureCostingPolicy
                 $rows = [];
                 foreach ($v['presentations'] as $p) {
                     if (($p['packaging_mode'] === 'none') !== ($p['components'] === [])) {
-                        throw ValidationException::withMessages(['presentations' => 'Indicá que la presentación no lleva packaging o agregá al menos un componente.']);
+                        throw ValidationException::withMessages(['presentations' => 'Indicá que no lleva caja ni envoltorio o agregá al menos uno.']);
                     }
                     if (count(array_unique(array_column($p['components'], 'inventory_item_id'))) !== count($p['components'])) {
-                        throw ValidationException::withMessages(['presentations' => 'Cada insumo puede aparecer una sola vez por presentación. Uní las cantidades en una sola línea.']);
+                        throw ValidationException::withMessages(['presentations' => 'Cada caja o envoltorio puede aparecer una sola vez por venta. Uní las cantidades en una sola línea.']);
                     }
                     $components = [];
                     foreach ($p['components'] as $c) {
                         $item = $items->get($c['inventory_item_id']);
                         $unit = $units->get($c['unit_id']);
                         if ($item === null || $unit === null || ! $item->is_active || ! $item->tracks_stock || ! in_array($item->kind, ['packaging', 'consumable'], true)) {
-                            throw ValidationException::withMessages(['presentations' => 'Elegí un insumo activo de packaging o consumible que controle stock, con una unidad de su misma medida.']);
+                            throw ValidationException::withMessages(['presentations' => 'Elegí un insumo activo de packaging o consumible que controle stock, con una medida compatible.']);
                         }
                         $components[] = $c + ['base_quantity' => $this->converter->toBase($item, $unit, $c['quantity'])];
                     }
@@ -73,7 +73,7 @@ final readonly class ConfigureCostingPolicy
             });
         } catch (QueryException $e) {
             if (($e->errorInfo[0] ?? null) === '23505') {
-                throw ValidationException::withMessages(['name' => 'Ya existe una política de costo con ese nombre. Usá otro nombre.']);
+                throw ValidationException::withMessages(['name' => 'Ya existe un packaging y gastos con ese nombre. Usá otro nombre.']);
             }
             throw $e;
         }

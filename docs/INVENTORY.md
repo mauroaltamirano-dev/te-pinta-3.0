@@ -11,7 +11,7 @@ Code: `app/Modules/Inventory/`. All routes are under `/admin/inventory` and requ
 | Production | `/admin/inventory/production` |
 | Adjustments | `/admin/inventory/adjustments` |
 | Product consumption definition | `/admin/inventory/product-consumption/{product}` (linked from `/admin/settings/products`) |
-| Costing policies / current costing | `/admin/inventory/costing-policies`, `/admin/inventory/costing` |
+| Packaging y gastos (costing policies) / Costos y ganancias | `/admin/inventory/costing-policies` (`?edit={id}` opens one), `/admin/inventory/costing` |
 | Rich purchases (money + stock) | `/admin/management/purchases` (owned by Management) |
 
 ## Items, units and categories
@@ -119,7 +119,7 @@ When it happens: on the first transition of an order to `delivered`, `OrderDeliv
 | Component | Source |
 | --- | --- |
 | Physical formula | Active `consume` version of the product's consumption definition |
-| Direct cost | Current balance and weighted cost layers of each component |
+| Direct cost | Current balance and weighted cost layers of each component; recipe estimate for a semi-finished component without reliable valuation (below) |
 | Packaging | Costing policy presentation (`none` or explicit item components) per commercial quantity 1–120, valued at current cost |
 | Overhead | Policy basis points, 0–10000 |
 | Selling price | Live `OrderPricingEngine` cooked quote, pickup, no add-ons or discount |
@@ -133,4 +133,9 @@ margin percentage   = round_half_up(margin × 10000 / selling price)   (basis po
 
 - Policies (`inventory_costing_policies`, presentations, packaging components) are explicit and assigned per product (`inventory_product_costing_policies`); none is inferred from category. An inactive assigned policy shows but yields no total.
 - Empanada products estimate unit, half-dozen (six units at the stored unit price) and dozen; the selling price is the quoted line before the order-level ARS 100 rounding. Unit products show one unit (or a requested quantity 1–120). Mixed-basket costing is not implemented.
-- Missing configuration, missing packaging presentation, unknown, partial, negative or warning-bearing valuation, or insufficient combined stock make the estimate Incomplete or Unreliable; total and margin are then unavailable. The UI never treats missing as zero.
+- **Recipe fallback.** A direct component of kind `semi_finished` whose valuation is unknown, zero stock (never produced), partial, negative or warning-bearing is costed from its active recipe (`BuildRecipeCurrentCost`): recipe total × component quantity ÷ expected output, rounded once with the rest of the aggregate, and marked `cost_source = recipe` ("estimado por receta"). It applies only when exactly one active recipe outputs the item and every ingredient has a current cost; otherwise the component stays unknown. Recipes are expanded one level only. Purchased items and packaging have no fallback. A fully valued semi-finished stock is always preferred; insufficient stock of a fully valued item is still unreliable. Example: 1,000 g onion at 2,150 pesos yields 500 g filling; 55 g per empanada → 236.5 → 237 pesos.
+- The read runs in a `REPEATABLE READ READ ONLY` transaction, so the recipe estimate is called without row locks (`buildMany(..., lockItems: false)`); PostgreSQL rejects `FOR SHARE` there.
+- Missing configuration, missing packaging presentation, unknown, partial, negative or warning-bearing valuation without a recipe fallback, or insufficient combined stock make the estimate Incomplete or Unreliable; total and margin are then unavailable. The UI never treats missing as zero.
+- **Screen.** "Costos y ganancias" shows one row per sale (Unidad / Media docena / Docena, or Unidad for unit products) with Precio, Costo (estimated total), Ganancia and %; a missing cost reads "Falta", never zero. Below come the "estimado por receta" note, the next steps as links, and a collapsed breakdown (ingredients, packaging, gastos generales). Phones get one card per sale. The UI avoids "política", "cobertura", "valoración" and "COGS"; policies are called "Packaging y gastos".
+- **Packaging editor.** Asks "¿Qué caja o envoltorio lleva la unidad / la media docena / la docena?" with *No lleva*, *Lleva caja o envoltorio* (items, quantity, unit) or *Todavía no lo sé* (no presentation row: unconfigured, never zero). Other unit counts (1–120) are added explicitly. Overhead is typed and shown as a percentage with up to two decimals ("12,5" → 1250 basis points). The data model is unchanged: the editor still saves presentations by commercial quantity.
+- `next_steps` (`Queries/ProductCostingNextSteps.php`) turns each blocker into one deduplicated Spanish action with a link: buy a purchased or packaging item, produce a semi-finished item, create or disambiguate its recipe, buy the missing ingredients of an incomplete recipe, correct negative stock, configure consumption, packaging or price.
