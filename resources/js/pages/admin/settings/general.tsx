@@ -16,7 +16,7 @@ interface OrderingSettings {
     delivery_fee: number;
     whatsapp_order_phone: string;
     /** Null when the dozen discount row is missing; the backend requires it on save. */
-    raw_price_discounts: { dozen: number | null };
+    raw_discount_percent: number | '';
     addons: Array<{
         id: number;
         name: string;
@@ -207,27 +207,53 @@ export default function GeneralSettings({
                             />
                         </div>
                     </fieldset>
-                    <fieldset className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3">
+                    <fieldset className="grid gap-4 rounded-lg border p-4">
                         <legend className="px-1 font-semibold">
-                            Descuentos por preparación en crudo
+                            Empanadas crudas
                         </legend>
-                        <p className="text-sm text-admin-text-secondary sm:col-span-3">
-                            Se descuenta de la docena de cada gusto. La unidad
-                            cruda se calcula desde esa docena con el mismo
-                            recargo por unidad.
-                        </p>
-                        <MoneyField
-                            id="raw-discount-dozen"
-                            min={1}
-                            label="Docena"
-                            value={form.data.raw_price_discounts.dozen ?? ''}
-                            error={form.errors['raw_price_discounts.dozen']}
-                            onChange={(value) =>
-                                form.setData('raw_price_discounts', {
-                                    dozen: value,
-                                })
-                            }
-                        />
+                        <div className="grid gap-2 sm:max-w-xs">
+                            <Label htmlFor="raw-discount-percent">
+                                Descuento para crudas (%)
+                            </Label>
+                            <Input
+                                id="raw-discount-percent"
+                                type="number"
+                                min={0}
+                                max={50}
+                                step="1"
+                                value={form.data.raw_discount_percent}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'raw_discount_percent',
+                                        event.target.value === ''
+                                            ? ''
+                                            : Number(event.target.value),
+                                    )
+                                }
+                                aria-invalid={Boolean(
+                                    form.errors.raw_discount_percent,
+                                )}
+                                aria-describedby={
+                                    form.errors.raw_discount_percent
+                                        ? 'raw-discount-percent-error'
+                                        : 'raw-discount-percent-help'
+                                }
+                                required
+                            />
+                            <p
+                                id="raw-discount-percent-help"
+                                className="text-xs text-muted-foreground"
+                            >
+                                Se descuenta este porcentaje de la docena de
+                                cada gusto (de 0 a 50). La unidad cruda se
+                                calcula desde esa docena con el mismo recargo
+                                por unidad. Los pedidos ya hechos no cambian.
+                            </p>
+                            <ErrorText
+                                id="raw-discount-percent-error"
+                                message={form.errors.raw_discount_percent}
+                            />
+                        </div>
                     </fieldset>
                     <fieldset className="grid gap-4 rounded-lg border p-4">
                         <legend className="px-1 font-semibold">

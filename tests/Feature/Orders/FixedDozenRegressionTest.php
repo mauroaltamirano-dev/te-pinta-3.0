@@ -74,7 +74,7 @@ final class FixedDozenRegressionTest extends TestCase
             '11 dulce + 1 jyq' => [['dulce' => 11, 'jyq' => 1], 'cooked', 17400],
             '6 dulce + 3 jyq + 3 salteña' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 'cooked', 17500],
             '11 salteña' => [['salteña' => 11], 'cooked', 18700],
-            'raw dozen dulce' => [['dulce' => 12], 'raw', 18000],
+            'raw dozen dulce' => [['dulce' => 12], 'raw', 19000],
             'raw unit dulce' => [['dulce' => 1], 'raw', 1700],
             'unit product x12 no grouping (15000)' => [['bebida' => 12], 'raw', 15000],
             'unit product 3 x 1250 = 3750 -> 3800' => [['bebida' => 3], 'cooked', 3800],
@@ -202,7 +202,7 @@ final class FixedDozenRegressionTest extends TestCase
         // Settings: percentage change with a retired field / invalid values.
         $this->actingAs($this->admin)->putJson(route('admin.settings.general.update'), [...$this->settingsPayload(30), 'combined_dozen_cooked_price' => 1])->assertUnprocessable();
         $this->actingAs($this->admin)->putJson(route('admin.settings.general.update'), [...$this->settingsPayload(30), 'raw_price_discounts' => ['dozen' => 2000, 'unit' => 1]])->assertUnprocessable();
-        $this->actingAs($this->admin)->putJson(route('admin.settings.general.update'), [...$this->settingsPayload(30), 'raw_price_discounts' => ['dozen' => 18001]])->assertUnprocessable();
+        $this->actingAs($this->admin)->putJson(route('admin.settings.general.update'), [...$this->settingsPayload(30), 'raw_discount_percent' => 51])->assertUnprocessable();
         $this->actingAs($this->admin)->putJson(route('admin.settings.general.update'), $this->settingsPayload(101))->assertUnprocessable();
         $this->actingAs($this->admin)->putJson(route('admin.settings.general.update'), [...$this->settingsPayload(30), 'empanada_unit_surcharge_percent' => ''])->assertUnprocessable();
         // Products: empanada unit price sent.
@@ -215,8 +215,8 @@ final class FixedDozenRegressionTest extends TestCase
             'dozen_price' => 30000, 'is_available' => true, 'sort_order' => 1,
         ])->assertUnprocessable()->assertJsonValidationErrors('unit_price');
         $this->assertSame($hash, $this->hash(), 'settings/products rejection changed the DB');
-        // Orders: raw misconfiguration (discount above a dozen) through admin creation and public checkout.
-        DB::table('raw_price_discounts')->where('pricing_mode', 'dozen')->update(['amount' => 18001]);
+        // Orders: raw misconfiguration (percentage above 100) through admin creation and public checkout.
+        DB::table('order_settings')->where('key', 'raw_discount_percent')->update(['integer_value' => 101]);
         $hash = $this->hash();
         $this->actingAs($this->admin)->postJson(route('admin.orders.store'), $this->adminPayload(['salteña' => 12], 'raw'))->assertUnprocessable();
         $this->postJson(route('public.orders.price-preview'), ['items' => $this->slugItems(['salteña' => 1]), 'condition' => 'raw', 'delivery_type' => 'pickup'])->assertUnprocessable();
@@ -227,7 +227,7 @@ final class FixedDozenRegressionTest extends TestCase
             'idempotency_key' => 'verifier-probe-key-000002',
         ])->assertUnprocessable()->assertJsonValidationErrors('items');
         $this->assertSame($hash, $this->hash(), 'raw misconfiguration rejection changed the DB');
-        DB::table('raw_price_discounts')->where('pricing_mode', 'dozen')->delete();
+        DB::table('order_settings')->where('key', 'raw_discount_percent')->delete();
         $hash = $this->hash();
         $this->actingAs($this->admin)->postJson(route('admin.orders.price-preview'), ['items' => $this->items(['dulce' => 1]), 'condition' => 'raw', 'delivery_type' => 'pickup'])->assertUnprocessable();
         $this->assertSame($hash, $this->hash());
@@ -259,7 +259,8 @@ final class FixedDozenRegressionTest extends TestCase
         $props = $page->viewData('page')['props']['orderingSettings'];
         $this->assertArrayNotHasKey('combined_dozen_cooked_price', $props);
         $this->assertArrayNotHasKey('combined_dozen_raw_price', $props);
-        $this->assertSame(['dozen' => 2000], $props['raw_price_discounts']);
+        $this->assertArrayNotHasKey('raw_price_discounts', $props);
+        $this->assertSame(5, $props['raw_discount_percent']);
         $this->assertSame(10, $props['empanada_unit_surcharge_percent']);
         $this->assertDatabaseHas('order_settings', ['key' => 'combined_dozen_cooked_price']);
         $this->assertDatabaseHas('order_settings', ['key' => 'combined_dozen_raw_price']);
@@ -335,7 +336,7 @@ final class FixedDozenRegressionTest extends TestCase
     {
         return [
             'empanada_unit_surcharge_percent' => $percent, 'combined_dozen_discount_percent' => 20, 'delivery_fee' => (int) OrderSetting::integer(OrderSettingKey::DeliveryFee),
-            'whatsapp_order_phone' => '+54 9 11 1234-5678', 'raw_price_discounts' => ['dozen' => 2000],
+            'whatsapp_order_phone' => '+54 9 11 1234-5678', 'raw_discount_percent' => 5,
             'addons' => OrderAddon::query()->orderBy('sort_order')->get()->map(fn (OrderAddon $addon): array => [
                 'id' => $addon->id, 'name' => $addon->name, 'price' => $addon->price, 'is_available' => $addon->is_available, 'sort_order' => $addon->sort_order,
             ])->all(),

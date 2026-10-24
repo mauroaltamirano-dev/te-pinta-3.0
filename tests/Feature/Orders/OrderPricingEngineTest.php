@@ -13,7 +13,6 @@ use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -30,11 +29,6 @@ final class OrderPricingEngineTest extends TestCase
         parent::setUp();
         $this->category = Category::query()->create([
             'name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true,
-        ]);
-        RawPriceDiscount::query()->insert([
-            ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
-            ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
-            ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
         ]);
     }
 
@@ -81,8 +75,8 @@ final class OrderPricingEngineTest extends TestCase
 
         $this->assertSame(['combined_dozen'], array_column($quote->toArray()['lines'], 'pricingMode'));
         $this->assertSame([[$a->id, 6], [$b->id, 3], [$c->id, 3]], array_map(fn (array $part): array => [$part['product_id'], $part['quantity']], $quote->lines[0]->composition));
-        // Raw U = (18000 - 2000) / 12 × 1.1 → 1500; 12 × 1500 less the 20% combined discount.
-        $this->assertSame(14400, $quote->total);
+        // Raw U = 18000 × 0.95 / 12 × 1.1 → 1600; 12 × 1600 = 19200 less the 20% combined discount, rounded once.
+        $this->assertSame(15400, $quote->total);
     }
 
     public function test_twenty_four_varied_items_keep_stable_product_order_before_the_combined_dozen(): void
@@ -131,11 +125,11 @@ final class OrderPricingEngineTest extends TestCase
         $product = $this->product('A');
         $quote = $this->engine()->quote($this->items([$product, 18]), OrderCondition::Raw);
 
-        // Dozen 18000 - 2000; six units at 1800 cooked and 1500 raw.
+        // Dozen 18000 less 5% = 17100; six units at 1800 cooked and 1600 raw.
         $this->assertSame(18000 + 6 * 1800, $quote->productsCookedSubtotal);
-        $this->assertSame(2000 + 6 * 300, $quote->rawDiscount);
-        $this->assertSame(16000 + 6 * 1500, $quote->productsSubtotal);
-        $this->assertSame([2000, 1800], array_column($quote->toArray()['lines'], 'rawDiscount'));
+        $this->assertSame(900 + 6 * 200, $quote->rawDiscount);
+        $this->assertSame(17100 + 6 * 1600, $quote->productsSubtotal);
+        $this->assertSame([900, 1200], array_column($quote->toArray()['lines'], 'rawDiscount'));
     }
 
     public function test_fixed_dozen_quotes_report_no_savings(): void
@@ -161,7 +155,7 @@ final class OrderPricingEngineTest extends TestCase
 
         $this->assertSame(1000, $delivery->addonsSubtotal);
         $this->assertSame(2500, $delivery->shippingFee);
-        $this->assertSame(1500 + 1000 + 2500, $delivery->total);
+        $this->assertSame(1600 + 1000 + 2500, $delivery->total);
         $this->assertSame(0, $pickup->shippingFee);
     }
 
@@ -180,9 +174,9 @@ final class OrderPricingEngineTest extends TestCase
             10,
         );
 
-        $this->assertSame(2000, $quote->discountableSubtotal);
-        $this->assertSame(200, $quote->discountAmount);
-        $this->assertSame(2000 - 200 + 2500, $quote->total);
+        $this->assertSame(2100, $quote->discountableSubtotal);
+        $this->assertSame(210, $quote->discountAmount);
+        $this->assertSame(4400, $quote->total);
         $this->assertSame('percentage', $quote->toArray()['discount_type']);
     }
 
@@ -216,7 +210,7 @@ final class OrderPricingEngineTest extends TestCase
             discountValue: 999999,
         );
 
-        $this->assertSame(1500, $quote->discountAmount);
+        $this->assertSame(1600, $quote->discountAmount);
         $this->assertSame(2500, $quote->total);
     }
 

@@ -6,10 +6,8 @@ use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Actions\RecalculateEmpanadaUnitPrices;
-use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Settings\Data\OrderingSettingsData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +18,6 @@ final class UpdateOrderingSettings
 
     public function execute(OrderingSettingsData $data): void
     {
-        $this->validateRawPrices($data);
         $this->validateCombinedSurcharge($data);
 
         DB::transaction(function () use ($data): void {
@@ -36,11 +33,7 @@ final class UpdateOrderingSettings
                 ['integer_value' => null, 'string_value' => $data->whatsappOrderPhone],
             );
 
-            // Unit and half-dozen discount rows are retired history and stay untouched.
-            RawPriceDiscount::query()->updateOrCreate(
-                ['pricing_mode' => PriceTier::Dozen->value],
-                ['amount' => $data->dozenRawDiscount],
-            );
+            $this->updateIntegerSetting(OrderSettingKey::RawDiscountPercent, $data->rawDiscountPercent);
 
             foreach ($data->addons as $addonData) {
                 OrderAddon::query()
@@ -56,17 +49,6 @@ final class UpdateOrderingSettings
                     ]);
             }
         });
-    }
-
-    private function validateRawPrices(OrderingSettingsData $data): void
-    {
-        $minimumDozenPrice = Product::query()->where('pricing_family', ProductPricingFamily::Empanada)->min('dozen_price');
-
-        if ($minimumDozenPrice !== null && $data->dozenRawDiscount > (int) $minimumDozenPrice) {
-            throw ValidationException::withMessages([
-                'raw_price_discounts.dozen' => 'El descuento crudo no puede superar el menor precio cocinado.',
-            ]);
-        }
     }
 
     /**

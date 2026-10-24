@@ -4,10 +4,8 @@ namespace Tests\Feature\Products;
 
 use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
-use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -25,7 +23,6 @@ final class ProductPricingFamilyTest extends TestCase
     ): void {
         $category = $this->category();
         $product = $this->product($category, $name, strtolower($name), $unitPrice, 111, 222, 'unit');
-        $this->rawDiscounts();
 
         $quote = app(OrderPricingEngine::class)->quote([
             ['product_id' => $product->id, 'quantity' => $quantity],
@@ -61,7 +58,6 @@ final class ProductPricingFamilyTest extends TestCase
         $beverage = $this->product($category, 'Beverage', 'beverage', 3_000, 111, 222, 'unit');
         $pizza = $this->product($category, 'Pizza', 'pizza', 7_000, 111, 222, 'unit');
         $dessert = $this->product($category, 'Dessert', 'dessert', 4_000, 111, 222, 'unit');
-        $this->rawDiscounts();
 
         $items = [
             ['product_id' => $criolla->id, 'quantity' => 6],
@@ -77,9 +73,9 @@ final class ProductPricingFamilyTest extends TestCase
         $this->assertSame(['unit', 'unit', 'unit', 'combined_dozen'], array_column($cooked->toArray()['lines'], 'pricingMode'));
         $this->assertSame(34_900, $cooked->total);
         $this->assertSame(0, $cooked->rawDiscount);
-        // Raw U from D - 2000: Criolla 10000 → 900, JyQ 15000 → 1400; (8400 + 5400) × 0.8 = 11040.
-        $this->assertSame(32_000, $raw->total);
-        $this->assertSame(2_880, $raw->rawDiscount);
+        // Raw U from D less 5%: Criolla 11400 → 1000, JyQ 16150 → 1500; (6000 + 9000) × 0.8 = 12000.
+        $this->assertSame(33_000, $raw->total);
+        $this->assertSame(1_920, $raw->rawDiscount);
         $this->assertSame([0, 0, 0], array_column(array_slice($raw->toArray()['lines'], 0, 3), 'rawDiscount'));
     }
 
@@ -91,7 +87,6 @@ final class ProductPricingFamilyTest extends TestCase
         $beverage = $this->product($category, 'Beverage', 'beverage', 3_000, 111, 222, 'unit');
         $pizza = $this->product($category, 'Pizza', 'pizza', 7_000, 111, 222, 'unit');
         $dessert = $this->product($category, 'Dessert', 'dessert', 4_000, 111, 222, 'unit');
-        $this->rawDiscounts();
 
         $quote = app(OrderPricingEngine::class)->quote([
             ['product_id' => $criolla->id, 'quantity' => 6],
@@ -102,8 +97,8 @@ final class ProductPricingFamilyTest extends TestCase
         ], OrderCondition::Raw);
 
         $this->assertSame(['unit', 'unit', 'unit', 'unit', 'unit'], array_column($quote->toArray()['lines'], 'pricingMode'));
-        $this->assertSame(33_400, $quote->total);
-        $this->assertSame(3_300, $quote->rawDiscount);
+        $this->assertSame(34_500, $quote->total);
+        $this->assertSame(2_200, $quote->rawDiscount);
         $this->assertSame([0, 0, 0], array_column(array_slice($quote->toArray()['lines'], 2), 'rawDiscount'));
     }
 
@@ -129,15 +124,6 @@ final class ProductPricingFamilyTest extends TestCase
             'dozen_price' => $dozenPrice,
             'is_available' => true,
             'sort_order' => 1,
-        ]);
-    }
-
-    private function rawDiscounts(): void
-    {
-        RawPriceDiscount::query()->insert([
-            ['pricing_mode' => PriceTier::Unit->value, 'amount' => 300],
-            ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1_000],
-            ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2_000],
         ]);
     }
 }

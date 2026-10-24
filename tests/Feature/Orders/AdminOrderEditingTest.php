@@ -17,10 +17,8 @@ use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
-use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -48,11 +46,6 @@ final class AdminOrderEditingTest extends TestCase
             'unit_price' => 1800, 'half_dozen_price' => 10000, 'dozen_price' => 18000,
             'is_available' => true, 'sort_order' => 1,
         ]);
-        RawPriceDiscount::query()->insert([
-            ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
-            ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
-            ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
-        ]);
     }
 
     public function test_edit_hydrates_real_quantities_and_active_statuses_update_without_changing_id(): void
@@ -75,8 +68,8 @@ final class AdminOrderEditingTest extends TestCase
             $order->refresh();
             $this->assertSame($status, $order->status);
             $this->assertSame($publicId, $order->public_id);
-            // Seven raw units at (18000 - 2000) / 12 × 1.1 → 1500; no half-dozen tier.
-            $this->assertSame(10500, (int) $order->total);
+            // Seven raw units at 18000 × 0.95 / 12 × 1.1 → 1600; no half-dozen tier.
+            $this->assertSame(11200, (int) $order->total);
             $this->assertSame(2, $order->edit_version);
             $this->assertSame(7, (int) $order->items->sole()->units_count);
         }
@@ -100,7 +93,7 @@ final class AdminOrderEditingTest extends TestCase
             $payload['notes'] = 'Corrected note';
             $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
             $this->assertSame($status, $order->refresh()->status);
-            $this->assertDatabaseHas('order_revisions', ['order_id' => $order->id, 'reason' => 'Administrative correction', 'total_before' => 9000, 'total_after' => 9000]);
+            $this->assertDatabaseHas('order_revisions', ['order_id' => $order->id, 'reason' => 'Administrative correction', 'total_before' => 9600, 'total_after' => 9600]);
             $payload['expected_version'] = 2;
             $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertSessionHasErrors('closed_edit');
         }
@@ -206,7 +199,7 @@ final class AdminOrderEditingTest extends TestCase
         $payload['delivery_address'] = null;
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame([10800, 1800, 1000, 0, 10000], [
+        $this->assertSame([10800, 1200, 1000, 0, 10600], [
             (int) $order->items_cooked_subtotal, (int) $order->raw_discount,
             (int) $order->toppings_subtotal, (int) $order->shipping_fee_snapshot, (int) $order->total,
         ]);
@@ -223,7 +216,7 @@ final class AdminOrderEditingTest extends TestCase
 
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame(7000, (int) $order->total);
+        $this->assertSame(7600, (int) $order->total);
         $this->assertSame(2000, (int) $order->discount_amount);
         $this->assertSame('bank_transfer', $order->payment_method->value);
         $this->assertSame(['fields' => ['payment_status', 'payment_method', 'discount'], 'economic_change' => true], $order->revisions()->sole()->changed_fields);
@@ -232,7 +225,7 @@ final class AdminOrderEditingTest extends TestCase
         $payload['payment_method'] = 'cash';
         $this->actingAs($this->admin)->put(route('admin.orders.update', $order), $payload)->assertRedirect();
         $order->refresh();
-        $this->assertSame(7000, (int) $order->total);
+        $this->assertSame(7600, (int) $order->total);
         $this->assertSame(3, $order->edit_version);
         $this->assertSame('cash', $order->payment_method->value);
         $this->assertFalse($order->revisions()->latest('id')->firstOrFail()->changed_fields['economic_change']);
@@ -268,13 +261,13 @@ final class AdminOrderEditingTest extends TestCase
         $this->product->update(['dozen_price' => 22000, 'unit_price' => 2000]);
 
         $this->actingAs($this->admin)->get(route('admin.orders.show', $edited))->assertOk();
-        $this->assertSame(9000, (int) $edited->fresh()->total);
+        $this->assertSame(9600, (int) $edited->fresh()->total);
         $payload = $this->updatePayload($edited);
         $payload['condition'] = 'cooked';
         $this->actingAs($this->admin)->put(route('admin.orders.update', $edited), $payload)->assertRedirect();
 
         $this->assertSame(12000, (int) $edited->fresh()->total);
-        $this->assertSame(9000, (int) $untouched->fresh()->total);
+        $this->assertSame(9600, (int) $untouched->fresh()->total);
         $this->assertSame(12000, (int) $edited->fresh()->items_cooked_subtotal);
         $this->assertSame(0, (int) $edited->fresh()->raw_discount);
     }
@@ -308,7 +301,7 @@ final class AdminOrderEditingTest extends TestCase
         }
 
         $order->refresh()->load('items');
-        $this->assertSame(9000, (int) $order->total);
+        $this->assertSame(9600, (int) $order->total);
         $this->assertSame(1, $order->edit_version);
         $this->assertSame(6, (int) $order->items->sum('units_count'));
         $this->assertDatabaseCount('order_revisions', 0);

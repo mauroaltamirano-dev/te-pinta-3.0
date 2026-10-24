@@ -11,10 +11,8 @@ use App\Modules\Orders\Http\Resources\AdminOrderResource;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Orders\Support\OrderSummaryFormatter;
-use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -36,11 +34,6 @@ final class OrderCheckoutHttpTest extends TestCase
             'unit_price' => 1800, 'half_dozen_price' => 10000, 'dozen_price' => 18000,
             'is_available' => true, 'sort_order' => 1,
         ]);
-        RawPriceDiscount::query()->insert([
-            ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
-            ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
-            ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
-        ]);
         OrderSetting::query()->where('key', OrderSettingKey::WhatsappOrderPhone->value)->update(['string_value' => '5491112345678']);
     }
 
@@ -61,15 +54,15 @@ final class OrderCheckoutHttpTest extends TestCase
             ->assertJsonPath('data.items_base_subtotal', null)
             ->assertJsonPath('data.cooking_surcharge', null)
             ->assertJsonPath('data.items_cooked_subtotal', 10800)
-            ->assertJsonPath('data.raw_discount', 1800)
-            ->assertJsonPath('data.total', 9000)
+            ->assertJsonPath('data.raw_discount', 1200)
+            ->assertJsonPath('data.total', 9600)
             ->assertJsonMissingPath('data.customer_id');
         $this->assertMatchesRegularExpression('/^TP-\d{6}$/', $response->json('data.order_id'));
         $this->assertStringContainsString($response->json('data.order_id'), $response->json('data.whatsapp_url'));
 
         $order = Order::query()->firstOrFail();
         $this->assertSame('Visitor name', $order->customer_name_snapshot);
-        $this->assertSame(9000, (int) $order->total);
+        $this->assertSame(9600, (int) $order->total);
         $this->assertCount(1, $order->items);
     }
 
@@ -110,7 +103,7 @@ final class OrderCheckoutHttpTest extends TestCase
             'half_dozen_price' => 500_000,
             'dozen_price' => 900_000,
         ]);
-        RawPriceDiscount::query()->where('pricing_mode', PriceTier::Unit)->update(['amount' => 1_000]);
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->update(['integer_value' => 50]);
 
         $resource = (new AdminOrderResource($order->fresh(['items.compositions', 'toppings'])))->resolve();
         $this->assertSame(7_500, $resource['total']);
@@ -203,7 +196,7 @@ final class OrderCheckoutHttpTest extends TestCase
             (int) $item->line_total,
         ]);
 
-        RawPriceDiscount::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->update(['integer_value' => 50]);
         $this->product->update(['half_dozen_price' => 50000]);
 
         $summary = app(OrderSummaryFormatter::class)->format($order->fresh(['items.compositions', 'toppings']));
@@ -407,7 +400,7 @@ TEXT, $summary);
             'total' => 9000,
         ]);
 
-        RawPriceDiscount::query()->where('pricing_mode', PriceTier::HalfDozen->value)->update(['amount' => 5000]);
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->update(['integer_value' => 50]);
         $order->refresh();
         $summary = app(OrderSummaryFormatter::class)->format($order);
 
@@ -490,7 +483,7 @@ TEXT, $summary);
         $this->assertSame('cash', $order->payment_method->value);
         $payment = ManagementOrderPayment::query()->sole();
         $this->assertSame($order->id, $payment->order_id);
-        $this->assertSame(9000, (int) $payment->amount);
+        $this->assertSame(9600, (int) $payment->amount);
 
         $this->actingAs($admin)->get(route('admin.orders.show', $order->public_id))->assertOk();
         $this->actingAs($admin)->get(route('admin.orders.index', ['order' => $order->public_id]))
@@ -523,7 +516,7 @@ TEXT, $summary);
         $response->assertCreated()
             ->assertJsonPath('data.status', 'waiting')
             ->assertJsonPath('data.payment_status', 'paid')
-            ->assertJsonPath('data.total', 9000)
+            ->assertJsonPath('data.total', 9600)
             ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, '🧾 *PEDIDO TP-'));
         $this->assertDatabaseCount('orders', 1);
 
@@ -557,9 +550,9 @@ TEXT, $summary);
             'discount_type' => 'percentage',
             'discount_value' => 10,
         ])->assertOk()
-            ->assertJsonPath('data.discountable_subtotal', 9000)
-            ->assertJsonPath('data.discount_amount', 900)
-            ->assertJsonPath('data.total', 8100);
+            ->assertJsonPath('data.discountable_subtotal', 9600)
+            ->assertJsonPath('data.discount_amount', 960)
+            ->assertJsonPath('data.total', 8600);
 
         $tampered = $payload + ['discount_amount' => 8999, 'total' => 1];
         $this->actingAs($admin)->post(route('admin.orders.store'), $tampered)
@@ -568,12 +561,12 @@ TEXT, $summary);
 
         $this->actingAs($admin)->postJson(route('admin.orders.store'), $payload)
             ->assertCreated()
-            ->assertJsonPath('data.total', 8100)
-            ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, 'Descuento: -$900'));
+            ->assertJsonPath('data.total', 8600)
+            ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, 'Descuento: -$960'));
         $order = Order::query()->sole();
         $this->assertSame('percentage', $order->discount_type->value);
         $this->assertSame(10, $order->discount_value);
-        $this->assertSame(900, (int) $order->discount_amount);
+        $this->assertSame(960, (int) $order->discount_amount);
         $this->assertSame('debit_card', $order->payment_method->value);
     }
 

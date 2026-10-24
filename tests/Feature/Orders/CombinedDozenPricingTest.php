@@ -11,10 +11,8 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Orders\Pricing\OrderPricingEngine;
 use App\Modules\Orders\Pricing\PricingLine;
-use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Pricing\EmpanadaUnitPrice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -37,11 +35,6 @@ final class CombinedDozenPricingTest extends TestCase
         OrderSetting::query()->where('key', OrderSettingKey::EmpanadaUnitSurchargePercent->value)->update(['integer_value' => 25]);
         OrderSetting::query()->where('key', OrderSettingKey::CombinedDozenDiscountPercent->value)->update(['integer_value' => 20]);
         $this->category = Category::query()->create(['name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true]);
-        RawPriceDiscount::query()->insert([
-            ['pricing_mode' => PriceTier::Unit->value, 'amount' => 200],
-            ['pricing_mode' => PriceTier::HalfDozen->value, 'amount' => 1000],
-            ['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000],
-        ]);
         $this->flavors = [
             'dulce' => $this->empanada('Dulce', 20000),
             'jyq' => $this->empanada('Jamón y Queso', 22000),
@@ -81,8 +74,8 @@ final class CombinedDozenPricingTest extends TestCase
     public static function requiredRawExamples(): array
     {
         return [
-            'Cruda 6 dulce + 6 JyQ = 19.200' => [['dulce' => 6, 'jyq' => 6], 19200],
-            'Cruda 6 + 3 + 3 = 18.200' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 18200],
+            'Cruda 6 dulce + 6 JyQ = 20.200 (combinada 20.160)' => [['dulce' => 6, 'jyq' => 6], 20200],
+            'Cruda 6 + 3 + 3 = 19.200' => [['dulce' => 6, 'jyq' => 3, 'salteña' => 3], 19200],
         ];
     }
 
@@ -124,8 +117,8 @@ final class CombinedDozenPricingTest extends TestCase
     {
         $line = $this->engine()->quote($this->items(['dulce' => 6, 'jyq' => 6]), OrderCondition::Raw)->lines[0];
 
-        // Raw U: dulce 1900, JyQ 2100 → 24000 × 0.8; cooked U 2100 / 2300 → 26400 × 0.8.
-        $this->assertSame(['combined_dozen', 19200, 19200, 21120, 21120, 1920, 24000, 4800], [
+        // Raw dozens at 5% off: dulce 19000 → U 2000, JyQ 20900 → U 2200 → 25200 × 0.8; cooked U 2100 / 2300 → 26400 × 0.8.
+        $this->assertSame(['combined_dozen', 20160, 20160, 21120, 21120, 960, 25200, 5040], [
             $line->pricingMode, $line->unitPrice, $line->lineTotal, $line->cookedUnitPrice, $line->cookedLineTotal,
             $line->rawDiscount, $line->regularPriceTotal, $line->savings,
         ]);
@@ -199,15 +192,15 @@ final class CombinedDozenPricingTest extends TestCase
 
         $order = Order::query()->latest('id')->firstOrFail();
         $row = DB::table('orders')->where('id', $order->id)->first();
-        // Raw U: dulce 1900, JyQ 2100, salteña 1700 → 22800 × 0.8 = 18240 → 18200; cooked 25200 × 0.8 = 20160.
-        $this->assertSame(18200, $preview->json('data.total'));
-        $this->assertSame([2, 18200, 18240, 20160, 1920, 4560], [
+        // Raw U: dulce 2000, JyQ 2200, salteña 1800 → 24000 × 0.8 = 19200; cooked 25200 × 0.8 = 20160.
+        $this->assertSame(19200, $preview->json('data.total'));
+        $this->assertSame([2, 19200, 19200, 20160, 960, 4800], [
             (int) $row->pricing_snapshot_version, (int) $row->total, (int) $row->items_subtotal, (int) $row->items_cooked_subtotal,
             (int) $row->raw_discount, (int) $row->combined_dozen_savings,
         ]);
 
         $item = $order->items()->with('compositions')->sole();
-        $this->assertSame([PricingMode::CombinedDozen, null, 1, 12, 18240, 22800, 4560, 2], [
+        $this->assertSame([PricingMode::CombinedDozen, null, 1, 12, 19200, 24000, 4800, 2], [
             $item->pricing_mode, $item->product_id, (int) $item->quantity, (int) $item->units_count, (int) $item->line_total,
             (int) $item->regular_price_total, (int) $item->savings, (int) $item->pricing_snapshot_version,
         ]);

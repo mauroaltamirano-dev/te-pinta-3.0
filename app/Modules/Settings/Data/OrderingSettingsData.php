@@ -14,14 +14,13 @@ final readonly class OrderingSettingsData
         public int $combinedDozenDiscountPercent,
         public int $deliveryFee,
         public string $whatsappOrderPhone,
-        public int $dozenRawDiscount,
+        public int $rawDiscountPercent,
         public array $addons,
         public ?int $combinedHalfDozenSurcharge = null,
     ) {}
 
     public static function fromRequest(FormRequest $request): self
     {
-        $discounts = $request->safe()->array('raw_price_discounts');
         $addons = $request->safe()->array('addons');
 
         return new self(
@@ -30,7 +29,7 @@ final readonly class OrderingSettingsData
             combinedDozenDiscountPercent: $request->integer('combined_dozen_discount_percent'),
             deliveryFee: $request->integer('delivery_fee'),
             whatsappOrderPhone: trim($request->string('whatsapp_order_phone')->toString()),
-            dozenRawDiscount: (int) $discounts['dozen'],
+            rawDiscountPercent: $request->integer('raw_discount_percent'),
             addons: array_values(array_map(
                 static fn (array $addon): array => [
                     'id' => (int) $addon['id'],

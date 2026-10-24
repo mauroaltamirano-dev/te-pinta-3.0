@@ -14,7 +14,6 @@ use App\Modules\Products\Http\Resources\AdminProductResource;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Models\ProductSubcategory;
-use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Products\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,7 +56,6 @@ final class ProductManagementController
                 ->map(fn (Product $product): array => (new AdminProductResource($product))->resolve($request))
                 ->all(),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name', 'slug']),
-            'rawPriceDiscounts' => RawPriceDiscount::query()->pluck('amount', 'pricing_mode'),
             'empanadaUnitSurchargePercent' => OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent),
         ]);
     }

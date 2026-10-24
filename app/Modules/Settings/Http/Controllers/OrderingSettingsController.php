@@ -7,8 +7,6 @@ use App\Modules\Identity\Enums\Permission;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
-use App\Modules\Products\Enums\PriceTier;
-use App\Modules\Products\Models\RawPriceDiscount;
 use App\Modules\Settings\Actions\UpdateOrderingSettings;
 use App\Modules\Settings\Data\OrderingSettingsData;
 use App\Modules\Settings\Http\Requests\UpdateOrderingSettingsRequest;
@@ -23,9 +21,6 @@ final class OrderingSettingsController
     {
         abort_unless($request->user()?->can(Permission::CatalogManage->value) === true, 403);
 
-        // A missing row is shown empty; saving validates it like any other required value and creates it.
-        $dozenRawDiscount = RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen->value)->value('amount');
-
         return Inertia::render('admin/settings/general', [
             'branding' => ['accent_color' => $branding->palette()->accent],
             'orderingSettings' => [
@@ -33,8 +28,7 @@ final class OrderingSettingsController
                 'combined_dozen_discount_percent' => OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent),
                 'delivery_fee' => OrderSetting::integer(OrderSettingKey::DeliveryFee),
                 'whatsapp_order_phone' => OrderSetting::string(OrderSettingKey::WhatsappOrderPhone),
-                // Only the dozen discount prices raw orders; unit and half-dozen rows are retired history.
-                'raw_price_discounts' => ['dozen' => $dozenRawDiscount === null ? null : (int) $dozenRawDiscount],
+                'raw_discount_percent' => OrderSetting::integer(OrderSettingKey::RawDiscountPercent),
                 'addons' => OrderAddon::query()
                     ->orderBy('sort_order')
                     ->orderBy('id')

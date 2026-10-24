@@ -116,26 +116,40 @@ final class FixedDozenOrderPricingTest extends TestCase
         $this->assertSame(['combined_dozen'], array_map(fn (PricingLine $line): string => $line->pricingMode, $quote->lines));
     }
 
-    public function test_cooking_at_home_takes_the_dozen_discount_and_then_the_same_formula(): void
+    public function test_cooking_at_home_takes_the_raw_percentage_off_the_dozen_and_then_the_same_formula(): void
     {
+        // Seeded at 5%: D_raw = 20000 × 95% = 19000; U_raw = 19000 × 108 / 1200 = 1710 → 1700.
         $dozen = $this->engine()->quote($this->items(['dulce' => 12]), OrderCondition::Raw);
         $unit = $this->engine()->quote($this->items(['dulce' => 1]), OrderCondition::Raw);
 
-        $this->assertSame(18000, $dozen->total);
-        $this->assertSame([18000, 20000, 2000], [$dozen->lines[0]->unitPrice, $dozen->lines[0]->cookedUnitPrice, $dozen->rawDiscount]);
+        $this->assertSame(5, OrderSetting::integer(OrderSettingKey::RawDiscountPercent));
+        $this->assertSame(19000, $dozen->total);
+        $this->assertSame([19000, 20000, 1000], [$dozen->lines[0]->unitPrice, $dozen->lines[0]->cookedUnitPrice, $dozen->rawDiscount]);
         $this->assertSame(1700, $unit->total);
         $this->assertSame([1700, 1800, 100], [$unit->lines[0]->unitPrice, $unit->lines[0]->cookedUnitPrice, $unit->rawDiscount]);
         $this->assertSame(1800, $unit->productsCookedSubtotal);
     }
 
-    public function test_unit_and_half_dozen_raw_discounts_are_no_longer_used(): void
+    public function test_the_raw_percentage_follows_the_setting(): void
     {
-        RawPriceDiscount::query()->whereIn('pricing_mode', [PriceTier::Unit->value, PriceTier::HalfDozen->value])->update(['amount' => 999999]);
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->update(['integer_value' => 10]);
+
+        // 22000 × 90% = 19800; 18000 × 90% = 16200.
+        $this->assertSame(19800, $this->engine()->quote($this->items(['jyq' => 12]), OrderCondition::Raw)->total);
+        $this->assertSame(16200, $this->engine()->quote($this->items(['salteña' => 12]), OrderCondition::Raw)->total);
+
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->update(['integer_value' => 0]);
+        $this->assertSame(20000, $this->engine()->quote($this->items(['dulce' => 12]), OrderCondition::Raw)->total);
+    }
+
+    public function test_fixed_raw_price_discounts_are_no_longer_used(): void
+    {
+        RawPriceDiscount::query()->update(['amount' => 999999]);
 
         $quote = $this->engine()->quote($this->items(['dulce' => 13]), OrderCondition::Raw);
 
-        $this->assertSame(18000 + 1700, $quote->total);
-        $this->assertSame(2, RawPriceDiscount::query()->whereIn('pricing_mode', [PriceTier::Unit->value, PriceTier::HalfDozen->value])->count());
+        $this->assertSame(19000 + 1700, $quote->total);
+        $this->assertSame(3, RawPriceDiscount::query()->count());
     }
 
     public function test_the_order_charges_the_stored_unit_price_not_a_per_order_recalculation(): void
@@ -181,10 +195,10 @@ final class FixedDozenOrderPricingTest extends TestCase
             'items' => $this->items(['dulce' => 12]), 'condition' => 'raw', 'delivery_type' => 'pickup',
         ]);
 
-        RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen->value)->update(['amount' => 20001]);
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->update(['integer_value' => 101]);
         $preview()->assertUnprocessable()->assertJsonValidationErrors('items');
 
-        RawPriceDiscount::query()->where('pricing_mode', PriceTier::Dozen->value)->delete();
+        OrderSetting::query()->where('key', OrderSettingKey::RawDiscountPercent->value)->delete();
         $preview()->assertUnprocessable()->assertJsonValidationErrors('items');
 
         // Cooked orders do not depend on raw configuration at all.
@@ -218,14 +232,14 @@ final class FixedDozenOrderPricingTest extends TestCase
 
         $order = Order::query()->latest('id')->firstOrFail();
         $row = DB::table('orders')->where('id', $order->id)->first();
-        // Raw U: dulce 1700, JyQ (20000) 1800, salteña (16000) 1500 → 20100 × 0.8 = 16080 → 16100; cooked 21900 × 0.8 = 17520.
-        $this->assertSame(16100, $preview->json('data.total'));
-        $this->assertSame([2, 16100, 16080, 17520, 1440], [(int) $row->pricing_snapshot_version, (int) $row->total, (int) $row->items_subtotal, (int) $row->items_cooked_subtotal, (int) $row->raw_discount]);
-        $this->assertSame([16080 * 12, 17520 * 12, 1440 * 12, 20 * 1200], [(int) $row->product_exact_numerator_12, (int) $row->cooked_product_exact_numerator_12, (int) $row->raw_discount_exact_numerator_12, (int) $row->rounding_adjustment_numerator_1200]);
+        // Raw U at 5% off: dulce (19000) 1700, JyQ (20900) 1900, salteña (17100) 1600 → 20700 × 0.8 = 16560 → 16600; cooked 21900 × 0.8 = 17520.
+        $this->assertSame(16600, $preview->json('data.total'));
+        $this->assertSame([2, 16600, 16560, 17520, 960], [(int) $row->pricing_snapshot_version, (int) $row->total, (int) $row->items_subtotal, (int) $row->items_cooked_subtotal, (int) $row->raw_discount]);
+        $this->assertSame([16560 * 12, 17520 * 12, 960 * 12, 40 * 1200], [(int) $row->product_exact_numerator_12, (int) $row->cooked_product_exact_numerator_12, (int) $row->raw_discount_exact_numerator_12, (int) $row->rounding_adjustment_numerator_1200]);
 
         $items = $order->items()->orderBy('id')->get();
         $this->assertSame([PricingMode::CombinedDozen], $items->map->pricing_mode->all());
-        $this->assertSame([[16080, 17520, 1440]], $items->map(fn ($item) => [(int) $item->unit_price, (int) $item->cooked_unit_price, (int) $item->raw_discount])->all());
+        $this->assertSame([[16560, 17520, 960]], $items->map(fn ($item) => [(int) $item->unit_price, (int) $item->cooked_unit_price, (int) $item->raw_discount])->all());
         $this->assertSame([2], DB::table('order_items')->where('order_id', $order->id)->distinct()->pluck('pricing_snapshot_version')->map(fn ($version) => (int) $version)->all());
     }
 

@@ -2,11 +2,9 @@
 
 namespace App\Modules\Products\Http\Requests;
 
-use App\Modules\Products\Enums\PriceTier;
 use App\Modules\Products\Enums\ProductPricingFamily;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Rules\AssignableSubcategory;
-use App\Modules\Products\Rules\CookedPriceSupportsRawDiscount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -43,7 +41,7 @@ final class UpdateProductRequest extends FormRequest
             'half_dozen_price' => ['prohibited'],
             // Retired P0 input that used to set the half dozen.
             'homogeneous_half_dozen_surcharge' => ['prohibited'],
-            'dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money, ...($isEmpanada ? [new CookedPriceSupportsRawDiscount(PriceTier::Dozen)] : [])],
+            'dozen_price' => [Rule::requiredIf($isEmpanada), Rule::prohibitedIf($isUnit), 'nullable', ...$money],
             'is_available' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:2147483647'],
         ];
