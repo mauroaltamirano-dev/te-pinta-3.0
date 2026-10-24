@@ -83,6 +83,19 @@ final class InstagramHistoryAdministrationTest extends TestCase
                 ->where('publication_filters.search', 'Target'));
     }
 
+    public function test_admin_previews_do_not_depend_on_the_public_media_base_url(): void
+    {
+        config()->set('instagram.public_media_base_url', '');
+        Storage::disk('local')->put('instagram/stories/menu.jpg', 'jpeg-bytes');
+        $asset = $this->asset();
+
+        $response = $this->actingAs($this->admin)->get('/admin/marketing/instagram')->assertOk();
+        $previewUrl = $response->viewData('page')['props']['assets'][0]['preview_url'];
+
+        $this->assertStringStartsWith("/media/instagram/{$asset->id}/story.jpg?", $previewUrl);
+        $this->get($previewUrl)->assertOk();
+    }
+
     public function test_archive_actions_preserve_audit_and_exclude_unsafe_rows(): void
     {
         $asset = $this->asset();

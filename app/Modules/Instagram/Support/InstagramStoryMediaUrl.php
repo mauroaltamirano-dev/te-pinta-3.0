@@ -8,17 +8,23 @@ use UnexpectedValueException;
 
 final class InstagramStoryMediaUrl
 {
+    /** Absolute URL that Meta fetches through the public media origin. */
     public function temporary(InstagramStoryAsset $asset, ?int $ttlMinutes = null): string
     {
+        return $this->publicBaseUrl().$this->preview($asset, $ttlMinutes);
+    }
+
+    /** Host-relative URL for admin previews, served by whichever host the admin is using. */
+    public function preview(InstagramStoryAsset $asset, ?int $ttlMinutes = null): string
+    {
         $ttlMinutes ??= (int) config('instagram.media_url_ttl_minutes');
-        $relativeUrl = URL::temporarySignedRoute(
+
+        return URL::temporarySignedRoute(
             'instagram.media.show',
             now()->addMinutes(max(1, $ttlMinutes)),
             ['asset' => $asset->id, 'filename' => 'story.jpg'],
             absolute: false,
         );
-
-        return $this->publicBaseUrl().$relativeUrl;
     }
 
     private function publicBaseUrl(): string

@@ -86,6 +86,7 @@ n8n -> POST .../{publication}/published | .../failed
 - Admin retry requires a failed, retryable row with attempts left, no manual-review flag and no Meta media ID. Cancel is limited to unclaimed pending or non-ambiguous failed rows. Archiving sets `archived_at`; the 30-day bulk archive skips pending, processing and manual-review rows.
 - Uploads: real JPEG or PNG up to 8 MiB; PNG is flattened on white and normalized to JPEG. Files live on the private disk under `instagram/stories/` with generated names; 1080 × 1920 is recommended and other ratios show a warning. Assets referenced by schedules or publications cannot be deleted; an asset used by an active schedule cannot be deactivated.
 - Media are served at `/media/instagram/{asset}/story.jpg` through a temporary signed URL (TTL `INSTAGRAM_AUTOMATION_MEDIA_URL_TTL_MINUTES`), built on `INSTAGRAM_AUTOMATION_PUBLIC_MEDIA_BASE_URL`. Meta must be able to download it from the public internet: the private Tailscale origin is not public, so only `/media/instagram` is exposed through a Tailscale Funnel handler on HTTPS `:8443` (`make media-route-status`, `TAILSCALE_FUNNEL_CONFIRM=yes make media-route-cutover`).
+- Admin previews use a host-relative signed URL on the same route, so the Instagram admin page loads even when the public media base URL is missing or invalid; only the automation API that hands URLs to Meta needs it.
 - Known issue: `/admin/marketing/instagram` returns HTTP 500 when the public media base URL is missing from the environment; it should degrade gracefully.
 
 ### Environment

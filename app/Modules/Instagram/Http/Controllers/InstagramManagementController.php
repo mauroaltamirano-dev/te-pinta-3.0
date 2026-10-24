@@ -331,7 +331,7 @@ final class InstagramManagementController
         return [
             'id' => $asset->id, 'name' => $asset->name, 'category' => $asset->category,
             'mime_type' => $asset->mime_type, 'width' => $asset->width, 'height' => $asset->height,
-            'is_active' => $asset->is_active, 'preview_url' => $mediaUrl->temporary($asset, 30),
+            'is_active' => $asset->is_active, 'preview_url' => $mediaUrl->preview($asset, 30),
             'schedules_count' => $schedulesCount, 'publications_count' => $publicationsCount,
             'active_schedules_count' => $asset->active_schedules_count ?? $activeSchedules->count(),
             'active_schedule_references' => $activeSchedules->map(fn (InstagramStorySchedule $schedule): array => ['id' => $schedule->id, 'name' => $schedule->name])->values()->all(),
