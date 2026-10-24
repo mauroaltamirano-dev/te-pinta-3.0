@@ -23,7 +23,7 @@ final class PublicSiteComingSoonTest extends TestCase
         $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('public/coming-soon')
             ->where('whatsappUrl', 'https://wa.me/5493534123456')
-            ->where('mapsUrl', 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6')
+            ->missing('mapsUrl')
             ->missing('featuredProduct'));
     }
 

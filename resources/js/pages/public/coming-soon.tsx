@@ -1,16 +1,12 @@
 import { Head } from '@inertiajs/react';
-import { MapPin, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { BrandBadge } from '@/components/brand-badge';
 import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
 
-const offer = ['Empanadas', 'Pizzas', 'Postres', 'Bebidas'];
-
 export default function ComingSoon({
     whatsappUrl,
-    mapsUrl,
 }: {
     whatsappUrl: string | null;
-    mapsUrl: string;
 }) {
     useRestaurantBranding();
 
@@ -44,48 +40,23 @@ export default function ComingSoon({
                     <span className="text-public-canvas">.</span>
                 </h1>
                 <p className="mt-6 max-w-lg text-base leading-7 text-white/85 sm:text-lg">
-                    Muy pronto vas a poder hacer tus pedidos desde acá. Mientras
-                    tanto, te esperamos en el local para comer con servicio a la
-                    mesa, o escribinos para pedir.
+                    Muy pronto vas a poder pedir tus empanadas desde acá. Y se
+                    vienen novedades.
                 </p>
-                <ul
-                    aria-label="Lo que ofrecemos"
-                    className="mt-8 flex flex-wrap justify-center gap-2"
-                >
-                    {offer.map((item) => (
-                        <li
-                            key={item}
-                            className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold"
-                        >
-                            {item}
-                        </li>
-                    ))}
-                </ul>
-                <div className="mt-10 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
-                    {whatsappUrl && (
-                        <a
-                            href={whatsappUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full bg-public-canvas px-7 text-base font-semibold text-white shadow-lg shadow-black/25 transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                        >
-                            <MessageCircle
-                                className="size-5"
-                                aria-hidden="true"
-                            />
-                            Escribinos por WhatsApp
-                        </a>
-                    )}
+                <p className="mt-3 text-sm text-white/70">
+                    Mientras tanto, escribinos para hacer tu pedido.
+                </p>
+                {whatsappUrl && (
                     <a
-                        href={mapsUrl}
+                        href={whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-white/40 px-7 text-base font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        className="mt-10 inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-public-canvas px-7 text-base font-semibold text-white shadow-lg shadow-black/25 transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
                     >
-                        <MapPin className="size-5" aria-hidden="true" />
-                        Cómo llegar
+                        <MessageCircle className="size-5" aria-hidden="true" />
+                        Escribinos por WhatsApp
                     </a>
-                </div>
+                )}
             </main>
             <footer className="px-4 py-6 text-center text-xs text-white/55">
                 © {new Date().getFullYear()} Te Pinta · Bell Ville, Córdoba

@@ -20,7 +20,6 @@ final readonly class PublicHomeController
 
             return Inertia::render('public/coming-soon', [
                 'whatsappUrl' => $phone === '' ? null : 'https://wa.me/'.$phone,
-                'mapsUrl' => config('public_site.maps_url'),
             ]);
         }
 
