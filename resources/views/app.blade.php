@@ -23,7 +23,10 @@
 
         <link rel="icon" href="/icons/te-pinta-logo.svg" type="image/svg+xml" sizes="any">
         <link rel="apple-touch-icon" href="/icons/te-pinta-logo-192.png">
-        <link rel="manifest" href="/manifest.webmanifest">
+        {{-- The admin PWA manifest is denied by the public gateway, so storefront pages do not link it. --}}
+        @unless (str_starts_with($page['component'], 'public/'))
+            <link rel="manifest" href="/manifest.webmanifest">
+        @endunless
         <meta name="theme-color" content="{{ $brandPalette->accent }}">
         <meta name="application-name" content="Te Pinta 3.0">
         <meta name="apple-mobile-web-app-title" content="Te Pinta">

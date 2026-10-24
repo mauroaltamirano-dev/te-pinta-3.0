@@ -20,7 +20,7 @@ do not publish the gateway port or place another proxy in front of it.
 Only public storefront pages, catalog, cart, checkout endpoints, product images,
 and required public assets are allowed. Admin, authentication, API, health,
 Instagram media, generic storage, and the existing administrative PWA manifest are
-denied. Do not change the operational `APP_URL`: it remains the private Tailscale
+denied; storefront pages do not link the manifest. Do not change the operational `APP_URL`: it remains the private Tailscale
 WebAuthn/passkey origin.
 
 Run the disposable regression harness before any local gateway start:
