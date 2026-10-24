@@ -16,10 +16,10 @@ Objective: close the public site behind a "coming soon" screen while the storefr
 ## Tasks
 
 - T1 — S1, S2: coming-soon screen and public-site switch, PHPUnit + e2e, docs. Route: inline. Status: done (`0ec0aef`).
-- T2 — S3: vegetarian leaf on public product cards and detail. Route: inline. Status: pending.
-- T3 — S4, S5, S6: home remodel (slogan, dine-in, table service, drinks, desserts, location; raw option de-emphasized). Route: inline. Status: pending (slogan wording to confirm).
+- T2 — S3: vegetarian leaf on public product cards and detail. Route: inline. Status: done (pending commit).
+- T3 — S4, S5, S6: home remodel (slogan, dine-in, table service, drinks, desserts, location; raw option de-emphasized). Route: inline. Status: done (pending commit; slogan "¿Qué te pinta hoy?" proposed to the user).
 - T4 — S7: real photos. Status: waiting for the user's photos.
-- T5 — S8: dozen promo price (D, struck 12 × U, % off) on public menu cards and detail. Route: inline. Status: pending.
+- T5 — S8: dozen promo price (D, struck 12 × U, % off) on public menu cards and detail. Route: inline. Status: done (pending commit).
 
 ## Log
 
@@ -28,3 +28,6 @@ Objective: close the public site behind a "coming soon" screen while the storefr
 - L3 (2026-10-24) — User addition: "Tambié, en el precio por docena, poner la típica de $20.000 (al lado el precio de docena original tachado y en grís) % descuento, o sea, hacer la promo visible de cuánto sale la docena de una variedad con su descuento respectivo (siendo el precio de 12 unidades sin el precio fijo de docena el "anterior" o de no ahorro)" → S8/T5.
 - L4 — T1 RED: 4 of 6 `PublicSiteComingSoonTest` failed (missing `config/public_site.php`, home still `public/home`, storefront routes open). GREEN after the config, `EnsurePublicSiteIsOpen` on every public route but `/`, and `public/coming-soon` (no PublicLayout). Screenshots desktop 1366 and mobile 390 with `PUBLIC_SITE_OPEN=false`: no horizontal scroll; `/menu` → 302 `/`.
 - L5 (2026-10-24) — Deployed 53dd939 with the site closed. User correction: "Sacale la ubicación también del Cómo Llegar, tampoco pongas pizzas, bebidas, etc, solmanete empanadsa, todavía no hemos anunciado el local, ni el agregado de pizzas, y demás, dejemoslo como borroso, para así también dar lugar a la expectativa". The teaser now mentions only empanadas plus "se vienen novedades"; no location, dine-in, pizzas, drinks or desserts until they are announced (S6 stays for the remodel, gated on the announcement).
+- L6 (2026-10-24) — User: "Dale, hazlo, y también sigue desarrollando todo lo otro que dijimos antes si es que aun o lo hiciste de los cambios de la web (no la screen de en construcción)". Production WhatsApp phone prefixed with +54 9 (link now wa.me/549…). Local preview for the user: `tepinta_preview` database (migrate --seed) served on 127.0.0.1:8098 with PUBLIC_SITE_OPEN=true; SSH tunnel `ssh -N -L 8098:127.0.0.1:8098 tuki@tuki-notebook`.
+- L7 — T2/T5 RED: new e2e "menu marks vegetarian flavors with a leaf and shows the dozen saving" failed (no leaf). GREEN with `VegetarianLeaf`, `DozenPrice`, `isVegetarian`/`dozenSaving` (admin card reuses `isVegetarian`). Humita: $17.000, struck $19.200, -11%. Detail page gives the dozen its own row.
+- L8 — T3 RED: public-home e2e expected heading "¿Qué te pinta hoy?", the dine-in section and the maps link, and no "cocinar en casa". GREEN after the home remodel; footer column renamed "Qué ofrecemos"; menu hero copy and detail "Precios" no longer say "cocinados". `public-checkout` e2e still expected the retired $2000 raw discount (missed in the raw-percentage branch): now 900 / 17100.

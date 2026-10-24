@@ -350,7 +350,7 @@ test('Inicio no reserva espacio cuando el backend no expone recomendación', asy
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('featured-product-card')).toHaveCount(0);
     await expect(
-        page.getByRole('heading', { name: /Te pinta una empanada/i }),
+        page.getByRole('heading', { level: 1, name: '¿Qué te pinta hoy?' }),
     ).toBeVisible();
 });
 

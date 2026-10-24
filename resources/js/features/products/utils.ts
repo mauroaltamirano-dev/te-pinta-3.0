@@ -14,3 +14,23 @@ export function empanadaUnitPrice(
         100
     );
 }
+
+export function isVegetarian(tags: { slug: string }[]): boolean {
+    return tags.some(
+        (tag) => tag.slug === 'vegetariana' || tag.slug === 'vegetarian',
+    );
+}
+
+/**
+ * The dozen promo: twelve units at the unit price are the regular price; the
+ * percentage is floored so the promo never overstates the saving.
+ */
+export function dozenSaving(
+    unitPrice: number,
+    dozenPrice: number,
+): { regular: number; percent: number } | null {
+    const regular = unitPrice * 12;
+    const percent = Math.floor(((regular - dozenPrice) * 100) / regular);
+
+    return percent > 0 ? { regular, percent } : null;
+}

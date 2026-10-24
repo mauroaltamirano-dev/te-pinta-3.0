@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/orders/cart-context';
 import type { PublicProduct } from '@/features/orders/types';
+import { DozenPrice } from '@/features/products/components/dozen-price';
 import { ProductImagePlaceholder } from '@/features/products/components/product-image-placeholder';
+import { VegetarianLeaf } from '@/features/products/components/vegetarian-leaf';
 import {
     filterBySubcategory,
     subcategoriesOf,
 } from '@/features/products/subcategory-filter';
+import { isVegetarian } from '@/features/products/utils';
 
 const money = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -125,8 +128,8 @@ export default function Menu() {
                             <span className="text-public-canvas">.</span>
                         </h1>
                         <p className="mt-4 text-sm leading-6 text-white/80 sm:text-base">
-                            Precios de productos cocinados. Sumá por docena,
-                            media docena o unidad; el total final se confirma al
+                            Sumá por docena, media docena o unidad: la docena
+                            tiene precio especial. El total final se confirma al
                             revisar el carrito.
                         </p>
                     </div>
@@ -366,14 +369,19 @@ function MenuProductCard({
                         </span>
                     )}
                 </p>
-                <h3 className="mt-1.5 font-serif text-2xl leading-tight font-semibold tracking-tight">
-                    <Link
-                        href={detailUrl}
-                        className="underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
-                    >
-                        {product.name}
-                    </Link>
-                </h3>
+                <div className="mt-1.5 flex items-start gap-2">
+                    <h3 className="font-serif text-2xl leading-tight font-semibold tracking-tight">
+                        <Link
+                            href={detailUrl}
+                            className="underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+                        >
+                            {product.name}
+                        </Link>
+                    </h3>
+                    {isVegetarian(product.tags) && (
+                        <VegetarianLeaf className="mt-0.5 size-7" />
+                    )}
+                </div>
                 {product.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                         {product.tags.map((tag) => (
@@ -398,10 +406,13 @@ function MenuProductCard({
                                 {isEmpanada ? 'Docena' : 'Precio'}
                             </dt>
                             <dd className="text-2xl font-semibold tabular-nums">
-                                {money.format(
-                                    isEmpanada
-                                        ? product.prices.dozen!
-                                        : product.prices.unit,
+                                {isEmpanada ? (
+                                    <DozenPrice
+                                        unitPrice={product.prices.unit}
+                                        dozenPrice={product.prices.dozen!}
+                                    />
+                                ) : (
+                                    money.format(product.prices.unit)
                                 )}
                             </dd>
                         </div>

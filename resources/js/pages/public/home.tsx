@@ -2,9 +2,10 @@ import { Head, Link } from '@inertiajs/react';
 import {
     ArrowRight,
     Bike,
-    Flame,
+    MapPin,
     MessageCircle,
     ShoppingBag,
+    UtensilsCrossed,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FeaturedProductCard } from '@/features/marketing/components/featured-product-card';
@@ -12,9 +13,18 @@ import type { FeaturedProductPublicView } from '@/features/marketing/types';
 import { useCart } from '@/features/orders/cart-context';
 
 const highlights = [
-    { icon: Flame, text: 'Cocinadas o para cocinar en casa' },
+    { icon: UtensilsCrossed, text: 'Comé en el local, con servicio a la mesa' },
     { icon: Bike, text: 'Retiro o envío a domicilio' },
     { icon: MessageCircle, text: 'Confirmás tu pedido por WhatsApp' },
+];
+
+const mapsUrl = 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6';
+
+const dineIn = [
+    'Servicio a la mesa',
+    'Empanadas y pizzas',
+    'Bebidas',
+    'Postres',
 ];
 
 const orderSteps = [
@@ -47,7 +57,7 @@ export default function Home({
 
     return (
         <>
-            <Head title="Empanadas para compartir">
+            <Head title="Empanadas y pizzas">
                 <link rel="preload" as="image" href="/images/brand/hero.png" />
             </Head>
 
@@ -70,16 +80,16 @@ export default function Home({
                                 className="h-px w-8 bg-public-earth"
                                 aria-hidden="true"
                             />
-                            Empanadas Te Pinta
+                            Te Pinta · Bell Ville
                         </p>
                         <h1 className="mt-6 font-serif text-[clamp(3.2rem,6.5vw,6.25rem)] leading-[0.95] font-semibold tracking-[-0.035em] text-balance">
-                            Te pinta{' '}
-                            <span className="text-public-earth">una</span>{' '}
-                            empanada.
+                            ¿Qué te{' '}
+                            <span className="text-public-earth">pinta</span>{' '}
+                            hoy?
                         </h1>
                         <p className="mt-7 max-w-md text-base leading-7 text-white/90 sm:text-lg">
-                            Elegí tus favoritas, armá el carrito y terminá tu
-                            pedido por WhatsApp.
+                            Empanadas caseras, pizzas y más. Pedilas para
+                            llevar, recibilas en casa o vení a comer al local.
                         </p>
                         <Button
                             asChild
@@ -172,6 +182,58 @@ export default function Home({
                             </span>
                         </Link>
                     )}
+                </div>
+            </section>
+
+            <section
+                className="relative isolate overflow-hidden bg-public-ink text-white"
+                aria-labelledby="home-dine-in-title"
+            >
+                <img
+                    src="/images/brand/bg-empanada.png"
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    className="pointer-events-none absolute -right-20 -bottom-20 -z-10 size-80 max-w-none object-contain opacity-20 select-none sm:size-[28rem] lg:right-[4%]"
+                />
+                <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-8 sm:py-18 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] lg:gap-12 lg:px-12">
+                    <div>
+                        <p className="text-xs font-bold tracking-[0.2em] text-white/70 uppercase">
+                            Nuestro local
+                        </p>
+                        <h2
+                            id="home-dine-in-title"
+                            className="mt-3 max-w-sm font-serif text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl"
+                        >
+                            Vení a comer al local.
+                        </h2>
+                    </div>
+                    <div>
+                        <p className="max-w-xl text-base leading-7 text-white/85">
+                            Sentate, pedí y te atendemos en la mesa. Empanadas
+                            recién salidas del horno, pizzas, algo para tomar y
+                            un postre para cerrar.
+                        </p>
+                        <ul className="mt-6 flex flex-wrap gap-2">
+                            {dineIn.map((item) => (
+                                <li
+                                    key={item}
+                                    className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold"
+                                >
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                        <a
+                            href={mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-public-canvas px-6 font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        >
+                            <MapPin className="size-5" aria-hidden="true" />
+                            Cómo llegar
+                        </a>
+                    </div>
                 </div>
             </section>
 

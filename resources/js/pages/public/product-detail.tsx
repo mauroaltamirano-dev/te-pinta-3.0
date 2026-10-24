@@ -11,7 +11,10 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/features/orders/cart-context';
 import type { PublicProduct } from '@/features/orders/types';
+import { DozenPrice } from '@/features/products/components/dozen-price';
 import { ProductImagePlaceholder } from '@/features/products/components/product-image-placeholder';
+import { VegetarianLeaf } from '@/features/products/components/vegetarian-leaf';
+import { isVegetarian } from '@/features/products/utils';
 
 const money = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -122,10 +125,18 @@ export default function ProductDetail({
                                 </span>
                             )}
                         </p>
-                        <h1 className="mt-3 font-serif text-5xl leading-none font-semibold tracking-tight sm:text-6xl">
-                            {product.name}
-                            <span className="text-public-canvas">.</span>
-                        </h1>
+                        <div
+                            data-testid="product-detail-title"
+                            className="mt-3 flex items-start gap-3"
+                        >
+                            <h1 className="font-serif text-5xl leading-none font-semibold tracking-tight sm:text-6xl">
+                                {product.name}
+                                <span className="text-public-canvas">.</span>
+                            </h1>
+                            {isVegetarian(product.tags) && (
+                                <VegetarianLeaf className="mt-1 size-10 sm:size-12" />
+                            )}
+                        </div>
                         {product.tags.length > 0 && (
                             <div className="mt-5 flex flex-wrap gap-2">
                                 {product.tags.map((tag) => (
@@ -162,19 +173,19 @@ export default function ProductDetail({
                             className="mt-7 border-t border-border pt-6"
                             aria-label={
                                 product.pricing_family === 'empanada'
-                                    ? 'Precios cocinados'
+                                    ? 'Precios'
                                     : 'Precio por unidad'
                             }
                         >
                             <h2 className="text-xs font-bold tracking-[0.16em] text-muted-foreground uppercase">
                                 {product.pricing_family === 'empanada'
-                                    ? 'Precios cocinados'
+                                    ? 'Precios'
                                     : 'Precio'}
                             </h2>
                             <dl
                                 className={`mt-4 grid gap-2 text-sm ${
                                     product.pricing_family === 'empanada'
-                                        ? 'grid-cols-3'
+                                        ? 'grid-cols-2'
                                         : 'grid-cols-1'
                                 }`}
                             >
@@ -200,14 +211,19 @@ export default function ProductDetail({
                                                 )}
                                             </dd>
                                         </div>
-                                        <div>
+                                        <div className="col-span-2 rounded-xl bg-secondary px-4 py-3">
                                             <dt className="text-muted-foreground">
                                                 Docena
                                             </dt>
-                                            <dd className="mt-1 font-bold tabular-nums">
-                                                {money.format(
-                                                    product.prices.dozen!,
-                                                )}
+                                            <dd className="mt-1 text-2xl font-bold">
+                                                <DozenPrice
+                                                    unitPrice={
+                                                        product.prices.unit
+                                                    }
+                                                    dozenPrice={
+                                                        product.prices.dozen!
+                                                    }
+                                                />
                                             </dd>
                                         </div>
                                     </>

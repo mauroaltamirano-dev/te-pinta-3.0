@@ -34,7 +34,7 @@ test('product detail is shareable and adds a selected quantity without blocking 
         `${title}.`,
     );
     await expect(
-        page.getByRole('region', { name: 'Precios cocinados' }),
+        page.getByRole('region', { name: 'Precios' }),
     ).toBeVisible();
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
         'href',
@@ -54,7 +54,7 @@ test('product detail is shareable and adds a selected quantity without blocking 
         contrastRatio(shellColors.foreground, shellColors.background),
     ).toBeGreaterThanOrEqual(4.5);
     const categoryColors = await page
-        .getByRole('heading', { level: 1 })
+        .getByTestId('product-detail-title')
         .locator('xpath=preceding-sibling::p[1]')
         .evaluate((category) => {
             const styles = getComputedStyle(category);

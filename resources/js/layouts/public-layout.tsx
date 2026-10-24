@@ -109,10 +109,11 @@ function PublicShell({ children }: PropsWithChildren) {
                     </div>
                     <div>
                         <p className="text-xs font-semibold tracking-[0.16em] text-white/55 uppercase">
-                            Cómo pedir
+                            Qué ofrecemos
                         </p>
                         <ul className="mt-3 space-y-1.5 text-sm text-white/80">
-                            <li>Cocinadas o para cocinar en casa</li>
+                            <li>Empanadas, pizzas y más</li>
+                            <li>Comé en el local</li>
                             <li>Retiro o envío a domicilio</li>
                             <li>Confirmación por WhatsApp</li>
                         </ul>

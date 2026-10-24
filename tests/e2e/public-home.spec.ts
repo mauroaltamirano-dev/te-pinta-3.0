@@ -27,8 +27,21 @@ test('public home presents the brand and leads directly to the menu', async ({
     await expect(page.getByTestId('public-cart-fab')).toHaveCount(0);
 
     await expect(
-        page.getByRole('heading', { name: /Te pinta una empanada/i }),
+        page.getByRole('heading', { level: 1, name: '¿Qué te pinta hoy?' }),
     ).toBeVisible();
+    await expect(page.getByText(/cocinar en casa/i)).toHaveCount(0);
+    const dineIn = page.locator(
+        'section[aria-labelledby="home-dine-in-title"]',
+    );
+    await expect(
+        dineIn.getByRole('heading', { name: 'Vení a comer al local.' }),
+    ).toBeVisible();
+    for (const item of ['Servicio a la mesa', 'Bebidas', 'Postres']) {
+        await expect(dineIn.getByText(item, { exact: true })).toBeVisible();
+    }
+    await expect(
+        dineIn.getByRole('link', { name: /Cómo llegar/ }),
+    ).toHaveAttribute('href', 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6');
     const orderCta = page.getByRole('link', { name: /Hacer pedido/i });
     await expect(orderCta).toHaveAttribute('href', '/menu');
     const orderCtaColors = await orderCta.evaluate((link) => {

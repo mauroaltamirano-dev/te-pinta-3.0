@@ -121,7 +121,7 @@ test('navegación pública expone las páginas principales', async ({ page }) =>
     ).toHaveAttribute('src', '/images/brand/logo-completo-blanco.png');
     await expect(
         page.getByRole('heading', {
-            name: 'Te pinta una empanada.',
+            name: '¿Qué te pinta hoy?',
             exact: true,
         }),
     ).toBeVisible();

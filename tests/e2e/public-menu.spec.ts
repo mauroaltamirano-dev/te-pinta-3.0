@@ -197,3 +197,51 @@ test('menu hides tier quick-add controls for a unit product', async ({
         0,
     );
 });
+
+test('menu marks vegetarian flavors with a leaf and shows the dozen saving', async ({
+    page,
+}) => {
+    await page.goto('/menu');
+
+    const humita = page
+        .getByTestId('public-product-card')
+        .filter({ hasText: 'Humita Tucumana' });
+    await expect(
+        humita.getByRole('img', { name: 'Vegetariana' }),
+    ).toBeVisible();
+    await expect(humita.getByText('Vegetariana', { exact: true })).toHaveCount(
+        1,
+    );
+
+    // 12 × $1.600 = $19.200 regular; the dozen costs $17.000 (11% off, floored).
+    const dozen = humita.getByTestId('dozen-price');
+    await expect(dozen.getByTestId('dozen-price-current')).toHaveText(
+        /\$\s?17\.000/,
+    );
+    await expect(dozen.getByTestId('dozen-price-regular')).toHaveText(
+        /\$\s?19\.200/,
+    );
+    await expect(dozen.getByTestId('dozen-price-regular')).toHaveCSS(
+        'text-decoration-line',
+        'line-through',
+    );
+    await expect(dozen.getByTestId('dozen-price-discount')).toHaveText('-11%');
+
+    const salteña = page
+        .getByTestId('public-product-card')
+        .filter({ hasText: 'Salteña' });
+    await expect(salteña.getByRole('img', { name: 'Vegetariana' })).toHaveCount(
+        0,
+    );
+
+    await humita.getByRole('link', { name: 'Ver detalles' }).click();
+    await expect(page).toHaveURL(/\/menu\/humita-tucumana$/);
+    await expect(
+        page
+            .getByTestId('product-detail-title')
+            .getByRole('img', { name: 'Vegetariana' }),
+    ).toBeVisible();
+    await expect(
+        page.getByTestId('dozen-price').getByTestId('dozen-price-discount'),
+    ).toHaveText('-11%');
+});

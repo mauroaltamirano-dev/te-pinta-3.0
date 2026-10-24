@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatMoney } from '@/lib/format';
 import type { Product } from '../types';
+import { isVegetarian } from '../utils';
 
 interface ProductCardProps {
     product: Product;
@@ -22,9 +23,7 @@ export function ProductCard({
     onEdit,
     onFeature,
 }: ProductCardProps) {
-    const isVegetarian = product.tags.some(
-        (tag) => tag.slug === 'vegetariana' || tag.slug === 'vegetarian',
-    );
+    const vegetarian = isVegetarian(product.tags);
     const isEmpanada = product.pricing_family === 'empanada';
 
     return (
@@ -53,9 +52,9 @@ export function ProductCard({
                 <p className="mt-0.5 truncate text-xs text-admin-text-secondary">
                     {location}
                 </p>
-                {(isVegetarian || !product.is_available) && (
+                {(vegetarian || !product.is_available) && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {isVegetarian && (
+                        {vegetarian && (
                             <Badge variant="secondary">Vegetariano</Badge>
                         )}
                         {!product.is_available && (
