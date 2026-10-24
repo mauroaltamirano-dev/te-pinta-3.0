@@ -39,7 +39,7 @@ export default function PrintStation({ restaurant }: { restaurant: string }) {
             <Head title="Estación de impresión" />
             <AdminPageShell
                 title="Estación de impresión"
-                description="Imprime las comandas y cuentas en la impresora de esta PC. Dejala abierta en su propia ventana, al frente."
+                description="Imprime las comandas y cuentas en la impresora de esta PC. Con la estación activa, imprime desde cualquier pantalla del admin que esté a la vista en esta PC."
                 actions={
                     <>
                         <Button
@@ -95,9 +95,10 @@ export default function PrintStation({ restaurant }: { restaurant: string }) {
                             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning bg-warning-subtle p-4 text-warning"
                         >
                             <p>
-                                La ventana estuvo en segundo plano: Chrome frena
-                                las páginas ocultas y las comandas pueden
-                                demorarse. Dejala al frente.
+                                Esta pestaña estuvo en segundo plano. Mientras
+                                está oculta no imprime: imprime la pantalla del
+                                admin que esté a la vista en esta PC. Si no hay
+                                ninguna a la vista, las comandas esperan.
                             </p>
                             <Button
                                 variant="outline"

@@ -154,6 +154,7 @@ Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printi
 #### Station page
 
 - Only the PC whose "Activar esta PC como estación" is on prints (remembered in that browser's `localStorage`); any other device that opens the page only watches the queue. It polls every 3 seconds, prints each claimed job through a hidden iframe and acknowledges it; an acknowledgement that cannot reach the server is kept in `localStorage` and retried before the next claim.
+- On the active PC every admin page prints, not only the station page: the admin layout runs the same loop (`features/printing/use-background-printing.ts`) for users with `orders.manage`, so the cashier can work on Mesas or Mostrador in the same window. Only a tab on screen claims jobs (Chrome holds `print()` in a background tab until it is shown); a hidden tab leaves them to a visible one, and the server hands each job to one claim. Outside the station page a failed print shows a toast; connection and session alerts stay on the station page.
 - Red alerts, always on screen, with the pending counter (also in the window title as `(N) Estación de impresión`): the session closed (401/419, with a link to log in again), no connection to the server, the station is off while jobs wait, pending jobs older than 30 seconds, jobs claimed more than 30 seconds ago and never confirmed, and a job that failed to print (it goes back to the queue). Unconfirmed jobs are listed with "Salió" (confirm) and "No salió" (back to the queue); the last 30 jobs can be reprinted.
 - Kitchen tickets carry table or order type, order number, round, time, waiter, "agregado por", customer and schedule for orders, notes and big quantities, never prices. Bills carry units per product (with the pack price, for example "1 docena × $ 18.000"), subtotal, discount, rounding, total and "Documento no válido como factura". Both are 80 mm HTML (`@page` 80 mm wide, zero margins).
 
@@ -169,7 +170,7 @@ Kitchen tickets and bills are stored server-side in `print_jobs` (module `Printi
 
    `--kiosk-printing` sends `print()` straight to the default printer without a dialog. Chrome ignores flags when a window with the same profile is already open, so the shortcut uses its own profile (`--user-data-dir`). `--app` opens the station in its own window. Copy the shortcut to `shell:startup` so it opens when Windows starts.
 4. Open the shortcut, log in with "Recordarme", press "Activar esta PC como estación" and then "Imprimir prueba": the ticket must come out complete and cut. If a URL or date is printed at the top or bottom, open the page once without `--kiosk-printing`, print the test with "Headers and footers" unchecked, close every window of that profile and reopen the shortcut.
-5. Keep the station window on its own, in front, never minimized or behind another window: Chrome slows down timers of hidden pages and the tickets would arrive late (the page warns when it was hidden). Turn off sleep in Windows power settings. Polling keeps the session alive; after a restart "Recordarme" logs it in again.
+5. Do all the cashier work in this same window (any admin page prints) and keep it on screen, never minimized: a hidden tab does not print, and with no admin page on screen the tickets wait (the station page warns when it was hidden). A normal Chrome window without `--kiosk-printing` must not be activated as station: it would open the print dialog. Turn off sleep in Windows power settings. Polling keeps the session alive; after a restart "Recordarme" logs it in again.
 
 #### Before opening (owner checklist)
 
@@ -200,7 +201,7 @@ Run on the shop PC with the Waggs printer, the station active, one waiter phone 
 | P13 | Unplug the PC network for 30 s, send a round from the phone, plug back | Red "Sin conexión" alert while offline; the ticket prints after reconnecting |
 | P14 | Deactivate the station, send a round, wait 35 s | Alert "pendientes hace más de 30 segundos" and the counter in the title |
 | P15 | Log out on another tab | "Se cerró la sesión" alert with the login link |
-| P16 | Minimize the window for 1 min while sending rounds | Hidden-window warning; record how late tickets arrived; keep the window in front |
+| P16 | In the station window open Mesas, send a round from a phone; then minimize the window for 1 min while sending rounds | The ticket prints while on Mesas; while minimized nothing prints and the tickets come out when the window is restored |
 | P17 | Two phones confirm rounds on two tables at the same time; then 10 quick rounds | Every ticket once, in confirmation order |
 | P18 | Restart Windows | Station opens at startup, still logged in and active |
 | P19 | Phone: turn on airplane mode right after "Confirmar y enviar a cocina", turn it off | "Sin conexión" toast; the round history shows whether it was saved: if it is there, do not confirm again (a retry after the table refreshed is a new round); if not, confirm again and one ticket prints |

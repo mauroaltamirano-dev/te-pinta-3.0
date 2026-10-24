@@ -3,8 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Core\Branding\RestaurantBranding;
+use App\Core\Tenancy\RestaurantContext;
 use App\Modules\Identity\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -53,6 +55,10 @@ class HandleInertiaRequests extends Middleware
                 'role' => $user?->role()?->value,
                 'permissions' => $user?->permissionNames() ?? [],
             ],
+            // Printed on tickets by the shop PC from any admin page (features/printing).
+            'restaurantName' => fn (): ?string => $user?->can('orders.manage')
+                ? DB::table('restaurants')->where('id', app(RestaurantContext::class)->id())->value('name')
+                : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

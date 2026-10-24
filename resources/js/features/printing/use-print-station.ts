@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StationRequestError, stationRequest } from './api';
 import { printHtml } from './print-frame';
-import {
-    isStationActive,
-    pendingAcks,
-    savePendingAcks,
-    setStationActive,
-} from './storage';
-import { jobHtml, testTicketHtml } from './templates';
+import { canClaimJobs, flushAcks, printClaimedJobs } from './printer';
+import { isStationActive, setStationActive } from './storage';
+import { testTicketHtml } from './templates';
 import type { PrintJob, QueueStatus } from './types';
 
 const POLL_MS = 3000;
-const CLAIM_TIMEOUT_MS = 30_000;
 /** The server lists at most this many unconfirmed jobs (PrintJobController). */
 const UNCONFIRMED_LIMIT = 50;
 const RECENT_EVERY_TICKS = 5;
@@ -29,8 +24,8 @@ export type StationAlert = {
 type Envelope<T> = { data: T };
 
 /**
- * Drives the shop PC: polls the queue, prints claimed jobs, acknowledges them (retrying from
- * localStorage when the network drops) and turns every failure into a visible alert.
+ * Drives the station page: polls the queue, prints claimed jobs while on screen, acknowledges them
+ * (retrying from localStorage when the network drops) and turns every failure into a visible alert.
  */
 export function usePrintStation(restaurant: string) {
     const [active, setActiveState] = useState(isStationActive);
@@ -63,74 +58,6 @@ export function usePrintStation(restaurant: string) {
         listedUnconfirmed.current = response.unconfirmed.length;
     }, []);
 
-    const flushAcks = useCallback(async () => {
-        let queue = pendingAcks();
-
-        for (const ack of queue) {
-            try {
-                await stationRequest(
-                    `/admin/print-jobs/${ack.id}/printed`,
-                    'POST',
-                    { claim_token: ack.token },
-                );
-            } catch (error) {
-                // 404/409/422: the job is gone or someone else settled it; nothing left to confirm.
-                if (
-                    !(error instanceof StationRequestError) ||
-                    ![404, 409, 422].includes(error.status ?? 0)
-                ) {
-                    throw error;
-                }
-            }
-
-            queue = queue.filter((item) => item.id !== ack.id);
-            savePendingAcks(queue);
-        }
-    }, []);
-
-    const printClaimed = useCallback(async () => {
-        // A claim committed on the server but abandoned here leaves its jobs unconfirmed, so it waits longer.
-        const { data: jobs } = await stationRequest<Envelope<PrintJob[]>>(
-            '/admin/print-jobs/claim',
-            'POST',
-            undefined,
-            CLAIM_TIMEOUT_MS,
-        );
-
-        for (const job of jobs) {
-            try {
-                await printHtml(jobHtml(job, restaurant));
-            } catch {
-                const released = await stationRequest(
-                    `/admin/print-jobs/${job.id}/release`,
-                    'POST',
-                ).then(
-                    () => true,
-                    () => false,
-                );
-                setPrintError(
-                    released
-                        ? `No se pudo imprimir el trabajo #${job.id}. Volvió a la cola.`
-                        : `No se pudo imprimir el trabajo #${job.id} y quedó sin confirmar: mandalo de nuevo a la cola.`,
-                );
-                continue;
-            }
-
-            // Without a token the job stays unconfirmed and a person settles it.
-            if (job.claim_token) {
-                savePendingAcks([
-                    ...pendingAcks(),
-                    { id: job.id, token: job.claim_token },
-                ]);
-            }
-        }
-
-        // Once, after the batch: a failed acknowledgement stays stored and never stops printing.
-        await flushAcks().catch(() => undefined);
-
-        return jobs.length > 0;
-    }, [flushAcks, restaurant]);
-
     const tick = useCallback(async () => {
         if (busy.current) {
             return;
@@ -146,8 +73,8 @@ export function usePrintStation(restaurant: string) {
             );
             let changed = false;
 
-            if (activeRef.current && data.pending > 0) {
-                changed = await printClaimed();
+            if (activeRef.current && data.pending > 0 && canClaimJobs()) {
+                changed = await printClaimedJobs(restaurant, setPrintError);
                 ({ data } = await stationRequest<Envelope<QueueStatus>>(
                     '/admin/print-jobs/status',
                 ));
@@ -170,7 +97,7 @@ export function usePrintStation(restaurant: string) {
         } finally {
             busy.current = false;
         }
-    }, [flushAcks, printClaimed, refreshRecent, report]);
+    }, [refreshRecent, report, restaurant]);
 
     useEffect(() => {
         const first = window.setTimeout(() => void tick(), 0);
@@ -254,7 +181,7 @@ export function usePrintStation(restaurant: string) {
         alerts.push({
             id: 'stale-pending',
             title: `${status?.pending} pendiente(s) hace más de ${STALE_SECONDS} segundos`,
-            detail: 'Revisá que la estación esté activa, en su propia ventana al frente, y que la impresora tenga papel.',
+            detail: 'Revisá que la estación esté activa, que haya una pantalla del admin a la vista en esta PC y que la impresora tenga papel.',
         });
     }
 

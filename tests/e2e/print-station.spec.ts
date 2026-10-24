@@ -260,3 +260,61 @@ test('un pedido colgado termina en la alerta de conexión', async ({ page }) => 
             .filter({ hasText: 'Sin conexión con el servidor' }),
     ).toBeVisible({ timeout: 20_000 });
 });
+
+test('una PC activada imprime desde cualquier pantalla del admin', async ({
+    page,
+}) => {
+    const printed = await capturePrints(page);
+    await logIn(page);
+    await page.goto('/admin/print-station');
+    await page
+        .getByRole('button', { name: 'Activar esta PC como estación' })
+        .click();
+    await expect(page.getByTestId('station-state')).toHaveText('Imprimiendo');
+
+    await page.goto('/admin/orders');
+    createCounterOrder();
+
+    await expect
+        .poll(async () => (await printed()).length, { timeout: 15_000 })
+        .toBe(1);
+    expect((await printed())[0]).toContain('Mostrador');
+
+    // Printed once: back on the station page the job is settled and nothing prints again.
+    await page.goto('/admin/print-station');
+    await expect(page.getByTestId('pending-count')).toHaveText('0');
+    await expect(page.getByText('Impreso ·')).toBeVisible();
+    await page.waitForTimeout(4000);
+    expect(await printed()).toHaveLength(0);
+});
+
+test('una PC que no es estación no imprime fuera de la estación', async ({
+    page,
+}) => {
+    const printed = await capturePrints(page);
+    await logIn(page);
+    await page.goto('/admin/orders');
+    createCounterOrder();
+
+    await page.waitForTimeout(5000);
+    expect(await printed()).toHaveLength(0);
+});
+
+test('una pestaña oculta no toma trabajos de la cola', async ({ page }) => {
+    const printed = await capturePrints(page);
+    await page.addInitScript(() => {
+        window.localStorage.setItem('print-station.active', '1');
+        Object.defineProperty(document, 'visibilityState', {
+            configurable: true,
+            get: () => 'hidden',
+        });
+    });
+    await logIn(page);
+    createCounterOrder();
+
+    await page.goto('/admin/print-station');
+    await expect(page.getByTestId('pending-count')).toHaveText('1');
+    await page.waitForTimeout(5000);
+    await expect(page.getByTestId('pending-count')).toHaveText('1');
+    expect(await printed()).toHaveLength(0);
+});

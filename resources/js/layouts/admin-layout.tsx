@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { AdminModuleNavigation } from '@/components/shared/admin-module-navigation';
 import { AdminSidebar } from '@/components/shared/admin-sidebar';
+import { useBackgroundPrinting } from '@/features/printing/use-background-printing';
 import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
 import { useSubmissionFailureToast } from '@/hooks/use-submission-failure-toast';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils';
 export default function AdminLayout({ children }: PropsWithChildren) {
     useRestaurantBranding();
     useSubmissionFailureToast();
+    useBackgroundPrinting();
     const { component } = usePage();
     const isQuickOrderHome = component === 'admin/home';
     const usesDashboardComposition = component === 'admin/dashboard';
