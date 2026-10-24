@@ -30,10 +30,9 @@ final class UpdateOrderingSettingsRequest extends FormRequest
             'combined_half_dozen_surcharge' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
             'delivery_fee' => $moneyRules,
             'whatsapp_order_phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9 ()-]*$/'],
-            'raw_price_discounts' => ['required', 'array:unit,half_dozen,dozen'],
-            'raw_price_discounts.unit' => ['prohibited'],
-            'raw_price_discounts.half_dozen' => ['prohibited'],
-            'raw_price_discounts.dozen' => ['required', 'integer', 'min:1', 'max:2147483647'],
+            'raw_discount_percent' => ['required', 'integer', 'min:0', 'max:50'],
+            // Retired input: raw orders take a percentage; the fixed amounts stay stored as history.
+            'raw_price_discounts' => ['prohibited'],
             'addons' => ['required', 'array', 'max:50'],
             'addons.*' => ['required', 'array:id,name,price,is_available,sort_order'],
             'addons.*.id' => [
@@ -53,13 +52,12 @@ final class UpdateOrderingSettingsRequest extends FormRequest
     public function messages(): array
     {
         $retiredCombined = 'El precio fijo de docena combinada ya no se usa; recargá la página.';
-        $retiredDiscount = 'Solo se usa el descuento crudo de docena; recargá la página.';
+        $retiredDiscount = 'El descuento crudo ahora es un porcentaje; recargá la página.';
 
         return [
             'combined_dozen_raw_price.prohibited' => $retiredCombined,
             'combined_dozen_cooked_price.prohibited' => $retiredCombined,
-            'raw_price_discounts.unit.prohibited' => $retiredDiscount,
-            'raw_price_discounts.half_dozen.prohibited' => $retiredDiscount,
+            'raw_price_discounts.prohibited' => $retiredDiscount,
         ];
     }
 

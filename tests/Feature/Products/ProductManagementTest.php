@@ -412,7 +412,7 @@ final class ProductManagementTest extends TestCase
         Storage::disk('public')->assertMissing($replacementPath);
     }
 
-    public function test_cooked_product_prices_cannot_be_lower_than_the_raw_discounts(): void
+    public function test_retired_fixed_raw_discounts_no_longer_limit_cooked_prices(): void
     {
         $admin = User::factory()->administrator()->create();
         $category = $this->createCategory();
@@ -423,9 +423,9 @@ final class ProductManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.products.store'), $this->validPayload($category, ['dozen_price' => 1999]))
-            ->assertSessionHasErrors('dozen_price');
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseCount('products', 0);
+        $this->assertDatabaseHas('products', ['dozen_price' => 1999]);
     }
 
     public function test_unavailable_product_remains_visible_in_administration(): void

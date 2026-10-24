@@ -2,10 +2,11 @@
 
 namespace App\Modules\Products\Http\Controllers;
 
+use App\Modules\Orders\Enums\OrderSettingKey;
+use App\Modules\Orders\Models\OrderSetting;
 use App\Modules\Products\Http\Resources\PublicProductResource;
 use App\Modules\Products\Models\Category;
 use App\Modules\Products\Models\Product;
-use App\Modules\Products\Models\RawPriceDiscount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -38,7 +39,7 @@ final class PublicProductCatalogController
                     'slug' => $category->slug,
                     'name' => $category->name,
                 ])->all(),
-            'raw_price_discounts' => RawPriceDiscount::query()->pluck('amount', 'pricing_mode'),
+            'raw_discount_percent' => OrderSetting::integer(OrderSettingKey::RawDiscountPercent),
         ]);
     }
 }
