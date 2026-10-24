@@ -60,19 +60,9 @@ test('public home presents the brand and leads directly to the menu', async ({
     await expect(
         page.getByRole('link', { name: 'Te Pinta, inicio' }).locator('img'),
     ).toHaveAttribute('src', '/images/brand/logo-completo-blanco.png');
-    const footerLogo = page.locator('footer img');
-    await expect(footerLogo).toHaveAttribute(
-        'src',
-        '/images/brand/logo-blanco.png',
-    );
-    await footerLogo.scrollIntoViewIfNeeded();
-    await expect
-        .poll(() =>
-            footerLogo.evaluate(
-                (image: HTMLImageElement) => image.naturalWidth,
-            ),
-        )
-        .toBeGreaterThan(0);
+    await expect(
+        page.locator('footer svg[viewBox="0 0 4318 4318"]'),
+    ).toBeVisible();
     expect(
         await page
             .locator('main > section')

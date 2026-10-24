@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, ShoppingBag } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
+import { BrandBadge } from '@/components/brand-badge';
 import { CartProvider, useCart } from '@/features/orders/cart-context';
 import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
 
@@ -91,13 +92,10 @@ function PublicShell({ children }: PropsWithChildren) {
                     className={`mx-auto grid max-w-7xl gap-8 px-4 pt-12 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr] lg:px-12 ${showFloatingCart ? 'pb-28' : 'pb-12'}`}
                 >
                     <div className="flex items-start gap-4">
-                        <img
-                            src="/images/brand/logo-blanco.png"
-                            alt=""
-                            width="64"
-                            height="64"
-                            loading="lazy"
-                            className="size-12 shrink-0 object-contain"
+                        <BrandBadge
+                            title=""
+                            aria-hidden="true"
+                            className="size-16 shrink-0 text-white"
                         />
                         <div>
                             <p className="font-serif text-2xl font-semibold">
