@@ -12,6 +12,9 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            case name === 'public/coming-soon':
+                // A standalone screen: no navigation to the closed storefront.
+                return undefined;
             case name.startsWith('public/'):
                 return PublicLayout;
             case name.startsWith('auth/'):

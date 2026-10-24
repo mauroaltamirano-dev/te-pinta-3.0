@@ -6,14 +6,17 @@ use App\Modules\Orders\Http\Controllers\PublicOrderPricingController;
 use App\Modules\Products\Http\Controllers\PublicProductCatalogController;
 use App\Modules\Products\Http\Controllers\PublicProductDetailController;
 use App\Modules\PublicSite\Http\Controllers\PublicHomeController;
+use App\Modules\PublicSite\Http\Middleware\EnsurePublicSiteIsOpen;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', PublicHomeController::class)->name('home');
-Route::inertia('/menu', 'public/menu')->name('menu');
-Route::inertia('/cart', 'public/cart')->name('cart');
+Route::middleware(EnsurePublicSiteIsOpen::class)->group(function (): void {
+    Route::inertia('/menu', 'public/menu')->name('menu');
+    Route::inertia('/cart', 'public/cart')->name('cart');
 
-Route::get('/menu/catalog', PublicProductCatalogController::class)->name('public.products.index');
-Route::get('/menu/{slug}', PublicProductDetailController::class)->name('public.products.show');
-Route::get('/checkout/options', PublicCheckoutOptionsController::class)->name('public.orders.options');
-Route::post('/checkout/price-preview', PublicOrderPricingController::class)->middleware('throttle:20,1')->name('public.orders.price-preview');
-Route::post('/checkout/orders', PublicOrderController::class)->middleware('throttle:5,1')->name('public.orders.store');
+    Route::get('/menu/catalog', PublicProductCatalogController::class)->name('public.products.index');
+    Route::get('/menu/{slug}', PublicProductDetailController::class)->name('public.products.show');
+    Route::get('/checkout/options', PublicCheckoutOptionsController::class)->name('public.orders.options');
+    Route::post('/checkout/price-preview', PublicOrderPricingController::class)->middleware('throttle:20,1')->name('public.orders.price-preview');
+    Route::post('/checkout/orders', PublicOrderController::class)->middleware('throttle:5,1')->name('public.orders.store');
+});
