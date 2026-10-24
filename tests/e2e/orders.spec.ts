@@ -718,8 +718,9 @@ test.describe('edición administrativa segura', () => {
             'Total actualizado',
         ).textContent();
         expect(updatedTotal).not.toBe(originalTotal);
+        // Raw at 5%: dozen 17100 + one unit 1600 = 18700 against the cooked 18000.
         await expect(summaryValue(page, 'Diferencia total')).toContainText(
-            /[−-]/,
+            /\+\s?\$\s?700/,
         );
 
         const update = page.waitForResponse((response) => {

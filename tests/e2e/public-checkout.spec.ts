@@ -316,12 +316,13 @@ test('checkout público usa cocinadas por defecto y crudas como alternativa más
     };
 
     expect(payload.data.products_cooked_subtotal).toBe(18000);
-    expect(payload.data.raw_discount).toBe(2000);
-    expect(payload.data.products_subtotal).toBe(16000);
+    // Raw dozens take raw_discount_percent (seed 5%) off the dozen.
+    expect(payload.data.raw_discount).toBe(900);
+    expect(payload.data.products_subtotal).toBe(17100);
     await expect(
         page.getByText('Descuento por preparación en crudo'),
     ).toBeVisible();
-    await expect(cookedSummary).toContainText(/16[.\s]000/);
+    await expect(cookedSummary).toContainText(/17[.\s]100/);
     await expect(page.getByText(/recargo por cocción/i)).toHaveCount(0);
 });
 
