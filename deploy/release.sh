@@ -106,10 +106,10 @@ expect_status() {
     local url=$1 expected=$2 status attempt
     for attempt in 1 2 3 4 5; do
         status=$(curl --silent --output /dev/null --max-time 10 --write-out '%{http_code}' "$url" || true)
-        [[ $status == "$expected" ]] && return 0
+        [[ $status =~ ^($expected)$ ]] && return 0
         sleep "$attempt"
     done
-    if [[ $status != "$expected" ]]; then
+    if [[ ! $status =~ ^($expected)$ ]]; then
         echo "smoke: $url answered $status, expected $expected" >&2
         return 1
     fi
@@ -121,7 +121,8 @@ smoke_test() {
     expect_status "http://127.0.0.1:$APP_PORT/login" 200 || ok=1
     expect_status "http://127.0.0.1:$PUBLIC_APP_PORT/up" 200 || ok=1
     expect_status "http://127.0.0.1:$PUBLIC_APP_PORT/" 200 || ok=1
-    expect_status "http://127.0.0.1:$PUBLIC_APP_PORT/menu" 200 || ok=1
+    # 302: the coming-soon switch (PUBLIC_SITE_OPEN) sends the menu back home.
+    expect_status "http://127.0.0.1:$PUBLIC_APP_PORT/menu" "200|302" || ok=1
     return $ok
 }
 
