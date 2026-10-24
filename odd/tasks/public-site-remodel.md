@@ -15,7 +15,7 @@ Objective: close the public site behind a "coming soon" screen while the storefr
 
 ## Tasks
 
-- T1 — S1, S2: coming-soon screen and public-site switch, PHPUnit + e2e, docs. Route: inline. Status: in progress.
+- T1 — S1, S2: coming-soon screen and public-site switch, PHPUnit + e2e, docs. Route: inline. Status: done (`0ec0aef`).
 - T2 — S3: vegetarian leaf on public product cards and detail. Route: inline. Status: pending.
 - T3 — S4, S5, S6: home remodel (slogan, dine-in, table service, drinks, desserts, location; raw option de-emphasized). Route: inline. Status: pending (slogan wording to confirm).
 - T4 — S7: real photos. Status: waiting for the user's photos.
