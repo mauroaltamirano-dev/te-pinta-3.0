@@ -36,9 +36,11 @@ test('public home presents the brand and leads directly to the menu', async ({
     await expect(
         dineIn.getByRole('heading', { name: 'Vení a comer al local.' }),
     ).toBeVisible();
+
     for (const item of ['Servicio a la mesa', 'Bebidas', 'Postres']) {
         await expect(dineIn.getByText(item, { exact: true })).toBeVisible();
     }
+
     await expect(
         dineIn.getByRole('link', { name: /Cómo llegar/ }),
     ).toHaveAttribute('href', 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6');
