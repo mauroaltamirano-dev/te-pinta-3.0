@@ -1,0 +1,1185 @@
+{
+    "name": "Te Pinta - Publish Instagram Stories",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 2
+                        }
+                    ]
+                }
+            },
+            "id": "9937a24c-8101-4893-8ebc-94d21c10d33b",
+            "name": "Every 2 Minutes",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [-1180, 0]
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.POS_BASE_URL.replace(/\\/$/, '') + '/api/automation/instagram/stories/pending' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "2586885e-1e1a-4ea5-9b6a-9305876b1a51",
+            "name": "Claim Next Publication",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [-960, 0],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "c64fe890-7171-466a-a79d-3fcdd3ac36b7",
+                            "leftValue": "={{ $json.statusCode }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "c3396ac8-e331-4aa7-98ae-613624bccac4",
+                            "leftValue": "={{ $json.body?.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "number",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "046e67af-87c1-4777-937f-40b463a22eb6",
+            "name": "Publication Available?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [-740, 0]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $env.META_INSTAGRAM_USER_ID + '/media' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "form-urlencoded",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "image_url",
+                            "value": "={{ $('Claim Next Publication').item.json.body.asset.media_url }}"
+                        },
+                        {
+                            "name": "media_type",
+                            "value": "STORIES"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "7dc52a22-130a-48fe-9f60-8cc5bb11c02f",
+            "name": "Create Story Container",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [-500, -120],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "00161bcb-5b56-473b-8db6-2369ab0b0fc8",
+                            "leftValue": "={{ $json.statusCode }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "3bcf672a-1244-4ce7-a1dd-125667c22dcc",
+                            "leftValue": "={{ $json.body?.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "9b2f8ac3-e544-4451-8748-07df46458c14",
+            "name": "Container Created?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [-280, -120]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $env.META_INSTAGRAM_USER_ID + '/media_publish' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "form-urlencoded",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "creation_id",
+                            "value": "={{ $('Create Story Container').item.json.body.id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "89bd08a5-5ffd-4929-800b-d1c9f17e032a",
+            "name": "Publish Story Container",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [3260, -620],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "f69ce77d-3daf-41c2-b2cd-c3b89188264e",
+                            "leftValue": "={{ $json.statusCode }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "6317c907-2256-4155-9515-227573576b40",
+                            "leftValue": "={{ $json.body?.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "eea0a1e1-6253-42b8-939a-3290d8efc902",
+            "name": "Story Published?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [3480, -620]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.POS_BASE_URL.replace(/\\/$/, '') + '/api/automation/instagram/stories/' + $('Claim Next Publication').item.json.body.id + '/published' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ JSON.stringify({ container_id: $('Create Story Container').item.json.body.id, media_id: $('Publish Story Container').item.json.body.id }) }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "98b83205-363b-4dc9-8d72-8d724550b63b",
+            "name": "Confirm Published in POS",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [3700, -760],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "7fd52e55-b6a7-431a-befa-c7b417999f8b",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gte"
+                            }
+                        },
+                        {
+                            "id": "c9097cd7-1c83-4323-9214-dd799cad10f8",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 300,
+                            "operator": {
+                                "type": "number",
+                                "operation": "lt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "25766267-76bc-49c7-96dc-227f73f9611f",
+            "name": "Published Callback Accepted?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [3920, -760]
+        },
+        {
+            "parameters": {
+                "errorType": "errorMessage",
+                "errorMessage": "={{ 'Meta published publication ' + $('Claim Next Publication').item.json.body.id + ', but the POS callback failed (HTTP ' + ($json.statusCode ?? 'network error') + '). DO NOT retry this execution. Reconcile manually to avoid a duplicate Story.' }}"
+            },
+            "id": "e39b03a7-13e2-4e54-9464-acd56f5634a6",
+            "name": "Stop - Ambiguous Published State",
+            "type": "n8n-nodes-base.stopAndError",
+            "typeVersion": 1,
+            "position": [4140, -680]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.POS_BASE_URL.replace(/\\/$/, '') + '/api/automation/instagram/stories/' + $('Claim Next Publication').item.json.body.id + '/failed' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ JSON.stringify({ error: 'Meta container creation failed (HTTP ' + ($json.statusCode ?? 'network error') + '; code ' + ($json.body?.error?.code ?? 'unknown') + '; subcode ' + ($json.body?.error?.error_subcode ?? 'unknown') + '). See n8n execution ' + $execution.id + '.', retryable: ![400, 401, 403].includes(Number($json.statusCode ?? 0)) }) }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "bdf857be-1330-4280-b96a-eb08ac874a23",
+            "name": "Report Container Failure",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [-40, 20],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.POS_BASE_URL.replace(/\\/$/, '') + '/api/automation/instagram/stories/' + $('Claim Next Publication').item.json.body.id + '/failed' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ JSON.stringify({ error: 'Meta publish result is ambiguous (HTTP ' + ($json.statusCode ?? 'network error') + '; code ' + ($json.body?.error?.code ?? 'unknown') + '; subcode ' + ($json.body?.error?.error_subcode ?? 'unknown') + '). Automatic retry is disabled; reconcile in Meta and the POS. See n8n execution ' + $execution.id + '.', retryable: false, ambiguous: true }) }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "1bd8a674-da0a-41d3-b7c7-e53ae38513ef",
+            "name": "Report Ambiguous Publish Failure",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [3700, -500],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "2cc41264-17e0-4298-b67f-d3f1d8099243",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gte"
+                            }
+                        },
+                        {
+                            "id": "4e5f824a-f25b-43a6-8bad-82b4ea251c84",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 300,
+                            "operator": {
+                                "type": "number",
+                                "operation": "lt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "f99950be-a971-4767-8d7a-bbf32bc2b746",
+            "name": "Failure Callback Accepted?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [3920, -300]
+        },
+        {
+            "parameters": {
+                "errorType": "errorMessage",
+                "errorMessage": "={{ 'The POS failure callback for publication ' + $('Claim Next Publication').item.json.body.id + ' failed (HTTP ' + ($json.statusCode ?? 'network error') + '). Inspect this execution and the POS before retrying.' }}"
+            },
+            "id": "19577040-e054-4caf-8346-8099533ec397",
+            "name": "Stop - Failure Callback Rejected",
+            "type": "n8n-nodes-base.stopAndError",
+            "typeVersion": 1,
+            "position": [4140, -220]
+        },
+        {
+            "parameters": {
+                "resume": "timeInterval",
+                "amount": 1,
+                "unit": "minutes"
+            },
+            "id": "10000000-0000-4000-8000-000000000001",
+            "name": "Wait Before Status Check 1",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [-40, -420],
+            "webhookId": "20000000-0000-4000-8000-000000000001"
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $('Create Story Container').item.json.body.id + '?fields=status_code' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "30000000-0000-4000-8000-000000000001",
+            "name": "Check Container Status 1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [180, -420],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "40000000-0000-4000-8001-000000000001",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "40000000-0000-4000-8002-000000000001",
+                            "leftValue": "={{ $json.body?.status_code ?? \"\" }}",
+                            "rightValue": "FINISHED",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "50000000-0000-4000-8000-000000000001",
+            "name": "Container Ready 1?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [400, -420]
+        },
+        {
+            "parameters": {
+                "resume": "timeInterval",
+                "amount": 1,
+                "unit": "minutes"
+            },
+            "id": "10000000-0000-4000-8000-000000000002",
+            "name": "Wait Before Status Check 2",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [620, -420],
+            "webhookId": "20000000-0000-4000-8000-000000000002"
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $('Create Story Container').item.json.body.id + '?fields=status_code' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "30000000-0000-4000-8000-000000000002",
+            "name": "Check Container Status 2",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [840, -420],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "40000000-0000-4000-8001-000000000002",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "40000000-0000-4000-8002-000000000002",
+                            "leftValue": "={{ $json.body?.status_code ?? \"\" }}",
+                            "rightValue": "FINISHED",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "50000000-0000-4000-8000-000000000002",
+            "name": "Container Ready 2?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [1060, -420]
+        },
+        {
+            "parameters": {
+                "resume": "timeInterval",
+                "amount": 1,
+                "unit": "minutes"
+            },
+            "id": "10000000-0000-4000-8000-000000000003",
+            "name": "Wait Before Status Check 3",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [1280, -420],
+            "webhookId": "20000000-0000-4000-8000-000000000003"
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $('Create Story Container').item.json.body.id + '?fields=status_code' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "30000000-0000-4000-8000-000000000003",
+            "name": "Check Container Status 3",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [1500, -420],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "40000000-0000-4000-8001-000000000003",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "40000000-0000-4000-8002-000000000003",
+                            "leftValue": "={{ $json.body?.status_code ?? \"\" }}",
+                            "rightValue": "FINISHED",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "50000000-0000-4000-8000-000000000003",
+            "name": "Container Ready 3?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [1720, -420]
+        },
+        {
+            "parameters": {
+                "resume": "timeInterval",
+                "amount": 1,
+                "unit": "minutes"
+            },
+            "id": "10000000-0000-4000-8000-000000000004",
+            "name": "Wait Before Status Check 4",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [1940, -420],
+            "webhookId": "20000000-0000-4000-8000-000000000004"
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $('Create Story Container').item.json.body.id + '?fields=status_code' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "30000000-0000-4000-8000-000000000004",
+            "name": "Check Container Status 4",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [2160, -420],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "40000000-0000-4000-8001-000000000004",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "40000000-0000-4000-8002-000000000004",
+                            "leftValue": "={{ $json.body?.status_code ?? \"\" }}",
+                            "rightValue": "FINISHED",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "50000000-0000-4000-8000-000000000004",
+            "name": "Container Ready 4?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [2380, -420]
+        },
+        {
+            "parameters": {
+                "resume": "timeInterval",
+                "amount": 1,
+                "unit": "minutes"
+            },
+            "id": "10000000-0000-4000-8000-000000000005",
+            "name": "Wait Before Status Check 5",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [2600, -420],
+            "webhookId": "20000000-0000-4000-8000-000000000005"
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $('Create Story Container').item.json.body.id + '?fields=status_code' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "30000000-0000-4000-8000-000000000005",
+            "name": "Check Container Status 5",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [2820, -420],
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "40000000-0000-4000-8001-000000000005",
+                            "leftValue": "={{ Number($json.statusCode ?? 0) }}",
+                            "rightValue": 200,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "40000000-0000-4000-8002-000000000005",
+                            "leftValue": "={{ $json.body?.status_code ?? \"\" }}",
+                            "rightValue": "FINISHED",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "50000000-0000-4000-8000-000000000005",
+            "name": "Container Ready 5?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [3040, -420]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.POS_BASE_URL.replace(/\\/$/, '') + '/api/automation/instagram/stories/' + $('Claim Next Publication').item.json.body.id + '/failed' }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ JSON.stringify({ error: 'Meta container did not reach FINISHED after five bounded status checks; media_publish was not called. Last status: ' + ($json.body?.status_code ?? 'unknown') + ' (HTTP ' + ($json.statusCode ?? 'network error') + '). See n8n execution ' + $execution.id + '.', retryable: true, ambiguous: false }) }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "fullResponse": true,
+                            "neverError": true,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "60000000-0000-4000-8000-000000000001",
+            "name": "Report Container Readiness Failure",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [3260, -160],
+            "onError": "continueRegularOutput"
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Every 2 Minutes": {
+            "main": [
+                [
+                    {
+                        "node": "Claim Next Publication",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Claim Next Publication": {
+            "main": [
+                [
+                    {
+                        "node": "Publication Available?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Publication Available?": {
+            "main": [
+                [
+                    {
+                        "node": "Create Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "Create Story Container": {
+            "main": [
+                [
+                    {
+                        "node": "Container Created?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Container Created?": {
+            "main": [
+                [
+                    {
+                        "node": "Wait Before Status Check 1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Report Container Failure",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Publish Story Container": {
+            "main": [
+                [
+                    {
+                        "node": "Story Published?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Story Published?": {
+            "main": [
+                [
+                    {
+                        "node": "Confirm Published in POS",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Report Ambiguous Publish Failure",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Confirm Published in POS": {
+            "main": [
+                [
+                    {
+                        "node": "Published Callback Accepted?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Published Callback Accepted?": {
+            "main": [
+                [],
+                [
+                    {
+                        "node": "Stop - Ambiguous Published State",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Report Container Failure": {
+            "main": [
+                [
+                    {
+                        "node": "Failure Callback Accepted?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Report Ambiguous Publish Failure": {
+            "main": [
+                [
+                    {
+                        "node": "Failure Callback Accepted?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Failure Callback Accepted?": {
+            "main": [
+                [],
+                [
+                    {
+                        "node": "Stop - Failure Callback Rejected",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait Before Status Check 1": {
+            "main": [
+                [
+                    {
+                        "node": "Check Container Status 1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Container Status 1": {
+            "main": [
+                [
+                    {
+                        "node": "Container Ready 1?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Container Ready 1?": {
+            "main": [
+                [
+                    {
+                        "node": "Publish Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Wait Before Status Check 2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait Before Status Check 2": {
+            "main": [
+                [
+                    {
+                        "node": "Check Container Status 2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Container Status 2": {
+            "main": [
+                [
+                    {
+                        "node": "Container Ready 2?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Container Ready 2?": {
+            "main": [
+                [
+                    {
+                        "node": "Publish Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Wait Before Status Check 3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait Before Status Check 3": {
+            "main": [
+                [
+                    {
+                        "node": "Check Container Status 3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Container Status 3": {
+            "main": [
+                [
+                    {
+                        "node": "Container Ready 3?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Container Ready 3?": {
+            "main": [
+                [
+                    {
+                        "node": "Publish Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Wait Before Status Check 4",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait Before Status Check 4": {
+            "main": [
+                [
+                    {
+                        "node": "Check Container Status 4",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Container Status 4": {
+            "main": [
+                [
+                    {
+                        "node": "Container Ready 4?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Container Ready 4?": {
+            "main": [
+                [
+                    {
+                        "node": "Publish Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Wait Before Status Check 5",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait Before Status Check 5": {
+            "main": [
+                [
+                    {
+                        "node": "Check Container Status 5",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Container Status 5": {
+            "main": [
+                [
+                    {
+                        "node": "Container Ready 5?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Container Ready 5?": {
+            "main": [
+                [
+                    {
+                        "node": "Publish Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Report Container Readiness Failure",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Report Container Readiness Failure": {
+            "main": [
+                [
+                    {
+                        "node": "Failure Callback Accepted?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "America/Argentina/Cordoba"
+    },
+    "versionId": "82f5f30a-a34f-45f4-ab23-1c92c12d2960",
+    "meta": {
+        "templateCredsSetupCompleted": false
+    },
+    "tags": []
+}

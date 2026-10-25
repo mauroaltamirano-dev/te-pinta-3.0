@@ -36,14 +36,13 @@ try {
             ),
         ),
     );
+    // Workflow export as it was before the incident 36779 fix.
     const baseline = JSON.parse(
-        execFileSync(
-            'git',
-            [
-                'show',
-                'a67a392dfed27fa55bf2b1a01841be93b108f660:ops/n8n/workflows/instagram-stories-publisher.json',
-            ],
-            { cwd: new URL('../../../', import.meta.url), encoding: 'utf8' },
+        readFileSync(
+            new URL(
+                './fixtures/instagram-stories-publisher.baseline-36779.json',
+                import.meta.url,
+            ),
         ),
     );
     for (const [index, fixture] of [baseline, workflow].entries()) {
