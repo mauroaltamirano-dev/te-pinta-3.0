@@ -243,7 +243,7 @@ final class FixedDozenOrderPricingTest extends TestCase
         $this->assertSame([2], DB::table('order_items')->where('order_id', $order->id)->distinct()->pluck('pricing_snapshot_version')->map(fn ($version) => (int) $version)->all());
     }
 
-    public function test_summaries_and_admin_resource_show_the_rounding(): void
+    public function test_admin_resource_shows_the_rounding_and_summaries_hide_it(): void
     {
         $this->actingAs(User::factory()->administrator()->create())->post(route('admin.orders.store'), [
             ...$this->payload(['dulce' => 12], 'cooked'), 'discount_type' => 'fixed_amount', 'discount_value' => 30,
@@ -251,11 +251,45 @@ final class FixedDozenOrderPricingTest extends TestCase
         $order = Order::query()->latest('id')->with(['items.compositions', 'toppings'])->firstOrFail();
         $formatter = app(OrderSummaryFormatter::class);
 
-        // 20000 − 30 = 19970 → 20000.
+        // 20000 − 30 = 19970 → 20000: the summaries never show the rounding, so the $30 discount nets to nothing.
         $this->assertSame(20000, $order->total);
-        $this->assertStringContainsString('Redondeo: +$30', $formatter->formatAdmin($order));
-        $this->assertStringContainsString('Redondeo: +$30', $formatter->format($order));
+        foreach ([$formatter->formatAdmin($order), $formatter->format($order)] as $summary) {
+            $this->assertStringContainsString('Productos: $20.000', $summary);
+            $this->assertStringNotContainsString('Redondeo', $summary);
+            $this->assertStringNotContainsString('Descuento', $summary);
+        }
         $this->assertSame(30, (new AdminOrderResource($order))->resolve()['rounding_adjustment']);
+    }
+
+    public function test_summaries_fold_every_saving_and_the_rounding_into_one_discount(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $formatter = app(OrderSummaryFormatter::class);
+        $summaries = [];
+        foreach (['cooked', 'raw'] as $condition) {
+            $this->actingAs($admin)->post(route('admin.orders.store'), $this->payload(['dulce' => 6, 'jyq' => 6], $condition))->assertRedirect();
+            $order = Order::query()->latest('id')->with(['items.compositions', 'toppings'])->firstOrFail();
+            $summaries[$condition] = [$order, $formatter->formatAdmin($order), $formatter->format($order)];
+        }
+
+        // Cooked: U 1800 / 2000 → list 22800; 20% off = 18240 → 18200, so the discount is 4600.
+        [$cooked, $admin_, $public] = $summaries['cooked'];
+        $this->assertSame(18200, $cooked->total);
+        $this->assertStringContainsString("*RESUMEN*\n\nProductos: $22.800\nDescuento: -$4.600\n\n💰 *TOTAL: $18.200*", $admin_);
+        $this->assertStringContainsString("Productos: $22.800\nDescuento: -$4.600\nTotal: $18.200", $public);
+        // Raw at 5%: U 1700 / 1900 → 21600 × 0.8 = 17280 → 17300 against the same cooked list price.
+        [$raw, $admin_, $public] = $summaries['raw'];
+        $this->assertSame(17300, $raw->total);
+        $this->assertStringContainsString('🥟 *Crudas*', $admin_);
+        $this->assertStringContainsString("Productos: $22.800\nDescuento: -$5.500\n\n💰 *TOTAL: $17.300*", $admin_);
+        $this->assertStringContainsString("Productos: $22.800\nDescuento: -$5.500\nTotal: $17.300", $public);
+        foreach ($summaries as [, $adminSummary, $publicSummary]) {
+            foreach ([$adminSummary, $publicSummary] as $summary) {
+                foreach (['Redondeo', 'Entrega', 'Condición', 'Ahorro', 'docena combinada ya', 'cocinados', 'preparación cruda', 'Envío:', 'Toppings:'] as $hidden) {
+                    $this->assertStringNotContainsString($hidden, $summary);
+                }
+            }
+        }
     }
 
     public function test_historical_orders_keep_their_snapshot_after_price_changes_and_metadata_edits(): void

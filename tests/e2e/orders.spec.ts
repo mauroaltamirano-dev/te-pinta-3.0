@@ -431,7 +431,8 @@ test('detalle compartido prioriza el ticket y copia el resumen estructurado', as
     const copied = await copiedOrderDetail(page);
     expect(copied).toContain(`🧾 *PEDIDO ${orderId}*`);
     expect(copied).toContain(`👤 *Cliente:* ${customerName}`);
-    expect(copied).toContain('🔥 *Condición:* Cocinadas');
+    expect(copied).not.toContain('Condición');
+    expect(copied).not.toContain('Redondeo');
     expect(copied).toContain('• 1 × Docena de Salteña');
     expect(copied).toContain('💰 *TOTAL:');
     expect(copied).not.toContain('5555-0101');
