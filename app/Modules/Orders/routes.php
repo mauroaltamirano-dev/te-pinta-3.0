@@ -8,6 +8,7 @@ use App\Modules\Orders\Http\Controllers\OrderStatusController;
 use App\Modules\Orders\Http\Controllers\OrderTrashController;
 use App\Modules\Orders\Http\Controllers\TableServiceController;
 use App\Modules\Orders\Http\Controllers\TableSessionController;
+use App\Modules\Orders\Http\Controllers\WebOrderAlertController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [OrderManagementController::class, 'home'])->middleware('can:orders.view')->name('home');
@@ -15,6 +16,7 @@ Route::get('/orders', [OrderManagementController::class, 'index'])->middleware('
 Route::get('/orders/create', [OrderManagementController::class, 'create'])->middleware('can:orders.manage')->name('orders.create');
 Route::post('/orders', [OrderManagementController::class, 'store'])->middleware('can:orders.manage')->name('orders.store');
 Route::post('/orders/price-preview', OrderPricingController::class)->middleware('can:orders.manage')->name('orders.price-preview');
+Route::get('/orders/web-pending', WebOrderAlertController::class)->middleware('can:orders.view')->name('orders.web-pending');
 Route::get('/orders/trash', [OrderTrashController::class, 'index'])->middleware('can:orders.view')->name('orders.trash.index');
 Route::patch('/orders/trash/{order}/restore', [OrderTrashController::class, 'restore'])->withTrashed()->middleware('can:orders.manage')->name('orders.trash.restore');
 Route::get('/orders/{order}/edit', [OrderManagementController::class, 'edit'])->middleware('can:orders.manage')->name('orders.edit');

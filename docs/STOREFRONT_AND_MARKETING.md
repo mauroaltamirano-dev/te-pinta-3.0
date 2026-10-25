@@ -44,6 +44,9 @@ Covers the public site and checkout (`PublicSite`, `Products`, `Orders`), featur
 - The order stores the window's opening date as `delivery_date`, its period from the opening time (before 15:00 `midday`, before 19:00 `afternoon`, otherwise `night`), and `delivery_time` null.
 - An idempotent retry that arrives after the window closed is rejected instead of replaying; the order already exists and staff see it.
 
+### New web order alert
+
+Every admin page of a user with `orders.view` polls `GET /admin/orders/web-pending` every 15 seconds (`useWebOrderAlerts`). It returns the count of `public_checkout` orders in `pending_confirmation` and the newest one. The first response sets the baseline; a newer order shows a toast with "Ver" and a short chime, and the orders list and quick order home reload. Browsers may mute the chime until staff have clicked the page once.
 
 Deployment of the public storefront (`tepinta.com.ar` through a Cloudflare tunnel and a default-deny gateway) is described in [OPERATIONS.md](OPERATIONS.md#public-storefront).
 
