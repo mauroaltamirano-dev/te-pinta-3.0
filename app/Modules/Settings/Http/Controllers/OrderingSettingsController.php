@@ -35,9 +35,7 @@ final class OrderingSettingsController
                     ->orderBy('id')
                     ->get(['id', 'name', 'price', 'is_available', 'sort_order']),
             ],
-            'orderingHours' => PublicOrderingHour::query()->orderBy('weekday')->get()
-                ->map(fn (PublicOrderingHour $hour): array => ['weekday' => $hour->weekday, 'opens_at' => $hour->opens_at, 'closes_at' => $hour->closes_at])
-                ->all(),
+            'orderingHours' => $this->orderingHours(),
         ]);
     }
 
@@ -48,5 +46,21 @@ final class OrderingSettingsController
         $updateOrderingSettings->execute(OrderingSettingsData::fromRequest($request));
 
         return to_route('admin.settings.general.index')->with('success', 'Configuración de pedidos actualizada.');
+    }
+
+    /**
+     * Every weekday, a missing row shown as closed so saving the form restores it.
+     *
+     * @return list<array{weekday: int, opens_at: ?string, closes_at: ?string}>
+     */
+    private function orderingHours(): array
+    {
+        $hours = PublicOrderingHour::query()->get()->keyBy('weekday');
+
+        return array_map(fn (int $weekday): array => [
+            'weekday' => $weekday,
+            'opens_at' => $hours->get($weekday)?->opens_at,
+            'closes_at' => $hours->get($weekday)?->closes_at,
+        ], range(1, 7));
     }
 }

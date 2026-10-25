@@ -147,6 +147,22 @@ final class PublicOrderingHoursTest extends TestCase
         $this->assertDatabaseHas('public_ordering_hours', ['weekday' => 1, 'opens_at' => '19:00:00', 'closes_at' => '00:00:00']);
     }
 
+    public function test_a_missing_day_shows_as_closed_and_can_be_saved_again(): void
+    {
+        $admin = User::factory()->administrator()->create();
+        $this->withoutVite();
+        PublicOrderingHour::query()->where('weekday', 3)->delete();
+
+        $this->actingAs($admin)->get(route('admin.settings.general.index'))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('orderingHours', 7)
+                ->where('orderingHours.2', ['weekday' => 3, 'opens_at' => null, 'closes_at' => null]));
+
+        $this->actingAs($admin)->put(route('admin.settings.general.ordering-hours.update'), ['hours' => $this->weekPayload()])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('public_ordering_hours', ['weekday' => 3, 'opens_at' => '19:00:00']);
+    }
+
     public function test_weekly_hours_need_both_times_or_none_and_every_day_once(): void
     {
         $admin = User::factory()->administrator()->create();
