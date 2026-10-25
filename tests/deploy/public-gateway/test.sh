@@ -156,4 +156,24 @@ malformed_client="$(curl --path-as-is --fail --silent --show-error --max-time 5 
     exit 1
 }
 
+# Visitors arriving over plain HTTP are sent to HTTPS before reaching the origin:
+# the page loads its module scripts from https://, which a http:// page cannot run.
+before="$(request_count)"
+redirect="$(curl --path-as-is --silent --show-error --output /dev/null --max-time 5 \
+    --write-out '%{http_code} %{redirect_url}' \
+    -H 'CF-Visitor: {"scheme":"http"}' \
+    "$gateway/menu?campaign=ig")"
+after="$(request_count)"
+[[ "$redirect" == '301 https://tepinta.com.ar/menu?campaign=ig' && "$before" == "$after" ]] || {
+    printf 'Expected plain HTTP to redirect to HTTPS without reaching the origin, got %s.\n' "$redirect" >&2
+    exit 1
+}
+secure_headers="$(curl --path-as-is --silent --show-error --output /dev/null --dump-header - --max-time 5 \
+    -H 'CF-Visitor: {"scheme":"https"}' \
+    "$gateway/menu")"
+[[ "$secure_headers" == *' 200'* && "$secure_headers" == *'Strict-Transport-Security: max-age=31536000'* ]] || {
+    printf 'Expected HTTPS requests to reach the origin with HSTS: %s\n' "$secure_headers" >&2
+    exit 1
+}
+
 printf 'Public gateway allowlist and default-deny regression checks passed.\n'
