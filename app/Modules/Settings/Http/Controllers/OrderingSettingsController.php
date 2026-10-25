@@ -3,6 +3,7 @@
 namespace App\Modules\Settings\Http\Controllers;
 
 use App\Core\Branding\RestaurantBranding;
+use App\Core\Branding\RestaurantIdentity;
 use App\Modules\Identity\Enums\Permission;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
@@ -18,12 +19,13 @@ use Inertia\Response;
 
 final class OrderingSettingsController
 {
-    public function index(Request $request, RestaurantBranding $branding): Response
+    public function index(Request $request, RestaurantBranding $branding, RestaurantIdentity $identity): Response
     {
         abort_unless($request->user()?->can(Permission::CatalogManage->value) === true, 403);
 
         return Inertia::render('admin/settings/general', [
             'branding' => ['accent_color' => $branding->palette()->accent],
+            'identity' => $identity->current(),
             'orderingSettings' => [
                 'empanada_unit_surcharge_percent' => OrderSetting::integer(OrderSettingKey::EmpanadaUnitSurchargePercent),
                 'combined_dozen_discount_percent' => OrderSetting::integer(OrderSettingKey::CombinedDozenDiscountPercent),

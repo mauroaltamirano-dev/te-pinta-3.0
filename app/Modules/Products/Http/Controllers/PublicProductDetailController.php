@@ -2,6 +2,7 @@
 
 namespace App\Modules\Products\Http\Controllers;
 
+use App\Core\Branding\RestaurantIdentity;
 use App\Modules\Products\Http\Resources\PublicProductResource;
 use App\Modules\Products\Models\Product;
 use Illuminate\Http\Request;
@@ -19,11 +20,12 @@ final class PublicProductDetailController
             ->firstOrFail();
 
         $publicProduct = (new PublicProductResource($product))->resolve($request);
-        $description = $product->description ?: "Conocé {$product->name} y hacé tu pedido en Te Pinta.";
+        $restaurantName = app(RestaurantIdentity::class)->name();
+        $description = $product->description ?: "Conocé {$product->name} y hacé tu pedido en {$restaurantName}.";
         $url = route('public.products.show', ['slug' => $product->slug]);
         $image = $publicProduct['image_url'] ? url($publicProduct['image_url']) : null;
         $seo = [
-            'title' => "{$product->name} | Te Pinta",
+            'title' => "{$product->name} | {$restaurantName}",
             'description' => $description,
             'url' => $url,
             'image' => $image,

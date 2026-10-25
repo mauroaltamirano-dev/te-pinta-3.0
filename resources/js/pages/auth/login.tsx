@@ -106,6 +106,6 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: 'Administración de Te Pinta',
+    title: (restaurantName: string) => `Administración de ${restaurantName}`,
     description: 'Usá tus credenciales de administración para continuar',
 };

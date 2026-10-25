@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Core\Branding\RestaurantBranding;
+use App\Core\Branding\RestaurantIdentity;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewInstance;
@@ -14,6 +15,7 @@ final class BrandingServiceProvider extends ServiceProvider
         // Resolve lazily: console boot and migrations must not query restaurant branding.
         View::composer('app', function (ViewInstance $view): void {
             $view->with('brandPalette', $this->app->make(RestaurantBranding::class)->palette());
+            $view->with('restaurantName', $this->app->make(RestaurantIdentity::class)->name());
         });
     }
 }

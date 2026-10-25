@@ -28,8 +28,8 @@
             <link rel="manifest" href="/manifest.webmanifest">
         @endunless
         <meta name="theme-color" content="{{ $brandPalette->accent }}">
-        <meta name="application-name" content="Te Pinta 3.0">
-        <meta name="apple-mobile-web-app-title" content="Te Pinta">
+        <meta name="application-name" content="{{ $restaurantName }}">
+        <meta name="apple-mobile-web-app-title" content="{{ $restaurantName }}">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -39,7 +39,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
             @unless (isset($publicSeo))
-                <title>{{ config('app.name', 'Laravel') }}</title>
+                <title>{{ $restaurantName }}</title>
             @endunless
         </x-inertia::head>
     </head>

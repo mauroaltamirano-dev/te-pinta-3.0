@@ -29,6 +29,7 @@ import {
     visibleAdminNavigation,
 } from '@/features/admin-navigation/model';
 import type { AdminNavigationIcon } from '@/features/admin-navigation/model';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 import { cn } from '@/lib/utils';
 
 const icons: Record<AdminNavigationIcon, LucideIcon> = {
@@ -46,6 +47,7 @@ const icons: Record<AdminNavigationIcon, LucideIcon> = {
 export function AdminSidebar() {
     const { url, props } = usePage();
     const [moreOpen, setMoreOpen] = useState(false);
+    const restaurant = useRestaurantIdentity();
     // Only modules the backend lets this user open; the routes enforce it.
     const groups = visibleAdminNavigation(props.auth?.permissions ?? []);
     const activeHref = activeAdminEntry(groups, url)?.href;
@@ -189,13 +191,15 @@ export function AdminSidebar() {
                         {/* First visible entry: the POS, or Pedidos for roles that cannot sell. */}
                         <Link
                             href={groups[0]?.entries[0]?.href ?? '/admin'}
-                            aria-label="Te Pinta POS"
+                            aria-label={`${restaurant.name} POS`}
                             className="mt-6 ml-6 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-admin-accent ring-1 ring-admin-border focus-visible:ring-2 focus-visible:ring-admin-accent focus-visible:outline-none"
                         >
                             <BrandLogo alt="" className="size-full" />
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Te Pinta POS</TooltipContent>
+                    <TooltipContent side="right">
+                        {restaurant.name} POS
+                    </TooltipContent>
                 </Tooltip>
 
                 <nav

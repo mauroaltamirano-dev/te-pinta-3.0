@@ -19,9 +19,11 @@ import type {
     PriceQuote,
     PublicProduct,
 } from '@/features/orders/types';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 
 export default function Cart() {
     const cart = useCart();
+    const restaurant = useRestaurantIdentity();
     const [catalog, setCatalog] = useState<PublicProduct[]>([]);
     const [availableAddons, setAvailableAddons] = useState<OrderAddon[]>([]);
     const [condition, setCondition] = useState<OrderCondition>('cooked');
@@ -243,8 +245,8 @@ export default function Cart() {
                             Todavía no elegiste nada.
                         </h2>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                            El menú te espera con nuestras empanadas. Sumá las
-                            que quieras y volvé por acá.
+                            {restaurant.empty_cart_text ??
+                                'Sumá productos desde el menú y volvé por acá.'}
                         </p>
                         <Button
                             asChild
