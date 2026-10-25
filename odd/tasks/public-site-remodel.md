@@ -11,6 +11,7 @@ Objective: close the public site behind a "coming soon" screen while the storefr
 - S5 — "no hagamos tanto énfasis en la oferta cruda, solamente que quede si nos preguntan y nada más, no ublicitarlo tanto". The raw option stays available but is not promoted on the public pages.
 - S6 — "mostrar que puede comer en el lugar, también el lugar ofrecemos servicio a mesa, bebidas, postre. Esta es la ubicación:  https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6". The public site presents dine-in with table service, drinks and desserts, and links the location.
 - S8 — "en el precio por docena, poner la típica de $20.000 (al lado el precio de docena original tachado y en grís) % descuento, o sea, hacer la promo visible de cuánto sale la docena de una variedad con su descuento respectivo (siendo el precio de 12 unidades sin el precio fijo de docena el "anterior" o de no ahorro)". Public dozen price shows D, next to it 12 × U struck through in gray, and the discount percentage.
+- S9 — "en la web pública, quisiera que el menú, las cards de los productos se vean chicos, ocupan mucha pantalla en desktop". Compact menu cards: four columns from `xl`, tighter padding and type; unit and half-dozen prices on one line under the dozen price.
 - S7 — "sobreotdo porque quiero sacar y usar fotos reales, y todavía no las tengo". Real photos replace placeholders when the user provides them (external dependency).
 
 ## Tasks
@@ -20,6 +21,7 @@ Objective: close the public site behind a "coming soon" screen while the storefr
 - T3 — S4, S5, S6: home remodel (slogan, dine-in, table service, drinks, desserts, location; raw option de-emphasized). Route: inline. Status: done (`7e1b476`; slogan "¿Qué te pinta hoy?" proposed to the user).
 - T4 — S7: real photos. Status: waiting for the user's photos.
 - T5 — S8: dozen promo price (D, struck 12 × U, % off) on public menu cards and detail. Route: inline. Status: done (`7e1b476`).
+- T6 — S9: compact public menu cards. Route: inline. Status: done (see commit).
 
 ## Log
 
@@ -31,3 +33,4 @@ Objective: close the public site behind a "coming soon" screen while the storefr
 - L6 (2026-10-24) — User: "Dale, hazlo, y también sigue desarrollando todo lo otro que dijimos antes si es que aun o lo hiciste de los cambios de la web (no la screen de en construcción)". Production WhatsApp phone prefixed with +54 9 (link now wa.me/549…). Local preview for the user: `tepinta_preview` database (migrate --seed) served on 127.0.0.1:8098 with PUBLIC_SITE_OPEN=true; SSH tunnel `ssh -N -L 8098:127.0.0.1:8098 tuki@tuki-notebook`.
 - L7 — T2/T5 RED: new e2e "menu marks vegetarian flavors with a leaf and shows the dozen saving" failed (no leaf). GREEN with `VegetarianLeaf`, `DozenPrice`, `isVegetarian`/`dozenSaving` (admin card reuses `isVegetarian`). Humita: $17.000, struck $19.200, -11%. Detail page gives the dozen its own row.
 - L8 — T3 RED: public-home e2e expected heading "¿Qué te pinta hoy?", the dine-in section and the maps link, and no "cocinar en casa". GREEN after the home remodel; footer column renamed "Qué ofrecemos"; menu hero copy and detail "Precios" no longer say "cocinados". `public-checkout` e2e still expected the retired $2000 raw discount (missed in the raw-percentage branch): now 900 / 17100.
+- L9 (2026-10-25) — User: "en la web pública, quisiera que el menú, las cards de los productos se vean chicos, ocupan mucha pantalla en desktop". T6: grid `xl:grid-cols-4`, card padding p-4, title and price `text-xl`, unit/half-dozen line under the dozen price. Checks: vite build, tsc, eslint, prettier OK; screenshots 1684 and 390 on the 8098 preview, no horizontal scroll. Not run: `make e2e` (no e2e stack for this worktree); classes only, no selector or copy changed.

@@ -272,7 +272,7 @@ export default function Menu() {
                                                 {group.name}
                                             </h3>
                                         )}
-                                        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+                                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                             {group.products.map((product) => (
                                                 <MenuProductCard
                                                     key={product.slug}
@@ -359,7 +359,7 @@ function MenuProductCard({
                     </span>
                 )}
             </Link>
-            <div className="flex flex-1 flex-col p-5">
+            <div className="flex flex-1 flex-col p-4">
                 <p className="text-xs font-semibold tracking-[0.14em] text-public-earth-ink uppercase">
                     <span>{product.category.name}</span>
                     {product.subcategory && (
@@ -370,7 +370,7 @@ function MenuProductCard({
                     )}
                 </p>
                 <div className="mt-1.5 flex items-start gap-2">
-                    <h3 className="font-serif text-2xl leading-tight font-semibold tracking-tight">
+                    <h3 className="font-serif text-xl leading-tight font-semibold tracking-tight">
                         <Link
                             href={detailUrl}
                             className="underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
@@ -379,7 +379,7 @@ function MenuProductCard({
                         </Link>
                     </h3>
                     {isVegetarian(product.tags) && (
-                        <VegetarianLeaf className="mt-0.5 size-7" />
+                        <VegetarianLeaf className="mt-0.5 size-6" />
                     )}
                 </div>
                 {product.tags.length > 0 && (
@@ -399,13 +399,13 @@ function MenuProductCard({
                         {product.description}
                     </p>
                 )}
-                <div className="mt-auto pt-5">
-                    <dl className="flex items-end justify-between gap-3 border-t border-border pt-4">
+                <div className="mt-auto pt-4">
+                    <dl className="flex flex-col gap-1 border-t border-border pt-3">
                         <div>
                             <dt className="text-xs text-muted-foreground">
                                 {isEmpanada ? 'Docena' : 'Precio'}
                             </dt>
-                            <dd className="text-2xl font-semibold tabular-nums">
+                            <dd className="text-xl font-semibold tabular-nums">
                                 {isEmpanada ? (
                                     <DozenPrice
                                         unitPrice={product.prices.unit}
@@ -417,7 +417,7 @@ function MenuProductCard({
                             </dd>
                         </div>
                         {isEmpanada && (
-                            <div className="text-right text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                                 <dt className="sr-only">
                                     Unidad y media docena
                                 </dt>
@@ -432,7 +432,7 @@ function MenuProductCard({
                         )}
                     </dl>
                     {quantity > 0 && (
-                        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-secondary px-3 py-1.5">
+                        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-secondary px-3 py-1.5">
                             <span
                                 className="text-sm font-semibold"
                                 aria-live="polite"
@@ -452,7 +452,7 @@ function MenuProductCard({
                         </div>
                     )}
                     {isEmpanada ? (
-                        <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="mt-3 grid grid-cols-2 gap-2">
                             <Button
                                 type="button"
                                 className="col-span-2 min-h-11 rounded-full bg-public-canvas text-white hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
@@ -481,7 +481,7 @@ function MenuProductCard({
                     ) : (
                         <Button
                             type="button"
-                            className="mt-4 min-h-11 w-full rounded-full bg-public-canvas text-white hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
+                            className="mt-3 min-h-11 w-full rounded-full bg-public-canvas text-white hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
                             aria-label={`Agregar una unidad de ${product.name}`}
                             onClick={() => onAdd(1)}
                         >
@@ -490,7 +490,7 @@ function MenuProductCard({
                     )}
                     <Link
                         href={detailUrl}
-                        className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-public-earth-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
+                        className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-public-earth-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-public-ink"
                     >
                         Ver detalles
                     </Link>
