@@ -1,0 +1,39 @@
+# Instagram media fetch reliability — incident 36779
+Objective: prepare a local correction; never replay publication 79 or publish to the real account.
+Branch: `fix/instagram-media-fetch-36779`; one work unit; runner: Node built-in test runner and isolated n8n 2.32.7; delivery: ask-on-risk.
+
+## Specs
+- S1: "restaurar la confiabilidad de las historias automatizadas sin provocar publicaciones duplicadas."
+- S2: "No volver a ejecutar la publicación."
+- S3: "No reencolar automáticamente una publicación con resultado incierto."
+- S4: "Agregar una validación preventiva del recurso cuando sea apropiado, sin exponer assets privados de manera permanente."
+- S5: "No convertir todos los HTTP 400 en reintentables."
+- S6: "Usar pruebas privadas y mocks de Meta para validar cambios."
+- S7: "Comprobar:" / "URL inaccesible." / "URL expirada." / "Respuesta HTML en lugar de JPEG." / "Imagen válida." / "Duplicados." / "Resultados ambiguos." / "Conservación del historial."
+- S8: "No modificar Pricing P0, AUX-2 ni POS-3."
+- S9: "No hacer deploy ni reiniciar servicios sin autorización."
+- S10: "Seguir TDD, native review y autorización separada para cualquier candidato de corrección."
+- S11: "bueno, toma una decisión y solucionalo"
+
+## Tasks
+- T1 [S1–S11] inline — implemented and functionally verified; native review and commit pending; implement the pre-container media check and narrowly retry explicit Meta media-fetch rejection through the existing bounded POS attempts; preserve all publish/ambiguous paths; commit pending verification and native review.
+
+## Log
+- L1 User authorization, verbatim: "bueno, toma una decisión y solucionalo"
+- L2 User reconciliation, verbatim: "confirmo que no apareció, y de dónde se supone que está esa imagen?"
+- L3 Evidence: execution 36779 / publication 79 / asset 7 failed before container creation with HTTP 400, code 9004, subcode 2207052, no container or media ID. The signature was valid; exact historical transport cause remains unknown. The existing asset is valid JPEG and current public ingress works. No previous publication is changed by this candidate.
+- L4 Decision: keep the existing claim, maximum-attempt and ambiguous-result guards. Add a bounded unauthenticated JPEG GET before container creation; only explicit HTTP 400/9004/2207052 with no container ID becomes eligible for the existing pre-publish retry policy. Other HTTP 400 responses remain terminal. An expired, redirected or non-JPEG resource never reaches Meta. Network/resource failures retain sanitized reasons without signed URLs or raw exception messages.
+- L5 Limits: n8n resolves the current hostname to its tailnet address. The preflight validates resource bytes but does NOT prove external Meta reachability; the explicit Meta rejection remains the transport signal. No DNS, infrastructure, production configuration, credentials or dependency changes.
+- L6 Route: solo inline; existing runtime metadata cannot verify auxiliary role/model/effort (delegation_unverifiable); no writing workers exist. Isolated worktree preserves the original dirty checkout. Independent functional verification must be attempted after checks; unavailable proof is not approval.
+- L7 Forecast: approximately 350 authored changed lines; one coherent workflow fix. Native review consent remains separate. No commit or closure on unavailable review without the exact candidate's user exception.
+- L8 Verification plan: observe RED on the unchanged workflow, then GREEN with mocked JPEG/unavailable/expired/HTML resources and Meta responses. Execute a synthetic workflow in an isolated, network-disabled n8n container; no production mounts, credentials, database, account or scheduler. Normalize before candidate freeze. Check final diff and protected paths.
+- L9 Engram mirror: pending; writes are blocked by the installed core's runtime-session-resolution incompatibility. Local document is the recovery source.
+- L10 RED observed before workflow edits: the incident classifier rejected the requested safe retry and the validation-node tests failed because the preflight was missing; existing other-client-error and ambiguous-publish guards passed. GREEN: 7/7 Node unit tests after the change.
+- L11 PostgreSQL verification: fresh network-isolated test database and read-only application/dependency mounts; `php vendor/bin/phpunit --do-not-cache-result --cache-directory=/tmp/phpunit tests/Feature/Instagram` passed 15 tests / 162 assertions. The first setup lacked a vendor mountpoint; the next lacked the existing Vite manifest. Both were test-harness issues, fixed using ignored mountpoints and an existing read-only build, without changing source or production.
+- L12 Runtime discovery: n8n 2.32.7 accepts `execute --file` in help but returns without executing unless `--id` is set; the fixture therefore imports into its own empty database and executes by synthetic ID. Its CLI can fail serializing existing cyclic HTTP response objects after execution; the harness verifies persisted engine status and actual HTTPS side effects instead of trusting a CLI exit code. The baseline is tested separately.
+- L13 Real-engine integration passed baseline plus 9 candidate cases: valid JPEG, explicit media-fetch rejection, unrelated HTTP 400, HTML, expired URL, unavailable source, ambiguous publish, rejected success callback and no pending work. Every case checked persisted engine status and counted private HTTPS requests; at most one publish occurred and no case replayed a publication. Baseline reproduced the CLI serialization error, distinct from engine status. History preservation is proven by the real backend suite, not an in-memory stand-in.
+- L14 The runtime fixture uses a real GD-encoded 1×1 JPEG (not only magic bytes). Source normalization precedes the final exact-candidate tests. Final authored scope is about 550 lines, primarily private unit/runtime fixtures; the about-400-line delivery decision remains pending before any commit. No production/runtime authority was altered.
+- L15 Final exact-source checks: Node 7/7; real n8n baseline plus 9 candidate scenarios passed with confirmed command exit 0; Prettier, Node syntax and `git diff --check` passed. PHP backend suite remains 15/15, 162 assertions. No application TypeScript, PHP, schema or dependency source changed; frontend typecheck/build are not applicable. The existing frontend build was only a read-only PHP-test fixture.
+- L16 Delegation tooling: the public `list_agents` response exposes only `/root` and `running`, with no effective role/model/effort or authoritative native worker UUID. No inspector invocation is applicable and no workers can mutate this scope. Record `delegation_unverifiable`, mode solo; no independent-verifier approval is claimed. Native review remains required and enabled.
+- L17 Primary structured self-review: worktree `/home/tuki/workspaces/tepinta3.0-worktrees/instagram-media-fetch-36779`, base/head `a67a392dfed27fa55bf2b1a01841be93b108f660`, scope limited to workflow export, its private tests/fixture, Instagram documentation and this log. Result CLEAR: no blocking findings after normalized-diff inspection. This is self-review, NOT native or independent approval. Limits: exact historical network cause is unknown; n8n preflight DNS is not an external vantage; JPEG framing is not a full decoder; integration compensates for a reproduced baseline CLI JSON-serialization defect by checking stored engine status and HTTPS effects.
+- L18 Production readback: workflow WwHXGWAwJb29O1za remains active on version 14da4969-cdfd-4621-974a-33cbc067874d with its original update timestamp. Publication 79 remains failed, attempts=1, retryable=false, null Meta IDs, unchanged update timestamp. Original dirty checkout counts remain unchanged. All disposable fixture containers were removed.

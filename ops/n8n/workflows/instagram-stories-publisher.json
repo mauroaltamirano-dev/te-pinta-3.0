@@ -82,6 +82,48 @@
         },
         {
             "parameters": {
+                "mode": "runOnceForEachItem",
+                "jsCode": "const mediaUrl = $json.body?.asset?.media_url;\nconst match =\n    typeof mediaUrl === 'string' &&\n    mediaUrl.match(\n        /^https:\\/\\/[a-zA-Z0-9.-]+(?::[0-9]+)?\\/media\\/instagram\\/[1-9][0-9]*\\/story\\.jpg\\?expires=([0-9]+)&signature=[a-f0-9]{64}$/,\n    );\nlet result = {\n    ok: false,\n    retryable: false,\n    failure: 'invalid_signed_media_url',\n};\nif (match && Number(match[1]) > Math.floor(Date.now() / 1000)) {\n    try {\n        const response = await this.helpers.httpRequest({\n            method: 'GET',\n            url: mediaUrl,\n            timeout: 15000,\n            returnFullResponse: true,\n            ignoreHttpStatusErrors: true,\n            disableFollowRedirect: true,\n            encoding: 'arraybuffer',\n        });\n        const status = Number(response.statusCode);\n        if (status !== 200) {\n            result = {\n                ok: false,\n                retryable: status === 429 || status >= 500,\n                failure: 'media_http_' + status,\n            };\n        } else {\n            const bytes = Buffer.from(response.body);\n            const mime = String(response.headers?.['content-type'] ?? '')\n                .split(';')[0]\n                .trim()\n                .toLowerCase();\n            const valid =\n                mime === 'image/jpeg' &&\n                bytes.length >= 4 &&\n                bytes.length <= 8 * 1024 * 1024 &&\n                bytes[0] === 0xff &&\n                bytes[1] === 0xd8 &&\n                bytes[2] === 0xff &&\n                bytes[bytes.length - 2] === 0xff &&\n                bytes[bytes.length - 1] === 0xd9;\n            result = {\n                ok: valid,\n                retryable: false,\n                failure: valid ? null : 'invalid_jpeg_response',\n            };\n        }\n    } catch {\n        result = {\n            ok: false,\n            retryable: true,\n            failure: 'media_request_failed',\n        };\n    }\n}\nreturn { json: { ...$json, resource_preflight: result } };\n"
+            },
+            "id": "38e8fc55-e65a-4545-8d62-36a4d0d49256",
+            "name": "Validate Story JPEG",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [-620, -280]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "3cf0ede0-637d-4aec-8747-fbf689768a68",
+                            "leftValue": "={{ $json.resource_preflight.ok }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "86b75b69-d719-4d00-a120-e0e4581202f4",
+            "name": "Resource Ready?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [-400, -280]
+        },
+        {
+            "parameters": {
                 "method": "POST",
                 "url": "={{ $env.META_GRAPH_BASE_URL.replace(/\\/$/, '') + '/' + $env.META_GRAPH_API_VERSION + '/' + $env.META_INSTAGRAM_USER_ID + '/media' }}",
                 "authentication": "genericCredentialType",
@@ -316,7 +358,7 @@
                 "sendBody": true,
                 "contentType": "raw",
                 "rawContentType": "application/json",
-                "body": "={{ JSON.stringify({ error: 'Meta container creation failed (HTTP ' + ($json.statusCode ?? 'network error') + '; code ' + ($json.body?.error?.code ?? 'unknown') + '; subcode ' + ($json.body?.error?.error_subcode ?? 'unknown') + '). See n8n execution ' + $execution.id + '.', retryable: ![400, 401, 403].includes(Number($json.statusCode ?? 0)) }) }}",
+                "body": "={{ JSON.stringify({ error: $json.resource_preflight ? 'Media preflight failed (' + $json.resource_preflight.failure + '). See n8n execution ' + $execution.id + '.' : 'Meta container creation failed (HTTP ' + ($json.statusCode ?? 'network error') + '; code ' + ($json.body?.error?.code ?? 'unknown') + '; subcode ' + ($json.body?.error?.error_subcode ?? 'unknown') + '). See n8n execution ' + $execution.id + '.', retryable: $json.resource_preflight ? $json.resource_preflight.retryable : (![400, 401, 403].includes(Number($json.statusCode ?? 0)) || (Number($json.statusCode) === 400 && Number($json.body?.error?.code) === 9004 && Number($json.body?.error?.error_subcode) === 2207052 && $json.body?.id == null)) }) }}",
                 "options": {
                     "response": {
                         "response": {
@@ -837,7 +879,7 @@
             "main": [
                 [
                     {
-                        "node": "Create Story Container",
+                        "node": "Validate Story JPEG",
                         "type": "main",
                         "index": 0
                     }
@@ -1165,6 +1207,35 @@
                 [
                     {
                         "node": "Failure Callback Accepted?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Story JPEG": {
+            "main": [
+                [
+                    {
+                        "node": "Resource Ready?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Resource Ready?": {
+            "main": [
+                [
+                    {
+                        "node": "Create Story Container",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Report Container Failure",
                         "type": "main",
                         "index": 0
                     }
