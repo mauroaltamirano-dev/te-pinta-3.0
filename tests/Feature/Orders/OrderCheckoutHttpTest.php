@@ -180,7 +180,7 @@ final class OrderCheckoutHttpTest extends TestCase
             ->assertJsonPath('data.items_cooked_subtotal', 10800)
             ->assertJsonPath('data.raw_discount', 0)
             ->assertJsonPath('data.total', 10800);
-        $this->assertStringContainsString('Productos cocinados: $10.800', $response->json('data.summary'));
+        $this->assertStringContainsString('Productos: $10.800', $response->json('data.summary'));
         $this->assertStringNotContainsString('Descuento por preparación cruda', $response->json('data.summary'));
 
         $order = Order::query()->with(['items.compositions', 'toppings'])->firstOrFail();
@@ -200,7 +200,7 @@ final class OrderCheckoutHttpTest extends TestCase
         $this->product->update(['half_dozen_price' => 50000]);
 
         $summary = app(OrderSummaryFormatter::class)->format($order->fresh(['items.compositions', 'toppings']));
-        $this->assertStringContainsString('Productos cocinados: $10.800', $summary);
+        $this->assertStringContainsString('Productos: $10.800', $summary);
         $this->assertStringNotContainsString('Descuento por preparación cruda', $summary);
         $this->assertStringContainsString('Total: $10.800', $summary);
 
@@ -310,9 +310,7 @@ final class OrderCheckoutHttpTest extends TestCase
 🧾 *PEDIDO TP-000015*
 
 👤 *Cliente:* Agostina Salomón
-📅 *Entrega:* 14/08/2026 · Noche
 🛵 *Modalidad:* Envío
-🔥 *Condición:* Cocinadas
 
 *DETALLE DEL PEDIDO*
 
@@ -326,15 +324,11 @@ final class OrderCheckoutHttpTest extends TestCase
 
 *RESUMEN*
 
-Productos: $20.700
-Envío: +$2.000
-Toppings: $0
+Productos: $24.200
+Descuento: -$3.500
+Envío: $2.000
 
 💰 *TOTAL: $22.700*
-
-🏷️ *Ahorro incluido por docena combinada: $3.500*
-
-*El ahorro de la docena combinada ya está aplicado en el precio de las empanadas.*
 
 📝 *Nota:* Sin cebolla
 TEXT, $summary);
@@ -381,10 +375,13 @@ TEXT, $summary);
 
         $summary = app(OrderSummaryFormatter::class)->formatAdmin($order);
 
-        $this->assertStringContainsString('📅 *Entrega:* 14/08/2026 · Mediodía', $summary);
-        $this->assertStringContainsString('🔥 *Condición:* Crudas', $summary);
+        $this->assertStringNotContainsString('Entrega', $summary);
+        $this->assertStringNotContainsString('Condición', $summary);
+        $this->assertStringContainsString('🥟 *Crudas*', $summary);
         $this->assertStringNotContainsString('Cocción:', $summary);
-        $this->assertStringNotContainsString('Ahorro incluido', $summary);
+        $this->assertStringNotContainsString('Descuento', $summary);
+        $this->assertStringNotContainsString('Envío:', $summary);
+        $this->assertStringNotContainsString('Toppings:', $summary);
         $this->assertStringNotContainsString('*ADICIONALES*', $summary);
         $this->assertStringNotContainsString('📝 *Nota:*', $summary);
     }
@@ -562,7 +559,7 @@ TEXT, $summary);
         $this->actingAs($admin)->postJson(route('admin.orders.store'), $payload)
             ->assertCreated()
             ->assertJsonPath('data.total', 8600)
-            ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, 'Descuento: -$960'));
+            ->assertJsonPath('data.summary', fn (string $summary): bool => str_contains($summary, "Productos: \$10.800\nDescuento: -\$2.200\n\n💰 *TOTAL: \$8.600*"));
         $order = Order::query()->sole();
         $this->assertSame('percentage', $order->discount_type->value);
         $this->assertSame(10, $order->discount_value);

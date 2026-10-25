@@ -4,25 +4,20 @@ namespace App\Modules\Orders\Support;
 
 use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Models\Order;
-use Carbon\CarbonImmutable;
+use App\Modules\Orders\Models\OrderItem;
 
 final class OrderSummaryFormatter
 {
     public function formatAdmin(Order $order): string
     {
         $order->loadMissing(['items.compositions', 'toppings']);
-        $delivery = $order->delivery_date === null ? 'Inmediato' : CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' · '.$this->deliveryPeriod($order->getRawOriginal('delivery_period'));
-        if ($order->delivery_time !== null) {
-            $delivery .= ' · '.CarbonImmutable::parse($order->delivery_time)->format('H:i');
-        }
 
         $lines = [
             "🧾 *PEDIDO {$order->public_id}*",
             '',
             ...($order->customer_name_snapshot === null ? [] : ["👤 *Cliente:* {$order->customer_name_snapshot}"]),
-            "📅 *Entrega:* {$delivery}",
             '🛵 *Modalidad:* '.$this->fulfillmentLabel($order->delivery_type),
-            '🔥 *Condición:* '.($order->condition->value === 'cooked' ? 'Cocinadas' : 'Crudas'),
+            ...($order->condition->value === 'raw' ? ['🥟 *Crudas*'] : []),
             '',
             '*DETALLE DEL PEDIDO*',
             '',
@@ -56,29 +51,10 @@ final class OrderSummaryFormatter
         $lines[] = '';
         $lines[] = '*RESUMEN*';
         $lines[] = '';
-        $lines[] = ($order->items_cooked_subtotal === null ? 'Productos' : 'Productos cocinados').': '.$this->money(
-            (int) ($order->items_cooked_subtotal ?? $order->items_subtotal),
-        );
-        if ($order->raw_discount !== null && (int) $order->raw_discount !== 0) {
-            $lines[] = 'Descuento por preparación cruda: -'.$this->money((int) $order->raw_discount);
-        }
-        $lines[] = 'Envío: '.$this->signedMoney((int) $order->shipping_fee_snapshot);
-        $lines[] = 'Toppings: '.$this->money((int) $order->toppings_subtotal);
-        if ((int) $order->discount_amount > 0) {
-            $lines[] = 'Descuento: -'.$this->money((int) $order->discount_amount);
-        }
-        if ($order->roundingAdjustment() !== 0) {
-            $lines[] = 'Redondeo: '.$this->signedMoney($order->roundingAdjustment());
-        }
+        array_push($lines, ...$this->summaryLines($order));
         $lines[] = '';
         $lines[] = '💰 *TOTAL: '.$this->money((int) $order->total).'*';
 
-        if ((int) $order->combined_dozen_savings > 0) {
-            $lines[] = '';
-            $lines[] = '🏷️ *Ahorro incluido por docena combinada: '.$this->money((int) $order->combined_dozen_savings).'*';
-            $lines[] = '';
-            $lines[] = '*El ahorro de la docena combinada ya está aplicado en el precio de las empanadas.*';
-        }
         if (filled($order->notes)) {
             $lines[] = '';
             $lines[] = "📝 *Nota:* {$order->notes}";
@@ -91,9 +67,8 @@ final class OrderSummaryFormatter
     {
         $order->loadMissing(['items.compositions', 'toppings']);
         $lines = ["Pedido {$order->public_id}", '', ...($order->customer_name_snapshot === null ? [] : ["Cliente: {$order->customer_name_snapshot}"]),
-            'Entrega: '.($order->delivery_date === null ? 'Inmediato' : CarbonImmutable::parse($order->delivery_date)->format('d/m/Y').' - '.$this->deliveryPeriod($order->getRawOriginal('delivery_period'))),
             'Modalidad: '.$this->fulfillmentLabel($order->delivery_type),
-            'Condición: '.($order->condition->value === 'cooked' ? 'Cocinado' : 'Crudo'), ''];
+            ...($order->condition->value === 'raw' ? ['Crudas'] : []), ''];
         foreach ($order->items as $item) {
             $label = match ($item->getRawOriginal('pricing_mode')) {
                 'unit' => $this->quantityLabel($item->quantity, 'unidad', 'unidades')." de {$item->product_name}",
@@ -113,23 +88,7 @@ final class OrderSummaryFormatter
             }
         }
         $lines[] = '';
-        $lines[] = ($order->items_cooked_subtotal === null ? 'Productos' : 'Productos cocinados').': '.$this->money(
-            (int) ($order->items_cooked_subtotal ?? $order->items_subtotal),
-        );
-        if ($order->raw_discount !== null && (int) $order->raw_discount !== 0) {
-            $lines[] = 'Descuento por preparación cruda: -'.$this->money((int) $order->raw_discount);
-        }
-        $lines[] = 'Toppings: '.$this->money((int) $order->toppings_subtotal);
-        $lines[] = 'Envío: '.$this->money((int) $order->shipping_fee_snapshot);
-        if ((int) $order->combined_dozen_savings > 0) {
-            $lines[] = 'Ahorro por docena combinada: '.$this->money((int) $order->combined_dozen_savings);
-        }
-        if ((int) $order->discount_amount > 0) {
-            $lines[] = 'Descuento: -'.$this->money((int) $order->discount_amount);
-        }
-        if ($order->roundingAdjustment() !== 0) {
-            $lines[] = 'Redondeo: '.$this->signedMoney($order->roundingAdjustment());
-        }
+        array_push($lines, ...$this->summaryLines($order));
         $lines[] = 'Total: '.$this->money((int) $order->total);
         if ($order->notes !== null) {
             $lines[] = '';
@@ -137,6 +96,39 @@ final class OrderSummaryFormatter
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Products at their menu (cooked) price, then one discount that folds the combined dozen, the raw
+     * discount, the admin discount and the final rounding, so the lines always add up to the total.
+     *
+     * @return list<string>
+     */
+    private function summaryLines(Order $order): array
+    {
+        $products = $order->items->isEmpty()
+            ? (int) ($order->items_cooked_subtotal ?? $order->items_subtotal)
+            : $order->items->sum(fn (OrderItem $item): int => $this->menuPrice($item));
+        $toppings = (int) $order->toppings_subtotal;
+        $shipping = (int) $order->shipping_fee_snapshot;
+        $discount = $products + $toppings + $shipping - (int) $order->total;
+
+        return [
+            'Productos: '.$this->money($products),
+            ...($discount > 0 ? ['Descuento: -'.$this->money($discount)] : []),
+            ...($toppings > 0 ? ['Toppings: '.$this->money($toppings)] : []),
+            ...($shipping > 0 ? ['Envío: '.$this->money($shipping)] : []),
+        ];
+    }
+
+    /** A combined dozen's regular price scales its cooked total by the same ratio as the applied one. */
+    private function menuPrice(OrderItem $item): int
+    {
+        $applied = (int) $item->line_total;
+        $cooked = $item->cooked_line_total === null ? $applied : (int) $item->cooked_line_total;
+        $regular = $item->regular_price_total === null ? $applied : (int) $item->regular_price_total;
+
+        return $applied > 0 && $regular > $applied ? intdiv($cooked * $regular + intdiv($applied, 2), $applied) : $cooked;
     }
 
     private function fulfillmentLabel(DeliveryType $type): string
@@ -153,25 +145,8 @@ final class OrderSummaryFormatter
         return '$'.number_format($amount, 0, ',', '.');
     }
 
-    private function signedMoney(int $amount): string
-    {
-        $sign = $amount > 0 ? '+' : ($amount < 0 ? '-' : '');
-
-        return $sign.$this->money(abs($amount));
-    }
-
     private function quantityLabel(int $quantity, string $singular, string $plural): string
     {
         return $quantity.' '.($quantity === 1 ? $singular : $plural);
-    }
-
-    private function deliveryPeriod(?string $period): string
-    {
-        return match ($period) {
-            'midday' => 'Mediodía',
-            'afternoon' => 'Tarde',
-            'night' => 'Noche',
-            default => $period ?? 'Sin franja',
-        };
     }
 }

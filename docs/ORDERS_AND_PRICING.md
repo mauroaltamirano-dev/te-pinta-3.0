@@ -152,7 +152,7 @@ total                 = net rounded once, half-up, to ARS 100     (ExactOrderTot
 rounding adjustment   = total − net                                (−49 … +50 for a whole-peso net)
 ```
 
-The percentage discount is kept exact (numerator over 1200) until the single rounding; `discount_amount` stores it rounded to pesos for display. Previews, WhatsApp and admin summaries show the adjustment as a `Redondeo` line. Products subtotal = cooked products subtotal − raw discount.
+The percentage discount is kept exact (numerator over 1200) until the single rounding; `discount_amount` stores it rounded to pesos for display. Previews show the adjustment as a `Redondeo` line. The copied order summaries (`OrderSummaryFormatter`, admin copy and customer WhatsApp) stay short: no delivery date or condition line (raw orders add a `Crudas` line), `Productos` at menu cooked prices (a combined dozen at the sum of its unit prices), one `Descuento` that folds the combined dozen saving, the raw discount, the admin discount and the rounding, `Toppings` and `Envío` only when non-zero, then the total. Products subtotal = cooked products subtotal − raw discount.
 
 ### Snapshot versions
 
