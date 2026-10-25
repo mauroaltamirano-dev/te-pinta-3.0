@@ -374,17 +374,42 @@ test('Compras and Auditoría are Gestión sections with the same tabs', async ({
         nav.getByRole('link', { name: 'Compras', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
 
-    // Like every Gestión page: heading first, then the section tabs.
+    const purchasePath = await page
+        .locator(
+            'a[href^="/admin/management/purchases/"]:not([href$="/create"])',
+        )
+        .first()
+        .getAttribute('href');
+    expect(purchasePath).toMatch(/^\/admin\/management\/purchases\/\d+$/);
+
+    // Like every Gestión page: the header block first, then the section tabs.
     for (const [path, heading] of [
         ['/admin/management/purchases', 'Compras'],
+        [purchasePath!, /^Compra #\d+$/],
+        ['/admin/management/purchases/create', 'Registrar compra'],
         ['/admin/management/audit', 'Auditoría'],
-    ]) {
+    ] as const) {
         await page.goto(path);
-        const headingBox = await page
-            .getByRole('heading', { name: heading, level: 1 })
-            .boundingBox();
+        const header = page.getByRole('heading', { name: heading, level: 1 });
+        await expect(header, `heading on ${path}`).toBeVisible();
+        await expect(nav, `section tabs on ${path}`).toBeVisible();
+        const headerBlock = header.locator('xpath=ancestor::header[1]');
+        await expect(headerBlock, `header block on ${path}`).toHaveCount(1);
+        const headerBox = await headerBlock.boundingBox();
         const navBox = await nav.boundingBox();
-        expect(headingBox!.y).toBeLessThan(navBox!.y);
+        expect(headerBox, `header box on ${path}`).not.toBeNull();
+        expect(navBox, `tabs box on ${path}`).not.toBeNull();
+        // The tabs sit right after the header block, before any other content.
+        expect(navBox!.y, path).toBeGreaterThanOrEqual(
+            headerBox!.y + headerBox!.height,
+        );
+        expect(
+            await headerBlock.evaluate(
+                (block, tabs) => block.nextElementSibling === tabs,
+                await nav.elementHandle(),
+            ),
+            `tabs follow the header block on ${path}`,
+        ).toBe(true);
     }
 
     await page.goto('/admin/management/purchases/create');

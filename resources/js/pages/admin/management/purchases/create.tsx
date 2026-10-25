@@ -92,15 +92,18 @@ export default function CreatePurchase({
         <section className="grid gap-6 text-admin-text-primary">
             <Head title="Registrar compra" />
             <Link href="/admin/management/purchases">Volver a Compras</Link>
-            <h1 className="text-2xl font-semibold text-balance">
-                Registrar compra
-            </h1>
-            <p className="max-w-3xl text-admin-text-secondary">
-                Cargá cada insumo que compraste con su cantidad y precio. El
-                total sale de la billetera elegida y suma stock a los insumos
-                que lo controlan. El envío se suma al total, pero no al costo de
-                los insumos. Los montos van en pesos, sin centavos.
-            </p>
+            <header>
+                <h1 className="text-2xl font-semibold text-balance">
+                    Registrar compra
+                </h1>
+                <p className="mt-1 max-w-3xl text-admin-text-secondary">
+                    Cargá cada insumo que compraste con su cantidad y precio. El
+                    total sale de la billetera elegida y suma stock a los
+                    insumos que lo controlan. El envío se suma al total, pero no
+                    al costo de los insumos. Los montos van en pesos, sin
+                    centavos.
+                </p>
+            </header>
             <ManagementSectionNavigation />
             {(!wallets.length || !inventory_items.length) && (
                 <p>
