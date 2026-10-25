@@ -65,6 +65,7 @@ Table service (`Orders\Support\TableSessionGuard`): confirming rounds, voids and
 | Customer privacy | Phone matching happens only inside `CreateOrder`; no lookup endpoint; matched profile data is never returned or overwritten |
 | Duplicates | Required idempotency key stored as HMAC with a payload fingerprint and a unique index |
 | Abuse | Throttle: preview 20/min, creation 5/min |
+| Ordering hours | Creation is rejected outside the configured weekly window (`PublicOrderingHours`); the visitor cannot send date, period or time |
 
 The public response contains only the public order ID, status, payment status, backend price breakdown, summary and WhatsApp URL.
 

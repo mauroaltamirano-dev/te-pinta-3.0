@@ -6,23 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/features/orders/cart-context';
 import { PriceSummary } from '@/features/orders/components/price-summary';
 import { postJson } from '@/features/orders/http';
 import type {
     CreatedOrderResponse,
-    DeliveryPeriod,
     DeliveryType,
     OrderAddon,
     OrderCondition,
+    OrderingStatus,
     PriceQuote,
     PublicProduct,
 } from '@/features/orders/types';
@@ -33,11 +26,7 @@ export default function Cart() {
     const [availableAddons, setAvailableAddons] = useState<OrderAddon[]>([]);
     const [condition, setCondition] = useState<OrderCondition>('cooked');
     const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
-    const [deliveryPeriod, setDeliveryPeriod] =
-        useState<DeliveryPeriod>('night');
-    const [businessToday, setBusinessToday] = useState('');
-    const [deliveryDate, setDeliveryDate] = useState('');
-    const [deliveryTime, setDeliveryTime] = useState('');
+    const [ordering, setOrdering] = useState<OrderingStatus | null>(null);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
@@ -79,7 +68,7 @@ export default function Cart() {
 
                 return response.json();
             }) as Promise<{
-                data: { addons: OrderAddon[]; today: string };
+                data: { addons: OrderAddon[]; ordering: OrderingStatus };
             }>,
         ])
             .then(([catalogPayload, optionsPayload]) => {
@@ -89,10 +78,7 @@ export default function Cart() {
 
                 setCatalog(catalogPayload.data);
                 setAvailableAddons(optionsPayload.data.addons);
-                setBusinessToday(optionsPayload.data.today);
-                setDeliveryDate(
-                    (currentDate) => currentDate || optionsPayload.data.today,
-                );
+                setOrdering(optionsPayload.data.ordering);
             })
             .catch(() => {
                 if (active) {
@@ -189,7 +175,7 @@ export default function Cart() {
         missingProducts.length === 0 &&
         missingAddons.length === 0 &&
         Boolean(quote) &&
-        Boolean(businessToday);
+        ordering?.is_open === true;
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -210,9 +196,6 @@ export default function Cart() {
                     phone,
                     address: deliveryType === 'delivery' ? address : null,
                 },
-                delivery_date: deliveryDate,
-                delivery_period: deliveryPeriod,
-                delivery_time: deliveryTime || null,
                 delivery_address: deliveryType === 'delivery' ? address : null,
                 notes: notes || null,
                 idempotency_key: cart.idempotency_key,
@@ -624,50 +607,11 @@ export default function Cart() {
                                             autoComplete="street-address"
                                         />
                                     )}
-                                    <Field
-                                        id="delivery-date"
-                                        type="date"
-                                        label="Fecha de entrega"
-                                        value={deliveryDate}
-                                        onChange={setDeliveryDate}
-                                        required
-                                        min={businessToday || undefined}
-                                    />
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="delivery-period">
-                                            Franja
-                                        </Label>
-                                        <Select
-                                            value={deliveryPeriod}
-                                            onValueChange={(value) =>
-                                                setDeliveryPeriod(
-                                                    value as DeliveryPeriod,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger id="delivery-period">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="midday">
-                                                    Mediodía
-                                                </SelectItem>
-                                                <SelectItem value="afternoon">
-                                                    Tarde
-                                                </SelectItem>
-                                                <SelectItem value="night">
-                                                    Noche
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <Field
-                                        id="delivery-time"
-                                        type="time"
-                                        label="Hora opcional"
-                                        value={deliveryTime}
-                                        onChange={setDeliveryTime}
-                                    />
+                                    <p className="text-sm leading-6 text-muted-foreground">
+                                        El horario de entrega o retiro lo
+                                        coordinamos por WhatsApp según la
+                                        demanda del momento.
+                                    </p>
                                     <div className="grid gap-2">
                                         <Label htmlFor="order-notes">
                                             Notas del pedido
@@ -716,6 +660,18 @@ export default function Cart() {
                                     </Button>
                                 </div>
                             )}
+                            {ordering && (
+                                <p
+                                    role="status"
+                                    className={
+                                        ordering.is_open
+                                            ? 'text-sm text-muted-foreground'
+                                            : 'rounded-xl border border-public-ink/20 bg-card p-4 text-sm font-semibold text-public-ink'
+                                    }
+                                >
+                                    {ordering.message}
+                                </p>
+                            )}
                             {error && (
                                 <p
                                     role="alert"
@@ -746,6 +702,11 @@ export default function Cart() {
                 {cart.items.length > 0 && (
                     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgb(27_27_27_/_0.08)] backdrop-blur-sm sm:hidden">
                         <div className="mx-auto max-w-7xl">
+                            {ordering && !ordering.is_open && (
+                                <p className="mb-2 text-center text-xs font-semibold text-public-ink">
+                                    {ordering.message}
+                                </p>
+                            )}
                             <Button
                                 form="public-checkout"
                                 type="submit"

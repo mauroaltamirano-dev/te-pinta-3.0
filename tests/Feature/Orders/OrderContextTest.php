@@ -29,10 +29,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\OpensPublicOrdering;
 use Tests\TestCase;
 
 final class OrderContextTest extends TestCase
 {
+    use OpensPublicOrdering;
     use RefreshDatabase;
 
     private Product $product;
@@ -42,6 +44,7 @@ final class OrderContextTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->openPublicOrderingAllDay();
         $this->admin = User::factory()->administrator()->create();
         $category = Category::query()->create(['name' => 'Drinks', 'slug' => 'drinks']);
         $this->product = Product::query()->create([
@@ -137,7 +140,7 @@ final class OrderContextTest extends TestCase
         return [
             ['customer.name', null, 'customer.name'], ['customer.phone', null, 'customer.phone'],
             ['delivery_address', null, 'delivery_address'], ['delivery_type', 'dine_in', 'delivery_type'],
-            ['source', 'pos', 'source'], ['delivery_date', null, 'delivery_date'], ['delivery_period', null, 'delivery_period'],
+            ['source', 'pos', 'source'], ['delivery_date', '2026-10-26', 'delivery_date'], ['delivery_period', 'night', 'delivery_period'],
         ];
     }
 
@@ -333,7 +336,7 @@ final class OrderContextTest extends TestCase
     {
         return [
             'items' => [['product_slug' => $this->product->slug, 'quantity' => 1]], 'condition' => 'cooked',
-            'delivery_type' => 'delivery', 'delivery_date' => now()->addDay()->toDateString(), 'delivery_period' => 'night',
+            'delivery_type' => 'delivery',
             'delivery_address' => 'Street 123', 'customer' => ['name' => 'Visitor', 'phone' => '123456789'],
             'idempotency_key' => 'pos1-public-'.bin2hex(random_bytes(12)),
         ];

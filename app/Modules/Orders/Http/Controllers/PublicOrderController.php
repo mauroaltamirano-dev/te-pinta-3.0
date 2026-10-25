@@ -9,18 +9,20 @@ use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Http\Requests\StorePublicOrderRequest;
 use App\Modules\Orders\Support\OrderSummaryFormatter;
+use App\Modules\Orders\Support\PublicOrderingHours;
 use App\Modules\Orders\Support\WhatsAppOrderLink;
 use Illuminate\Http\JsonResponse;
 
 final class PublicOrderController
 {
-    public function __invoke(StorePublicOrderRequest $request, ResolvePublicCheckoutSelections $resolveSelections, CreateOrder $createOrder, OrderSummaryFormatter $formatter, WhatsAppOrderLink $whatsApp): JsonResponse
+    public function __invoke(StorePublicOrderRequest $request, ResolvePublicCheckoutSelections $resolveSelections, CreateOrder $createOrder, OrderSummaryFormatter $formatter, WhatsAppOrderLink $whatsApp, PublicOrderingHours $hours): JsonResponse
     {
+        $window = $hours->assertOpen();
         $selections = $resolveSelections->execute(
             $request->validated('items'), $request->validated('addons', []),
             OrderCondition::from($request->validated('condition')),
         );
-        $order = $createOrder->execute(OrderCheckoutData::fromRequest($request, true, $selections['items'], $selections['addons']), OrderSource::PublicCheckout);
+        $order = $createOrder->execute(OrderCheckoutData::fromRequest($request, true, $selections['items'], $selections['addons'], $window), OrderSource::PublicCheckout);
 
         return response()->json([
             'data' => [

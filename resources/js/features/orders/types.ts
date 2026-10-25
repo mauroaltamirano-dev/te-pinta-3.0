@@ -9,6 +9,12 @@ export type PaymentMethod = 'cash' | 'bank_transfer' | 'debit_card';
 export type DiscountType = 'percentage' | 'fixed_amount';
 export type OrdersView = 'grid' | 'list';
 
+/** Whether the public site takes orders right now, with the copy to show. */
+export interface OrderingStatus {
+    is_open: boolean;
+    message: string;
+}
+
 export interface PublicProduct {
     slug: string;
     name: string;

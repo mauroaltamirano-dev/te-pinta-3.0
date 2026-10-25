@@ -43,8 +43,9 @@ final readonly class OrderCheckoutData
 
     /** @param array<int, array{product_id: int, quantity: int}>|null $resolvedItems
      * @param  array<int, array{addon_id: int, quantity: int}>|null  $resolvedAddons
+     * @param  array{date: string, period: DeliveryPeriod}|null  $orderingWindow  public checkout: the server sets the schedule
      */
-    public static function fromRequest(FormRequest $request, bool $public, ?array $resolvedItems = null, ?array $resolvedAddons = null): self
+    public static function fromRequest(FormRequest $request, bool $public, ?array $resolvedItems = null, ?array $resolvedAddons = null, ?array $orderingWindow = null): self
     {
         /** @var Customer|null $selectedCustomer */
         $selectedCustomer = ! $public && $request->validated('customer_id') !== null
@@ -61,8 +62,8 @@ final readonly class OrderCheckoutData
             addons: $resolvedAddons ?? $request->validated('addons', []),
             condition: OrderCondition::from($request->validated('condition')),
             deliveryType: DeliveryType::from($request->validated('delivery_type')),
-            deliveryPeriod: $request->validated('delivery_period') === null ? null : DeliveryPeriod::from($request->validated('delivery_period')),
-            deliveryDate: $request->validated('delivery_date'),
+            deliveryPeriod: $orderingWindow['period'] ?? ($request->validated('delivery_period') === null ? null : DeliveryPeriod::from($request->validated('delivery_period'))),
+            deliveryDate: $orderingWindow['date'] ?? $request->validated('delivery_date'),
             deliveryTime: $request->validated('delivery_time'),
             deliveryAddress: $request->validated('delivery_address'),
             notes: $request->validated('notes'),

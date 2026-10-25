@@ -24,16 +24,26 @@ Covers the public site and checkout (`PublicSite`, `Products`, `Orders`), featur
 
 ## Public checkout
 
-1. The visitor sends product and add-on **slugs**, quantities, condition, delivery or pickup, schedule, name, phone, optional address and notes, plus an idempotency key.
-2. Slugs are resolved to internal IDs only after sellability checks (`ResolvePublicCheckoutSelections`); `OrderPricingEngine` prices the order.
-3. `CreateOrder` runs one transaction: normalizes the phone, matches an active customer by normalized phone or creates one, persists the order with status `pending_confirmation` and payment `unpaid`, and stores all snapshots.
-4. The response contains the public order ID, status, payment status, backend price breakdown, summary and a `wa.me` link to `order_settings.whatsapp_order_phone`.
+1. The visitor sends product and add-on **slugs**, quantities, condition, delivery or pickup, name, phone, optional address and notes, plus an idempotency key. There is no schedule choice: delivery or pickup time is agreed over WhatsApp, depending on demand.
+2. Orders are taken only inside the current ordering window (below); outside it the request fails with an `ordering` validation error saying when ordering reopens.
+3. Slugs are resolved to internal IDs only after sellability checks (`ResolvePublicCheckoutSelections`); `OrderPricingEngine` prices the order.
+4. `CreateOrder` runs one transaction: normalizes the phone, matches an active customer by normalized phone or creates one, persists the order with status `pending_confirmation` and payment `unpaid`, and stores all snapshots.
+5. The response contains the public order ID, status, payment status, backend price breakdown, summary and a `wa.me` link to `order_settings.whatsapp_order_phone`.
 
 - Idempotency: the key is stored as an HMAC (`app.key`) plus a payload fingerprint with a unique index. An exact retry returns the same order; reusing a key with a different payload is rejected.
 - The public request cannot set customer ID, status, payment status or method, discount, total, shipping or combined price, and cannot choose `dine_in`.
 - Matching a customer never returns or overwrites that customer's private data; the order stores the visitor-supplied snapshots.
 - An empty WhatsApp setting makes link generation fail with an explicit "not configured" error after the order is saved. Opening WhatsApp only hands off to the customer; it does not prove a message was sent.
 - No online payment exists.
+
+### Ordering hours
+
+- Configuración → "Horario de pedidos web" (`catalog.manage`, `PUT /admin/settings/general/ordering-hours`) edits one window per weekday in `public_ordering_hours`: opening and closing time, or closed. Seeded every day 19:00–00:00.
+- Times are read in `orders.timezone`. A closing time at or before the opening time ends the next day (19:00–00:00 closes at midnight; equal times mean all day). A window that ends after midnight belongs to the day it opened.
+- `PublicOrderingHours` decides: `GET /checkout/options` returns `ordering: {is_open, message}` ("Tomamos pedidos hasta las 00:00." or "Ahora no estamos tomando pedidos por la web. Volvemos hoy a las 19:00."), and `POST /checkout/orders` rejects closed requests with the same message. Menu, cart and price preview stay available; the cart shows the message and disables confirmation.
+- The order stores the window's opening date as `delivery_date`, its period from the opening time (before 15:00 `midday`, before 19:00 `afternoon`, otherwise `night`), and `delivery_time` null.
+- An idempotent retry that arrives after the window closed is rejected instead of replaying; the order already exists and staff see it.
+
 
 Deployment of the public storefront (`tepinta.com.ar` through a Cloudflare tunnel and a default-deny gateway) is described in [OPERATIONS.md](OPERATIONS.md#public-storefront).
 

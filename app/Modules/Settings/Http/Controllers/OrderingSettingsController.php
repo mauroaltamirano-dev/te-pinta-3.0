@@ -7,6 +7,7 @@ use App\Modules\Identity\Enums\Permission;
 use App\Modules\Orders\Enums\OrderSettingKey;
 use App\Modules\Orders\Models\OrderAddon;
 use App\Modules\Orders\Models\OrderSetting;
+use App\Modules\Orders\Models\PublicOrderingHour;
 use App\Modules\Settings\Actions\UpdateOrderingSettings;
 use App\Modules\Settings\Data\OrderingSettingsData;
 use App\Modules\Settings\Http\Requests\UpdateOrderingSettingsRequest;
@@ -34,6 +35,9 @@ final class OrderingSettingsController
                     ->orderBy('id')
                     ->get(['id', 'name', 'price', 'is_available', 'sort_order']),
             ],
+            'orderingHours' => PublicOrderingHour::query()->orderBy('weekday')->get()
+                ->map(fn (PublicOrderingHour $hour): array => ['weekday' => $hour->weekday, 'opens_at' => $hour->opens_at, 'closes_at' => $hour->closes_at])
+                ->all(),
         ]);
     }
 

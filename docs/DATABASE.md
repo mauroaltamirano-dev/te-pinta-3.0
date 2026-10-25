@@ -92,6 +92,7 @@ A subcategory is only a filter: pricing, order snapshots, inventory consumption 
 | --- | --- |
 | `order_settings` | Closed key set (`Orders\Enums\OrderSettingKey`), exactly one integer or string value per row. Seeds: `empanada_unit_surcharge_percent` 10 (derives stored empanada unit prices), `raw_discount_percent` 5 (raw empanada dozens), `delivery_fee` 0, `whatsapp_order_phone` empty. Retired rows kept as history and never read: `combined_dozen_cooked_price` 17500, `combined_dozen_raw_price` 16000; `combined_half_dozen_surcharge` 1500 feeds only the inactive derived classes. |
 | `order_addons` | Toppings: slug, name, integer price, availability, sort order, soft delete. Seeds: Lactonesa (500), Yasgua (200). |
+| `public_ordering_hours` | Weekly public ordering window: one row per ISO weekday (`1` = Monday, unique per restaurant), `opens_at`/`closes_at` `time(0)`, both null when closed (check constraint). A closing time at or before the opening time ends the next day. Seed: every day 19:00–00:00 (migration `2026_10_25_000000`). |
 | `raw_price_discounts` | Retired history: fixed raw discounts per tier, never read. Raw prices use `order_settings.raw_discount_percent`. |
 | `instagram_automation_settings` | Operator on/off switch for Story automation. |
 

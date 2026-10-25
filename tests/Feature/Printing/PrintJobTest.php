@@ -31,10 +31,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Support\OpensPublicOrdering;
 use Tests\TestCase;
 
 final class PrintJobTest extends TestCase
 {
+    use OpensPublicOrdering;
     use RefreshDatabase;
 
     private Product $salteña;
@@ -48,6 +50,7 @@ final class PrintJobTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->openPublicOrderingAllDay();
         RawPriceDiscount::query()->insert(['pricing_mode' => PriceTier::Dozen->value, 'amount' => 2000]);
         $empanadas = Category::query()->create(['name' => 'Empanadas', 'slug' => 'empanadas', 'sort_order' => 1, 'is_active' => true]);
         $this->salteña = Product::query()->create([
@@ -159,7 +162,7 @@ final class PrintJobTest extends TestCase
     {
         $this->postJson(route('public.orders.store'), [
             'items' => [['product_slug' => 'saltena', 'quantity' => 6]], 'addons' => [], 'condition' => 'cooked', 'delivery_type' => 'pickup',
-            'delivery_period' => 'night', 'delivery_date' => now()->toDateString(), 'delivery_time' => null, 'delivery_address' => null,
+            'delivery_address' => null,
             'notes' => null, 'customer' => ['name' => 'Visitor', 'phone' => '+54 9 11 1234-5678', 'address' => 'X'],
             'idempotency_key' => 'print-public-order-key-0001',
         ])->assertSuccessful();

@@ -16,10 +16,12 @@ use App\Modules\Products\Models\Product;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Support\OpensPublicOrdering;
 use Tests\TestCase;
 
 final class OrderCheckoutHttpTest extends TestCase
 {
+    use OpensPublicOrdering;
     use RefreshDatabase;
 
     private Product $product;
@@ -35,6 +37,7 @@ final class OrderCheckoutHttpTest extends TestCase
             'is_available' => true, 'sort_order' => 1,
         ]);
         OrderSetting::query()->where('key', OrderSettingKey::WhatsappOrderPhone->value)->update(['string_value' => '5491112345678']);
+        $this->openPublicOrderingAllDay();
     }
 
     public function test_public_checkout_is_backend_priced_persisted_and_safe(): void
@@ -146,18 +149,10 @@ final class OrderCheckoutHttpTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.today', '2026-08-13');
 
-        $publicPayload = $this->payload();
-        $publicPayload['delivery_date'] = '2026-08-13';
-        $this->postJson(route('public.orders.store'), $publicPayload)->assertCreated();
+        $this->postJson(route('public.orders.store'), $this->payload())->assertCreated();
+        $this->assertDatabaseHas('orders', ['source' => 'public_checkout', 'delivery_date' => '2026-08-13']);
 
-        $publicPayload['delivery_date'] = '2026-08-12';
-        $publicPayload['idempotency_key'] = 'checkout-business-date-old';
-        $this->postJson(route('public.orders.store'), $publicPayload)
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('delivery_date')
-            ->assertJsonPath('errors.delivery_date.0', 'La fecha de entrega debe ser igual o posterior al 13/08/2026.');
-
-        $adminPayload = $this->payload();
+        $adminPayload = $this->adminPayload();
         unset($adminPayload['idempotency_key'], $adminPayload['customer']);
         $adminPayload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
         $adminPayload['customer_id'] = Customer::query()->create(['name' => 'Business date customer'])->id;
@@ -464,7 +459,7 @@ TEXT, $summary);
         $this->get(route('admin.orders.index'))->assertRedirect();
         $admin = User::factory()->administrator()->create();
         $customer = Customer::query()->create(['name' => 'POS customer']);
-        $payload = $this->payload();
+        $payload = $this->adminPayload();
         unset($payload['idempotency_key']);
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 6]];
         $payload['customer_id'] = $customer->id;
@@ -501,7 +496,7 @@ TEXT, $summary);
     {
         $admin = User::factory()->administrator()->create();
         $customer = Customer::query()->create(['name' => 'Quick POS customer']);
-        $payload = $this->payload();
+        $payload = $this->adminPayload();
         unset($payload['idempotency_key'], $payload['customer']);
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 6]];
         $payload['customer_id'] = $customer->id;
@@ -530,7 +525,7 @@ TEXT, $summary);
     {
         $admin = User::factory()->administrator()->create();
         $customer = Customer::query()->create(['name' => 'Discount customer']);
-        $payload = $this->payload();
+        $payload = $this->adminPayload();
         unset($payload['idempotency_key'], $payload['customer']);
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 6]];
         $payload['customer_id'] = $customer->id;
@@ -571,7 +566,7 @@ TEXT, $summary);
     {
         $admin = User::factory()->administrator()->create();
         $customer = Customer::query()->create(['name' => 'Zero total customer']);
-        $payload = $this->payload();
+        $payload = $this->adminPayload();
         unset($payload['idempotency_key'], $payload['customer']);
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
         $payload['customer_id'] = $customer->id;
@@ -602,7 +597,7 @@ TEXT, $summary);
     {
         $admin = User::factory()->administrator()->create();
         $customer = Customer::query()->create(['name' => 'Payment customer']);
-        $payload = $this->payload();
+        $payload = $this->adminPayload();
         unset($payload['idempotency_key'], $payload['customer']);
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
         $payload['customer_id'] = $customer->id;
@@ -619,7 +614,7 @@ TEXT, $summary);
     {
         $admin = User::factory()->administrator()->create();
         Customer::query()->create(['name' => 'Existing', 'phone' => '11 2222', 'phone_normalized' => '112222']);
-        $payload = $this->payload();
+        $payload = $this->adminPayload();
         unset($payload['idempotency_key']);
         $payload['items'] = [['product_id' => $this->product->id, 'quantity' => 1]];
         $payload['customer'] = ['name' => 'Different person', 'phone' => '11-2222'];
@@ -636,10 +631,15 @@ TEXT, $summary);
         return [
             'items' => [['product_slug' => $this->product->slug, 'quantity' => 6]],
             'addons' => [], 'condition' => 'raw', 'delivery_type' => 'pickup',
-            'delivery_period' => 'night', 'delivery_date' => now()->toDateString(),
-            'delivery_time' => null, 'delivery_address' => null, 'notes' => 'Ring the bell',
+            'delivery_address' => null, 'notes' => 'Ring the bell',
             'customer' => ['name' => 'Visitor name', 'phone' => '+54 9 11 1234-5678', 'address' => 'Visitor address'],
             'idempotency_key' => 'checkout-example-key-0001',
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function adminPayload(): array
+    {
+        return $this->payload() + ['delivery_period' => 'night', 'delivery_date' => now()->toDateString(), 'delivery_time' => null];
     }
 }

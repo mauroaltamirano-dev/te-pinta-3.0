@@ -9,6 +9,7 @@ use App\Modules\Marketing\Models\FeaturedProduct;
 use App\Modules\Marketing\Support\MarketingClock;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
+use App\Modules\Orders\Models\PublicOrderingHour;
 use App\Modules\Orders\Support\OrderBusinessDate;
 use App\Modules\Products\Models\Product;
 use Carbon\CarbonImmutable;
@@ -30,6 +31,8 @@ final class PlaywrightDatabaseSeeder extends Seeder
         ]);
 
         $this->call(ProductCatalogSeeder::class);
+        // Equal times mean all day, so checkout specs do not depend on the clock.
+        PublicOrderingHour::query()->update(['opens_at' => '00:00', 'closes_at' => '00:00']);
         $unitFixtureCategoryId = Product::query()->where('slug', 'saltena')->value('category_id');
         Product::query()->firstOrCreate(
             ['slug' => 'playwright-unit-beverage'],

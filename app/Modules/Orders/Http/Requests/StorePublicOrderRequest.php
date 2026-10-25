@@ -2,10 +2,8 @@
 
 namespace App\Modules\Orders\Http\Requests;
 
-use App\Modules\Orders\Enums\DeliveryPeriod;
 use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Enums\OrderCondition;
-use App\Modules\Orders\Support\OrderBusinessDate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,9 +30,8 @@ final class StorePublicOrderRequest extends FormRequest
             'addons.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'condition' => ['required', Rule::enum(OrderCondition::class)],
             'delivery_type' => ['required', Rule::in([DeliveryType::Delivery->value, DeliveryType::Pickup->value])],
-            'delivery_period' => ['required', Rule::enum(DeliveryPeriod::class)],
-            'delivery_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.app(OrderBusinessDate::class)->todayString()],
-            'delivery_time' => ['nullable', 'date_format:H:i'],
+            // The order is for the current ordering window; timing is agreed over WhatsApp.
+            'delivery_period' => ['prohibited'], 'delivery_date' => ['prohibited'], 'delivery_time' => ['prohibited'],
             'delivery_address' => ['nullable', 'required_if:delivery_type,delivery', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'customer' => ['required', 'array:name,phone,phone_normalized,address'],
@@ -47,22 +44,6 @@ final class StorePublicOrderRequest extends FormRequest
             'discount_type' => ['prohibited'], 'discount_value' => ['prohibited'], 'discount_amount' => ['prohibited'],
             'source' => ['prohibited'],
             'total' => ['prohibited'], 'shipping_fee' => ['prohibited'], 'combined_price' => ['prohibited'],
-        ];
-    }
-
-    /** @return array<string, string> */
-    public function messages(): array
-    {
-        return [
-            'delivery_date.after_or_equal' => 'La fecha de entrega debe ser igual o posterior al '.app(OrderBusinessDate::class)->today()->format('d/m/Y').'.',
-        ];
-    }
-
-    /** @return array<string, string> */
-    public function attributes(): array
-    {
-        return [
-            'delivery_date' => 'fecha de entrega',
         ];
     }
 

@@ -16,12 +16,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\LegacyPricingSnapshots;
+use Tests\Support\OpensPublicOrdering;
 use Tests\TestCase;
 
 /** Independent verifier probes: public HTTP interface only, except fixture setup and v1 history conversion. */
 final class FixedDozenRegressionTest extends TestCase
 {
     use LegacyPricingSnapshots;
+    use OpensPublicOrdering;
     use RefreshDatabase;
 
     private User $admin;
@@ -34,6 +36,7 @@ final class FixedDozenRegressionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->openPublicOrderingAllDay();
         // A fixed business morning keeps same-day night deliveries valid whatever the wall clock.
         $this->travelTo(CarbonImmutable::parse('2026-10-20 13:00:00 UTC'));
         $this->admin = User::factory()->administrator()->create();
@@ -108,7 +111,7 @@ final class FixedDozenRegressionTest extends TestCase
         ])->assertOk();
         $this->postJson(route('public.orders.store'), [
             'items' => $this->slugItems($basket), 'addons' => [], 'condition' => 'raw', 'delivery_type' => 'pickup',
-            'delivery_period' => 'night', 'delivery_date' => now()->toDateString(), 'delivery_time' => null, 'delivery_address' => null,
+            'delivery_address' => null,
             'notes' => null, 'customer' => ['name' => 'Visitor', 'phone' => '+54 9 11 1234-5678', 'address' => 'X'],
             'idempotency_key' => 'verifier-probe-key-000001',
         ])->assertSuccessful();
@@ -222,7 +225,7 @@ final class FixedDozenRegressionTest extends TestCase
         $this->postJson(route('public.orders.price-preview'), ['items' => $this->slugItems(['salteña' => 1]), 'condition' => 'raw', 'delivery_type' => 'pickup'])->assertUnprocessable();
         $this->postJson(route('public.orders.store'), [
             'items' => $this->slugItems(['salteña' => 12]), 'addons' => [], 'condition' => 'raw', 'delivery_type' => 'pickup',
-            'delivery_period' => 'night', 'delivery_date' => now()->toDateString(), 'delivery_time' => null, 'delivery_address' => null,
+            'delivery_address' => null,
             'notes' => null, 'customer' => ['name' => 'New visitor', 'phone' => '+54 9 11 5555-0000', 'address' => 'X'],
             'idempotency_key' => 'verifier-probe-key-000002',
         ])->assertUnprocessable()->assertJsonValidationErrors('items');

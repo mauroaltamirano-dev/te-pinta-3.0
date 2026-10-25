@@ -16,7 +16,7 @@ Code: `app/Modules/Orders/`. Key entry points: `Actions/CreateOrder.php`, `Actio
 
 | Context | Customer / contact | Address | Schedule | Shipping |
 | --- | --- | --- | --- | --- |
-| Public delivery | Name and phone required | Required | Date and period required; date not in the past (business date) | `delivery_fee` setting |
+| Public delivery | Name and phone required | Required | Not sent (prohibited): the server sets the current ordering window's date and period, time null; timing is agreed over WhatsApp | `delivery_fee` setting |
 | Public pickup | Name and phone required | Not required | As above | 0 |
 | Admin delivery | Existing customer or new name; phone optional | Required | Date and period; past dates allowed (historical entry) | `delivery_fee` setting |
 | Admin pickup | Existing customer or new name; phone optional | Not required | As above | 0 |

@@ -242,20 +242,33 @@ test('menu mantiene jerarquía editorial, contraste y recomposición responsive'
     await expect(heroCart).toHaveCSS('outline-width', '2px');
 });
 
-test('checkout público hidrata la fecha mínima desde options.today', async ({
+test('checkout público fuera de horario avisa cuándo vuelve y no deja confirmar', async ({
     page,
 }) => {
+    const message =
+        'Ahora no estamos tomando pedidos por la web. Volvemos hoy a las 19:00.';
     await page.route('**/checkout/options', async (route) => {
         await route.fulfill({
-            json: { data: { addons: [], today: '2026-08-13' } },
+            json: {
+                data: {
+                    addons: [],
+                    today: '2026-08-13',
+                    ordering: { is_open: false, message },
+                },
+            },
         });
     });
     await addSaltenaDozenAndOpenCart(page);
-    await expect(page.getByLabel('Fecha de entrega')).toHaveValue('2026-08-13');
-    await expect(page.getByLabel('Fecha de entrega')).toHaveAttribute(
-        'min',
-        '2026-08-13',
-    );
+    await expect(
+        page.getByRole('status').filter({ hasText: message }),
+    ).toBeVisible();
+    await expect(
+        page
+            .getByRole('button', { name: 'Confirmar y abrir WhatsApp' })
+            .first(),
+    ).toBeDisabled();
+    await expect(page.getByLabel('Fecha de entrega')).toHaveCount(0);
+    await expect(page.getByLabel('Franja')).toHaveCount(0);
     const cardColors = await page
         .locator('[data-slot="card"]')
         .first()
@@ -498,7 +511,9 @@ test('si fallan las opciones iniciales, permite reintentar sin confirmar a ciega
         page.getByRole('button', { name: 'Confirmar y abrir WhatsApp' }),
     ).toBeDisabled();
     await page.getByRole('button', { name: 'Reintentar carga' }).click();
-    await expect(page.getByLabel('Fecha de entrega')).not.toBeEmpty();
+    await expect(
+        page.getByText('Tomamos pedidos hasta las 00:00.'),
+    ).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
