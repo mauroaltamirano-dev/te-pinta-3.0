@@ -19,13 +19,19 @@ do not publish the gateway port or place another proxy in front of it.
 
 Only public storefront pages, catalog, cart, checkout endpoints, product images,
 and required public assets are allowed. Admin, authentication, API, health,
-Visitors that reach Cloudflare over plain HTTP (`CF-Visitor` scheme `http`) get a 301 to
-`https://tepinta.com.ar` before the origin is contacted, and every response carries
-`Strict-Transport-Security: max-age=31536000`: an `http://` page cannot run the `https://`
-module scripts, so phones and in-app browsers that open `http://` saw a blank page.
-
 Instagram media, generic storage, and the existing administrative PWA manifest are
-denied; storefront pages do not link the manifest. Do not change the operational `APP_URL`: it remains the private Tailscale
+denied; storefront pages do not link the manifest.
+
+Visitors that reach Cloudflare over plain HTTP (`CF-Visitor` scheme `http`) get a 301 to
+`https://tepinta.com.ar` before the origin is contacted: an `http://` page cannot run the
+`https://` module scripts, so phones and in-app browsers that open `http://` saw a blank page.
+
+Every response, redirects and denials included, carries the browser security headers
+(HSTS, a same-origin Content-Security-Policy, `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`); see
+[SECURITY.md](../../docs/SECURITY.md#origin-sessions-and-mobile-install). The gateway hides
+origin copies so each is sent once. Loading a third-party resource on the storefront requires
+widening the policy here and in `tests/deploy/public-gateway/test.sh`. Do not change the operational `APP_URL`: it remains the private Tailscale
 WebAuthn/passkey origin.
 
 Run the disposable regression harness before any local gateway start:

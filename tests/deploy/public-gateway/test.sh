@@ -176,4 +176,31 @@ secure_headers="$(curl --path-as-is --silent --show-error --output /dev/null --d
     exit 1
 }
 
+# Every response, including redirects and denials, carries the browser security headers once.
+expect_security_headers() {
+    local label="$1"
+    local headers="$2"
+    local expected
+
+    for expected in \
+        'Strict-Transport-Security: max-age=31536000' \
+        "Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" \
+        'X-Frame-Options: DENY' \
+        'X-Content-Type-Options: nosniff' \
+        'Referrer-Policy: strict-origin-when-cross-origin'; do
+        [[ "$(grep -ci "^${expected%%:*}:" <<<"$headers")" == 1 && "$headers" == *"$expected"$'\r'* ]] || {
+            printf 'Expected %s to send exactly one "%s":\n%s\n' "$label" "$expected" "$headers" >&2
+            exit 1
+        }
+    done
+}
+
+expect_security_headers 'GET /menu' "$secure_headers"
+expect_security_headers 'GET / with origin duplicates' "$(curl --path-as-is --silent --show-error --output /dev/null --dump-header - --max-time 5 \
+    "$gateway/?with_security_headers=1")"
+expect_security_headers 'a denied path' "$(curl --path-as-is --silent --show-error --output /dev/null --dump-header - --max-time 5 \
+    "$gateway/admin")"
+expect_security_headers 'the HTTPS redirect' "$(curl --path-as-is --silent --show-error --output /dev/null --dump-header - --max-time 5 \
+    -H 'CF-Visitor: {"scheme":"http"}' "$gateway/")"
+
 printf 'Public gateway allowlist and default-deny regression checks passed.\n'

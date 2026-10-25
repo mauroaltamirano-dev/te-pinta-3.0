@@ -103,6 +103,7 @@ Floor reads require `orders.manage` and floor writes `floor.manage`; inventory a
 - The operational runtime binds to loopback and trusts only its direct proxy (`TRUSTED_PROXIES=REMOTE_ADDR`).
 - Fortify derives the passkey relying party from `APP_URL`; register passkeys on the stable HTTPS origin instead of widening allowed origins.
 - The public gateway exposes only storefront paths and never falls back to the private runtime ([OPERATIONS.md](OPERATIONS.md#public-storefront)).
+- The public gateway sends, on every response: `Strict-Transport-Security: max-age=31536000`, `Content-Security-Policy` (`default-src 'self'`; scripts, fonts, images and API calls same-origin; inline styles allowed for the brand palette; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, `upgrade-insecure-requests`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. Origin copies are hidden so each header is sent once. A storefront change that loads a third-party script, font, image or API must update the policy in `deploy/cloudflare/nginx.conf` and its test.
 
 ## Tenancy
 
