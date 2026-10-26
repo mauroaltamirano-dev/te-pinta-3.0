@@ -20,7 +20,7 @@ Assumptions:
 | ID | Specs | Route | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | T1 | S2, S4, S5 | inline | done | RED 7/8 failing → GREEN 9/9; Orders suite 248 passed; own commit |
-| T2 | S1, S3, S6 | inline | pending | — |
+| T2 | S1, S3, S6 | inline | done | RED 6/6 failing → GREEN 6/6; full suite 1094 passed; e2e admin-quick-order 5/5 |
 
 Route evidence: one unit of behavior with shared code (no writer trigger); T1 holds the high-risk migration and gets its own commit.
 
@@ -30,3 +30,6 @@ Route evidence: one unit of behavior with shared code (no writer trigger); T1 ho
 - Verified: Vender already offers "Mostrador" (`dine_in`, no customer); pickup and delivery require name, date and period in validation and in `orders_context_valid` (`2026_10_05_000000_prepare_order_context.php`).
 - L2 (2026-10-26, user): "Claro, o sea, sería sobretodo para anotar rápido el pedido que nos hagan, por defecto sería para el mismo día, luego nosotros podemos modificar esos datos, inclsuive, si lo creamos rápido, lo dejamos como Pendiente, no como confirmado, luego lo confirmamos una vez que complemteos datos de nombre, teléfono, etc, es por ejemplo que alguien nos venga, nos pida en el mostrador pero no se siente a comer, y yo quiero hacer el pedido rápido, cargar su pedido y listo, o mismo cuando nos mandan un mensaje para pedirnos, estamos cargando rápido, queremos ver el total y que se quede creado el pedido, si estamos apurados no nos da tiempo a cargar el nombre, teléfono, dirección, etc, queremos selccionar el producto y crear, así ya vemos el total y nos queda como comanda rápida"
 - L3 (2026-10-26, user, kitchen ticket on creation or on confirmation): "si, imprime apenas lo creamos"
+- T1 committed as `73c7ef7` (migration + status guard; RED 7 of 8 failing, GREEN 9/9 with the added name-without-customer case).
+- T2: `quick` flag (admin store only; public checkout and edit reject it), `OrderCheckoutData::$quick` (server sets today's business date), `CreateOrder` status pending, `ResolveOrderCustomer` creates no customer, draft panel button "Pedido rápido", result panel shows the pending state. Playwright needed a local `testing_playwright` database on `tepinta-dev-pgsql` (created 2026-10-26).
+

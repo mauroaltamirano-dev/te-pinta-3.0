@@ -304,7 +304,10 @@ export function useAdminOrderDraft(
         setCreatedOrder(null);
     };
 
-    const submitQuickOrder = async () => {
+    /** `quick`: "Pedido rápido", products only; the backend makes it a pickup for today awaiting confirmation. */
+    const submitQuickOrder = async ({
+        quick = false,
+    }: { quick?: boolean } = {}) => {
         if (
             quickSubmitLocked.current ||
             !currentQuote ||
@@ -323,20 +326,27 @@ export function useAdminOrderDraft(
         form.clearErrors();
 
         try {
+            const anonymous = {
+                customer_id: null,
+                customer: null,
+                delivery_date: null,
+                delivery_period: null,
+                delivery_time: null,
+                delivery_address: null,
+            };
             const { data } = await postJson<{ data: AdminCreatedOrder }>(
                 '/admin/orders',
-                form.data.delivery_type === 'dine_in'
-                    ? // A counter order is immediate and anonymous: no schedule, address or customer.
-                      {
+                quick
+                    ? {
                           ...form.data,
-                          customer_id: null,
-                          customer: null,
-                          delivery_date: null,
-                          delivery_period: null,
-                          delivery_time: null,
-                          delivery_address: null,
+                          ...anonymous,
+                          quick: true,
+                          delivery_type: 'pickup',
                       }
-                    : form.data,
+                    : form.data.delivery_type === 'dine_in'
+                      ? // A counter order is immediate and anonymous: no schedule, address or customer.
+                        { ...form.data, ...anonymous }
+                      : form.data,
             );
             setCreatedOrder(data);
             autoFilledDeliveryAddress.current = null;

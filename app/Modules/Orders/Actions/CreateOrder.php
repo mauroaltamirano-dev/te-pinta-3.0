@@ -66,7 +66,7 @@ final readonly class CreateOrder
                     'source' => $source,
                     'customer_name_snapshot' => $data->customerName,
                     'customer_phone_snapshot' => $data->customerPhone,
-                    'status' => $source === OrderSource::PublicCheckout ? OrderStatus::PendingConfirmation : OrderStatus::Waiting,
+                    'status' => $source === OrderSource::PublicCheckout || $data->quick ? OrderStatus::PendingConfirmation : OrderStatus::Waiting,
                     'payment_status' => $payment['status'],
                     'payment_method' => $payment['method'],
                     'condition' => $data->condition,
@@ -95,7 +95,7 @@ final readonly class CreateOrder
                     ));
                 }
 
-                // Staff-created orders are confirmed on creation; public orders print when staff confirm them.
+                // Staff-created orders print on creation (quick ones too, though they await confirmation); public orders print when staff confirm them.
                 if ($kitchenTicket && $source !== OrderSource::PublicCheckout && $adminId !== null) {
                     event($this->documents->orderKitchenTicket($order->refresh(), $adminId));
                 }

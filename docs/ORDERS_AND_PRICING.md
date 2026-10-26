@@ -10,7 +10,7 @@ Code: `app/Modules/Orders/`. Key entry points: `Actions/CreateOrder.php`, `Actio
 
 | `source` | Created by | Initial status |
 | --- | --- | --- |
-| `admin` | Admin quick order (`/admin`) or full form (`/admin/orders/create`) | `waiting` |
+| `admin` | Admin quick order (`/admin`) or full form (`/admin/orders/create`) | `waiting`; `pending_confirmation` for a "Pedido rápido" |
 | `public_checkout` | Public storefront `POST /checkout/orders` | `pending_confirmation` |
 | `pos` | Table service (`ConfirmTableRound`, first round of a table), counter orders (`POST /admin/orders` with `delivery_type=dine_in`, "Mostrador" in the quick order) and the internal `CreateOrder` command | `waiting` |
 
@@ -20,6 +20,7 @@ Code: `app/Modules/Orders/`. Key entry points: `Actions/CreateOrder.php`, `Actio
 | Public pickup | Name and phone required | Not required | As above | 0 |
 | Admin delivery | Existing customer or new name; phone optional | Required | Date and period; past dates allowed (historical entry) | `delivery_fee` setting |
 | Admin pickup | Existing customer or new name; phone optional | Not required | As above | 0 |
+| Admin "Pedido rápido" (`quick: true`) | Prohibited; completed before confirming | Prohibited | Server sets today's business date; period and time prohibited (null) | 0 (always pickup) |
 | POS `dine_in` | Customer, name and phone optional; no profile is created | Prohibited | Date, period and time null | 0 |
 
 Public checkout rejects `dine_in` and the full admin form does not offer it; the admin store accepts it only as a counter order, which it records as `source=pos` (it never accepts a client-supplied `source`). Delivery periods: `midday`, `afternoon`, `night`; `delivery_time` is optional.
@@ -222,6 +223,7 @@ Orders builds every printable document in `Support/OrderDocuments.php` and emits
 - Product cards add 12, 6 or 1 unit to an in-memory draft; nothing is persisted until final confirmation.
 - Category tabs and, when the chosen category has subcategories, a second row of subcategory chips filter the cards (the round composer of a table does the same). Subcategories are display filters only: the engine never reads them and a combined dozen mixes flavors of any subcategory.
 - Both screens share `features/orders/hooks/use-admin-order-draft.ts` (draft state, preview sequencing, stale-response protection, submit lock), `admin-order-details-fields.tsx` and `PriceSummary`, which calls `POST /admin/orders/price-preview`.
+- **Pedido rápido** (draft panel button under "Continuar"): posts the draft with `quick: true`, no customer, schedule or address, and `delivery_type=pickup`. The order is created as `admin`, `pending_confirmation`, for today's business date with no period; its kitchen ticket prints at once (the confirmation later finds the same dedupe key and prints nothing). The result panel says it is pending. Staff complete name and period with the full edit before confirming (see Lifecycle). It is not a web order: the web order alert counts only `public_checkout`. Public checkout and the edit request reject `quick`.
 - Confirmation posts to `POST /admin/orders` (`StoreAdminOrderRequest` → `CreateOrder`). Quick order receives a JSON confirmation with the backend-generated ticket; the full form receives an Inertia redirect.
 
 ## Change checklist

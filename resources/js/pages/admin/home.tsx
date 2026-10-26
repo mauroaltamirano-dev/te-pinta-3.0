@@ -66,6 +66,7 @@ export default function AdminHome({
                             setMobileCartOpen(false);
                             setContinuationOpen(true);
                         }}
+                        onQuickCreated={() => setMobileCartOpen(false)}
                     />
                 </SheetContent>
             </Sheet>

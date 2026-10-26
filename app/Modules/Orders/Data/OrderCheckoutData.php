@@ -10,6 +10,7 @@ use App\Modules\Orders\Enums\OrderCondition;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\PaymentMethod;
 use App\Modules\Orders\Enums\PaymentStatus;
+use App\Modules\Orders\Support\OrderBusinessDate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -39,6 +40,8 @@ final readonly class OrderCheckoutData
         public ?DiscountType $discountType = null,
         public ?int $discountValue = null,
         public ?string $idempotencyKey = null,
+        /** "Pedido rápido": an admin pickup for today without customer or period, awaiting confirmation. */
+        public bool $quick = false,
     ) {}
 
     /** @param array<int, array{product_id: int, quantity: int}>|null $resolvedItems
@@ -52,6 +55,7 @@ final readonly class OrderCheckoutData
             ? Customer::query()->findOrFail($request->validated('customer_id'))
             : null;
 
+        $quick = ! $public && filter_var($request->validated('quick', false), FILTER_VALIDATE_BOOLEAN);
         $customerName = $selectedCustomer !== null ? $selectedCustomer->name : $request->validated('customer.name');
         $customerPhone = $selectedCustomer !== null ? $selectedCustomer->phone : $request->validated('customer.phone');
         $customerPhoneNormalized = $selectedCustomer !== null ? $selectedCustomer->phone_normalized : $request->validated('customer.phone_normalized');
@@ -63,7 +67,7 @@ final readonly class OrderCheckoutData
             condition: OrderCondition::from($request->validated('condition')),
             deliveryType: DeliveryType::from($request->validated('delivery_type')),
             deliveryPeriod: $orderingWindow['period'] ?? ($request->validated('delivery_period') === null ? null : DeliveryPeriod::from($request->validated('delivery_period'))),
-            deliveryDate: $orderingWindow['date'] ?? $request->validated('delivery_date'),
+            deliveryDate: $orderingWindow['date'] ?? ($quick ? app(OrderBusinessDate::class)->todayString() : $request->validated('delivery_date')),
             deliveryTime: $request->validated('delivery_time'),
             deliveryAddress: $request->validated('delivery_address'),
             notes: $request->validated('notes'),
@@ -77,6 +81,7 @@ final readonly class OrderCheckoutData
             discountType: $public || $request->validated('discount_type') === null ? null : DiscountType::from($request->validated('discount_type')),
             discountValue: $public ? null : $request->validated('discount_value'),
             idempotencyKey: $public ? $request->validated('idempotency_key') : null,
+            quick: $quick,
         );
     }
 
@@ -84,6 +89,29 @@ final readonly class OrderCheckoutData
     {
         $dineIn = $this->deliveryType === DeliveryType::DineIn;
         $public = $source === OrderSource::PublicCheckout;
+        if ($this->quick) {
+            Validator::make([
+                'source' => $source->value,
+                'delivery_type' => $this->deliveryType->value,
+                'customer_id' => $this->customerId,
+                'customer' => $this->customerName,
+                'delivery_date' => $this->deliveryDate,
+                'delivery_period' => $this->deliveryPeriod?->value,
+                'delivery_time' => $this->deliveryTime,
+                'delivery_address' => $this->deliveryAddress,
+            ], [
+                'source' => [Rule::in([OrderSource::Admin->value])],
+                'delivery_type' => [Rule::in([DeliveryType::Pickup->value])],
+                'customer_id' => ['prohibited'],
+                'customer' => ['prohibited'],
+                'delivery_date' => ['required', 'date_format:Y-m-d'],
+                'delivery_period' => ['prohibited'],
+                'delivery_time' => ['prohibited'],
+                'delivery_address' => ['prohibited'],
+            ])->validate();
+
+            return;
+        }
         Validator::make([
             'source' => $source->value,
             'idempotency_key' => $this->idempotencyKey,

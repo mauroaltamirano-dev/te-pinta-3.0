@@ -8,11 +8,14 @@ export function QuickOrderDraftPanel({
     products,
     draft,
     onContinue,
+    onQuickCreated,
     onClose,
 }: {
     products: AdminProductOption[];
     draft: AdminOrderDraft;
     onContinue: () => void;
+    /** Runs after a quick order was created (its result opens in the continuation panel). */
+    onQuickCreated?: () => void;
     onClose?: () => void;
 }) {
     const selectedProducts = draft.form.data.items.flatMap((line) => {
@@ -162,6 +165,31 @@ export function QuickOrderDraftPanel({
                 >
                     Continuar
                 </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                        if (await draft.submitQuickOrder({ quick: true })) {
+                            onQuickCreated?.();
+                        }
+                    }}
+                    disabled={
+                        selectedProducts.length === 0 ||
+                        draft.quoteLoading ||
+                        !draft.quote ||
+                        draft.submittingQuickOrder
+                    }
+                    aria-describedby="quick-order-help"
+                >
+                    Pedido rápido
+                </Button>
+                <p
+                    id="quick-order-help"
+                    className="text-xs text-admin-text-secondary"
+                >
+                    Retiro para hoy, sin datos del cliente: queda pendiente de
+                    confirmar y se imprime la comanda.
+                </p>
                 {selectedProducts.length > 0 && (
                     <Button
                         type="button"

@@ -15,7 +15,7 @@ final class ResolveOrderCustomer
             return Customer::query()->findOrFail($data->customerId);
         }
 
-        if ($data->deliveryType === DeliveryType::DineIn) {
+        if ($data->deliveryType === DeliveryType::DineIn || $data->quick) {
             return null;
         }
 

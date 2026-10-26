@@ -18,7 +18,13 @@ final class StoreAdminOrderRequest extends FormRequest
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
-        return $this->checkoutRules(false, $this->isCounterOrder());
+        return $this->checkoutRules(false, $this->isCounterOrder() && ! $this->isQuickOrder(), $this->isQuickOrder());
+    }
+
+    /** "Pedido rápido": only products; customer and schedule are completed before confirming. */
+    public function isQuickOrder(): bool
+    {
+        return $this->boolean('quick');
     }
 
     /** "Consumo en el local / mostrador": immediate, without schedule, address or required customer. */

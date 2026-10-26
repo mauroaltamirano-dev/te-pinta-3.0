@@ -487,3 +487,33 @@ test('descartar limpia el borrador sin persistir un pedido', async ({
     ).toBeDisabled();
     expect(orderPostCount()).toBe(0);
 });
+
+test('Pedido rápido crea un retiro pendiente sin pedir datos del cliente', async ({
+    page,
+}) => {
+    await logIn(page);
+    const orderPostCount = countOrderPosts(page);
+
+    await addProduct(page, 'Salteña', 2);
+    await openDraftOnMobile(page);
+    const draft = draftPanel(page);
+    await expect(draft.getByLabel('Cantidad de Salteña: 2')).toBeVisible();
+    const quickButton = draft.getByRole('button', {
+        name: 'Pedido rápido',
+        exact: true,
+    });
+    await expect(quickButton).toBeEnabled();
+    await quickButton.click();
+
+    await expect(
+        page.getByText('Pedido rápido creado · pendiente de confirmar.', {
+            exact: false,
+        }),
+    ).toBeVisible();
+    await expect(page.getByTestId('quick-order-success-ticket')).toBeVisible();
+    expect(orderPostCount()).toBe(1);
+
+    await page.getByRole('link', { name: 'Ver pedido' }).click();
+    await expect(page).toHaveURL(/\/admin\/orders\/TP-\d{6}$/);
+    await expect(page.getByText('Sin cliente asociado').first()).toBeVisible();
+});

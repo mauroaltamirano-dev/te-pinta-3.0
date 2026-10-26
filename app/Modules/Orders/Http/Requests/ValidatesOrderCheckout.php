@@ -13,12 +13,15 @@ use Illuminate\Validation\Rule;
 
 trait ValidatesOrderCheckout
 {
-    /** @return array<string, array<int, mixed>> */
-    protected function checkoutRules(bool $public, bool $dineIn = false): array
+    /**
+     * @param  bool|null  $quick  null when the request cannot create a quick order (the flag is then rejected)
+     * @return array<string, array<int, mixed>>
+     */
+    protected function checkoutRules(bool $public, bool $dineIn = false, ?bool $quick = null): array
     {
         $excludeNestedCustomer = ! $public && $this->filled('customer_id');
 
-        return [
+        $rules = [
             'items' => ['required', 'array', 'min:1', 'max:50'],
             'items.*' => ['required', 'array:product_id,quantity'],
             'items.*.product_id' => ['required', 'integer', 'distinct'],
@@ -62,6 +65,27 @@ trait ValidatesOrderCheckout
             'shipping_fee' => ['prohibited'],
             'combined_price' => ['prohibited'],
             'discount_amount' => ['prohibited'],
+            'quick' => $quick === null ? ['prohibited'] : ['sometimes', 'boolean'],
+        ];
+
+        if ($quick !== true) {
+            return $rules;
+        }
+
+        // "Pedido rápido": products only; the server makes it a same-day pickup awaiting confirmation.
+        return [
+            ...$rules,
+            'delivery_type' => ['required', Rule::in([DeliveryType::Pickup->value])],
+            'delivery_period' => ['prohibited'],
+            'delivery_date' => ['prohibited'],
+            'delivery_time' => ['prohibited'],
+            'delivery_address' => ['prohibited'],
+            'customer_id' => ['prohibited'],
+            'customer' => ['prohibited'],
+            'customer.name' => ['prohibited'],
+            'customer.phone' => ['prohibited'],
+            'customer.phone_normalized' => ['prohibited'],
+            'customer.address' => ['prohibited'],
         ];
     }
 

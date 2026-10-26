@@ -42,7 +42,7 @@ final class StorePublicOrderRequest extends FormRequest
             'idempotency_key' => ['required', 'string', 'min:16', 'max:100'],
             'customer_id' => ['prohibited'], 'payment_status' => ['prohibited'], 'payment_method' => ['prohibited'], 'status' => ['prohibited'],
             'discount_type' => ['prohibited'], 'discount_value' => ['prohibited'], 'discount_amount' => ['prohibited'],
-            'source' => ['prohibited'],
+            'source' => ['prohibited'], 'quick' => ['prohibited'],
             'total' => ['prohibited'], 'shipping_fee' => ['prohibited'], 'combined_price' => ['prohibited'],
         ];
     }

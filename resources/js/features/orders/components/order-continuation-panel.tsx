@@ -50,7 +50,10 @@ export function OrderContinuationPanel({
                         <div className="w-full max-w-md text-center">
                             <CheckCircle2 className="mx-auto size-14 text-success" />
                             <p className="mt-5 text-sm text-admin-text-secondary">
-                                Pedido confirmado
+                                {draft.createdOrder.status ===
+                                'pending_confirmation'
+                                    ? 'Pedido rápido creado · pendiente de confirmar. Completá el cliente y el horario desde "Ver pedido".'
+                                    : 'Pedido confirmado'}
                             </p>
                             <div
                                 data-testid="quick-order-success-ticket"
