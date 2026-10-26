@@ -2,6 +2,7 @@
 
 namespace App\Modules\Orders\Actions;
 
+use App\Modules\Orders\Enums\DeliveryType;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Support\OpenTableOrders;
@@ -23,8 +24,8 @@ final readonly class UpdateOrderStatus
             $this->openTables->assertNotOpen($locked->id);
             $previous = $locked->status;
             $this->fulfillment->assertTransition($locked->id, $previous, $status);
-            // A quick order is confirmed only once staff completed its customer and schedule.
-            if ($previous === OrderStatus::PendingConfirmation && ! in_array($status, [OrderStatus::PendingConfirmation, OrderStatus::Cancelled], true)
+            // A quick order is confirmed (or reopened after cancelling) only once staff completed its customer and schedule.
+            if ($locked->delivery_type !== DeliveryType::DineIn && ! in_array($status, [OrderStatus::PendingConfirmation, OrderStatus::Cancelled], true)
                 && ($locked->customer_name_snapshot === null || $locked->delivery_period === null)) {
                 throw ValidationException::withMessages(['status' => 'Completá el nombre del cliente y la franja horaria antes de confirmar el pedido.']);
             }

@@ -99,6 +99,32 @@ final class QuickPendingOrderLifecycleTest extends TestCase
         $this->assertSame(OrderStatus::Cancelled, $order->refresh()->status);
     }
 
+    public function test_a_cancelled_incomplete_order_cannot_be_reopened_without_its_data(): void
+    {
+        $order = $this->quickPendingOrder();
+        DB::table('orders')->where('id', $order->id)->update(['status' => 'cancelled']);
+
+        $this->actingAs($this->cashier)
+            ->from(route('admin.orders.show', $order))
+            ->patch(route('admin.orders.status.update', $order), ['status' => OrderStatus::Waiting->value])
+            ->assertRedirect(route('admin.orders.show', $order))
+            ->assertSessionHasErrors(['status' => self::CONFIRM_ERROR]);
+
+        $this->assertSame(OrderStatus::Cancelled, $order->refresh()->status);
+    }
+
+    public function test_a_cancelled_incomplete_order_can_go_back_to_pending(): void
+    {
+        $order = $this->quickPendingOrder();
+        DB::table('orders')->where('id', $order->id)->update(['status' => 'cancelled']);
+
+        $this->actingAs($this->cashier)
+            ->patch(route('admin.orders.status.update', $order), ['status' => OrderStatus::PendingConfirmation->value])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(OrderStatus::PendingConfirmation, $order->refresh()->status);
+    }
+
     public function test_a_complete_pending_order_is_still_confirmed_from_the_status_control(): void
     {
         $order = $this->pickupOrder();
