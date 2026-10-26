@@ -10,6 +10,7 @@ use App\Modules\Orders\Support\OrderDocuments;
 use App\Modules\Orders\Support\OrderPhysicalFulfillment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 final readonly class UpdateOrderStatus
 {
@@ -22,6 +23,11 @@ final readonly class UpdateOrderStatus
             $this->openTables->assertNotOpen($locked->id);
             $previous = $locked->status;
             $this->fulfillment->assertTransition($locked->id, $previous, $status);
+            // A quick order is confirmed only once staff completed its customer and schedule.
+            if ($previous === OrderStatus::PendingConfirmation && ! in_array($status, [OrderStatus::PendingConfirmation, OrderStatus::Cancelled], true)
+                && ($locked->customer_name_snapshot === null || $locked->delivery_period === null)) {
+                throw ValidationException::withMessages(['status' => 'Completá el nombre del cliente y la franja horaria antes de confirmar el pedido.']);
+            }
             if ($previous !== $status) {
                 $locked->update(['status' => $status, 'edit_version' => $locked->edit_version + 1]);
                 $this->fulfillment->dispatch($locked->id, $previous, $status, $this->businessDate->today(), $adminId);

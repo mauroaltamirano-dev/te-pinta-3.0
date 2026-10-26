@@ -36,7 +36,8 @@ Public checkout rejects `dine_in` and the full admin form does not offer it; the
 
 Rules enforced in `Orders/Support/OrderPhysicalFulfillment.php`:
 
-- Status updates accept any enum value, except that a `delivered` order can only move to `cancelled`.
+- Status updates accept any enum value, except that a `delivered` order can only move to `cancelled`, and a `pending_confirmation` order without customer name or delivery period (a quick order) can only stay pending or move to `cancelled` until staff complete it: "Completá el nombre del cliente y la franja horaria antes de confirmar el pedido." (`UpdateOrderStatus`; the full edit already requires both).
+- PostgreSQL `orders_context_valid` (migration `2026_10_26_000000_allow_quick_pending_orders`): counter orders are `pos` `dine_in` without schedule; every other order has a customer, name, delivery date and period, except an `admin` pickup that is `pending_confirmation` or `cancelled`, which may lack the period and/or the customer (customer and name are null together) but keeps its delivery date. Rollback refuses while such orders exist.
 - The first transition to `delivered` emits `OrderDelivered`; `delivered → cancelled` emits `OrderDeliveryCancelled`. Both run synchronously in the order transaction ([INVENTORY.md](INVENTORY.md#order-consumption)).
 - An order whose delivery consumption was reversed cannot be delivered again; create a new order.
 - `delivered` and `cancelled` orders are "closed": editing requires `POST /admin/orders/{order}/enable-edit` with a 3–300 character reason. The permission is stored in the admin session, bound to the order and its `edit_version`, and consumed by one successful edit.
