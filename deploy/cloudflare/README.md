@@ -40,17 +40,14 @@ Run the disposable regression harness before any local gateway start:
 tests/deploy/public-gateway/test.sh
 ```
 
-After a passing test, a local operator can start or stop the reversible public
-application and gateway with:
+In production the gateway is part of each release: `deploy/release.sh deploy <sha>` and
+`deploy/release.sh rollback` recreate it (Compose project `cloudflare`) from
+`~/tepinta-releases/<sha>/deploy/cloudflare/compose.yaml`, so nginx reads that release's
+`nginx.conf`, and the smoke test checks that it serves `/` and denies `/admin`. Never start
+the production gateway from a development checkout: its `nginx.conf` follows whatever branch
+is checked out. Recreating the container drops `tepinta.com.ar` for a second or two.
 
-```bash
-docker compose -f deploy/cloudflare/public-app/compose.yaml up -d --no-build --pull never public-app
-docker compose -f deploy/cloudflare/compose.yaml up -d
-docker compose -f deploy/cloudflare/compose.yaml down
-docker compose -f deploy/cloudflare/public-app/compose.yaml down
-```
-
-Those commands do not publish a hostname. Only after both local services are
+Starting the gateway does not publish a hostname. Only after both local services are
 ready should the operator start or restart the verified scoped named-tunnel
 connector. It is a local user systemd service named
 `tepinta-public-cloudflared.service` and serves only the exact apex hostname
@@ -71,10 +68,10 @@ then stop the gateway, then stop the public application:
 ```bash
 systemctl --user stop tepinta-public-cloudflared.service
 systemctl --user is-active tepinta-public-cloudflared.service # expect: inactive
-docker compose -f deploy/cloudflare/compose.yaml down
-docker compose -f deploy/cloudflare/public-app/compose.yaml down
+docker compose -p cloudflare -f ~/tepinta-releases/<current>/deploy/cloudflare/compose.yaml down
+docker compose -p public-app -f ~/tepinta-releases/<current>/deploy/cloudflare/public-app/compose.yaml down
 ```
 
-The resulting temporary outage on `tepinta.com.ar` is intentional. It preserves
+`<current>` is the release `deploy/release.sh status` reports. The resulting temporary outage on `tepinta.com.ar` is intentional. It preserves
 the private Tailscale administration runtime and prevents accidental public access
 to it.

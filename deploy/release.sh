@@ -4,9 +4,10 @@
 #   build <commit>    Export the commit with git archive (never the working tree)
 #                     and build the image tepinta3:<short-sha>.
 #   deploy <sha>      Backup -> migrate with the new image -> switch the
-#                     operational app, scheduler and public app -> wait
-#                     healthy -> smoke test. A failed smoke test switches the
-#                     application back to the previous release.
+#                     operational app, scheduler, public app and gateway
+#                     (nginx.conf from the release directory, never a
+#                     checkout) -> wait healthy -> smoke test. A failed smoke
+#                     test switches the application back to the previous release.
 #   rollback          Switch the application back to the previous release.
 #                     Database migrations are not reverted. It swaps current
 #                     and previous: running it twice returns to the newer one.
@@ -20,7 +21,8 @@
 #   APP_STORAGE_ROOT        absolute path of the persistent storage directory
 #   OPERATIONAL_PROJECT     Compose project of app + scheduler (tailscale)
 #   PUBLIC_PROJECT          Compose project of the public app  (public-app)
-#   APP_PORT / PUBLIC_APP_PORT  loopback ports                  (8082 / 8084)
+#   GATEWAY_PROJECT         Compose project of the gateway     (cloudflare)
+#   APP_PORT / PUBLIC_APP_PORT / GATEWAY_PORT  loopback ports  (8082 / 8084 / 8083)
 #   DATABASE_DOCKER_NETWORK database network                    (tepinta-production)
 #   BACKUP_COMMAND          run before migrating   (~/tepinta-ops/backup-db.sh)
 #   SAIL_IMAGE              build base image                    (sail-8.5/app)
@@ -30,15 +32,17 @@ repository=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 release_home=${RELEASE_HOME:-$HOME/tepinta-releases}
 operational_project=${OPERATIONAL_PROJECT:-tailscale}
 public_project=${PUBLIC_PROJECT:-public-app}
+gateway_project=${GATEWAY_PROJECT:-cloudflare}
 export APP_PORT=${APP_PORT:-8082}
 export PUBLIC_APP_PORT=${PUBLIC_APP_PORT:-8084}
+export GATEWAY_PORT=${GATEWAY_PORT:-8083}
 export DATABASE_DOCKER_NETWORK=${DATABASE_DOCKER_NETWORK:-tepinta-production}
 backup_command=${BACKUP_COMMAND:-$HOME/tepinta-ops/backup-db.sh}
 state_file="$release_home/state"
 log_file="$release_home/releases.log"
 
 usage() {
-    sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 log() {
@@ -100,6 +104,9 @@ switch_to() {
         up --detach --no-build --pull never --wait --wait-timeout 90 app scheduler || return 1
     compose "$public_project" "$directory/deploy/cloudflare/public-app/compose.yaml" \
         up --detach --no-build --pull never --wait --wait-timeout 90 public-app || return 1
+    # The gateway reads deploy/cloudflare/nginx.conf next to its compose file: the release copy.
+    compose "$gateway_project" "$directory/deploy/cloudflare/compose.yaml" \
+        up --detach --no-build --pull never --wait --wait-timeout 30 gateway || return 1
 }
 
 expect_status() {
@@ -115,6 +122,13 @@ expect_status() {
     fi
 }
 
+# The gateway answers the storefront and still denies the private paths. Every release
+# satisfies this, so the same check guards deploys and rollbacks.
+expect_gateway() {
+    expect_status "http://127.0.0.1:$GATEWAY_PORT/" 200 || return 1
+    expect_status "http://127.0.0.1:$GATEWAY_PORT/admin" 404
+}
+
 smoke_test() {
     local ok=0
     expect_status "http://127.0.0.1:$APP_PORT/up" 200 || ok=1
@@ -123,6 +137,7 @@ smoke_test() {
     expect_status "http://127.0.0.1:$PUBLIC_APP_PORT/" 200 || ok=1
     # 302: the coming-soon switch (PUBLIC_SITE_OPEN) sends the menu back home.
     expect_status "http://127.0.0.1:$PUBLIC_APP_PORT/menu" "200|302" || ok=1
+    expect_gateway || ok=1
     return $ok
 }
 
@@ -209,7 +224,7 @@ rollback() {
 status() {
     echo "current:  $(state current)"
     echo "previous: $(state previous)"
-    for project in "$operational_project" "$public_project"; do
+    for project in "$operational_project" "$public_project" "$gateway_project"; do
         docker ps --filter "label=com.docker.compose.project=$project" --format '{{.Names}}\t{{.Image}}\t{{.Status}}'
     done
 }

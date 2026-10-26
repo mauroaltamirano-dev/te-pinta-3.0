@@ -8,10 +8,11 @@ services:
             - -c
             - envsubst '$$GATEWAY_PORT $$UPSTREAM_HOST $$UPSTREAM_PORT' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf && exec nginx -c /tmp/nginx.conf -g 'daemon off;'
         environment:
-            GATEWAY_PORT: '8083'
+            GATEWAY_PORT: '${GATEWAY_PORT:-8083}'
             UPSTREAM_HOST: '127.0.0.1'
-            UPSTREAM_PORT: '8084'
+            UPSTREAM_PORT: '${PUBLIC_APP_PORT:-8084}'
         volumes:
+            # Relative to this file: deploy/release.sh runs it from ~/tepinta-releases/<sha>.
             - ./nginx.conf:/etc/nginx/nginx.conf.template:ro
         read_only: true
         cap_drop:
