@@ -216,9 +216,10 @@ Phones (the waiter screens) and the shop PC reach the operational app through Ta
 
 `https://tepinta.com.ar` is served by a scoped Cloudflare named tunnel (user systemd unit `tepinta-public-cloudflared.service`, configuration outside the repo) → gateway `8083` → public app `8084`. The gateway allows only storefront pages, catalog, cart, checkout endpoints, product images and required assets; admin, auth, API, health, Instagram media, generic storage and the admin manifest are denied. It trusts `CF-Connecting-IP` only from its loopback peer.
 
-- Run `tests/deploy/public-gateway/test.sh` before starting the gateway.
+- The gateway is part of each release: `deploy/release.sh deploy <sha>` and `deploy/release.sh rollback` recreate it (Compose project `cloudflare`) from `~/tepinta-releases/<sha>/deploy/cloudflare/compose.yaml`, so nginx reads that release's `nginx.conf`; the smoke test checks that it serves `/` and denies `/admin`. Recreating it drops `tepinta.com.ar` for a second or two. Never start the gateway from a checkout: its `nginx.conf` follows whatever branch is checked out.
+- Run `tests/deploy/public-gateway/test.sh` before building a release that changes `deploy/cloudflare/nginx.conf`.
 - The public app shares the production database. Releases are pinned, locally built images from a clean worktree at an approved commit (see `deploy/cloudflare/public-app/README.md` for the current tag and rollback tag); never `docker compose build` from a working checkout.
-- Never point the public hostname or gateway at the private `8082` runtime. To withdraw: stop the connector and confirm it is inactive, then stop the gateway, then the public app.
+- Never point the public hostname or gateway at the private `8082` runtime. To withdraw: stop the connector and confirm it is inactive, then stop the gateway, then the public app, with the current release's compose files (see `deploy/cloudflare/README.md`).
 
 ### Legacy database cutover
 
