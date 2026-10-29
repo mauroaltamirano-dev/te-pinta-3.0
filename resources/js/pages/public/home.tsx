@@ -19,15 +19,6 @@ import {
 /** Icons of the restaurant's highlights, by position. */
 const highlightIcons = [UtensilsCrossed, Bike, MessageCircle];
 
-const mapsUrl = 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6';
-
-const dineIn = [
-    'Servicio a la mesa',
-    'Empanadas y pizzas',
-    'Bebidas',
-    'Postres',
-];
-
 const orderSteps = [
     {
         number: '01',
@@ -234,25 +225,29 @@ export default function Home({
                             recién salidas del horno, pizzas, algo para tomar y
                             un postre para cerrar.
                         </p>
-                        <ul className="mt-6 flex flex-wrap gap-2">
-                            {dineIn.map((item) => (
-                                <li
-                                    key={item}
-                                    className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold"
-                                >
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                        <a
-                            href={mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-public-canvas px-6 font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                        >
-                            <MapPin className="size-5" aria-hidden="true" />
-                            Cómo llegar
-                        </a>
+                        {restaurant.dine_in_items.length > 0 && (
+                            <ul className="mt-6 flex flex-wrap gap-2">
+                                {restaurant.dine_in_items.map((item, index) => (
+                                    <li
+                                        key={index}
+                                        className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold"
+                                    >
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {restaurant.maps_url && (
+                            <a
+                                href={restaurant.maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-public-canvas px-6 font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                                <MapPin className="size-5" aria-hidden="true" />
+                                Cómo llegar
+                            </a>
+                        )}
                     </div>
                 </div>
             </section>

@@ -35,6 +35,14 @@ final class RestaurantIdentitySettingsTest extends TestCase
         'location' => 'Bell Ville, Córdoba',
         'coming_soon_text' => 'Muy pronto vas a poder pedir tus empanadas desde acá. Y se vienen novedades.',
         'empty_cart_text' => 'El menú te espera con nuestras empanadas. Sumá las que quieras y volvé por acá.',
+        'offerings' => [
+            'Empanadas, pizzas y más',
+            'Comé en el local',
+            'Retiro o envío a domicilio',
+            'Confirmación por WhatsApp',
+        ],
+        'dine_in_items' => ['Servicio a la mesa', 'Empanadas y pizzas', 'Bebidas', 'Postres'],
+        'maps_url' => 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6',
     ];
 
     private const CAFE = [
@@ -49,6 +57,9 @@ final class RestaurantIdentitySettingsTest extends TestCase
         'location' => 'Villa María, Córdoba',
         'coming_soon_text' => 'Muy pronto vas a poder pedir desde acá.',
         'empty_cart_text' => 'Sumá productos desde el menú y volvé por acá.',
+        'offerings' => ['Pastas frescas', 'Café de especialidad'],
+        'dine_in_items' => ['Desayunos', 'Meriendas'],
+        'maps_url' => 'https://maps.app.goo.gl/example',
     ];
 
     protected function setUp(): void
@@ -103,6 +114,8 @@ final class RestaurantIdentitySettingsTest extends TestCase
                 ...self::CAFE,
                 'name' => '  La Esquina  ',
                 'highlights' => ['Pastas frescas todos los días', '', 'Retiro en el local'],
+                'offerings' => ['Pastas frescas', '', 'Café de especialidad'],
+                'dine_in_items' => ['', 'Desayunos', 'Meriendas'],
             ])
             ->assertRedirect(route('admin.settings.general.index'))
             ->assertSessionHasNoErrors()
@@ -132,6 +145,9 @@ final class RestaurantIdentitySettingsTest extends TestCase
                 'location' => null,
                 'coming_soon_text' => null,
                 'empty_cart_text' => null,
+                'offerings' => [],
+                'dine_in_items' => [],
+                'maps_url' => null,
             ]));
     }
 
@@ -154,6 +170,20 @@ final class RestaurantIdentitySettingsTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.settings.general.identity.update'), [...self::CAFE, 'highlights' => ['a', 'b', 'c', 'd']])
             ->assertSessionHasErrors(['highlights' => 'Cargá como máximo 3 frases destacadas.']);
+
+        $this->actingAs($admin)
+            ->put(route('admin.settings.general.identity.update'), [...self::CAFE, 'offerings' => ['a', 'b', 'c', 'd', 'e', 'f', 'g']])
+            ->assertSessionHasErrors(['offerings' => 'Cargá como máximo 6 cosas en "Qué ofrecemos".']);
+
+        $this->actingAs($admin)
+            ->put(route('admin.settings.general.identity.update'), [...self::CAFE, 'dine_in_items' => ['a', 'b', 'c', 'd', 'e', 'f', 'g']])
+            ->assertSessionHasErrors(['dine_in_items' => 'Cargá como máximo 6 etiquetas del local.']);
+
+        foreach (['javascript:alert(1)', 'http://maps.app.goo.gl/x', 'no es un enlace'] as $url) {
+            $this->actingAs($admin)
+                ->put(route('admin.settings.general.identity.update'), [...self::CAFE, 'maps_url' => $url])
+                ->assertSessionHasErrors(['maps_url' => 'Pegá un enlace que empiece con https://.']);
+        }
 
         $this->actingAs($admin)
             ->put(route('admin.settings.general.identity.update'), [...self::CAFE, 'name' => str_repeat('a', 61)])

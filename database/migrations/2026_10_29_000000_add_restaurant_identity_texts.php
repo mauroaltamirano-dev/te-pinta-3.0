@@ -20,9 +20,14 @@ return new class extends Migration
             $table->string('public_location', 60)->nullable();
             $table->string('public_coming_soon_text', 200)->nullable();
             $table->string('public_empty_cart_text', 200)->nullable();
+            $table->jsonb('public_offerings')->default(DB::raw("'[]'::jsonb"));
+            $table->jsonb('public_dine_in_items')->default(DB::raw("'[]'::jsonb"));
+            $table->string('public_maps_url', 255)->nullable();
         });
 
         DB::statement("ALTER TABLE restaurants ADD CONSTRAINT restaurants_public_highlights_array CHECK (jsonb_typeof(public_highlights) = 'array' AND jsonb_array_length(public_highlights) <= 3)");
+        DB::statement("ALTER TABLE restaurants ADD CONSTRAINT restaurants_public_offerings_array CHECK (jsonb_typeof(public_offerings) = 'array' AND jsonb_array_length(public_offerings) <= 6)");
+        DB::statement("ALTER TABLE restaurants ADD CONSTRAINT restaurants_public_dine_in_items_array CHECK (jsonb_typeof(public_dine_in_items) = 'array' AND jsonb_array_length(public_dine_in_items) <= 6)");
 
         // Te Pinta's storefront copy moves from the code to its restaurant row unchanged.
         DB::table('restaurants')->where('slug', 'te-pinta')->update([
@@ -40,6 +45,19 @@ return new class extends Migration
             'public_location' => 'Bell Ville, Córdoba',
             'public_coming_soon_text' => 'Muy pronto vas a poder pedir tus empanadas desde acá. Y se vienen novedades.',
             'public_empty_cart_text' => 'El menú te espera con nuestras empanadas. Sumá las que quieras y volvé por acá.',
+            'public_offerings' => json_encode([
+                'Empanadas, pizzas y más',
+                'Comé en el local',
+                'Retiro o envío a domicilio',
+                'Confirmación por WhatsApp',
+            ], JSON_UNESCAPED_UNICODE),
+            'public_dine_in_items' => json_encode([
+                'Servicio a la mesa',
+                'Empanadas y pizzas',
+                'Bebidas',
+                'Postres',
+            ], JSON_UNESCAPED_UNICODE),
+            'public_maps_url' => 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6',
         ]);
     }
 
@@ -57,6 +75,9 @@ return new class extends Migration
                 'public_location',
                 'public_coming_soon_text',
                 'public_empty_cart_text',
+                'public_offerings',
+                'public_dine_in_items',
+                'public_maps_url',
             ]);
         });
     }

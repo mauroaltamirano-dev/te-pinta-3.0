@@ -13,6 +13,9 @@ export interface RestaurantIdentity {
     location: string | null;
     coming_soon_text: string | null;
     empty_cart_text: string | null;
+    offerings: string[];
+    dine_in_items: string[];
+    maps_url: string | null;
 }
 
 export function useRestaurantIdentity(): RestaurantIdentity {

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Name and storefront copy of the restaurant in context, so one codebase serves several installations.
  *
- * @phpstan-type Identity array{name: string, eyebrow: ?string, headline: ?string, headline_highlight: ?string, intro: ?string, home_title: ?string, highlights: list<string>, footer_text: ?string, location: ?string, coming_soon_text: ?string, empty_cart_text: ?string}
+ * @phpstan-type Identity array{name: string, eyebrow: ?string, headline: ?string, headline_highlight: ?string, intro: ?string, home_title: ?string, highlights: list<string>, footer_text: ?string, location: ?string, coming_soon_text: ?string, empty_cart_text: ?string, offerings: list<string>, dine_in_items: list<string>, maps_url: ?string}
  */
 final class RestaurantIdentity
 {
@@ -24,6 +24,14 @@ final class RestaurantIdentity
         'location' => 'public_location',
         'coming_soon_text' => 'public_coming_soon_text',
         'empty_cart_text' => 'public_empty_cart_text',
+        'maps_url' => 'public_maps_url',
+    ];
+
+    /** Public list field => restaurants jsonb column. */
+    private const LISTS = [
+        'highlights' => 'public_highlights',
+        'offerings' => 'public_offerings',
+        'dine_in_items' => 'public_dine_in_items',
     ];
 
     public function __construct(
@@ -44,14 +52,22 @@ final class RestaurantIdentity
 
         $row = DB::table('restaurants')
             ->where('id', $this->context->id())
-            ->first(['name', 'public_highlights', ...array_values(self::COLUMNS)]);
+            ->first(['name', ...array_values(self::LISTS), ...array_values(self::COLUMNS)]);
 
         $text = function (string $field) use ($row): ?string {
             $value = $row?->{self::COLUMNS[$field]};
 
             return is_string($value) && $value !== '' ? $value : null;
         };
-        $highlights = is_string($row?->public_highlights) ? json_decode($row->public_highlights, true) : [];
+        $list = function (string $field) use ($row): array {
+            $value = $row?->{self::LISTS[$field]};
+            $items = is_string($value) ? json_decode($value, true) : [];
+
+            return array_values(array_filter(
+                is_array($items) ? $items : [],
+                fn (mixed $item): bool => is_string($item) && $item !== '',
+            ));
+        };
 
         $identity = [
             'name' => is_string($row?->name) ? $row->name : '',
@@ -60,14 +76,14 @@ final class RestaurantIdentity
             'headline_highlight' => $text('headline_highlight'),
             'intro' => $text('intro'),
             'home_title' => $text('home_title'),
-            'highlights' => array_values(array_filter(
-                is_array($highlights) ? $highlights : [],
-                fn (mixed $highlight): bool => is_string($highlight) && $highlight !== '',
-            )),
+            'highlights' => $list('highlights'),
             'footer_text' => $text('footer_text'),
             'location' => $text('location'),
             'coming_soon_text' => $text('coming_soon_text'),
             'empty_cart_text' => $text('empty_cart_text'),
+            'offerings' => $list('offerings'),
+            'dine_in_items' => $list('dine_in_items'),
+            'maps_url' => $text('maps_url'),
         ];
         $this->request->attributes->set($key, $identity);
 
@@ -88,7 +104,10 @@ final class RestaurantIdentity
             $values[$column] = $identity[$field];
         }
 
-        $values['public_highlights'] = json_encode($identity['highlights'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        foreach (self::LISTS as $field => $column) {
+            $values[$column] = json_encode($identity[$field], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        }
+
         $values['updated_at'] = now();
 
         DB::table('restaurants')->where('id', $this->context->id())->update($values);
