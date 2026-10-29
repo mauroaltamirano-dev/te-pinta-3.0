@@ -6,6 +6,7 @@ import { join } from 'node:path';
 // Real n8n engine and HTTP helpers; every service is a private HTTPS fixture.
 const directory = mkdtempSync(join(tmpdir(), 'instagram-n8n-test-'));
 const container = directory.split('/').at(-1);
+
 try {
     execFileSync(
         'openssl',
@@ -45,15 +46,19 @@ try {
             ),
         ),
     );
+
     for (const [index, fixture] of [baseline, workflow].entries()) {
         fixture.id =
             index === 0 ? 'privateBaseline36779' : 'privateInstagram36779';
+
         for (const node of fixture.nodes) {
             delete node.credentials;
+
             if (node.type === 'n8n-nodes-base.httpRequest') {
                 node.parameters.authentication = 'none';
                 delete node.parameters.genericAuthType;
             }
+
             if (
                 node.type === 'n8n-nodes-base.scheduleTrigger' ||
                 node.type === 'n8n-nodes-base.wait'
@@ -66,6 +71,7 @@ try {
             }
         }
     }
+
     writeFileSync(
         join(directory, 'workflow.json'),
         JSON.stringify([baseline, workflow]),
@@ -217,8 +223,11 @@ server.listen(8443, '127.0.0.1', async () => {
         META_GRAPH_API_VERSION: 'v26.0',
         META_INSTAGRAM_USER_ID: 'private-account',
     };
-    for (const [key, value] of Object.entries(environment))
+
+    for (const [key, value] of Object.entries(environment)) {
         args.push('-e', `${key}=${value}`);
+    }
+
     args.push(
         '--entrypoint',
         'node',
@@ -232,5 +241,6 @@ server.listen(8443, '127.0.0.1', async () => {
     } catch {
         // --rm already removed a completed fixture container.
     }
+
     rmSync(directory, { recursive: true, force: true });
 }

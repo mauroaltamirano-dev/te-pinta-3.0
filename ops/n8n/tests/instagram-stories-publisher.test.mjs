@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
@@ -14,6 +15,7 @@ const workflow = JSON.parse(
 const node = (name) => {
     const result = workflow.nodes.find((item) => item.name === name);
     assert.ok(result, `Missing node: ${name}`);
+
     return result;
 };
 const mediaUrl = (expires = Math.floor(Date.now() / 1000) + 5400) =>
@@ -49,13 +51,18 @@ async function preflight(response, url = mediaUrl()) {
             helpers: {
                 httpRequest: async (options) => {
                     calls.push(options);
-                    if (response instanceof Error) throw response;
+
+                    if (response instanceof Error) {
+                        throw response;
+                    }
+
                     return response;
                 },
             },
         },
         { body: { id: 123, asset: { media_url: url } } },
     );
+
     return {
         result: result.json.resource_preflight,
         calls,
@@ -94,8 +101,10 @@ test('other client errors remain terminal and existing server/network retries ar
     ]) {
         assert.equal(failure(response).retryable, false);
     }
-    for (const status of [429, 500, undefined])
+
+    for (const status of [429, 500, undefined]) {
         assert.equal(failure({ statusCode: status }).retryable, true);
+    }
 });
 
 test('valid JPEG preflight is bounded, unauthenticated and does not retain image bytes', async () => {
@@ -148,11 +157,13 @@ test('HTML, redirects, forbidden and missing assets never reach Meta', async () 
         { ...jpeg, body: Buffer.from('ffd8ff', 'hex') },
         ...[302, 403, 404].map((statusCode) => ({ statusCode })),
     ];
+
     for (const response of responses) {
         const { result } = await preflight(response);
         assert.equal(result.ok, false);
         assert.equal(result.retryable, false);
     }
+
     assert.equal(
         workflow.connections['Publication Available?'].main[0][0].node,
         'Validate Story JPEG',
@@ -173,8 +184,11 @@ test('HTML, redirects, forbidden and missing assets never reach Meta', async () 
 
 test('retries never bypass claiming, duplicate a publish request, or replay ambiguous results', () => {
     assert.equal(workflow.active, false);
-    for (const name of ['Create Story Container', 'Publish Story Container'])
+
+    for (const name of ['Create Story Container', 'Publish Story Container']) {
         assert.notEqual(node(name).retryOnFail, true);
+    }
+
     assert.equal(
         workflow.connections['Failure Callback Accepted?'].main[0].length,
         0,
