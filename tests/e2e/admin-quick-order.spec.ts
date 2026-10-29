@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import type { Locator, Page } from '@playwright/test';
+import { formatMoney } from '@/lib/format';
 import { expect, test } from './support/test';
 
 async function logIn(page: Page) {
@@ -105,6 +107,25 @@ async function changeDraftPricing(
             };
         }
     ).data;
+}
+
+function setDeliveryFee(fee: number): number {
+    const code = `$s = App\\Modules\\Orders\\Models\\OrderSetting::where('key', 'delivery_fee')->firstOrFail(); echo $s->integer_value; $s->update(['integer_value' => ${fee}]);`;
+
+    return Number(
+        execFileSync('php', ['artisan', 'tinker', '--execute', code], {
+            env: {
+                ...process.env,
+                APP_ENV: 'testing',
+                DB_DATABASE:
+                    process.env.PLAYWRIGHT_DB_DATABASE ?? 'testing_playwright',
+                DB_URL: '',
+            },
+            stdio: 'pipe',
+        })
+            .toString()
+            .trim(),
+    );
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -516,4 +537,56 @@ test('Pedido rápido crea un retiro pendiente sin pedir datos del cliente', asyn
     await page.getByRole('link', { name: 'Ver pedido' }).click();
     await expect(page).toHaveURL(/\/admin\/orders\/TP-\d{6}$/);
     await expect(page.getByText('Sin cliente asociado').first()).toBeVisible();
+});
+
+test('Pedido rápido después de elegir Envío y volver se cotiza y se crea como retiro', async ({
+    page,
+}) => {
+    const previousFee = setDeliveryFee(1500);
+
+    try {
+        await logIn(page);
+        await addProduct(page, 'Salteña', 2);
+        await openDraftOnMobile(page);
+        const draft = draftPanel(page);
+        await expect(draft.getByLabel('Cantidad de Salteña: 2')).toBeVisible();
+        await draft.getByRole('button', { name: 'Continuar' }).click();
+
+        const continuation = page.getByRole('dialog');
+        const deliveryQuote = await changeDraftPricing(page, () =>
+            continuation.getByRole('button', { name: 'Envío' }).click(),
+        );
+        expect(deliveryQuote.shipping_fee).toBeGreaterThan(0);
+
+        const pickupQuote = await changeDraftPricing(page, () =>
+            continuation
+                .getByRole('button', { name: 'Volver al catálogo' })
+                .click(),
+        );
+        expect(pickupQuote.shipping_fee).toBe(0);
+        await openDraftOnMobile(page);
+        await expect(draft.getByTestId('order-total')).toHaveText(
+            formatMoney(pickupQuote.total),
+        );
+
+        const created = page.waitForResponse(
+            (response) =>
+                response.request().method() === 'POST' &&
+                new URL(response.url()).pathname === '/admin/orders',
+        );
+        await draft
+            .getByRole('button', { name: 'Pedido rápido', exact: true })
+            .click();
+        const order = (
+            (await (await created).json()) as {
+                data: { total: number; status: string };
+            }
+        ).data;
+        expect([order.status, order.total]).toEqual([
+            'pending_confirmation',
+            pickupQuote.total,
+        ]);
+    } finally {
+        setDeliveryFee(previousFee);
+    }
 });

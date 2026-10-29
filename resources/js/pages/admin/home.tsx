@@ -72,7 +72,14 @@ export default function AdminHome({
             </Sheet>
             <OrderContinuationPanel
                 open={continuationOpen}
-                onClose={() => setContinuationOpen(false)}
+                onClose={() => {
+                    setContinuationOpen(false);
+
+                    // The draft panel offers "Pedido rápido", always a pickup, so its total must not carry a delivery fee.
+                    if (draft.form.data.delivery_type === 'delivery') {
+                        draft.selectDeliveryType('pickup');
+                    }
+                }}
                 draft={draft}
                 customers={customers}
                 addons={addons}
