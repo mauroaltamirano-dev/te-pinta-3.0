@@ -28,7 +28,6 @@
 #   SAIL_IMAGE              build base image                    (sail-8.5/app)
 set -euo pipefail
 
-repository=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 release_home=${RELEASE_HOME:-$HOME/tepinta-releases}
 operational_project=${OPERATIONAL_PROJECT:-tailscale}
 public_project=${PUBLIC_PROJECT:-public-app}
@@ -142,7 +141,9 @@ smoke_test() {
 }
 
 build() {
-    local commit sha directory
+    local repository commit sha directory
+    # Only build reads the repository: deploy, rollback and status also run from a release directory.
+    repository=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
     commit=$(git -C "$repository" rev-parse --verify "${1:?usage: build <commit>}^{commit}")
     sha=${commit:0:12}
     directory="$release_home/$sha"
