@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { MessageCircle } from 'lucide-react';
 import { BrandBadge } from '@/components/brand-badge';
 import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 
 export default function ComingSoon({
     whatsappUrl,
@@ -9,6 +10,7 @@ export default function ComingSoon({
     whatsappUrl: string | null;
 }) {
     useRestaurantBranding();
+    const restaurant = useRestaurantIdentity();
 
     return (
         <div className="public-theme relative isolate flex min-h-svh flex-col overflow-hidden bg-public-ink font-sans text-white">
@@ -21,7 +23,7 @@ export default function ComingSoon({
             />
             <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-8">
                 <BrandBadge
-                    title="Te Pinta"
+                    title={restaurant.name}
                     className="size-32 text-white sm:size-40"
                 />
                 <p className="mt-10 inline-flex items-center gap-3 text-xs font-bold tracking-[0.2em] text-white/80 uppercase">
@@ -40,8 +42,8 @@ export default function ComingSoon({
                     <span className="text-public-canvas">.</span>
                 </h1>
                 <p className="mt-6 max-w-lg text-base leading-7 text-white/85 sm:text-lg">
-                    Muy pronto vas a poder pedir tus empanadas desde acá. Y se
-                    vienen novedades.
+                    {restaurant.coming_soon_text ??
+                        'Muy pronto vas a poder hacer tu pedido desde acá.'}
                 </p>
                 <p className="mt-3 text-sm text-white/70">
                     Mientras tanto, escribinos para hacer tu pedido.
@@ -59,7 +61,8 @@ export default function ComingSoon({
                 )}
             </main>
             <footer className="px-4 py-6 text-center text-xs text-white/55">
-                © {new Date().getFullYear()} Te Pinta · Bell Ville, Córdoba
+                © {new Date().getFullYear()} {restaurant.name}
+                {restaurant.location && ` · ${restaurant.location}`}
             </footer>
         </div>
     );

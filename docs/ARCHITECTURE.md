@@ -26,7 +26,7 @@ Controllers coordinate HTTP. Form Requests authorize and validate. Actions execu
 
 | Module | Responsibility |
 | --- | --- |
-| `Core` | `ProductPriceProvider` contract + `SellableProductPrice`, `PublicIdentifier`, `RestaurantContext` (tenancy), `TestingDatabaseGuard`, `Branding` (validated restaurant accent palette) |
+| `Core` | `ProductPriceProvider` contract + `SellableProductPrice`, `PublicIdentifier`, `RestaurantContext` (tenancy), `TestingDatabaseGuard`, `Branding` (validated restaurant accent palette, restaurant name and storefront copy) |
 | `Shared` | `AssignRequestId` (request ID in log context) and `LogAdminRequest` (`admin.request.completed`) middleware |
 | `Identity` | Users, per-restaurant memberships (`restaurant_user`), code-defined roles and permissions, `restaurant.member` middleware, user management (`/admin/users`), `admin:create` console command |
 | `Products` | Categories, optional subcategories (filter only), products, tags, availability, pricing family (`empanada`/`unit`), cooked base prices, raw-price discounts, public catalog and product detail |
@@ -105,7 +105,7 @@ Every business row carries a NOT NULL `restaurant_id` whose column default is th
 
 ## Branding
 
-`Core/Branding/RestaurantBranding` reads and updates only the restaurant selected by `RestaurantContext`; it has no business-module dependencies. Settings owns its administrative HTTP write surface, under the same authorization as existing general settings. `BrandingServiceProvider` lazily supplies the root view; Inertia shares validated palette values for subsequent navigation. The provider performs no database access during console boot or migrations. See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) and [ADR 0014](decisions/0014-light-theme-restaurant-branding.md).
+`Core/Branding/RestaurantBranding` reads and updates only the restaurant selected by `RestaurantContext`; it has no business-module dependencies. Settings owns its administrative HTTP write surface, under the same authorization as existing general settings. `BrandingServiceProvider` lazily supplies the root view; Inertia shares validated palette values for subsequent navigation. The provider performs no database access during console boot or migrations. `Core/Branding/RestaurantIdentity` does the same for the restaurant name and storefront copy, shared as the `restaurant` Inertia prop; it is what lets one codebase serve separate installations (each with its own database) without hardcoded restaurant text. See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [STOREFRONT_AND_MARKETING.md](STOREFRONT_AND_MARKETING.md#public-site) and [ADR 0014](decisions/0014-light-theme-restaurant-branding.md).
 
 ## User-facing language
 

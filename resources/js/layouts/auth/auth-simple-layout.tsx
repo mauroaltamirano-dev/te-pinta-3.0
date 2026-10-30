@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { BrandLogo } from '@/components/brand-logo';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
@@ -8,6 +9,8 @@ export default function AuthSimpleLayout({
     title,
     description,
 }: AuthLayoutProps) {
+    const restaurant = useRestaurantIdentity();
+
     return (
         <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
             <div className="w-full max-w-sm">
@@ -15,7 +18,7 @@ export default function AuthSimpleLayout({
                     <div className="flex flex-col items-center gap-4">
                         <Link
                             href={home()}
-                            aria-label="Ir al inicio de Te Pinta"
+                            aria-label={`Ir al inicio de ${restaurant.name}`}
                             className="flex flex-col items-center gap-2 font-medium"
                         >
                             <div className="mb-1 size-20 overflow-hidden rounded-2xl bg-admin-accent shadow-sm ring-1 ring-admin-border">

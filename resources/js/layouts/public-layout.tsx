@@ -4,6 +4,7 @@ import type { PropsWithChildren } from 'react';
 import { BrandBadge } from '@/components/brand-badge';
 import { CartProvider, useCart } from '@/features/orders/cart-context';
 import { useRestaurantBranding } from '@/hooks/use-restaurant-branding';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 
 const navigation = [
     { label: 'Inicio', href: '/' },
@@ -25,6 +26,7 @@ function PublicShell({ children }: PropsWithChildren) {
     const { count } = useCart();
     const pathname = url.split('?')[0];
     const showFloatingCart = count > 0 && pathname !== '/cart';
+    const restaurant = useRestaurantIdentity();
 
     return (
         <div className="public-theme public-shell flex min-h-screen flex-col bg-background font-sans text-foreground">
@@ -42,7 +44,7 @@ function PublicShell({ children }: PropsWithChildren) {
                     <Link
                         href="/"
                         className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white"
-                        aria-label="Te Pinta, inicio"
+                        aria-label={`${restaurant.name}, inicio`}
                     >
                         <img
                             src="/images/brand/logo-completo-blanco.png"
@@ -99,25 +101,27 @@ function PublicShell({ children }: PropsWithChildren) {
                         />
                         <div>
                             <p className="font-serif text-2xl font-semibold">
-                                Te Pinta
+                                {restaurant.name}
                             </p>
-                            <p className="mt-2 max-w-xs text-sm leading-6 text-white/70">
-                                Elegí del menú, armá tu pedido y confirmalo por
-                                WhatsApp.
-                            </p>
+                            {restaurant.footer_text && (
+                                <p className="mt-2 max-w-xs text-sm leading-6 text-white/70">
+                                    {restaurant.footer_text}
+                                </p>
+                            )}
                         </div>
                     </div>
-                    <div>
-                        <p className="text-xs font-semibold tracking-[0.16em] text-white/55 uppercase">
-                            Qué ofrecemos
-                        </p>
-                        <ul className="mt-3 space-y-1.5 text-sm text-white/80">
-                            <li>Empanadas, pizzas y más</li>
-                            <li>Comé en el local</li>
-                            <li>Retiro o envío a domicilio</li>
-                            <li>Confirmación por WhatsApp</li>
-                        </ul>
-                    </div>
+                    {restaurant.offerings.length > 0 && (
+                        <div>
+                            <p className="text-xs font-semibold tracking-[0.16em] text-white/55 uppercase">
+                                Qué ofrecemos
+                            </p>
+                            <ul className="mt-3 space-y-1.5 text-sm text-white/80">
+                                {restaurant.offerings.map((text, index) => (
+                                    <li key={index}>{text}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     <nav aria-label="Enlaces del pie">
                         <p className="text-xs font-semibold tracking-[0.16em] text-white/55 uppercase">
                             Explorar
@@ -145,8 +149,8 @@ function PublicShell({ children }: PropsWithChildren) {
                 </div>
                 <div className="border-t border-white/10">
                     <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/50 sm:px-8 lg:px-12">
-                        © {new Date().getFullYear()} Te Pinta. Los precios se
-                        confirman al revisar el carrito.
+                        © {new Date().getFullYear()} {restaurant.name}. Los
+                        precios se confirman al revisar el carrito.
                     </p>
                 </div>
             </footer>

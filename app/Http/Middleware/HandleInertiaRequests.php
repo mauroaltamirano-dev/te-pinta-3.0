@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Core\Branding\RestaurantBranding;
+use App\Core\Branding\RestaurantIdentity;
 use App\Core\Tenancy\RestaurantContext;
 use App\Modules\Identity\Models\User;
 use Illuminate\Http\Request;
@@ -50,6 +51,8 @@ class HandleInertiaRequests extends Middleware
 
                 return ['accent' => $palette->accent, 'variables' => $palette->cssVariables()];
             },
+            // Public storefront copy; every installation renders its own restaurant.
+            'restaurant' => fn (): array => app(RestaurantIdentity::class)->current(),
             'auth' => [
                 'user' => $user,
                 'role' => $user?->role()?->value,

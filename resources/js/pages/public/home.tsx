@@ -11,21 +11,13 @@ import { Button } from '@/components/ui/button';
 import { FeaturedProductCard } from '@/features/marketing/components/featured-product-card';
 import type { FeaturedProductPublicView } from '@/features/marketing/types';
 import { useCart } from '@/features/orders/cart-context';
+import {
+    splitHeadline,
+    useRestaurantIdentity,
+} from '@/hooks/use-restaurant-identity';
 
-const highlights = [
-    { icon: UtensilsCrossed, text: 'Comé en el local, con servicio a la mesa' },
-    { icon: Bike, text: 'Retiro o envío a domicilio' },
-    { icon: MessageCircle, text: 'Confirmás tu pedido por WhatsApp' },
-];
-
-const mapsUrl = 'https://maps.app.goo.gl/CoZHPYbs9VHNMH9L6';
-
-const dineIn = [
-    'Servicio a la mesa',
-    'Empanadas y pizzas',
-    'Bebidas',
-    'Postres',
-];
+/** Icons of the restaurant's highlights, by position. */
+const highlightIcons = [UtensilsCrossed, Bike, MessageCircle];
 
 const orderSteps = [
     {
@@ -54,10 +46,15 @@ export default function Home({
     featuredProduct?: FeaturedProductPublicView | null;
 }) {
     const { addProduct } = useCart();
+    const restaurant = useRestaurantIdentity();
+    const headline = splitHeadline(
+        restaurant.headline ?? restaurant.name,
+        restaurant.headline_highlight,
+    );
 
     return (
         <>
-            <Head title="Empanadas y pizzas">
+            <Head title={restaurant.home_title ?? restaurant.name}>
                 <link rel="preload" as="image" href="/images/brand/hero.png" />
             </Head>
 
@@ -75,22 +72,29 @@ export default function Home({
                 />
                 <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-8 lg:px-12">
                     <div className="max-w-2xl">
-                        <p className="flex items-center gap-3 text-xs font-bold tracking-[0.2em] text-white/90 uppercase">
-                            <span
-                                className="h-px w-8 bg-public-earth"
-                                aria-hidden="true"
-                            />
-                            Te Pinta · Bell Ville
-                        </p>
-                        <h1 className="mt-6 font-serif text-[clamp(3.2rem,6.5vw,6.25rem)] leading-[0.95] font-semibold tracking-[-0.035em] text-balance">
-                            ¿Qué te{' '}
-                            <span className="text-public-earth">pinta</span>{' '}
-                            hoy?
+                        {restaurant.eyebrow && (
+                            <p className="mb-6 flex items-center gap-3 text-xs font-bold tracking-[0.2em] text-white/90 uppercase">
+                                <span
+                                    className="h-px w-8 bg-public-earth"
+                                    aria-hidden="true"
+                                />
+                                {restaurant.eyebrow}
+                            </p>
+                        )}
+                        <h1 className="font-serif text-[clamp(3.2rem,6.5vw,6.25rem)] leading-[0.95] font-semibold tracking-[-0.035em] text-balance">
+                            {headline.before}
+                            {headline.highlight && (
+                                <span className="text-public-earth">
+                                    {headline.highlight}
+                                </span>
+                            )}
+                            {headline.after}
                         </h1>
-                        <p className="mt-7 max-w-md text-base leading-7 text-white/90 sm:text-lg">
-                            Empanadas caseras, pizzas y más. Pedilas para
-                            llevar, recibilas en casa o vení a comer al local.
-                        </p>
+                        {restaurant.intro && (
+                            <p className="mt-7 max-w-md text-base leading-7 text-white/90 sm:text-lg">
+                                {restaurant.intro}
+                            </p>
+                        )}
                         <Button
                             asChild
                             size="lg"
@@ -108,25 +112,32 @@ export default function Home({
                 </div>
             </section>
 
-            <section
-                aria-label="Cómo trabajamos"
-                className="border-b border-border bg-white text-public-ink"
-            >
-                <ul className="mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:grid-cols-3 sm:px-8 lg:px-12">
-                    {highlights.map(({ icon: Icon, text }) => (
-                        <li
-                            key={text}
-                            className="flex items-center gap-3 text-sm font-medium"
-                        >
-                            <Icon
-                                className="size-5 shrink-0 text-public-canvas"
-                                aria-hidden="true"
-                            />
-                            {text}
-                        </li>
-                    ))}
-                </ul>
-            </section>
+            {restaurant.highlights.length > 0 && (
+                <section
+                    aria-label="Cómo trabajamos"
+                    className="border-b border-border bg-white text-public-ink"
+                >
+                    <ul className="mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:grid-cols-3 sm:px-8 lg:px-12">
+                        {restaurant.highlights.map((text, index) => {
+                            const Icon =
+                                highlightIcons[index % highlightIcons.length];
+
+                            return (
+                                <li
+                                    key={index}
+                                    className="flex items-center gap-3 text-sm font-medium"
+                                >
+                                    <Icon
+                                        className="size-5 shrink-0 text-public-canvas"
+                                        aria-hidden="true"
+                                    />
+                                    {text}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
+            )}
 
             <section
                 className="bg-public-earth text-public-ink"
@@ -214,25 +225,29 @@ export default function Home({
                             recién salidas del horno, pizzas, algo para tomar y
                             un postre para cerrar.
                         </p>
-                        <ul className="mt-6 flex flex-wrap gap-2">
-                            {dineIn.map((item) => (
-                                <li
-                                    key={item}
-                                    className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold"
-                                >
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                        <a
-                            href={mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-public-canvas px-6 font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                        >
-                            <MapPin className="size-5" aria-hidden="true" />
-                            Cómo llegar
-                        </a>
+                        {restaurant.dine_in_items.length > 0 && (
+                            <ul className="mt-6 flex flex-wrap gap-2">
+                                {restaurant.dine_in_items.map((item, index) => (
+                                    <li
+                                        key={index}
+                                        className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold"
+                                    >
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {restaurant.maps_url && (
+                            <a
+                                href={restaurant.maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-public-canvas px-6 font-semibold text-white transition-colors hover:bg-public-earth-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                                <MapPin className="size-5" aria-hidden="true" />
+                                Cómo llegar
+                            </a>
+                        )}
                     </div>
                 </div>
             </section>

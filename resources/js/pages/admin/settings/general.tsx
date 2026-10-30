@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { BrandingForm } from '@/features/settings/components/branding-form';
 import { OrderingHoursForm } from '@/features/settings/components/ordering-hours-form';
 import type { OrderingHour } from '@/features/settings/components/ordering-hours-form';
+import { RestaurantIdentityForm } from '@/features/settings/components/restaurant-identity-form';
+import type { RestaurantIdentity } from '@/hooks/use-restaurant-identity';
 import SettingsLayout from '@/layouts/settings-layout';
 
 interface OrderingSettings {
@@ -31,10 +33,12 @@ export default function GeneralSettings({
     orderingSettings,
     orderingHours,
     branding,
+    identity,
 }: {
     orderingSettings: OrderingSettings;
     orderingHours: OrderingHour[];
     branding: { accent_color: string };
+    identity: RestaurantIdentity;
 }) {
     const form = useForm(orderingSettings);
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -58,6 +62,7 @@ export default function GeneralSettings({
                         cálculo de precios y el proceso de compra.
                     </p>
                 </header>
+                <RestaurantIdentityForm identity={identity} />
                 <BrandingForm accentColor={branding.accent_color} />
                 <OrderingHoursForm hours={orderingHours} />
                 <form onSubmit={submit} className="grid gap-6 p-5 sm:p-7">

@@ -6,10 +6,15 @@ import AdminLayout from '@/layouts/admin-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import PublicLayout from '@/layouts/public-layout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// The restaurant name is rendered by the server, so one build serves every installation.
+const restaurantName = () =>
+    document
+        .querySelector('meta[name="application-name"]')
+        ?.getAttribute('content') ?? '';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) =>
+        title ? `${title} - ${restaurantName()}` : restaurantName(),
     layout: (name) => {
         switch (true) {
             case name === 'public/coming-soon':

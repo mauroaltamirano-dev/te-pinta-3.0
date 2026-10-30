@@ -54,6 +54,7 @@ import type {
     InstagramStoryAsset,
     InstagramStorySchedule,
 } from '@/features/instagram/types';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 import { cn } from '@/lib/utils';
 
 export default function InstagramAutomation({
@@ -66,6 +67,7 @@ export default function InstagramAutomation({
     operational_summary,
     pending_publications_count = 0,
 }: InstagramPageProps) {
+    const restaurant = useRestaurantIdentity();
     const [automationSaving, setAutomationSaving] = useState(false);
     const [scheduleDialog, setScheduleDialog] =
         useState<InstagramStorySchedule | null>();
@@ -156,8 +158,8 @@ export default function InstagramAutomation({
                             Instagram
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-admin-text-tertiary">
-                            Prepará las historias de cada día. Te Pinta crea la
-                            cola y n8n se encarga de publicarlas.
+                            Prepará las historias de cada día. {restaurant.name}{' '}
+                            crea la cola y n8n se encarga de publicarlas.
                         </p>
                     </div>
                     <Button

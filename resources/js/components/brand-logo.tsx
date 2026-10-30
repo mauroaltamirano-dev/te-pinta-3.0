@@ -1,20 +1,20 @@
 import type { ComponentProps } from 'react';
+import { useRestaurantIdentity } from '@/hooks/use-restaurant-identity';
 import { cn } from '@/lib/utils';
 
 type BrandLogoProps = Omit<ComponentProps<'span'>, 'children'> & {
     alt?: string;
 };
 
-export function BrandLogo({
-    className,
-    alt = 'Te Pinta',
-    ...props
-}: BrandLogoProps) {
+export function BrandLogo({ className, alt, ...props }: BrandLogoProps) {
+    const restaurant = useRestaurantIdentity();
+    const label = alt ?? restaurant.name;
+
     return (
         <span
-            role={alt ? 'img' : undefined}
-            aria-label={alt || undefined}
-            aria-hidden={alt ? undefined : true}
+            role={label ? 'img' : undefined}
+            aria-label={label || undefined}
+            aria-hidden={label ? undefined : true}
             className={cn(
                 'relative block overflow-hidden bg-admin-accent',
                 className,
